@@ -103,6 +103,8 @@
                             <tr>
                                 <th>Node Name</th>
                                 <th>Status</th>
+                                <th>Calculation Count</th>
+                                <th>Last Calculation</th>
                                 <th>Input State</th>
                                 <th>Output State</th>
                                 <th>Errors</th>
@@ -117,6 +119,20 @@
                                     <span class="badge bg-warning text-dark">Dirty</span>
                                     {% else %}
                                     <span class="badge bg-success">Clean</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.calculation_count is not none %}
+                                    <span class="badge bg-info">{{ node.calculation_count }}</span>
+                                    {% else %}
+                                    <em class="text-muted">N/A</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.last_calculation %}
+                                    <small>{{ node.last_calculation }}</small>
+                                    {% else %}
+                                    <em class="text-muted">Never</em>
                                     {% endif %}
                                 </td>
                                 <td>

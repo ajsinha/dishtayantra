@@ -181,15 +181,31 @@ def dag_state(dag_name):
         dag = dag_server.dags[dag_name]
         sorted_nodes = dag.topological_sort()
 
-        # Build state info
+        # Build state info with calculation details
         node_states = []
         for node in sorted_nodes:
+            # Get calculation count
+            calculation_count = None
+            if hasattr(node, '_calculation_count'):
+                calculation_count = node._calculation_count
+            elif hasattr(node, 'calculation_count'):
+                calculation_count = node.calculation_count
+
+            # Get last calculation time
+            last_calculation = None
+            if hasattr(node, '_last_calculation'):
+                last_calculation = node._last_calculation
+            elif hasattr(node, 'last_calculation'):
+                last_calculation = node.last_calculation
+
             node_states.append({
                 'name': node.name,
                 'input': node._input,
                 'output': node._output,
                 'isdirty': node._isdirty,
-                'errors': list(node._errors)
+                'errors': list(node._errors),
+                'calculation_count': calculation_count,
+                'last_calculation': last_calculation
             })
 
         return render_template('dag_state.html',
