@@ -35,6 +35,23 @@
     .page-btn:hover:not(:disabled) {
         background: #e9ecef;
     }
+    .auto-refresh-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .countdown-badge {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
 </style>
 {% endblock %}
 
@@ -50,6 +67,17 @@
             </a>
         </div>
         <h2><i class="bi bi-diagram-3"></i> DAG Details: {{ dag_name }}</h2>
+
+        <!-- Auto-refresh toggle -->
+        <div class="auto-refresh-toggle mt-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                <label class="form-check-label" for="autoRefreshToggle">
+                    <strong>Auto-refresh</strong>
+                </label>
+            </div>
+            <span id="refreshCountdown" class="badge bg-secondary countdown-badge">Next refresh in: 30s</span>
+        </div>
     </div>
 </div>
 
@@ -549,5 +577,93 @@ function toggleJson() {
         text.text('Hide');
     }
 }
+
+// Auto-refresh functionality
+var autoRefreshEnabled = true;
+var refreshInterval = 30; // seconds (longer for details page as it's less dynamic)
+var countdownTimer;
+var refreshTimer;
+var secondsRemaining = refreshInterval;
+
+function startCountdown() {
+    secondsRemaining = refreshInterval;
+    updateCountdownDisplay();
+
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+
+    countdownTimer = setInterval(function() {
+        secondsRemaining--;
+        updateCountdownDisplay();
+
+        if (secondsRemaining <= 0) {
+            clearInterval(countdownTimer);
+        }
+    }, 1000);
+}
+
+function updateCountdownDisplay() {
+    var countdownElement = document.getElementById('refreshCountdown');
+    if (autoRefreshEnabled) {
+        countdownElement.textContent = 'Next refresh in: ' + secondsRemaining + 's';
+        countdownElement.className = 'badge bg-primary countdown-badge';
+    } else {
+        countdownElement.textContent = 'Auto-refresh disabled';
+        countdownElement.className = 'badge bg-secondary countdown-badge';
+    }
+}
+
+function scheduleRefresh() {
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+    }
+
+    if (autoRefreshEnabled) {
+        startCountdown();
+        refreshTimer = setTimeout(function() {
+            location.reload();
+        }, refreshInterval * 1000);
+    }
+}
+
+function toggleAutoRefresh() {
+    autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
+
+    if (autoRefreshEnabled) {
+        scheduleRefresh();
+    } else {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+        if (refreshTimer) {
+            clearTimeout(refreshTimer);
+        }
+        updateCountdownDisplay();
+    }
+}
+
+// Update initialization
+$(document).ready(function() {
+    initTable('nodes');
+    initTable('subscribers');
+    initTable('publishers');
+    initTable('transformers');
+    initTable('calculators');
+
+    setupTablePagination('nodes');
+    setupTablePagination('subscribers');
+    setupTablePagination('publishers');
+    setupTablePagination('transformers');
+    setupTablePagination('calculators');
+
+    // Set up auto-refresh toggle
+    document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
+    // Start auto-refresh if enabled
+    if (autoRefreshEnabled) {
+        scheduleRefresh();
+    }
+});
 </script>
 {% endblock %}
