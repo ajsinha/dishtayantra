@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}DAG State - {{ dag_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <h2><i class="bi bi-graph-up"></i> DAG State: {{ dag_name }}</h2>
+        <p class="text-muted">Current input/output state and errors for each node</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Node Name</th>
+                                <th>Status</th>
+                                <th>Input State</th>
+                                <th>Output State</th>
+                                <th>Errors</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for node in node_states %}
+                            <tr>
+                                <td><strong>{{ node.name }}</strong></td>
+                                <td>
+                                    {% if node.isdirty %}
+                                    <span class="badge bg-warning text-dark">Dirty</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Clean</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.input %}
+                                    <button class="btn btn-sm btn-outline-primary" onclick="showData('input_{{ loop.index }}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                    <div id="input_{{ loop.index }}" style="display:none" class="mt-2">
+                                        <pre class="json-config">{{ node.input | tojson(indent=2) }}</pre>
+                                    </div>
+                                    {% else %}
+                                    <em class="text-muted">Empty</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.output %}
+                                    <button class="btn btn-sm btn-outline-success" onclick="showData('output_{{ loop.index }}')">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                    <div id="output_{{ loop.index }}" style="display:none" class="mt-2">
+                                        <pre class="json-config">{{ node.output | tojson(indent=2) }}</pre>
+                                    </div>
+                                    {% else %}
+                                    <em class="text-muted">Empty</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.errors %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showData('errors_{{ loop.index }}')">
+                                        <i class="bi bi-exclamation-triangle"></i> {{ node.errors | length }} Error(s)
+                                    </button>
+                                    <div id="errors_{{ loop.index }}" style="display:none" class="mt-2">
+                                        <div class="list-group">
+                                            {% for error in node.errors %}
+                                            <div class="list-group-item list-group-item-danger">
+                                                <strong>{{ error.time }}</strong><br>
+                                                {{ error.error }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-success"><i class="bi bi-check-circle"></i> No errors</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-md-12 text-center">
+        <button class="btn btn-primary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh State
+        </button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showData(elementId) {
+    $('#' + elementId).toggle();
+}
+
+// Auto-refresh every 5 seconds
+setTimeout(function() {
+    location.reload();
+}, 5000);
+</script>
+{% endblock %}

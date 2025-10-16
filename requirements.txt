@@ -1,0 +1,8 @@
+flask==3.0.0
+kafka-python==2.0.2
+stomp.py==8.1.0
+pymysql==1.1.0
+psycopg2-binary==2.9.9
+aerospike==13.0.0
+redis==5.0.1
+kazoo==2.9.0

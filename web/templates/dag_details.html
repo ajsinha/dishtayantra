@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}DAG Details - {{ dag_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <h2><i class="bi bi-diagram-3"></i> DAG Details: {{ dag_name }}</h2>
+    </div>
+</div>
+
+<!-- Nodes Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-box"></i> Nodes (Topologically Sorted)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Dependencies</th>
+                                <th>Configuration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for node in node_details %}
+                            <tr id="node_{{ node.name }}">
+                                <td><strong><a href="#node_{{ node.name }}">{{ node.name }}</a></strong></td>
+                                <td><span class="badge bg-info">{{ node.type }}</span></td>
+                                <td>
+                                    {% if node.dependencies %}
+                                    <ul class="mb-0">
+                                        {% for dep in node.dependencies %}
+                                        <li><a href="#node_{{ dep }}">{{ dep }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <em>None</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="showConfig('{{ node.name }}')">
+                                        <i class="bi bi-code-square"></i> View Config
+                                    </button>
+                                    <div id="config_{{ node.name }}" style="display:none" class="mt-2">
+                                        <pre class="json-config">{{ node.config | tojson(indent=2) }}</pre>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subscribers Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-arrow-down-circle"></i> Subscribers</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Source</th>
+                                <th>Queue Depth</th>
+                                <th>Last Receive</th>
+                                {% if is_admin %}<th>Actions</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, sub in details.subscribers.items() %}
+                            <tr>
+                                <td>{{ name }}</td>
+                                <td><code>{{ sub.source }}</code></td>
+                                <td>{{ sub.current_depth }} / {{ sub.max_depth }}</td>
+                                <td>{{ sub.last_receive or 'Never' }}</td>
+                                {% if is_admin %}
+                                <td>
+                                    {% if 'mem://' in sub.source or 'kafka://' in sub.source or 'redischannel://' in sub.source or 'activemq://' in sub.source %}
+                                    <button class="btn btn-sm btn-primary" onclick="showPublishModal('{{ dag_name }}', '{{ name }}')">
+                                        <i class="bi bi-send"></i> Publish
+                                    </button>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Publishers Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="bi bi-arrow-up-circle"></i> Publishers</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Destination</th>
+                                <th>Queue Depth</th>
+                                <th>Last Publish</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, pub in details.publishers.items() %}
+                            <tr>
+                                <td>{{ name }}</td>
+                                <td><code>{{ pub.destination }}</code></td>
+                                <td>{{ pub.queue_depth }}</td>
+                                <td>{{ pub.last_publish or 'Never' }}</td>
+                                <td>{{ pub.publish_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transformers Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-shuffle"></i> Transformers</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Transform Count</th>
+                                <th>Last Transform</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, trans in details.transformers.items() %}
+                            <tr>
+                                <td>{{ name }}</td>
+                                <td><span class="badge bg-secondary">{{ trans.type }}</span></td>
+                                <td>{{ trans.transform_count }}</td>
+                                <td>{{ trans.last_transform or 'Never' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calculators Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5><i class="bi bi-calculator"></i> Calculators</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Calculation Count</th>
+                                <th>Last Calculation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, calc in details.calculators.items() %}
+                            <tr>
+                                <td>{{ name }}</td>
+                                <td><span class="badge bg-secondary">{{ calc.type }}</span></td>
+                                <td>{{ calc.calculation_count }}</td>
+                                <td>{{ calc.last_calculation or 'Never' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JSON Configuration Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <button class="btn btn-sm btn-outline-primary" onclick="toggleJson()">
+                    <i class="bi bi-code"></i> <span id="jsonToggleText">Show</span> JSON Configuration
+                </button>
+            </div>
+            <div class="card-body" id="jsonConfigSection" style="display:none">
+                <textarea class="form-control json-config" rows="20" readonly>{{ details | tojson(indent=2) }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Publish Message Modal -->
+<div class="modal fade" id="publishModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Publish Message to Subscriber</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="publishMessage" class="form-label">Message (JSON)</label>
+                    <textarea class="form-control" id="publishMessage" rows="10" placeholder='{"key": "value"}'></textarea>
+                </div>
+                <div id="publishResult"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="publishMessage()">Publish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var currentDagName = '';
+var currentSubscriberName = '';
+
+function showConfig(nodeName) {
+    var configDiv = $('#config_' + nodeName);
+    configDiv.toggle();
+}
+
+function toggleJson() {
+    var section = $('#jsonConfigSection');
+    var text = $('#jsonToggleText');
+    if (section.is(':visible')) {
+        section.hide();
+        text.text('Show');
+    } else {
+        section.show();
+        text.text('Hide');
+    }
+}
+
+function showPublishModal(dagName, subscriberName) {
+    currentDagName = dagName;
+    currentSubscriberName = subscriberName;
+    $('#publishMessage').val('');
+    $('#publishResult').html('');
+    $('#publishModal').modal('show');
+}
+
+function publishMessage() {
+    var message = $('#publishMessage').val();
+    
+    try {
+        JSON.parse(message);
+    } catch (e) {
+        $('#publishResult').html('<div class="alert alert-danger">Invalid JSON: ' + e.message + '</div>');
+        return;
+    }
+    
+    $.ajax({
+        url: '/dag/' + currentDagName + '/subscriber/' + currentSubscriberName + '/publish',
+        method: 'POST',
+        data: {message: message},
+        success: function(response) {
+            $('#publishResult').html('<div class="alert alert-success">Message published successfully</div>');
+            setTimeout(function() {
+                $('#publishModal').modal('hide');
+            }, 1500);
+        },
+        error: function(xhr) {
+            var error = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error';
+            $('#publishResult').html('<div class="alert alert-danger">Error: ' + error + '</div>');
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{
+  "name": "kafka_data_pipeline",
+  "start_time": null,
+  "end_time": null,
+  "subscribers": [
+    {
+      "name": "kafka_input",
+      "config": {
+        "source": "kafka://topic/input_topic",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "dag_consumer_group",
+        "max_depth": 5000
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "kafka_output",
+      "config": {
+        "destination": "kafka://topic/output_topic",
+        "bootstrap_servers": ["localhost:9092"]
+      }
+    },
+    {
+      "name": "file_backup",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/output.jsonl",
+        "publish_interval": 10,
+        "batch_size": 100
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "enrichment_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "processed_timestamp": null,
+          "version": "1.0",
+          "source": "kafka_pipeline"
+        }
+      }
+    },
+    {
+      "name": "value_calc",
+      "type": "MultiplicationCalculator",
+      "config": {
+        "arguments": ["price", "quantity"],
+        "output_attribute": "total_value"
+      }
+    }
+  ],
+  "transformers": [
+    {
+      "name": "output_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["id", "name", "total_value", "processed_timestamp", "version"]
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "name": "kafka_input_node",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_input"
+    },
+    {
+      "name": "enrichment_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "enrichment_calc"
+    },
+    {
+      "name": "calculation_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "value_calc"
+    },
+    {
+      "name": "output_node",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["kafka_output", "file_backup"],
+      "input_transformers": ["output_filter"]
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "kafka_input_node",
+      "to_node": "enrichment_node"
+    },
+    {
+      "from_node": "enrichment_node",
+      "to_node": "calculation_node"
+    },
+    {
+      "from_node": "calculation_node",
+      "to_node": "output_node"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "heartbeat_monitor",
+  "start_time": null,
+  "end_time": null,
+  "subscribers": [
+    {
+      "name": "heartbeat_subscriber",
+      "config": {
+        "source": "metronome",
+        "message": "heartbeat",
+        "interval": 60
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "heartbeat_publisher",
+      "config": {
+        "destination": "mem://topic/heartbeat_topic"
+      }
+    },
+    {
+      "name": "heartbeat_log",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/heartbeat.jsonl"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "heartbeat_enrichment",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "dag_name": "heartbeat_monitor",
+          "status": "healthy"
+        }
+      }
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "metronome_node",
+      "type": "MetronomeNode",
+      "config": {
+        "interval": 60
+      },
+      "subscriber": "heartbeat_subscriber",
+      "publishers": ["heartbeat_publisher", "heartbeat_log"],
+      "calculator": "heartbeat_enrichment"
+    }
+  ],
+  "edges": []
+}

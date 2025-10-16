@@ -1,0 +1,98 @@
+{
+  "name": "sample_data_pipeline",
+  "start_time": "0900",
+  "end_time": "1700",
+  "subscribers": [
+    {
+      "name": "input_subscriber",
+      "config": {
+        "source": "mem://queue/input_queue",
+        "max_depth": 1000
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "output_publisher",
+      "config": {
+        "destination": "mem://queue/output_queue"
+      }
+    },
+    {
+      "name": "file_publisher",
+      "config": {
+        "destination": "file:///tmp/output.jsonl"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "defaults_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "status": "active",
+          "priority": 1
+        }
+      }
+    },
+    {
+      "name": "addition_calc",
+      "type": "AdditionCalculator",
+      "config": {
+        "arguments": ["value1", "value2"],
+        "output_attribute": "total"
+      }
+    }
+  ],
+  "transformers": [
+    {
+      "name": "filter_transformer",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["id", "name", "total", "status"]
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "name": "input_node",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "input_subscriber"
+    },
+    {
+      "name": "apply_defaults_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "defaults_calc"
+    },
+    {
+      "name": "calculation_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "addition_calc"
+    },
+    {
+      "name": "output_node",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["output_publisher", "file_publisher"],
+      "input_transformers": ["filter_transformer"]
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "input_node",
+      "to_node": "apply_defaults_node"
+    },
+    {
+      "from_node": "apply_defaults_node",
+      "to_node": "calculation_node"
+    },
+    {
+      "from_node": "calculation_node",
+      "to_node": "output_node"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: dagserver-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - dagserver-network
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: dagserver-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+    depends_on:
+      - zookeeper
+    networks:
+      - dagserver-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dagserver-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - dagserver-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: dagserver-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=dagserver
+      - MYSQL_USER=daguser
+      - MYSQL_PASSWORD=dagpassword
+    networks:
+      - dagserver-network
+
+  activemq:
+    image: apache/activemq-artemis:latest
+    container_name: dagserver-activemq
+    ports:
+      - "61613:61613"
+      - "8161:8161"
+    environment:
+      - ARTEMIS_USERNAME=admin
+      - ARTEMIS_PASSWORD=admin
+    networks:
+      - dagserver-network
+
+  dagserver:
+    build: .
+    container_name: dagserver-app
+    ports:
+      - "5000:5000"
+    environment:
+      - DAG_CONFIG_FOLDER=/app/config/dags
+      - ZOOKEEPER_HOSTS=zookeeper:2181
+      - USERS_FILE=/app/config/users.json
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+    depends_on:
+      - zookeeper
+      - kafka
+      - redis
+      - mysql
+      - activemq
+    networks:
+      - dagserver-network
+
+networks:
+  dagserver-network:
+    driver: bridge

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - DAG Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .time-window-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-left: 5px;
+    }
+    .time-window-active {
+        background-color: #28a745;
+    }
+    .time-window-inactive {
+        background-color: #dc3545;
+    }
+    .auto-refresh-control {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border: 1px solid #dee2e6;
+    }
+    .countdown-timer {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-diagram-3"></i> DAG Dashboard</h2>
+            <div>
+                <span class="badge {{ 'bg-success' if server_status.is_primary else 'bg-secondary' }} fs-6">
+                    {{ 'PRIMARY' if server_status.is_primary else 'STANDBY' }}
+                </span>
+                <span class="badge {{ 'bg-success' if server_status.get('monitor_running') else 'bg-danger' }} fs-6 ms-2">
+                    <i class="bi bi-clock"></i> Monitor: {{ 'Active' if server_status.get('monitor_running') else 'Inactive' }}
+                </span>
+                {% if is_admin %}
+                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#createDagModal">
+                    <i class="bi bi-plus-circle"></i> Create DAG
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Time Window</th>
+                                <th>Window Status</th>
+                                <th>Nodes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dag in dags %}
+                            <tr>
+                                <td><strong>{{ dag.name }}</strong></td>
+                                <td>
+                                    {% if dag.is_running %}
+                                        {% if dag.is_suspended %}
+                                        <span class="badge bg-warning status-badge">Suspended</span>
+                                        {% else %}
+                                        <span class="badge bg-success status-badge">Running</span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="badge bg-secondary status-badge">Stopped</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if dag.start_time and dag.end_time %}
+                                    {{ dag.start_time[:2] }}:{{ dag.start_time[2:] }} - {{ dag.end_time[:2] }}:{{ dag.end_time[2:] }}
+                                    {% else %}
+                                    <span class="text-muted">Always Active</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if dag.start_time and dag.end_time %}
+                                        {% if dag.in_time_window %}
+                                        <span class="badge bg-success">In Window</span>
+                                        <span class="time-window-indicator time-window-active" title="Within time window"></span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Outside Window</span>
+                                        <span class="time-window-indicator time-window-inactive" title="Outside time window"></span>
+                                        {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ dag.node_count }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('dag_details', dag_name=dag.name) }}" class="btn btn-info">
+                                            <i class="bi bi-info-circle"></i> Details
+                                        </a>
+                                        <a href="{{ url_for('dag_state', dag_name=dag.name) }}" class="btn btn-secondary">
+                                            <i class="bi bi-eye"></i> State
+                                        </a>
+                                        {% if is_admin %}
+                                        <button class="btn btn-primary" onclick="showCloneModal('{{ dag.name }}')">
+                                            <i class="bi bi-files"></i> Clone
+                                        </button>
+                                        {% if dag.is_running %}
+                                            {% if dag.is_suspended %}
+                                            <form method="POST" action="{{ url_for('resume_dag', dag_name=dag.name) }}" style="display:inline">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-play-fill"></i> Resume
+                                                </button>
+                                            </form>
+                                            {% else %}
+                                            <form method="POST" action="{{ url_for('suspend_dag', dag_name=dag.name) }}" style="display:inline">
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="bi bi-pause-fill"></i> Suspend
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                            <form method="POST" action="{{ url_for('stop_dag', dag_name=dag.name) }}" style="display:inline">
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-stop-fill"></i> Stop
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form method="POST" action="{{ url_for('start_dag', dag_name=dag.name) }}" style="display:inline">
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="bi bi-play-fill"></i> Start
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <button class="btn btn-danger" onclick="confirmDelete('{{ dag.name }}')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No DAGs available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-Refresh Control Widget -->
+<div class="auto-refresh-control">
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+        <label class="form-check-label" for="autoRefreshToggle">
+            <i class="bi bi-arrow-clockwise"></i> Auto-Refresh
+        </label>
+    </div>
+    <div class="countdown-timer" id="countdownTimer">
+        Next refresh in <strong><span id="countdown">10</span>s</strong>
+    </div>
+    <small class="text-muted d-block mt-2">
+        <i class="bi bi-info-circle"></i> Interval: 10 seconds
+    </small>
+</div>
+
+<!-- Create DAG Modal -->
+<div class="modal fade" id="createDagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New DAG</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('create_dag') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="config_file" class="form-label">Configuration File (JSON)</label>
+                        <input type="file" class="form-control" id="config_file" name="config_file" accept=".json" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Clone DAG Modal -->
+<div class="modal fade" id="cloneDagModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Clone DAG</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="cloneForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="start_time" class="form-label">Start Time (HHMM, optional)</label>
+                        <input type="text" class="form-control" id="start_time" name="start_time" placeholder="e.g., 0900" pattern="[0-9]{4}">
+                        <small class="text-muted">Leave empty to keep original or for always-active DAG</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_time" class="form-label">End Time (HHMM, optional)</label>
+                        <input type="text" class="form-control" id="end_time" name="end_time" placeholder="e.g., 1700" pattern="[0-9]{4}">
+                        <small class="text-muted">Leave empty to keep original or for always-active DAG</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Clone</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var autoRefreshEnabled = true;
+var refreshInterval = 10; // seconds
+var countdownSeconds = refreshInterval;
+var refreshTimer = null;
+var countdownTimer = null;
+
+function showCloneModal(dagName) {
+    $('#cloneForm').attr('action', '/dag/' + dagName + '/clone');
+    $('#cloneDagModal').modal('show');
+}
+
+function confirmDelete(dagName) {
+    if (confirm('Are you sure you want to delete DAG: ' + dagName + '?')) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/dag/' + dagName + '/delete';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function startAutoRefresh() {
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+    }
+    refreshTimer = setTimeout(function() {
+        location.reload();
+    }, refreshInterval * 1000);
+}
+
+function stopAutoRefresh() {
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+        refreshTimer = null;
+    }
+}
+
+function updateCountdown() {
+    if (autoRefreshEnabled) {
+        $('#countdown').text(countdownSeconds);
+
+        if (countdownSeconds <= 0) {
+            countdownSeconds = refreshInterval;
+        } else {
+            countdownSeconds--;
+        }
+    } else {
+        $('#countdownTimer').html('<span class="text-muted">Paused</span>');
+    }
+}
+
+function startCountdown() {
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+    countdownSeconds = refreshInterval;
+    countdownTimer = setInterval(updateCountdown, 1000);
+}
+
+function stopCountdown() {
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+    }
+}
+
+// Handle toggle switch
+$('#autoRefreshToggle').change(function() {
+    autoRefreshEnabled = this.checked;
+
+    if (autoRefreshEnabled) {
+        console.log('Auto-refresh enabled');
+        countdownSeconds = refreshInterval;
+        startAutoRefresh();
+        startCountdown();
+    } else {
+        console.log('Auto-refresh disabled');
+        stopAutoRefresh();
+        stopCountdown();
+        $('#countdownTimer').html('<span class="text-muted">Paused</span>');
+    }
+
+    // Save preference to localStorage
+    localStorage.setItem('autoRefreshEnabled', autoRefreshEnabled);
+});
+
+// Initialize on page load
+$(document).ready(function() {
+    // Load saved preference
+    var savedPreference = localStorage.getItem('autoRefreshEnabled');
+    if (savedPreference !== null) {
+        autoRefreshEnabled = savedPreference === 'true';
+        $('#autoRefreshToggle').prop('checked', autoRefreshEnabled);
+    }
+
+    // Start auto-refresh if enabled
+    if (autoRefreshEnabled) {
+        startAutoRefresh();
+        startCountdown();
+    } else {
+        $('#countdownTimer').html('<span class="text-muted">Paused</span>');
+    }
+});
+</script>
+{% endblock %}
