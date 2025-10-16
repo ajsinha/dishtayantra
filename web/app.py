@@ -188,48 +188,68 @@ def dag_state(dag_name):
         return redirect(url_for('dashboard'))
 
 
-@app.route('/dag/create', methods=['POST'])
+@app.route('/dag/create', methods=['GET', 'POST'])
 @admin_required
 def create_dag():
+    if request.method == 'GET':
+        return render_template('create_dag.html')
+
     try:
         if 'config_file' not in request.files:
             flash('No file provided', 'error')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('create_dag'))
 
         file = request.files['config_file']
         if file.filename == '':
             flash('No file selected', 'error')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('create_dag'))
 
         if not file.filename.endswith('.json'):
             flash('File must be a JSON file', 'error')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('create_dag'))
 
         config_data = json.load(file)
         dag_name = dag_server.add_dag(config_data, file.filename)
 
         flash(f'DAG {dag_name} created successfully', 'success')
+        return redirect(url_for('dashboard'))
     except Exception as e:
         logger.error(f"Error creating DAG: {str(e)}")
         flash(f'Error creating DAG: {str(e)}', 'error')
+        return redirect(url_for('create_dag'))
 
-    return redirect(url_for('dashboard'))
 
-
-@app.route('/dag/<dag_name>/clone', methods=['POST'])
+@app.route('/dag/<dag_name>/clone', methods=['GET', 'POST'])
 @admin_required
 def clone_dag(dag_name):
+    if request.method == 'GET':
+        try:
+            # Get original DAG details
+            dag = dag_server.dags.get(dag_name)
+            if not dag:
+                flash(f'DAG {dag_name} not found', 'error')
+                return redirect(url_for('dashboard'))
+
+            return render_template('clone_dag.html',
+                                   dag_name=dag_name,
+                                   original_start=dag.start_time,
+                                   original_end=dag.end_time)
+        except Exception as e:
+            logger.error(f"Error loading clone page: {str(e)}")
+            flash(f'Error: {str(e)}', 'error')
+            return redirect(url_for('dashboard'))
+
     try:
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
 
         cloned_name = dag_server.clone_dag(dag_name, start_time, end_time)
         flash(f'DAG cloned to {cloned_name}', 'success')
+        return redirect(url_for('dashboard'))
     except Exception as e:
         logger.error(f"Error cloning DAG: {str(e)}")
         flash(f'Error cloning DAG: {str(e)}', 'error')
-
-    return redirect(url_for('dashboard'))
+        return redirect(url_for('clone_dag', dag_name=dag_name))
 
 
 @app.route('/dag/<dag_name>/delete', methods=['POST'])

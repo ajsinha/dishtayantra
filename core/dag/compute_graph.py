@@ -270,27 +270,62 @@ class ComputeGraph:
             self._compute_thread = threading.Thread(target=self.do_compute, daemon=True)
             self._compute_thread.start()
 
-        # Start time window check thread if needed
+        # Start time window check thread if time window is configured
         if self.start_time and self.end_time:
             if not self._time_check_thread or not self._time_check_thread.is_alive():
                 self._time_check_thread = threading.Thread(target=self._time_window_check, daemon=True)
                 self._time_check_thread.start()
+                logger.info(f"DAG {self.name}: Time window monitor started ({self.start_time}-{self.end_time})")
 
         logger.info(f"ComputeGraph {self.name} started")
 
     def _time_window_check(self):
         """Check if current time is within configured window"""
-        while not self._stop_event.is_set():
-            current_time = datetime.now().strftime('%H%M')
+        logger.info(f"DAG {self.name}: Time window checker started")
 
-            if self.start_time <= current_time <= self.end_time:
+        while not self._stop_event.is_set():
+            if not self.start_time or not self.end_time:
+                # No time window configured, skip
+                time.sleep(60)
+                continue
+
+            now = datetime.now()
+            current_time = now.strftime('%H%M')
+            current_time_int = int(current_time)
+            start_time_int = int(self.start_time)
+            end_time_int = int(self.end_time)
+
+            in_window = start_time_int <= current_time_int <= end_time_int
+
+            logger.debug(
+                f"DAG {self.name} time check: current={current_time_int}, start={start_time_int}, end={end_time_int}, in_window={in_window}")
+
+            if in_window:
+                # Within time window - should be running
                 if not self._suspend_event.is_set():
+                    logger.info(f"DAG {self.name}: Entering time window, resuming")
                     self.resume()
             else:
+                # Outside time window - should be suspended
                 if self._suspend_event.is_set():
+                    logger.info(f"DAG {self.name}: Leaving time window, suspending")
                     self.suspend()
 
             time.sleep(60)  # Check every minute
+
+        logger.info(f"DAG {self.name}: Time window checker stopped")
+
+    def is_in_time_window(self):
+        """Check if current time is within the configured window"""
+        if not self.start_time or not self.end_time:
+            return True  # Always active if no window configured
+
+        now = datetime.now()
+        current_time_int = int(now.strftime('%H%M'))
+        start_time_int = int(self.start_time)
+        end_time_int = int(self.end_time)
+
+        return start_time_int <= current_time_int <= end_time_int
 
     def suspend(self):
         """Suspend the compute graph"""

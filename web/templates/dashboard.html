@@ -45,13 +45,10 @@
                 <span class="badge {{ 'bg-success' if server_status.is_primary else 'bg-secondary' }} fs-6">
                     {{ 'PRIMARY' if server_status.is_primary else 'STANDBY' }}
                 </span>
-                <span class="badge {{ 'bg-success' if server_status.get('monitor_running') else 'bg-danger' }} fs-6 ms-2">
-                    <i class="bi bi-clock"></i> Monitor: {{ 'Active' if server_status.get('monitor_running') else 'Inactive' }}
-                </span>
                 {% if is_admin %}
-                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#createDagModal">
+                <a href="{{ url_for('create_dag') }}" class="btn btn-primary ms-2">
                     <i class="bi bi-plus-circle"></i> Create DAG
-                </button>
+                </a>
                 {% endif %}
             </div>
         </div>
@@ -119,9 +116,9 @@
                                             <i class="bi bi-eye"></i> State
                                         </a>
                                         {% if is_admin %}
-                                        <button class="btn btn-primary" onclick="showCloneModal('{{ dag.name }}')">
+                                        <a href="{{ url_for('clone_dag', dag_name=dag.name) }}" class="btn btn-primary">
                                             <i class="bi bi-files"></i> Clone
-                                        </button>
+                                        </a>
                                         {% if dag.is_running %}
                                             {% if dag.is_suspended %}
                                             <form method="POST" action="{{ url_for('resume_dag', dag_name=dag.name) }}" style="display:inline">
@@ -169,180 +166,4 @@
 </div>
 
 <!-- Auto-Refresh Control Widget -->
-<div class="auto-refresh-control">
-    <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
-        <label class="form-check-label" for="autoRefreshToggle">
-            <i class="bi bi-arrow-clockwise"></i> Auto-Refresh
-        </label>
-    </div>
-    <div class="countdown-timer" id="countdownTimer">
-        Next refresh in <strong><span id="countdown">10</span>s</strong>
-    </div>
-    <small class="text-muted d-block mt-2">
-        <i class="bi bi-info-circle"></i> Interval: 10 seconds
-    </small>
-</div>
-
-<!-- Create DAG Modal -->
-<div class="modal fade" id="createDagModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create New DAG</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" action="{{ url_for('create_dag') }}" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="config_file" class="form-label">Configuration File (JSON)</label>
-                        <input type="file" class="form-control" id="config_file" name="config_file" accept=".json" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Clone DAG Modal -->
-<div class="modal fade" id="cloneDagModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Clone DAG</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST" id="cloneForm">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="start_time" class="form-label">Start Time (HHMM, optional)</label>
-                        <input type="text" class="form-control" id="start_time" name="start_time" placeholder="e.g., 0900" pattern="[0-9]{4}">
-                        <small class="text-muted">Leave empty to keep original or for always-active DAG</small>
-                    </div>
-                    <div class="mb-3">
-                        <label for="end_time" class="form-label">End Time (HHMM, optional)</label>
-                        <input type="text" class="form-control" id="end_time" name="end_time" placeholder="e.g., 1700" pattern="[0-9]{4}">
-                        <small class="text-muted">Leave empty to keep original or for always-active DAG</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Clone</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-var autoRefreshEnabled = true;
-var refreshInterval = 10; // seconds
-var countdownSeconds = refreshInterval;
-var refreshTimer = null;
-var countdownTimer = null;
-
-function showCloneModal(dagName) {
-    $('#cloneForm').attr('action', '/dag/' + dagName + '/clone');
-    $('#cloneDagModal').modal('show');
-}
-
-function confirmDelete(dagName) {
-    if (confirm('Are you sure you want to delete DAG: ' + dagName + '?')) {
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/dag/' + dagName + '/delete';
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function startAutoRefresh() {
-    if (refreshTimer) {
-        clearTimeout(refreshTimer);
-    }
-    refreshTimer = setTimeout(function() {
-        location.reload();
-    }, refreshInterval * 1000);
-}
-
-function stopAutoRefresh() {
-    if (refreshTimer) {
-        clearTimeout(refreshTimer);
-        refreshTimer = null;
-    }
-}
-
-function updateCountdown() {
-    if (autoRefreshEnabled) {
-        $('#countdown').text(countdownSeconds);
-
-        if (countdownSeconds <= 0) {
-            countdownSeconds = refreshInterval;
-        } else {
-            countdownSeconds--;
-        }
-    } else {
-        $('#countdownTimer').html('<span class="text-muted">Paused</span>');
-    }
-}
-
-function startCountdown() {
-    if (countdownTimer) {
-        clearInterval(countdownTimer);
-    }
-    countdownSeconds = refreshInterval;
-    countdownTimer = setInterval(updateCountdown, 1000);
-}
-
-function stopCountdown() {
-    if (countdownTimer) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
-    }
-}
-
-// Handle toggle switch
-$('#autoRefreshToggle').change(function() {
-    autoRefreshEnabled = this.checked;
-
-    if (autoRefreshEnabled) {
-        console.log('Auto-refresh enabled');
-        countdownSeconds = refreshInterval;
-        startAutoRefresh();
-        startCountdown();
-    } else {
-        console.log('Auto-refresh disabled');
-        stopAutoRefresh();
-        stopCountdown();
-        $('#countdownTimer').html('<span class="text-muted">Paused</span>');
-    }
-
-    // Save preference to localStorage
-    localStorage.setItem('autoRefreshEnabled', autoRefreshEnabled);
-});
-
-// Initialize on page load
-$(document).ready(function() {
-    // Load saved preference
-    var savedPreference = localStorage.getItem('autoRefreshEnabled');
-    if (savedPreference !== null) {
-        autoRefreshEnabled = savedPreference === 'true';
-        $('#autoRefreshToggle').prop('checked', autoRefreshEnabled);
-    }
-
-    // Start auto-refresh if enabled
-    if (autoRefreshEnabled) {
-        startAutoRefresh();
-        startCountdown();
-    } else {
-        $('#countdownTimer').html('<span class="text-muted">Paused</span>');
-    }
-});
-</script>
 {% endblock %}

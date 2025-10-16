@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Clone DAG - {{ dag_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <h2><i class="bi bi-files"></i> Clone DAG: {{ dag_name }}</h2>
+        <p class="text-muted">Create a copy of this DAG with optional time window modifications</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-gear"></i> Clone Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Cloning Information</h6>
+                    <p class="mb-1"><strong>Original DAG:</strong> {{ dag_name }}</p>
+                    <p class="mb-1"><strong>Original Time Window:</strong> 
+                        {% if original_start and original_end %}
+                        {{ original_start[:2] }}:{{ original_start[2:] }} - {{ original_end[:2] }}:{{ original_end[2:] }}
+                        {% else %}
+                        Always Active
+                        {% endif %}
+                    </p>
+                    <hr>
+                    <p class="mb-0">
+                        <small>The cloned DAG will have a new name with timestamp: <code>{{ dag_name }}_YYYYMMDDHHMMSS</code></small>
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ url_for('clone_dag', dag_name=dag_name) }}">
+                    <div class="mb-4">
+                        <label for="start_time" class="form-label">
+                            <strong>Start Time (HHMM format)</strong>
+                        </label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="start_time" 
+                               name="start_time" 
+                               placeholder="e.g., 0900" 
+                               pattern="[0-9]{4}"
+                               value="{{ original_start or '' }}">
+                        <div class="form-text">
+                            <i class="bi bi-clock"></i> Leave empty to keep original or for always-active DAG. Format: HHMM (24-hour)
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="end_time" class="form-label">
+                            <strong>End Time (HHMM format)</strong>
+                        </label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="end_time" 
+                               name="end_time" 
+                               placeholder="e.g., 1700" 
+                               pattern="[0-9]{4}"
+                               value="{{ original_end or '' }}">
+                        <div class="form-text">
+                            <i class="bi bi-clock"></i> Leave empty to keep original or for always-active DAG. Format: HHMM (24-hour)
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Important Notes</h6>
+                        <ul class="mb-0">
+                            <li>Both start_time and end_time must be provided for time window to be active</li>
+                            <li>If you leave both empty, the cloned DAG will use original settings or be always active</li>
+                            <li>Time format: HHMM (e.g., 0900 for 9:00 AM, 1730 for 5:30 PM)</li>
+                            <li>The cloned DAG will NOT automatically start - you must start it manually</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-files"></i> Clone DAG
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="bi bi-question-circle"></i> Time Window Examples</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>0900</code></td>
+                            <td><code>1700</code></td>
+                            <td>Business hours (9 AM to 5 PM)</td>
+                        </tr>
+                        <tr>
+                            <td><code>0000</code></td>
+                            <td><code>0600</code></td>
+                            <td>Night processing (Midnight to 6 AM)</td>
+                        </tr>
+                        <tr>
+                            <td><code>1800</code></td>
+                            <td><code>2359</code></td>
+                            <td>Evening hours (6 PM to 11:59 PM)</td>
+                        </tr>
+                        <tr>
+                            <td><em>empty</em></td>
+                            <td><em>empty</em></td>
+                            <td>Always active (24/7)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
