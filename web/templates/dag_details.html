@@ -2,6 +2,42 @@
 
 {% block title %}DAG Details - {{ dag_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .table-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: flex-end;
+    }
+    .pagination-info {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    .page-btn {
+        padding: 5px 10px;
+        border: 1px solid #dee2e6;
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .page-btn:hover:not(:disabled) {
+        background: #e9ecef;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
     <div class="col-md-12">
@@ -20,8 +56,19 @@
                 <h5><i class="bi bi-box"></i> Nodes (Topologically Sorted)</h5>
             </div>
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="nodesPageSize">Show:</label>
+                        <select id="nodesPageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10">10 rows</option>
+                            <option value="50" selected>50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered" id="nodesTable">
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
@@ -30,7 +77,7 @@
                                 <th>Configuration</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="nodesTableBody">
                             {% for node in node_details %}
                             <tr id="node_{{ node.name }}">
                                 <td><strong><a href="#node_{{ node.name }}">{{ node.name }}</a></strong></td>
@@ -59,6 +106,16 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="pagination-controls" id="nodesPagination">
+                    <span class="pagination-info" id="nodesInfo"></span>
+                    <div>
+                        <button class="page-btn" id="nodesFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="nodesPrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="nodesPage"></span>
+                        <button class="page-btn" id="nodesNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="nodesLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -72,8 +129,19 @@
                 <h5><i class="bi bi-arrow-down-circle"></i> Subscribers</h5>
             </div>
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="subscribersPageSize">Show:</label>
+                        <select id="subscribersPageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10" selected>10 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="subscribersTable">
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
@@ -83,7 +151,7 @@
                                 {% if is_admin %}<th>Actions</th>{% endif %}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="subscribersTableBody">
                             {% for name, sub in details.subscribers.items() %}
                             <tr>
                                 <td>{{ name }}</td>
@@ -104,6 +172,16 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="pagination-controls" id="subscribersPagination">
+                    <span class="pagination-info" id="subscribersInfo"></span>
+                    <div>
+                        <button class="page-btn" id="subscribersFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="subscribersPrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="subscribersPage"></span>
+                        <button class="page-btn" id="subscribersNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="subscribersLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -117,8 +195,19 @@
                 <h5><i class="bi bi-arrow-up-circle"></i> Publishers</h5>
             </div>
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="publishersPageSize">Show:</label>
+                        <select id="publishersPageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10" selected>10 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="publishersTable">
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
@@ -128,7 +217,7 @@
                                 <th>Count</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="publishersTableBody">
                             {% for name, pub in details.publishers.items() %}
                             <tr>
                                 <td>{{ name }}</td>
@@ -140,6 +229,16 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <div class="pagination-controls" id="publishersPagination">
+                    <span class="pagination-info" id="publishersInfo"></span>
+                    <div>
+                        <button class="page-btn" id="publishersFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="publishersPrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="publishersPage"></span>
+                        <button class="page-btn" id="publishersNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="publishersLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -154,8 +253,19 @@
                 <h5><i class="bi bi-shuffle"></i> Transformers</h5>
             </div>
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="transformersPageSize">Show:</label>
+                        <select id="transformersPageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10" selected>10 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="transformersTable">
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
@@ -164,7 +274,7 @@
                                 <th>Last Transform</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="transformersTableBody">
                             {% for name, trans in details.transformers.items() %}
                             <tr>
                                 <td>{{ name }}</td>
@@ -175,6 +285,16 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <div class="pagination-controls" id="transformersPagination">
+                    <span class="pagination-info" id="transformersInfo"></span>
+                    <div>
+                        <button class="page-btn" id="transformersFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="transformersPrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="transformersPage"></span>
+                        <button class="page-btn" id="transformersNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="transformersLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -189,8 +309,19 @@
                 <h5><i class="bi bi-calculator"></i> Calculators</h5>
             </div>
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="calculatorsPageSize">Show:</label>
+                        <select id="calculatorsPageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10" selected>10 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="calculatorsTable">
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
@@ -199,7 +330,7 @@
                                 <th>Last Calculation</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="calculatorsTableBody">
                             {% for name, calc in details.calculators.items() %}
                             <tr>
                                 <td>{{ name }}</td>
@@ -210,6 +341,16 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <div class="pagination-controls" id="calculatorsPagination">
+                    <span class="pagination-info" id="calculatorsInfo"></span>
+                    <div>
+                        <button class="page-btn" id="calculatorsFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="calculatorsPrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="calculatorsPage"></span>
+                        <button class="page-btn" id="calculatorsNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="calculatorsLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -262,6 +403,124 @@
 var currentDagName = '';
 var currentSubscriberName = '';
 
+// Pagination state for each table
+var tables = {
+    nodes: { currentPage: 1, pageSize: 50, totalRows: 0, allRows: [] },
+    subscribers: { currentPage: 1, pageSize: 10, totalRows: 0, allRows: [] },
+    publishers: { currentPage: 1, pageSize: 10, totalRows: 0, allRows: [] },
+    transformers: { currentPage: 1, pageSize: 10, totalRows: 0, allRows: [] },
+    calculators: { currentPage: 1, pageSize: 10, totalRows: 0, allRows: [] }
+};
+
+function initTable(tableName) {
+    var tbody = document.getElementById(tableName + 'TableBody');
+    var rows = tbody.getElementsByTagName('tr');
+    tables[tableName].allRows = Array.from(rows);
+    tables[tableName].totalRows = rows.length;
+    updateTable(tableName);
+}
+
+function updateTable(tableName) {
+    var state = tables[tableName];
+    var tbody = document.getElementById(tableName + 'TableBody');
+
+    // Clear tbody
+    tbody.innerHTML = '';
+
+    // Calculate pagination
+    var start, end;
+    if (state.pageSize === 'all') {
+        start = 0;
+        end = state.totalRows;
+        state.currentPage = 1;
+    } else {
+        start = (state.currentPage - 1) * state.pageSize;
+        end = Math.min(start + state.pageSize, state.totalRows);
+    }
+
+    // Add rows
+    for (var i = start; i < end; i++) {
+        tbody.appendChild(state.allRows[i].cloneNode(true));
+    }
+
+    // Update pagination controls
+    updatePaginationControls(tableName);
+}
+
+function updatePaginationControls(tableName) {
+    var state = tables[tableName];
+    var totalPages = state.pageSize === 'all' ? 1 : Math.ceil(state.totalRows / state.pageSize);
+
+    // Update info text
+    var start = state.pageSize === 'all' ? 1 : (state.currentPage - 1) * state.pageSize + 1;
+    var end = state.pageSize === 'all' ? state.totalRows : Math.min(state.currentPage * state.pageSize, state.totalRows);
+    document.getElementById(tableName + 'Info').textContent =
+        'Showing ' + start + ' to ' + end + ' of ' + state.totalRows + ' entries';
+    document.getElementById(tableName + 'Page').textContent =
+        'Page ' + state.currentPage + ' of ' + totalPages;
+
+    // Update button states
+    document.getElementById(tableName + 'First').disabled = state.currentPage === 1 || state.pageSize === 'all';
+    document.getElementById(tableName + 'Prev').disabled = state.currentPage === 1 || state.pageSize === 'all';
+    document.getElementById(tableName + 'Next').disabled = state.currentPage === totalPages || state.pageSize === 'all';
+    document.getElementById(tableName + 'Last').disabled = state.currentPage === totalPages || state.pageSize === 'all';
+}
+
+function setupTablePagination(tableName) {
+    // Page size dropdown
+    document.getElementById(tableName + 'PageSize').addEventListener('change', function() {
+        var value = this.value;
+        tables[tableName].pageSize = value === 'all' ? 'all' : parseInt(value);
+        tables[tableName].currentPage = 1;
+        updateTable(tableName);
+    });
+
+    // First page
+    document.getElementById(tableName + 'First').addEventListener('click', function() {
+        tables[tableName].currentPage = 1;
+        updateTable(tableName);
+    });
+
+    // Previous page
+    document.getElementById(tableName + 'Prev').addEventListener('click', function() {
+        if (tables[tableName].currentPage > 1) {
+            tables[tableName].currentPage--;
+            updateTable(tableName);
+        }
+    });
+
+    // Next page
+    document.getElementById(tableName + 'Next').addEventListener('click', function() {
+        var totalPages = Math.ceil(tables[tableName].totalRows / tables[tableName].pageSize);
+        if (tables[tableName].currentPage < totalPages) {
+            tables[tableName].currentPage++;
+            updateTable(tableName);
+        }
+    });
+
+    // Last page
+    document.getElementById(tableName + 'Last').addEventListener('click', function() {
+        var totalPages = Math.ceil(tables[tableName].totalRows / tables[tableName].pageSize);
+        tables[tableName].currentPage = totalPages;
+        updateTable(tableName);
+    });
+}
+
+// Initialize on page load
+$(document).ready(function() {
+    initTable('nodes');
+    initTable('subscribers');
+    initTable('publishers');
+    initTable('transformers');
+    initTable('calculators');
+
+    setupTablePagination('nodes');
+    setupTablePagination('subscribers');
+    setupTablePagination('publishers');
+    setupTablePagination('transformers');
+    setupTablePagination('calculators');
+});
+
 function showConfig(nodeName) {
     var configDiv = $('#config_' + nodeName);
     configDiv.toggle();
@@ -289,14 +548,14 @@ function showPublishModal(dagName, subscriberName) {
 
 function publishMessage() {
     var message = $('#publishMessage').val();
-    
+
     try {
         JSON.parse(message);
     } catch (e) {
         $('#publishResult').html('<div class="alert alert-danger">Invalid JSON: ' + e.message + '</div>');
         return;
     }
-    
+
     $.ajax({
         url: '/dag/' + currentDagName + '/subscriber/' + currentSubscriberName + '/publish',
         method: 'POST',
