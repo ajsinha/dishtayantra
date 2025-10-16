@@ -1,0 +1,609 @@
+{
+  "name": "complex_kafka_pipeline_50_nodes",
+  "start_time": "0600",
+  "end_time": "2200",
+  "subscribers": [
+    {
+      "name": "kafka_input_orders",
+      "config": {
+        "source": "kafka://topic/orders_topic",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "orders_consumer_group",
+        "max_depth": 10000
+      }
+    },
+    {
+      "name": "kafka_input_inventory",
+      "config": {
+        "source": "kafka://topic/inventory_topic",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "inventory_consumer_group",
+        "max_depth": 10000
+      }
+    },
+    {
+      "name": "kafka_input_customers",
+      "config": {
+        "source": "kafka://topic/customers_topic",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "customers_consumer_group",
+        "max_depth": 5000
+      }
+    },
+    {
+      "name": "kafka_input_pricing",
+      "config": {
+        "source": "kafka://topic/pricing_topic",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "pricing_consumer_group",
+        "max_depth": 5000
+      }
+    },
+    {
+      "name": "metronome_heartbeat",
+      "config": {
+        "source": "metronome",
+        "message": "system_heartbeat",
+        "interval": 30
+      }
+    },
+    {
+      "name": "metronome_stats_collector",
+      "config": {
+        "source": "metronome",
+        "message": "collect_statistics",
+        "interval": 60
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "kafka_output_processed_orders",
+      "config": {
+        "destination": "kafka://topic/processed_orders",
+        "bootstrap_servers": ["localhost:9092"]
+      }
+    },
+    {
+      "name": "kafka_output_alerts",
+      "config": {
+        "destination": "kafka://topic/alerts_topic",
+        "bootstrap_servers": ["localhost:9092"]
+      }
+    },
+    {
+      "name": "kafka_output_analytics",
+      "config": {
+        "destination": "kafka://topic/analytics_topic",
+        "bootstrap_servers": ["localhost:9092"]
+      }
+    },
+    {
+      "name": "file_output_orders_log",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/orders_processed.jsonl"
+      }
+    },
+    {
+      "name": "file_output_errors_log",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/processing_errors.jsonl"
+      }
+    },
+    {
+      "name": "file_output_audit_log",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/audit_trail.jsonl"
+      }
+    },
+    {
+      "name": "file_output_heartbeat_log",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/heartbeat.jsonl"
+      }
+    },
+    {
+      "name": "file_output_stats",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/statistics.jsonl",
+        "publish_interval": 10,
+        "batch_size": 50
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "order_defaults_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "status": "received",
+          "priority": 1,
+          "processed_timestamp": null
+        }
+      }
+    },
+    {
+      "name": "order_total_calc",
+      "type": "MultiplicationCalculator",
+      "config": {
+        "arguments": ["quantity", "unit_price"],
+        "output_attribute": "line_total"
+      }
+    },
+    {
+      "name": "tax_calc",
+      "type": "MultiplicationCalculator",
+      "config": {
+        "arguments": ["line_total", "tax_rate"],
+        "output_attribute": "tax_amount"
+      }
+    },
+    {
+      "name": "order_grand_total_calc",
+      "type": "AdditionCalculator",
+      "config": {
+        "arguments": ["line_total", "tax_amount", "shipping_cost"],
+        "output_attribute": "grand_total"
+      }
+    },
+    {
+      "name": "discount_calc",
+      "type": "MultiplicationCalculator",
+      "config": {
+        "arguments": ["line_total", "discount_rate"],
+        "output_attribute": "discount_amount"
+      }
+    },
+    {
+      "name": "inventory_defaults_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "reorder_level": 10,
+          "status": "active"
+        }
+      }
+    },
+    {
+      "name": "customer_defaults_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "tier": "standard",
+          "credit_limit": 1000
+        }
+      }
+    },
+    {
+      "name": "pricing_defaults_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "currency": "USD",
+          "tax_rate": 0.08
+        }
+      }
+    },
+    {
+      "name": "audit_enrichment_calc",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "audit_timestamp": null,
+          "audit_user": "system",
+          "audit_action": "processed"
+        }
+      }
+    },
+    {
+      "name": "field_rename_calc",
+      "type": "AttributeNameChangeCalculator",
+      "config": {
+        "name_mapping": {
+          "order_id": "transaction_id",
+          "customer_id": "client_id"
+        }
+      }
+    }
+  ],
+  "transformers": [
+    {
+      "name": "order_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["order_id", "customer_id", "grand_total", "status", "processed_timestamp"]
+      }
+    },
+    {
+      "name": "customer_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["customer_id", "name", "email", "tier", "credit_limit"]
+      }
+    },
+    {
+      "name": "inventory_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["product_id", "quantity_available", "reorder_level", "status"]
+      }
+    },
+    {
+      "name": "sensitive_data_filter",
+      "type": "AttributeFilterAwayDataTransformer",
+      "config": {
+        "filter_attributes": ["ssn", "credit_card", "password", "api_key"]
+      }
+    },
+    {
+      "name": "audit_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["transaction_id", "audit_timestamp", "audit_user", "audit_action", "changes"]
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "name": "node_01_kafka_orders_input",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_input_orders"
+    },
+    {
+      "name": "node_02_orders_defaults",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_03_orders_validation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_04_kafka_customers_input",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_input_customers"
+    },
+    {
+      "name": "node_05_customer_enrichment",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "customer_defaults_calc"
+    },
+    {
+      "name": "node_06_customer_tier_check",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "customer_defaults_calc"
+    },
+    {
+      "name": "node_07_kafka_pricing_input",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_input_pricing"
+    },
+    {
+      "name": "node_08_pricing_validation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "pricing_defaults_calc"
+    },
+    {
+      "name": "node_09_line_total_calc",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_total_calc"
+    },
+    {
+      "name": "node_10_tax_calculation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "tax_calc"
+    },
+    {
+      "name": "node_11_discount_application",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "discount_calc"
+    },
+    {
+      "name": "node_12_grand_total_calc",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_grand_total_calc"
+    },
+    {
+      "name": "node_13_kafka_inventory_input",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_input_inventory"
+    },
+    {
+      "name": "node_14_inventory_check",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "inventory_defaults_calc"
+    },
+    {
+      "name": "node_15_inventory_validation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "inventory_defaults_calc"
+    },
+    {
+      "name": "node_16_inventory_merge",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "inventory_defaults_calc"
+    },
+    {
+      "name": "node_17_order_customer_merge",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_18_pricing_merge",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "pricing_defaults_calc"
+    },
+    {
+      "name": "node_19_inventory_order_merge",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_20_credit_check",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "customer_defaults_calc"
+    },
+    {
+      "name": "node_21_fraud_detection",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_22_risk_assessment",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_23_compliance_check",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_24_audit_preparation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "audit_enrichment_calc"
+    },
+    {
+      "name": "node_25_field_mapping",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "field_rename_calc"
+    },
+    {
+      "name": "node_26_data_quality_check",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_27_business_rules_engine",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_28_promotion_application",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "discount_calc"
+    },
+    {
+      "name": "node_29_loyalty_points_calc",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_total_calc"
+    },
+    {
+      "name": "node_30_shipping_calculation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_31_payment_processing",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_32_order_confirmation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_33_notification_prep",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_34_analytics_aggregation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_35_metrics_collection",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_36_error_detection",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_37_error_classification",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_38_sensitive_data_removal",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc",
+      "input_transformers": ["sensitive_data_filter"]
+    },
+    {
+      "name": "node_39_output_preparation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc",
+      "output_transformers": ["order_filter"]
+    },
+    {
+      "name": "node_40_kafka_processed_output",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["kafka_output_processed_orders"]
+    },
+    {
+      "name": "node_41_kafka_analytics_output",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["kafka_output_analytics"]
+    },
+    {
+      "name": "node_42_file_orders_log",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["file_output_orders_log"]
+    },
+    {
+      "name": "node_43_audit_trail_output",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["file_output_audit_log"],
+      "input_transformers": ["audit_filter"]
+    },
+    {
+      "name": "node_44_error_log_output",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["file_output_errors_log"]
+    },
+    {
+      "name": "node_45_alert_generation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_46_alert_output",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["kafka_output_alerts"]
+    },
+    {
+      "name": "node_47_metronome_heartbeat",
+      "type": "MetronomeNode",
+      "config": {
+        "interval": 30
+      },
+      "subscriber": "metronome_heartbeat",
+      "publishers": ["file_output_heartbeat_log"]
+    },
+    {
+      "name": "node_48_stats_collector",
+      "type": "MetronomeNode",
+      "config": {
+        "interval": 60
+      },
+      "subscriber": "metronome_stats_collector",
+      "publishers": ["file_output_stats"]
+    },
+    {
+      "name": "node_49_final_aggregation",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "order_defaults_calc"
+    },
+    {
+      "name": "node_50_pipeline_completion",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "audit_enrichment_calc"
+    }
+  ],
+  "edges": [
+    {"from_node": "node_01_kafka_orders_input", "to_node": "node_02_orders_defaults"},
+    {"from_node": "node_02_orders_defaults", "to_node": "node_03_orders_validation"},
+    {"from_node": "node_03_orders_validation", "to_node": "node_17_order_customer_merge"},
+    {"from_node": "node_04_kafka_customers_input", "to_node": "node_05_customer_enrichment"},
+    {"from_node": "node_05_customer_enrichment", "to_node": "node_06_customer_tier_check"},
+    {"from_node": "node_06_customer_tier_check", "to_node": "node_17_order_customer_merge"},
+    {"from_node": "node_07_kafka_pricing_input", "to_node": "node_08_pricing_validation"},
+    {"from_node": "node_08_pricing_validation", "to_node": "node_18_pricing_merge"},
+    {"from_node": "node_17_order_customer_merge", "to_node": "node_18_pricing_merge"},
+    {"from_node": "node_18_pricing_merge", "to_node": "node_09_line_total_calc"},
+    {"from_node": "node_09_line_total_calc", "to_node": "node_10_tax_calculation"},
+    {"from_node": "node_10_tax_calculation", "to_node": "node_11_discount_application"},
+    {"from_node": "node_11_discount_application", "to_node": "node_12_grand_total_calc"},
+    {"from_node": "node_12_grand_total_calc", "to_node": "node_19_inventory_order_merge"},
+    {"from_node": "node_13_kafka_inventory_input", "to_node": "node_14_inventory_check"},
+    {"from_node": "node_14_inventory_check", "to_node": "node_15_inventory_validation"},
+    {"from_node": "node_15_inventory_validation", "to_node": "node_16_inventory_merge"},
+    {"from_node": "node_16_inventory_merge", "to_node": "node_19_inventory_order_merge"},
+    {"from_node": "node_19_inventory_order_merge", "to_node": "node_20_credit_check"},
+    {"from_node": "node_20_credit_check", "to_node": "node_21_fraud_detection"},
+    {"from_node": "node_21_fraud_detection", "to_node": "node_22_risk_assessment"},
+    {"from_node": "node_22_risk_assessment", "to_node": "node_23_compliance_check"},
+    {"from_node": "node_23_compliance_check", "to_node": "node_24_audit_preparation"},
+    {"from_node": "node_24_audit_preparation", "to_node": "node_25_field_mapping"},
+    {"from_node": "node_25_field_mapping", "to_node": "node_26_data_quality_check"},
+    {"from_node": "node_26_data_quality_check", "to_node": "node_27_business_rules_engine"},
+    {"from_node": "node_27_business_rules_engine", "to_node": "node_28_promotion_application"},
+    {"from_node": "node_28_promotion_application", "to_node": "node_29_loyalty_points_calc"},
+    {"from_node": "node_29_loyalty_points_calc", "to_node": "node_30_shipping_calculation"},
+    {"from_node": "node_30_shipping_calculation", "to_node": "node_31_payment_processing"},
+    {"from_node": "node_31_payment_processing", "to_node": "node_32_order_confirmation"},
+    {"from_node": "node_32_order_confirmation", "to_node": "node_33_notification_prep"},
+    {"from_node": "node_33_notification_prep", "to_node": "node_34_analytics_aggregation"},
+    {"from_node": "node_34_analytics_aggregation", "to_node": "node_35_metrics_collection"},
+    {"from_node": "node_35_metrics_collection", "to_node": "node_36_error_detection"},
+    {"from_node": "node_36_error_detection", "to_node": "node_37_error_classification"},
+    {"from_node": "node_37_error_classification", "to_node": "node_38_sensitive_data_removal"},
+    {"from_node": "node_38_sensitive_data_removal", "to_node": "node_39_output_preparation"},
+    {"from_node": "node_39_output_preparation", "to_node": "node_40_kafka_processed_output"},
+    {"from_node": "node_39_output_preparation", "to_node": "node_41_kafka_analytics_output"},
+    {"from_node": "node_39_output_preparation", "to_node": "node_42_file_orders_log"},
+    {"from_node": "node_24_audit_preparation", "to_node": "node_43_audit_trail_output"},
+    {"from_node": "node_37_error_classification", "to_node": "node_44_error_log_output"},
+    {"from_node": "node_36_error_detection", "to_node": "node_45_alert_generation"},
+    {"from_node": "node_45_alert_generation", "to_node": "node_46_alert_output"},
+    {"from_node": "node_40_kafka_processed_output", "to_node": "node_49_final_aggregation"},
+    {"from_node": "node_41_kafka_analytics_output", "to_node": "node_49_final_aggregation"},
+    {"from_node": "node_42_file_orders_log", "to_node": "node_49_final_aggregation"},
+    {"from_node": "node_49_final_aggregation", "to_node": "node_50_pipeline_completion"}
+  ]
+}
