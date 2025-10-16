@@ -136,15 +136,28 @@ def dag_details(dag_name):
         dag = dag_server.dags[dag_name]
         sorted_nodes = dag.topological_sort()
 
-        # Build dependency info
+        # Build dependency info with additional details
         node_details = []
         for node in sorted_nodes:
             dependencies = [edge.from_node.name for edge in node._incoming_edges]
+
+            # Get last calculation time (if it's a calculator)
+            last_calculation = None
+            if hasattr(node, '_last_calculation'):
+                last_calculation = node._last_calculation
+
+            # Get errors
+            errors = []
+            if hasattr(node, '_errors'):
+                errors = list(node._errors)
+
             node_details.append({
                 'name': node.name,
                 'type': node.__class__.__name__,
                 'dependencies': dependencies,
-                'config': node.config
+                'config': node.config,
+                'last_calculation': last_calculation,
+                'errors': errors
             })
 
         return render_template('dag_details.html',
@@ -317,9 +330,34 @@ def resume_dag(dag_name):
     return redirect(url_for('dashboard'))
 
 
-@app.route('/dag/<dag_name>/subscriber/<subscriber_name>/publish', methods=['POST'])
+@app.route('/dag/<dag_name>/subscriber/<subscriber_name>/publish', methods=['GET', 'POST'])
 @admin_required
-def publish_to_subscriber(dag_name, subscriber_name):
+def publish_message(dag_name, subscriber_name):
+    """Display the publish message page (GET) or handle message submission (POST)"""
+    if request.method == 'GET':
+        try:
+            details = dag_server.details(dag_name)
+
+            # Check if subscriber exists
+            if subscriber_name not in details.get('subscribers', {}):
+                flash(f'Subscriber {subscriber_name} not found', 'error')
+                return redirect(url_for('dag_details', dag_name=dag_name))
+
+            subscriber_info = details['subscribers'][subscriber_name]
+
+            return render_template(
+                'publish_message.html',
+                dag_name=dag_name,
+                subscriber_name=subscriber_name,
+                subscriber_info=subscriber_info,
+                is_admin=True
+            )
+        except Exception as e:
+            logger.error(f"Error loading publish message page: {str(e)}")
+            flash(f'Error: {str(e)}', 'error')
+            return redirect(url_for('dag_details', dag_name=dag_name))
+
+    # POST method - handle message submission
     try:
         message = request.form.get('message')
         if not message:
@@ -351,6 +389,9 @@ def publish_to_subscriber(dag_name, subscriber_name):
         temp_publisher.stop()
 
         return jsonify({'success': True, 'message': 'Message published successfully'})
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON: {str(e)}")
+        return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
     except Exception as e:
         logger.error(f"Error publishing message: {str(e)}")
         return jsonify({'error': str(e)}), 500

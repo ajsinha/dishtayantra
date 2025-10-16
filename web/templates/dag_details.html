@@ -41,9 +41,14 @@
 {% block content %}
 <div class="row mb-3">
     <div class="col-md-12">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mb-3">
-            <i class="bi bi-arrow-left"></i> Back to Dashboard
-        </a>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+            <a href="{{ url_for('dag_state', dag_name=dag_name) }}" class="btn btn-info">
+                <i class="bi bi-graph-up"></i> DAG State
+            </a>
+        </div>
         <h2><i class="bi bi-diagram-3"></i> DAG Details: {{ dag_name }}</h2>
     </div>
 </div>
@@ -74,6 +79,8 @@
                                 <th>Name</th>
                                 <th>Type</th>
                                 <th>Dependencies</th>
+                                <th>Last Calculation</th>
+                                <th>Errors</th>
                                 <th>Configuration</th>
                             </tr>
                         </thead>
@@ -91,6 +98,32 @@
                                     </ul>
                                     {% else %}
                                     <em>None</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.last_calculation %}
+                                    {{ node.last_calculation }}
+                                    {% else %}
+                                    <em class="text-muted">Never</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if node.errors %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showErrors('{{ node.name }}')">
+                                        <i class="bi bi-exclamation-triangle"></i> {{ node.errors | length }} Error(s)
+                                    </button>
+                                    <div id="errors_{{ node.name }}" style="display:none" class="mt-2">
+                                        <div class="list-group">
+                                            {% for error in node.errors %}
+                                            <div class="list-group-item list-group-item-danger">
+                                                <strong>{{ error.time }}</strong><br>
+                                                {{ error.error }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-success"><i class="bi bi-check-circle"></i> No errors</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -161,9 +194,9 @@
                                 {% if is_admin %}
                                 <td>
                                     {% if 'mem://' in sub.source or 'kafka://' in sub.source or 'redischannel://' in sub.source or 'activemq://' in sub.source %}
-                                    <button class="btn btn-sm btn-primary" onclick="showPublishModal('{{ dag_name }}', '{{ name }}')">
+                                    <a href="{{ url_for('publish_message', dag_name=dag_name, subscriber_name=name) }}" class="btn btn-sm btn-primary">
                                         <i class="bi bi-send"></i> Publish
-                                    </button>
+                                    </a>
                                     {% endif %}
                                 </td>
                                 {% endif %}
@@ -373,36 +406,10 @@
     </div>
 </div>
 
-<!-- Publish Message Modal -->
-<div class="modal fade" id="publishModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Publish Message to Subscriber</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="publishMessage" class="form-label">Message (JSON)</label>
-                    <textarea class="form-control" id="publishMessage" rows="10" placeholder='{"key": "value"}'></textarea>
-                </div>
-                <div id="publishResult"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="publishMessage()">Publish</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
-var currentDagName = '';
-var currentSubscriberName = '';
-
 // Pagination state for each table
 var tables = {
     nodes: { currentPage: 1, pageSize: 50, totalRows: 0, allRows: [] },
@@ -526,6 +533,11 @@ function showConfig(nodeName) {
     configDiv.toggle();
 }
 
+function showErrors(nodeName) {
+    var errorsDiv = $('#errors_' + nodeName);
+    errorsDiv.toggle();
+}
+
 function toggleJson() {
     var section = $('#jsonConfigSection');
     var text = $('#jsonToggleText');
@@ -536,41 +548,6 @@ function toggleJson() {
         section.show();
         text.text('Hide');
     }
-}
-
-function showPublishModal(dagName, subscriberName) {
-    currentDagName = dagName;
-    currentSubscriberName = subscriberName;
-    $('#publishMessage').val('');
-    $('#publishResult').html('');
-    $('#publishModal').modal('show');
-}
-
-function publishMessage() {
-    var message = $('#publishMessage').val();
-
-    try {
-        JSON.parse(message);
-    } catch (e) {
-        $('#publishResult').html('<div class="alert alert-danger">Invalid JSON: ' + e.message + '</div>');
-        return;
-    }
-
-    $.ajax({
-        url: '/dag/' + currentDagName + '/subscriber/' + currentSubscriberName + '/publish',
-        method: 'POST',
-        data: {message: message},
-        success: function(response) {
-            $('#publishResult').html('<div class="alert alert-success">Message published successfully</div>');
-            setTimeout(function() {
-                $('#publishModal').modal('hide');
-            }, 1500);
-        },
-        error: function(xhr) {
-            var error = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error';
-            $('#publishResult').html('<div class="alert alert-danger">Error: ' + error + '</div>');
-        }
-    });
 }
 </script>
 {% endblock %}

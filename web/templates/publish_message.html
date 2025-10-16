@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Publish Message - {{ dag_name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{{ url_for('dag_details', dag_name=dag_name) }}" class="btn btn-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to DAG Details
+        </a>
+        <h2><i class="bi bi-send"></i> Publish Message</h2>
+        <p class="text-muted">DAG: <strong>{{ dag_name }}</strong> | Subscriber: <strong>{{ subscriber_name }}</strong></p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-envelope"></i> Message Details</h5>
+            </div>
+            <div class="card-body">
+                <form id="publishForm" method="POST">
+                    <div class="mb-3">
+                        <label for="publishMessage" class="form-label">Message (JSON)</label>
+                        <textarea class="form-control font-monospace" id="publishMessage" name="message" rows="15" placeholder='{"key": "value", "data": "example"}'></textarea>
+                        <small class="form-text text-muted">Enter a valid JSON message to publish to the subscriber.</small>
+                    </div>
+
+                    <div id="publishResult"></div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Publish Message
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="validateJson()">
+                            <i class="bi bi-check-circle"></i> Validate JSON
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearMessage()">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="bi bi-info-circle"></i> Subscriber Info</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Name:</dt>
+                    <dd class="col-sm-7">{{ subscriber_name }}</dd>
+
+                    <dt class="col-sm-5">Source:</dt>
+                    <dd class="col-sm-7"><code>{{ subscriber_info.source }}</code></dd>
+
+                    <dt class="col-sm-5">Queue Depth:</dt>
+                    <dd class="col-sm-7">{{ subscriber_info.current_depth }} / {{ subscriber_info.max_depth }}</dd>
+
+                    <dt class="col-sm-5">Last Receive:</dt>
+                    <dd class="col-sm-7">{{ subscriber_info.last_receive or 'Never' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-secondary text-white">
+                <h5><i class="bi bi-lightbulb"></i> Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li>Ensure your message is valid JSON format</li>
+                    <li>Use the "Validate JSON" button to check syntax before publishing</li>
+                    <li>Messages are published immediately to the subscriber queue</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#publishForm').on('submit', function(e) {
+        e.preventDefault();
+        publishMessage();
+    });
+});
+
+function validateJson() {
+    var message = $('#publishMessage').val();
+    var resultDiv = $('#publishResult');
+
+    if (!message.trim()) {
+        resultDiv.html('<div class="alert alert-warning alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-exclamation-triangle"></i> Please enter a message to validate.</div>');
+        return false;
+    }
+
+    try {
+        var parsed = JSON.parse(message);
+        resultDiv.html('<div class="alert alert-success alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-check-circle"></i> Valid JSON! Ready to publish.</div>');
+        return true;
+    } catch (e) {
+        resultDiv.html('<div class="alert alert-danger alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-x-circle"></i> Invalid JSON: ' + e.message + '</div>');
+        return false;
+    }
+}
+
+function clearMessage() {
+    if (confirm('Are you sure you want to clear the message?')) {
+        $('#publishMessage').val('');
+        $('#publishResult').html('');
+    }
+}
+
+function publishMessage() {
+    var message = $('#publishMessage').val();
+    var resultDiv = $('#publishResult');
+
+    if (!message.trim()) {
+        resultDiv.html('<div class="alert alert-warning alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-exclamation-triangle"></i> Please enter a message to publish.</div>');
+        return;
+    }
+
+    try {
+        JSON.parse(message);
+    } catch (e) {
+        resultDiv.html('<div class="alert alert-danger alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-x-circle"></i> Invalid JSON: ' + e.message + '</div>');
+        return;
+    }
+
+    // Show loading state
+    resultDiv.html('<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Publishing message...</div>');
+
+    $.ajax({
+        url: '{{ url_for("publish_message", dag_name=dag_name, subscriber_name=subscriber_name) }}',
+        method: 'POST',
+        data: { message: message },
+        success: function(response) {
+            resultDiv.html('<div class="alert alert-success alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-check-circle"></i> Message published successfully!</div>');
+            // Optionally clear the message after successful publish
+            // $('#publishMessage').val('');
+        },
+        error: function(xhr) {
+            var error = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
+            resultDiv.html('<div class="alert alert-danger alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-x-circle"></i> Error: ' + error + '</div>');
+        }
+    });
+}
+</script>
+{% endblock %}
