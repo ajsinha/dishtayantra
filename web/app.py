@@ -30,11 +30,13 @@ if not os.path.exists(USERS_FILE):
     default_users = {
         "admin": {
             "password": "admin123",
-            "role": "admin"
+            "full_name": "System Administrator",
+            "roles": ["admin", "user"]
         },
         "user1": {
             "password": "user123",
-            "role": "user"
+            "full_name": "John Doe",
+            "roles": ["user"]
         }
     }
     with open(USERS_FILE, 'w') as f:
@@ -71,7 +73,8 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if 'username' not in session:
             return redirect(url_for('login'))
-        if session.get('role') != 'admin':
+        # Check if user has admin role in their roles list
+        if 'admin' not in session.get('roles', []):
             flash('Admin access required', 'error')
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
@@ -94,7 +97,8 @@ def login():
 
         if username in users_db and users_db[username]['password'] == password:
             session['username'] = username
-            session['role'] = users_db[username].get('role', 'user')
+            session['full_name'] = users_db[username].get('full_name', username)
+            session['roles'] = users_db[username].get('roles', ['user'])
             flash('Login successful', 'success')
             return redirect(url_for('dashboard'))
         else:
@@ -118,7 +122,7 @@ def dashboard():
         dags = dag_server.list_dags()
         return render_template('dashboard.html',
                                dags=dags,
-                               is_admin=session.get('role') == 'admin',
+                               is_admin='admin' in session.get('roles', []),
                                server_status=server_status)
     except Exception as e:
         logger.error(f"Error loading dashboard: {str(e)}")
@@ -164,7 +168,7 @@ def dag_details(dag_name):
                                dag_name=dag_name,
                                details=details,
                                node_details=node_details,
-                               is_admin=session.get('role') == 'admin')
+                               is_admin='admin' in session.get('roles', []))
     except Exception as e:
         logger.error(f"Error loading DAG details: {str(e)}")
         flash(f'Error loading DAG details: {str(e)}', 'error')

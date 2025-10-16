@@ -1,14 +1,22 @@
 {
   "admin": {
     "password": "admin123",
-    "role": "admin"
+    "full_name": "System Administrator",
+    "roles": ["admin", "user"]
   },
   "user1": {
     "password": "user123",
-    "role": "user"
+    "full_name": "John Doe",
+    "roles": ["user"]
   },
   "operator": {
     "password": "operator123",
-    "role": "user"
+    "full_name": "Jane Smith",
+    "roles": ["operator", "user"]
+  },
+  "jdoe": {
+    "password": "pass123",
+    "full_name": "Jane Doe",
+    "roles": ["admin", "operator", "user"]
   }
 }
