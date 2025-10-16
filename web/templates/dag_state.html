@@ -2,6 +2,42 @@
 
 {% block title %}DAG State - {{ dag_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .table-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: flex-end;
+    }
+    .pagination-info {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    .page-btn {
+        padding: 5px 10px;
+        border: 1px solid #dee2e6;
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .page-btn:hover:not(:disabled) {
+        background: #e9ecef;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
     <div class="col-md-12">
@@ -22,8 +58,19 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="statePageSize">Show:</label>
+                        <select id="statePageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10" selected>10 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
+                    <table class="table table-bordered table-hover" id="stateTable">
                         <thead class="table-dark">
                             <tr>
                                 <th>Node Name</th>
@@ -33,7 +80,7 @@
                                 <th>Errors</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="stateTableBody">
                             {% for node in node_states %}
                             <tr>
                                 <td><strong>{{ node.name }}</strong></td>
@@ -92,6 +139,16 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="pagination-controls" id="statePagination">
+                    <span class="pagination-info" id="stateInfo"></span>
+                    <div>
+                        <button class="page-btn" id="stateFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="statePrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="statePage"></span>
+                        <button class="page-btn" id="stateNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="stateLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -109,9 +166,115 @@
 
 {% block extra_js %}
 <script>
+// Pagination state
+var stateTable = {
+    currentPage: 1,
+    pageSize: 10,
+    totalRows: 0,
+    allRows: []
+};
+
+function initStateTable() {
+    var tbody = document.getElementById('stateTableBody');
+    var rows = tbody.getElementsByTagName('tr');
+    stateTable.allRows = Array.from(rows);
+    stateTable.totalRows = rows.length;
+    updateStateTable();
+}
+
+function updateStateTable() {
+    var tbody = document.getElementById('stateTableBody');
+
+    // Clear tbody
+    tbody.innerHTML = '';
+
+    // Calculate pagination
+    var start, end;
+    if (stateTable.pageSize === 'all') {
+        start = 0;
+        end = stateTable.totalRows;
+        stateTable.currentPage = 1;
+    } else {
+        start = (stateTable.currentPage - 1) * stateTable.pageSize;
+        end = Math.min(start + stateTable.pageSize, stateTable.totalRows);
+    }
+
+    // Add rows
+    for (var i = start; i < end; i++) {
+        tbody.appendChild(stateTable.allRows[i].cloneNode(true));
+    }
+
+    // Update pagination controls
+    updateStatePaginationControls();
+}
+
+function updateStatePaginationControls() {
+    var totalPages = stateTable.pageSize === 'all' ? 1 : Math.ceil(stateTable.totalRows / stateTable.pageSize);
+
+    // Update info text
+    var start = stateTable.pageSize === 'all' ? 1 : (stateTable.currentPage - 1) * stateTable.pageSize + 1;
+    var end = stateTable.pageSize === 'all' ? stateTable.totalRows : Math.min(stateTable.currentPage * stateTable.pageSize, stateTable.totalRows);
+    document.getElementById('stateInfo').textContent =
+        'Showing ' + start + ' to ' + end + ' of ' + stateTable.totalRows + ' entries';
+    document.getElementById('statePage').textContent =
+        'Page ' + stateTable.currentPage + ' of ' + totalPages;
+
+    // Update button states
+    document.getElementById('stateFirst').disabled = stateTable.currentPage === 1 || stateTable.pageSize === 'all';
+    document.getElementById('statePrev').disabled = stateTable.currentPage === 1 || stateTable.pageSize === 'all';
+    document.getElementById('stateNext').disabled = stateTable.currentPage === totalPages || stateTable.pageSize === 'all';
+    document.getElementById('stateLast').disabled = stateTable.currentPage === totalPages || stateTable.pageSize === 'all';
+}
+
+function setupStatePagination() {
+    // Page size dropdown
+    document.getElementById('statePageSize').addEventListener('change', function() {
+        var value = this.value;
+        stateTable.pageSize = value === 'all' ? 'all' : parseInt(value);
+        stateTable.currentPage = 1;
+        updateStateTable();
+    });
+
+    // First page
+    document.getElementById('stateFirst').addEventListener('click', function() {
+        stateTable.currentPage = 1;
+        updateStateTable();
+    });
+
+    // Previous page
+    document.getElementById('statePrev').addEventListener('click', function() {
+        if (stateTable.currentPage > 1) {
+            stateTable.currentPage--;
+            updateStateTable();
+        }
+    });
+
+    // Next page
+    document.getElementById('stateNext').addEventListener('click', function() {
+        var totalPages = Math.ceil(stateTable.totalRows / stateTable.pageSize);
+        if (stateTable.currentPage < totalPages) {
+            stateTable.currentPage++;
+            updateStateTable();
+        }
+    });
+
+    // Last page
+    document.getElementById('stateLast').addEventListener('click', function() {
+        var totalPages = Math.ceil(stateTable.totalRows / stateTable.pageSize);
+        stateTable.currentPage = totalPages;
+        updateStateTable();
+    });
+}
+
 function showData(elementId) {
     $('#' + elementId).toggle();
 }
+
+// Initialize on page load
+$(document).ready(function() {
+    initStateTable();
+    setupStatePagination();
+});
 
 // Auto-refresh every 5 seconds
 setTimeout(function() {
