@@ -46,6 +46,15 @@ def create_publisher(name, config):
     elif destination.startswith('grpc://'):
         from core.pubsub.grpc_datapubsub import GRPCDataPublisher
         return GRPCDataPublisher(name, destination, config)
+    elif destination.startswith('rabbitmq://'):
+        from core.pubsub.rabbitmq_datapubsub import RabbitMQDataPublisher
+        return RabbitMQDataPublisher(name, destination, config)
+    elif destination.startswith('tibcoems://'):
+        from core.pubsub.tibcoems_datapubsub import TibcoEMSDataPublisher
+        return TibcoEMSDataPublisher(name, destination, config)
+    elif destination.startswith('websphere://'):
+        from core.pubsub.websphere_datapubsub import WebSphereMQDataPublisher
+        return WebSphereMQDataPublisher(name, destination, config)
     elif destination.startswith('activemq://'):
         from core.pubsub.activemq_datapubsub import ActiveMQDataPublisher
         return ActiveMQDataPublisher(name, destination, config)
@@ -105,6 +114,15 @@ def create_subscriber(name, config):
     elif source.startswith('grpc://'):
         from core.pubsub.grpc_datapubsub import GRPCDataSubscriber
         return GRPCDataSubscriber(name, source, config)
+    elif source.startswith('rabbitmq://'):
+        from core.pubsub.rabbitmq_datapubsub import RabbitMQDataSubscriber
+        return RabbitMQDataSubscriber(name, source, config)
+    elif source.startswith('tibcoems://'):
+        from core.pubsub.tibcoems_datapubsub import TibcoEMSDataSubscriber
+        return TibcoEMSDataSubscriber(name, source, config)
+    elif source.startswith('websphere://'):
+        from core.pubsub.websphere_datapubsub import WebSphereMQDataSubscriber
+        return WebSphereMQDataSubscriber(name, source, config)
     elif source.startswith('activemq://'):
         from core.pubsub.activemq_datapubsub import ActiveMQDataSubscriber
         return ActiveMQDataSubscriber(name, source, config)
