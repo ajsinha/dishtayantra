@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package pubsub;
+
+// Service definition for publish/subscribe
+service PubSubService {
+    // Publish a message to a topic
+    rpc Publish(PublishRequest) returns (PublishResponse);
+
+    // Subscribe to a topic and receive a stream of messages
+    rpc Subscribe(SubscribeRequest) returns (stream Message);
+}
+
+// Request to publish a message
+message PublishRequest {
+    string topic = 1;          // Topic name
+    bytes data = 2;            // Message data (JSON serialized)
+}
+
+// Response to a publish request
+message PublishResponse {
+    bool success = 1;          // Whether publish was successful
+    string message = 2;        // Status message or error description
+}
+
+// Request to subscribe to a topic
+message SubscribeRequest {
+    string topic = 1;          // Topic name to subscribe to
+    string subscriber_id = 2;  // Unique identifier for the subscriber
+}
+
+// Message received from a subscription
+message Message {
+    string topic = 1;          // Topic the message was published to
+    bytes data = 2;            // Message data (JSON serialized)
+    int64 timestamp = 3;       // Unix timestamp of when message was published
+}

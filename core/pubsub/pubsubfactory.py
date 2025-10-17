@@ -43,6 +43,9 @@ def create_publisher(name, config):
     elif destination.startswith('kafka://topic/'):
         from core.pubsub.kafka_datapubsub import KafkaDataPublisher
         return KafkaDataPublisher(name, destination, config)
+    elif destination.startswith('grpc://'):
+        from core.pubsub.grpc_datapubsub import GRPCDataPublisher
+        return GRPCDataPublisher(name, destination, config)
     elif destination.startswith('activemq://'):
         from core.pubsub.activemq_datapubsub import ActiveMQDataPublisher
         return ActiveMQDataPublisher(name, destination, config)
@@ -99,6 +102,9 @@ def create_subscriber(name, config):
     elif source.startswith('kafka://topic/'):
         from core.pubsub.kafka_datapubsub import KafkaDataSubscriber
         return KafkaDataSubscriber(name, source, config)
+    elif source.startswith('grpc://'):
+        from core.pubsub.grpc_datapubsub import GRPCDataSubscriber
+        return GRPCDataSubscriber(name, source, config)
     elif source.startswith('activemq://'):
         from core.pubsub.activemq_datapubsub import ActiveMQDataSubscriber
         return ActiveMQDataSubscriber(name, source, config)
