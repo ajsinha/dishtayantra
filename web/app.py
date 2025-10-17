@@ -145,10 +145,10 @@ def dag_details(dag_name):
         for node in sorted_nodes:
             dependencies = [edge.from_node.name for edge in node._incoming_edges]
 
-            # Get last calculation time (if it's a calculator)
+            # Get last calculation time - FIXED: use _last_compute from Node class
             last_calculation = None
-            if hasattr(node, '_last_calculation'):
-                last_calculation = node._last_calculation
+            if hasattr(node, '_last_compute'):
+                last_calculation = node._last_compute
 
             # Get errors
             errors = []
@@ -188,19 +188,19 @@ def dag_state(dag_name):
         # Build state info with calculation details
         node_states = []
         for node in sorted_nodes:
-            # Get calculation count
+            # Get calculation count - FIXED: use _compute_count from Node class
             calculation_count = None
-            if hasattr(node, '_calculation_count'):
-                calculation_count = node._calculation_count
-            elif hasattr(node, 'calculation_count'):
-                calculation_count = node.calculation_count
+            if hasattr(node, '_compute_count'):
+                calculation_count = node._compute_count
+            elif hasattr(node, 'compute_count'):
+                calculation_count = node.compute_count
 
-            # Get last calculation time
+            # Get last calculation time - FIXED: use _last_compute from Node class
             last_calculation = None
-            if hasattr(node, '_last_calculation'):
-                last_calculation = node._last_calculation
-            elif hasattr(node, 'last_calculation'):
-                last_calculation = node.last_calculation
+            if hasattr(node, '_last_compute'):
+                last_calculation = node._last_compute
+            elif hasattr(node, 'last_compute'):
+                last_calculation = node.last_compute
 
             node_states.append({
                 'name': node.name,
