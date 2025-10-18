@@ -99,6 +99,12 @@ class ComputeGraph:
 
             logger.info(f"Created transformer: {name}")
 
+    def subscriber_by_name(self, sub_name):
+        return self.subscribers[sub_name]
+    
+    def publisher_by_name(self, pub_name):
+        return self.subscribers[pub_name]
+
     def build_dag(self):
         """Build the DAG from config"""
         # Build nodes
@@ -147,6 +153,7 @@ class ComputeGraph:
                     if trans_name in self.transformers:
                         node.add_output_transformer(self.transformers[trans_name])
 
+            node.set_graph(self)
             self.nodes[name] = node
             logger.info(f"Created node: {name}")
 

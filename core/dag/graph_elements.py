@@ -24,6 +24,7 @@ class Node(ABC):
         self._errors = deque(maxlen=10)
         self._outgoing_edges = []
         self._incoming_edges = []
+        self._graph = None
 
     def input(self):
         """Return copy of input data"""
@@ -36,6 +37,10 @@ class Node(ABC):
     def isdirty(self):
         """Return dirty status"""
         return self._isdirty
+
+    def set_graph(self, g):
+        self._graph = g
+
 
     def set_dirty(self):
         """Mark node as dirty"""
