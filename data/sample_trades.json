@@ -1,0 +1,1083 @@
+{
+  "trades": [
+    {
+      "trade_type": "EQUITY_CASH",
+      "product_type": "COMMON_STOCK",
+      "trade_id": "TRD-EQ-20240315-001234",
+      "reference_id": "REF-EQ-789456",
+      "parent_order_id": "ORD-20240315-5678",
+      "instrument": {
+        "symbol": "AAPL",
+        "isin": "US0378331005",
+        "cusip": "037833100",
+        "sedol": "2046251",
+        "ric": "AAPL.O",
+        "bloomberg_ticker": "AAPL US Equity",
+        "figi": "BBG000B9XRY4",
+        "exchange_code": "XNAS",
+        "currency": "USD",
+        "instrument_name": "Apple Inc. Common Stock",
+        "asset_class": "EQUITY",
+        "sub_asset_class": "COMMON_STOCK"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "quantity": 1000,
+        "price": 178.50,
+        "gross_amount": 178500.00,
+        "net_amount": 178515.75,
+        "principal_amount": 178500.00,
+        "accrued_interest": 0,
+        "execution_type": "FILL",
+        "order_type": "LIMIT",
+        "time_in_force": "DAY",
+        "average_price": 178.50
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T14:35:22.123Z",
+        "settlement_date": "2024-03-17",
+        "value_date": "2024-03-17"
+      },
+      "counterparty": {
+        "executing_broker": "GOLDMAN_SACHS",
+        "clearing_broker": "GOLDMAN_SACHS",
+        "prime_broker": "MORGAN_STANLEY",
+        "custodian": "BNY_MELLON",
+        "counterparty_lei": "W22LROWP2IHZNBB6K528",
+        "broker_id": "GSCO",
+        "mpid": "GSCO"
+      },
+      "venue": {
+        "execution_venue": "XNAS",
+        "execution_venue_type": "EXCHANGE",
+        "mic_code": "XNAS",
+        "ats_indicator": false,
+        "dark_pool": false,
+        "systematic_internaliser": false
+      },
+      "fees": {
+        "commission": 12.50,
+        "exchange_fee": 2.25,
+        "clearing_fee": 0.50,
+        "regulatory_fee": 0.50,
+        "tax": 0,
+        "stamp_duty": 0,
+        "total_fees": 15.75
+      },
+      "settlement": {
+        "settlement_type": "DVP",
+        "settlement_cycle": "T+2",
+        "settlement_currency": "USD",
+        "clearing_house": "DTCC",
+        "settlement_instruction": "SLI-2024-789456",
+        "settlement_status": "PENDING"
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["MIFID_II", "CAT", "TRACE"],
+        "transaction_id": "TXN-2024-0315-123456",
+        "uti": "UTI-2024-0315-EQUITY-001",
+        "best_execution": true,
+        "short_sale": false,
+        "regulation_sho_locate": null
+      },
+      "risk_metrics": {
+        "market_value": 178500.00,
+        "exposure": 178500.00,
+        "var_95": 3570.00,
+        "delta": 1.0,
+        "beta": 1.15
+      },
+      "accounting": {
+        "book": "TRADING_BOOK",
+        "strategy": "MOMENTUM",
+        "portfolio": "US_EQUITY_LONG",
+        "pnl_currency": "USD",
+        "hedge_designation": "NONE"
+      }
+    },
+    {
+      "trade_type": "FIXED_INCOME",
+      "product_type": "CORPORATE_BOND",
+      "trade_id": "TRD-FI-20240315-002345",
+      "reference_id": "REF-BOND-456789",
+      "instrument": {
+        "isin": "US594918BT09",
+        "cusip": "594918BT0",
+        "bloomberg_id": "EI1234567",
+        "description": "Microsoft Corp 3.125% 2028",
+        "issuer": "MICROSOFT CORPORATION",
+        "issuer_lei": "INR2EJN1ERAN0W5ZP974",
+        "currency": "USD",
+        "asset_class": "FIXED_INCOME",
+        "sub_asset_class": "CORPORATE_BOND",
+        "bond_details": {
+          "coupon_rate": 3.125,
+          "coupon_frequency": "SEMI_ANNUAL",
+          "coupon_type": "FIXED",
+          "maturity_date": "2028-11-15",
+          "issue_date": "2021-11-15",
+          "first_coupon_date": "2022-05-15",
+          "day_count_convention": "30/360",
+          "rating_sp": "AAA",
+          "rating_moody": "Aaa",
+          "rating_fitch": "AAA",
+          "seniority": "SENIOR_UNSECURED",
+          "callable": false,
+          "putable": false,
+          "convertible": false,
+          "floating_rate_index": null,
+          "spread": null,
+          "cap": null,
+          "floor": null,
+          "sector": "TECHNOLOGY",
+          "industry": "SOFTWARE"
+        }
+      },
+      "trade_details": {
+        "side": "BUY",
+        "quantity": 5000000,
+        "price": 98.25,
+        "clean_price": 98.25,
+        "dirty_price": 99.15625,
+        "yield": 3.45,
+        "spread_to_benchmark": 75,
+        "benchmark": "UST 3Y",
+        "gross_amount": 4957812.50,
+        "net_amount": 4958312.50,
+        "principal_amount": 4912500.00,
+        "accrued_interest": 45312.50,
+        "execution_type": "RFQ",
+        "order_type": "MARKET"
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T10:45:33.456Z",
+        "settlement_date": "2024-03-18",
+        "value_date": "2024-03-18",
+        "accrual_start_date": "2024-02-15",
+        "next_coupon_date": "2024-05-15"
+      },
+      "counterparty": {
+        "dealer": "JP_MORGAN",
+        "dealer_lei": "8I5DZWZKVSZI1NUHU748",
+        "clearing_broker": "JP_MORGAN",
+        "custodian": "EUROCLEAR",
+        "settlement_agent": "JP_MORGAN"
+      },
+      "venue": {
+        "execution_venue": "BLOOMBERG_MTF",
+        "execution_venue_type": "MTF",
+        "trading_protocol": "RFQ",
+        "voice_trade": false
+      },
+      "fees": {
+        "commission": 500.00,
+        "clearing_fee": 0,
+        "custody_fee": 0,
+        "total_fees": 500.00
+      },
+      "settlement": {
+        "settlement_type": "DVP",
+        "settlement_cycle": "T+3",
+        "settlement_currency": "USD",
+        "clearing_system": "EUROCLEAR",
+        "settlement_status": "PENDING"
+      },
+      "risk_metrics": {
+        "duration": 4.25,
+        "modified_duration": 4.12,
+        "convexity": 0.25,
+        "dv01": 2089.45,
+        "credit_dv01": 245.67,
+        "spread_duration": 4.15,
+        "oas": 72,
+        "z_spread": 73
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["TRACE", "MIFID_II"],
+        "trace_eligible": true,
+        "trace_report_time": "2024-03-15T10:46:33.456Z",
+        "uti": "UTI-2024-0315-BOND-002"
+      }
+    },
+    {
+      "trade_type": "DERIVATIVE",
+      "product_type": "EQUITY_OPTION",
+      "trade_id": "TRD-OPT-20240315-003456",
+      "reference_id": "REF-OPT-987654",
+      "instrument": {
+        "option_symbol": "AAPL240419C00180000",
+        "underlying_symbol": "AAPL",
+        "underlying_isin": "US0378331005",
+        "contract_type": "CALL",
+        "exercise_style": "AMERICAN",
+        "settlement_type": "PHYSICAL",
+        "strike_price": 180.00,
+        "expiration_date": "2024-04-19",
+        "contract_size": 100,
+        "currency": "USD",
+        "exchange": "CBOE",
+        "asset_class": "DERIVATIVE",
+        "sub_asset_class": "EQUITY_OPTION",
+        "option_type": "VANILLA"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "position_effect": "OPENING",
+        "quantity": 50,
+        "contracts": 50,
+        "premium_per_contract": 3.45,
+        "total_premium": 17250.00,
+        "notional_amount": 900000.00,
+        "execution_type": "FILL",
+        "order_type": "LIMIT"
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T15:22:11.789Z",
+        "settlement_date": "2024-03-18",
+        "expiration_date": "2024-04-19",
+        "exercise_date": null,
+        "last_trading_date": "2024-04-19"
+      },
+      "greeks": {
+        "delta": 0.52,
+        "gamma": 0.015,
+        "theta": -0.08,
+        "vega": 0.23,
+        "rho": 0.12,
+        "implied_volatility": 28.5,
+        "theoretical_value": 3.48
+      },
+      "counterparty": {
+        "executing_broker": "INTERACTIVE_BROKERS",
+        "clearing_broker": "INTERACTIVE_BROKERS",
+        "clearing_member": "IB_CLEARING",
+        "occ_member": "IBKR"
+      },
+      "venue": {
+        "execution_venue": "CBOE",
+        "execution_venue_type": "EXCHANGE",
+        "mic_code": "XCBO"
+      },
+      "fees": {
+        "commission": 32.50,
+        "exchange_fee": 12.50,
+        "clearing_fee": 5.00,
+        "regulatory_fee": 2.50,
+        "total_fees": 52.50
+      },
+      "settlement": {
+        "clearing_house": "OCC",
+        "settlement_type": "CASH",
+        "settlement_currency": "USD",
+        "margin_required": 45000.00,
+        "margin_type": "INITIAL"
+      },
+      "risk_metrics": {
+        "notional_exposure": 900000.00,
+        "delta_adjusted_exposure": 468000.00,
+        "var_95": 3500.00,
+        "max_loss": 17250.00,
+        "breakeven": 183.45,
+        "moneyness": 0.989
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["DODD_FRANK", "EMIR"],
+        "large_trader_id": "LT-123456",
+        "position_limit_eligible": true
+      }
+    },
+    {
+      "trade_type": "DERIVATIVE",
+      "product_type": "INTEREST_RATE_SWAP",
+      "trade_id": "TRD-IRS-20240315-004567",
+      "reference_id": "REF-SWAP-123789",
+      "instrument": {
+        "product_type": "VANILLA_IRS",
+        "currency": "USD",
+        "index": "USD-LIBOR-3M",
+        "day_count_fixed": "30/360",
+        "day_count_float": "ACT/360",
+        "payment_frequency_fixed": "SEMI_ANNUAL",
+        "payment_frequency_float": "QUARTERLY",
+        "business_day_convention": "MODIFIED_FOLLOWING",
+        "asset_class": "RATES",
+        "sub_asset_class": "IRS"
+      },
+      "trade_details": {
+        "direction": "PAY_FIXED",
+        "notional": 100000000,
+        "fixed_rate": 3.85,
+        "floating_spread": 0,
+        "effective_date": "2024-03-19",
+        "maturity_date": "2029-03-19",
+        "term": "5Y",
+        "upfront_payment": 0,
+        "clean_price": 100.00,
+        "market_value": -125000.00
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T09:15:45.123Z",
+        "effective_date": "2024-03-19",
+        "maturity_date": "2029-03-19",
+        "next_fixing_date": "2024-06-17",
+        "next_payment_date": "2024-06-19",
+        "previous_payment_date": "2024-03-19"
+      },
+      "counterparty": {
+        "counterparty_name": "BARCLAYS_BANK",
+        "counterparty_lei": "G5GSEF7VJP5I7OUK5573",
+        "clearing_member": "LCH_CLEARING",
+        "prime_broker": null,
+        "documentation": "ISDA_2002"
+      },
+      "valuation": {
+        "npv": -125000.00,
+        "clean_npv": -125000.00,
+        "dirty_npv": -125000.00,
+        "accrued_fixed": 0,
+        "accrued_float": 0,
+        "par_rate": 3.88,
+        "pv01": 48500.00,
+        "dv01": 485.00
+      },
+      "risk_metrics": {
+        "pv01": 48500.00,
+        "dv01": 485.00,
+        "cr01": 125.00,
+        "duration": 4.85,
+        "convexity": 0.35,
+        "delta_ladder": {
+          "3M": -12000,
+          "6M": -15000,
+          "1Y": -18000,
+          "2Y": -22000,
+          "3Y": -25000,
+          "5Y": -33000
+        }
+      },
+      "clearing": {
+        "cleared": true,
+        "clearing_house": "LCH",
+        "clearing_member_id": "CM-123456",
+        "initial_margin": 2500000.00,
+        "variation_margin": -125000.00,
+        "clearing_account": "HOUSE",
+        "clearing_status": "CLEARED"
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["DODD_FRANK", "EMIR", "MIFID_II"],
+        "uti": "UTI-2024-0315-IRS-004",
+        "usi": "USI-2024-0315-IRS-004",
+        "execution_venue": "SEF",
+        "mandatory_clearing": true,
+        "package_transaction": false
+      },
+      "collateral": {
+        "csa_eligible": true,
+        "initial_margin": 2500000.00,
+        "variation_margin": -125000.00,
+        "collateral_currency": "USD",
+        "threshold": 250000.00,
+        "minimum_transfer_amount": 100000.00
+      }
+    },
+    {
+      "trade_type": "FX",
+      "product_type": "FX_SPOT",
+      "trade_id": "TRD-FX-20240315-005678",
+      "reference_id": "REF-FXS-456123",
+      "instrument": {
+        "currency_pair": "EUR/USD",
+        "base_currency": "EUR",
+        "quote_currency": "USD",
+        "asset_class": "FX",
+        "sub_asset_class": "SPOT"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "base_amount": 10000000,
+        "quote_amount": 10875000,
+        "exchange_rate": 1.0875,
+        "contra_rate": 0.9195,
+        "all_in_rate": 1.0875,
+        "execution_type": "ELECTRONIC"
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T12:34:56.789Z",
+        "value_date": "2024-03-19",
+        "fixing_date": null,
+        "settlement_date": "2024-03-19"
+      },
+      "counterparty": {
+        "counterparty_name": "DEUTSCHE_BANK",
+        "counterparty_lei": "7LTWFZYICNSX8D621K86",
+        "prime_broker": "DEUTSCHE_BANK",
+        "settlement_agent": "DEUTSCHE_BANK"
+      },
+      "venue": {
+        "execution_venue": "EBS",
+        "execution_venue_type": "ECN",
+        "trading_model": "CLOB"
+      },
+      "settlement": {
+        "settlement_type": "PVP",
+        "settlement_method": "CLS",
+        "cls_eligible": true,
+        "settlement_status": "PENDING",
+        "netting_eligible": true,
+        "netting_set": "CLS-2024-03-19"
+      },
+      "fees": {
+        "spread_cost": 50.00,
+        "commission": 25.00,
+        "settlement_fee": 15.00,
+        "total_fees": 90.00
+      },
+      "risk_metrics": {
+        "notional_usd": 10875000.00,
+        "fx_delta": 10000000.00,
+        "var_95": 108750.00
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["MIFID_II"],
+        "transaction_id": "TXN-FX-2024-005678",
+        "uti": "UTI-2024-0315-FXS-005"
+      }
+    },
+    {
+      "trade_type": "DERIVATIVE",
+      "product_type": "COMMODITY_FUTURE",
+      "trade_id": "TRD-FUT-20240315-006789",
+      "reference_id": "REF-COMF-789456",
+      "instrument": {
+        "contract_code": "CLK24",
+        "contract_name": "WTI Crude Oil Future May 2024",
+        "underlying": "WTI_CRUDE_OIL",
+        "contract_size": 1000,
+        "contract_unit": "BARRELS",
+        "tick_size": 0.01,
+        "tick_value": 10.00,
+        "currency": "USD",
+        "exchange": "NYMEX",
+        "expiry_date": "2024-04-22",
+        "delivery_month": "2024-05",
+        "asset_class": "COMMODITIES",
+        "sub_asset_class": "ENERGY"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "quantity": 10,
+        "contracts": 10,
+        "price": 78.45,
+        "notional_value": 784500.00,
+        "execution_type": "FILL",
+        "order_type": "MARKET"
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T14:22:33.456Z",
+        "settlement_date": "2024-03-18",
+        "expiry_date": "2024-04-22",
+        "first_notice_date": "2024-04-01",
+        "last_trading_date": "2024-04-22",
+        "delivery_date": "2024-05-01"
+      },
+      "counterparty": {
+        "executing_broker": "ADM_INVESTOR_SERVICES",
+        "clearing_broker": "ADM_INVESTOR_SERVICES",
+        "fcm": "ADM_CLEARING",
+        "clearing_member_id": "ADM-789"
+      },
+      "venue": {
+        "execution_venue": "NYMEX",
+        "execution_venue_type": "FUTURES_EXCHANGE",
+        "mic_code": "XNYM"
+      },
+      "margin": {
+        "initial_margin": 65000.00,
+        "maintenance_margin": 50000.00,
+        "variation_margin": -1250.00,
+        "margin_currency": "USD",
+        "excess_margin": 13750.00
+      },
+      "fees": {
+        "commission": 25.00,
+        "exchange_fee": 15.00,
+        "clearing_fee": 8.00,
+        "nfa_fee": 2.00,
+        "total_fees": 50.00
+      },
+      "settlement": {
+        "settlement_price": 78.32,
+        "previous_settlement": 78.58,
+        "settlement_type": "CASH",
+        "clearing_house": "CME_CLEARING",
+        "position_keeper": "CME"
+      },
+      "risk_metrics": {
+        "notional_exposure": 784500.00,
+        "dv01": 78.45,
+        "var_95": 15690.00,
+        "commodity_delta": 10000,
+        "basis_risk": 0.12
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["DODD_FRANK", "EMIR"],
+        "large_trader_reportable": true,
+        "position_limit": 5000,
+        "current_position": 10,
+        "cftc_code": "067651"
+      }
+    },
+    {
+      "trade_type": "DERIVATIVE",
+      "product_type": "CREDIT_DEFAULT_SWAP",
+      "trade_id": "TRD-CDS-20240315-007890",
+      "reference_id": "REF-CDS-321654",
+      "instrument": {
+        "reference_entity": "GENERAL_ELECTRIC_COMPANY",
+        "reference_entity_id": "38141G10",
+        "reference_obligation": "SENIOR_UNSECURED",
+        "seniority": "SENIOR",
+        "restructuring": "MOD_MOD_R",
+        "index_series": null,
+        "maturity": "5Y",
+        "currency": "USD",
+        "asset_class": "CREDIT",
+        "sub_asset_class": "SINGLE_NAME_CDS"
+      },
+      "trade_details": {
+        "protection_buyer": "COUNTERPARTY",
+        "protection_seller": "US",
+        "notional": 10000000,
+        "spread": 125,
+        "upfront_payment": -25000,
+        "clean_price": 99.75,
+        "recovery_rate": 0.40,
+        "quarterly_premium": 31250
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "effective_date": "2024-03-20",
+        "maturity_date": "2029-03-20",
+        "next_roll_date": "2024-06-20",
+        "premium_leg_dates": ["2024-06-20", "2024-09-20", "2024-12-20", "2025-03-20"]
+      },
+      "counterparty": {
+        "counterparty_name": "CREDIT_SUISSE",
+        "counterparty_lei": "ANGGYXNX0JLX3X63JN86",
+        "clearing_required": true,
+        "clearing_house": "ICE_CLEAR_CREDIT"
+      },
+      "valuation": {
+        "mark_to_market": -32500,
+        "credit_dv01": 4850,
+        "spread_sensitivity": 485,
+        "recovery_sensitivity": 25000,
+        "default_probability_1y": 0.0125,
+        "expected_loss": 75000
+      },
+      "events": {
+        "credit_events": [],
+        "succession_events": [],
+        "auction_date": null,
+        "auction_price": null
+      },
+      "clearing": {
+        "cleared": true,
+        "clearing_house": "ICE_CLEAR_CREDIT",
+        "initial_margin": 450000,
+        "variation_margin": -32500
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["DODD_FRANK", "EMIR"],
+        "uti": "UTI-2024-0315-CDS-007",
+        "product_identifier": "CDS.SINGLE.CORP"
+      }
+    },
+    {
+      "trade_type": "REPO",
+      "product_type": "REPURCHASE_AGREEMENT",
+      "trade_id": "TRD-REPO-20240315-008901",
+      "reference_id": "REF-REPO-654987",
+      "instrument": {
+        "collateral_type": "US_TREASURY",
+        "collateral_isin": "US912810TM87",
+        "collateral_description": "US Treasury 2.5% 2031",
+        "asset_class": "REPO",
+        "sub_asset_class": "TREASURY_REPO"
+      },
+      "trade_details": {
+        "repo_type": "BILATERAL",
+        "direction": "REVERSE_REPO",
+        "cash_amount": 50000000,
+        "collateral_amount": 50125000,
+        "repo_rate": 5.25,
+        "haircut": 0.25,
+        "term": "OVERNIGHT",
+        "open_repo": false
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "start_date": "2024-03-15",
+        "end_date": "2024-03-18",
+        "maturity_date": "2024-03-18"
+      },
+      "collateral": {
+        "collateral_value": 50125000,
+        "haircut_percentage": 0.25,
+        "margin_type": "VARIATION",
+        "substitution_allowed": true,
+        "rehypothecation_allowed": false
+      },
+      "settlement": {
+        "settlement_type": "DVP",
+        "tri_party_agent": "BNY_MELLON",
+        "settlement_instructions": "REPO-SI-2024-008901"
+      },
+      "fees": {
+        "transaction_fee": 250,
+        "agent_fee": 100,
+        "total_fees": 350
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["SFTR", "MMSR"],
+        "uti": "UTI-2024-0315-REPO-008"
+      }
+    },
+    {
+      "trade_type": "ETF",
+      "product_type": "EXCHANGE_TRADED_FUND",
+      "trade_id": "TRD-ETF-20240315-009012",
+      "reference_id": "REF-ETF-147852",
+      "instrument": {
+        "symbol": "SPY",
+        "isin": "US78462F1030",
+        "fund_name": "SPDR S&P 500 ETF Trust",
+        "underlying_index": "S&P 500",
+        "asset_class": "EQUITY",
+        "sub_asset_class": "ETF",
+        "fund_type": "INDEX",
+        "replication_method": "PHYSICAL"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "quantity": 5000,
+        "price": 515.75,
+        "gross_amount": 2578750.00,
+        "net_amount": 2578850.00,
+        "creation_unit": false,
+        "in_kind": false
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T15:45:12.345Z",
+        "settlement_date": "2024-03-19"
+      },
+      "etf_details": {
+        "nav": 515.82,
+        "premium_discount": -0.07,
+        "bid_ask_spread": 0.01,
+        "tracking_error": 0.02,
+        "expense_ratio": 0.0945,
+        "aum": 485000000000,
+        "shares_outstanding": 940000000
+      },
+      "counterparty": {
+        "executing_broker": "VIRTU_FINANCIAL",
+        "authorized_participant": "JANE_STREET",
+        "market_maker": "CITADEL_SECURITIES"
+      },
+      "venue": {
+        "execution_venue": "NYSE_ARCA",
+        "mic_code": "XARC"
+      },
+      "fees": {
+        "commission": 50.00,
+        "exchange_fee": 25.00,
+        "sec_fee": 25.00,
+        "total_fees": 100.00
+      },
+      "regulatory": {
+        "reportable": true,
+        "reporting_regime": ["CAT", "MIFID_II"],
+        "rule_201_restriction": false
+      }
+    },
+    {
+      "trade_type": "STRUCTURED_PRODUCT",
+      "product_type": "EQUITY_LINKED_NOTE",
+      "trade_id": "TRD-ELN-20240315-010123",
+      "reference_id": "REF-STRUC-963852",
+      "instrument": {
+        "product_name": "Autocallable Equity Linked Note",
+        "isin": "XS2123456789",
+        "underlying": "EURO STOXX 50",
+        "underlying_bloomberg": "SX5E Index",
+        "currency": "EUR",
+        "asset_class": "STRUCTURED_PRODUCTS",
+        "sub_asset_class": "EQUITY_LINKED_NOTE",
+        "issuer": "BNP_PARIBAS",
+        "guarantor": "BNP_PARIBAS_SA"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "notional": 1000000,
+        "issue_price": 100.00,
+        "trade_price": 98.50,
+        "gross_amount": 985000.00,
+        "coupon": 7.5,
+        "barrier_level": 70,
+        "autocall_level": 100,
+        "participation": 100
+      },
+      "structure_features": {
+        "capital_protected": false,
+        "autocall_dates": ["2024-09-15", "2025-03-15", "2025-09-15"],
+        "barrier_type": "EUROPEAN",
+        "barrier_observation": "AT_MATURITY",
+        "worst_of_basket": false,
+        "memory_coupon": true,
+        "knock_in_level": 70,
+        "knock_out_level": null
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "issue_date": "2024-03-20",
+        "maturity_date": "2026-03-20",
+        "valuation_dates": ["2026-03-15"],
+        "coupon_dates": ["2024-09-15", "2025-03-15", "2025-09-15", "2026-03-15"]
+      },
+      "valuation": {
+        "theoretical_value": 98.75,
+        "implied_volatility": 22.5,
+        "credit_spread": 85,
+        "funding_spread": 45
+      },
+      "counterparty": {
+        "issuer": "BNP_PARIBAS",
+        "distributor": "PRIVATE_BANK_X",
+        "calculation_agent": "BNP_PARIBAS",
+        "paying_agent": "BNP_SECURITIES_SERVICES"
+      },
+      "risk_metrics": {
+        "delta": 0.45,
+        "vega": 0.85,
+        "credit_exposure": 985000.00,
+        "issuer_risk_weight": 0.20,
+        "scenario_analysis": {
+          "spot_minus_10": -8.5,
+          "spot_minus_30": -28.7,
+          "spot_plus_10": 12.3
+        }
+      },
+      "regulatory": {
+        "priips_required": true,
+        "complex_product": true,
+        "target_market": "PROFESSIONAL",
+        "packaged_product": true
+      }
+    },
+    {
+      "trade_type": "CONVERTIBLE_BOND",
+      "product_type": "CONVERTIBLE_BOND",
+      "trade_id": "TRD-CB-20240315-011234",
+      "reference_id": "REF-CONV-741963",
+      "instrument": {
+        "isin": "US88160R1014",
+        "cusip": "88160R101",
+        "description": "Tesla 2.00% Convertible 2024",
+        "underlying_stock": "TSLA",
+        "conversion_ratio": 3.2276,
+        "conversion_price": 309.83,
+        "parity": 825.47,
+        "currency": "USD",
+        "asset_class": "HYBRID",
+        "sub_asset_class": "CONVERTIBLE_BOND"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "quantity": 2000000,
+        "price": 265.50,
+        "clean_price": 265.50,
+        "dirty_price": 266.11,
+        "gross_amount": 5322200.00,
+        "accrued_interest": 12200.00,
+        "conversion_value": 1650940.00,
+        "conversion_premium": 32.5,
+        "yield_to_maturity": -15.6
+      },
+      "convertible_features": {
+        "conversion_type": "AMERICAN",
+        "mandatory_conversion": false,
+        "contingent_conversion": true,
+        "conversion_trigger": 130,
+        "soft_call_trigger": 130,
+        "hard_call_date": "2024-05-15",
+        "put_dates": [],
+        "credit_spread": 285,
+        "stock_borrow_cost": 0.35
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "settlement_date": "2024-03-18",
+        "maturity_date": "2024-05-15",
+        "last_conversion_date": "2024-05-14",
+        "next_coupon_date": "2024-05-15"
+      },
+      "greeks": {
+        "delta": 0.89,
+        "gamma": 0.003,
+        "vega": 0.45,
+        "credit_sensitivity": 0.15,
+        "rho": 0.08,
+        "omicron": 0.92
+      },
+      "counterparty": {
+        "dealer": "JEFFERIES",
+        "clearing_broker": "JEFFERIES",
+        "prime_broker": "GOLDMAN_SACHS"
+      },
+      "risk_metrics": {
+        "equity_sensitivity": 0.89,
+        "credit_sensitivity": 0.15,
+        "interest_rate_sensitivity": 0.08,
+        "cheapness": -2.5
+      }
+    },
+    {
+      "trade_type": "MONEY_MARKET",
+      "product_type": "COMMERCIAL_PAPER",
+      "trade_id": "TRD-CP-20240315-012345",
+      "reference_id": "REF-MM-852741",
+      "instrument": {
+        "isin": "US06406RAA67",
+        "cusip": "06406RAA6",
+        "issuer": "BANK_OF_AMERICA_CP",
+        "program_type": "USCP",
+        "rating_sp": "A-1",
+        "rating_moody": "P-1",
+        "currency": "USD",
+        "asset_class": "MONEY_MARKET",
+        "sub_asset_class": "COMMERCIAL_PAPER"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "face_value": 25000000,
+        "discount_rate": 5.35,
+        "price": 99.108333,
+        "purchase_price": 24777083.33,
+        "interest_amount": 222916.67,
+        "yield": 5.42,
+        "days_to_maturity": 60
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "settlement_date": "2024-03-15",
+        "maturity_date": "2024-05-14",
+        "issue_date": "2024-03-15"
+      },
+      "settlement": {
+        "settlement_type": "SAME_DAY",
+        "clearing_system": "FEDWIRE",
+        "payment_type": "DISCOUNT"
+      },
+      "regulatory": {
+        "eligible_collateral": true,
+        "liquidity_coverage_ratio": "LEVEL_2A",
+        "basel_iii_compliant": true
+      }
+    },
+    {
+      "trade_type": "DERIVATIVE",
+      "product_type": "VARIANCE_SWAP",
+      "trade_id": "TRD-VAR-20240315-013456",
+      "reference_id": "REF-VARS-159753",
+      "instrument": {
+        "underlying": "S&P 500",
+        "underlying_ticker": "SPX Index",
+        "variance_strike": 400,
+        "vega_notional": 100000,
+        "currency": "USD",
+        "asset_class": "DERIVATIVE",
+        "sub_asset_class": "VARIANCE_SWAP"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "variance_units": 100000,
+        "strike_volatility": 20.0,
+        "variance_strike": 400,
+        "cap": 900,
+        "floor": null,
+        "notional_amount": 2000000
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "observation_start": "2024-03-18",
+        "observation_end": "2024-06-18",
+        "settlement_date": "2024-06-21",
+        "averaging_dates": "DAILY"
+      },
+      "valuation": {
+        "fair_variance": 425,
+        "fair_volatility": 20.62,
+        "mark_to_market": 25000,
+        "realized_variance_to_date": 0,
+        "remaining_variance": 425
+      },
+      "counterparty": {
+        "dealer": "NOMURA",
+        "prime_broker": "NOMURA_INTERNATIONAL",
+        "documentation": "ISDA"
+      },
+      "risk_metrics": {
+        "vega": 100000,
+        "variance_vega": 5000,
+        "gamma": -2500,
+        "correlation_risk": 0.85
+      }
+    },
+    {
+      "trade_type": "LOAN",
+      "product_type": "SYNDICATED_LOAN",
+      "trade_id": "TRD-LOAN-20240315-014567",
+      "reference_id": "REF-SYN-357159",
+      "instrument": {
+        "facility_name": "Company ABC Term Loan B",
+        "borrower": "COMPANY_ABC",
+        "facility_type": "TERM_LOAN_B",
+        "lien": "FIRST_LIEN",
+        "rating_sp": "B+",
+        "rating_moody": "B1",
+        "currency": "USD",
+        "asset_class": "LOAN",
+        "sub_asset_class": "LEVERAGED_LOAN"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "commitment_amount": 10000000,
+        "funded_amount": 9900000,
+        "unfunded_amount": 100000,
+        "price": 98.50,
+        "all_in_rate": "SOFR+450",
+        "base_rate": "SOFR",
+        "margin": 450,
+        "floor": 0.50,
+        "original_issue_discount": 1.50
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "settlement_date": "2024-03-29",
+        "maturity_date": "2031-03-15",
+        "next_payment_date": "2024-06-30"
+      },
+      "loan_details": {
+        "agent_bank": "JP_MORGAN",
+        "syndicate_members": ["JP_MORGAN", "BOFA", "CITI", "WELLS_FARGO"],
+        "covenant_lite": true,
+        "payment_frequency": "QUARTERLY",
+        "amortization": 1.0,
+        "call_protection": "101_SOFT_CALL_6M"
+      },
+      "settlement": {
+        "settlement_type": "DELAYED_COMP",
+        "lsta_standard": true,
+        "clearpar_eligible": false
+      },
+      "regulatory": {
+        "volcker_compliant": true,
+        "risk_retention": true,
+        "bsr_reportable": true
+      }
+    },
+    {
+      "trade_type": "CRYPTO",
+      "product_type": "CRYPTOCURRENCY",
+      "trade_id": "TRD-CRYPTO-20240315-015678",
+      "reference_id": "REF-BTC-258369",
+      "instrument": {
+        "symbol": "BTC/USD",
+        "base_currency": "BTC",
+        "quote_currency": "USD",
+        "asset_class": "DIGITAL_ASSET",
+        "sub_asset_class": "CRYPTOCURRENCY"
+      },
+      "trade_details": {
+        "side": "BUY",
+        "base_quantity": 2.5,
+        "quote_amount": 175625.00,
+        "execution_price": 70250.00,
+        "fee_currency": "USD",
+        "network_fee": 25.00
+      },
+      "dates": {
+        "trade_date": "2024-03-15",
+        "trade_time": "2024-03-15T16:45:23.789Z",
+        "settlement_date": "2024-03-15",
+        "settlement_time": "2024-03-15T16:47:45.123Z"
+      },
+      "venue": {
+        "exchange": "COINBASE",
+        "venue_type": "CRYPTO_EXCHANGE",
+        "order_book": "BTC-USD"
+      },
+      "blockchain": {
+        "transaction_hash": "0x742d35cc6634c0532925a3b844bc454789",
+        "block_number": 831245,
+        "confirmations": 3,
+        "network": "BITCOIN",
+        "wallet_address": "bc1qxy2kgdygjrsqtzq2n0yrf24",
+        "custody_solution": "COLD_STORAGE"
+      },
+      "fees": {
+        "trading_fee": 351.25,
+        "spread": 125.00,
+        "network_fee": 25.00,
+        "total_fees": 501.25
+      },
+      "regulatory": {
+        "reporting_required": true,
+        "aml_kyc_complete": true,
+        "travel_rule_compliant": true
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "generated_date": "2024-03-15",
+    "total_trade_types": 15,
+    "asset_classes": [
+      "EQUITY",
+      "FIXED_INCOME",
+      "DERIVATIVES",
+      "FX",
+      "COMMODITIES",
+      "STRUCTURED_PRODUCTS",
+      "MONEY_MARKET",
+      "LOANS",
+      "CRYPTO"
+    ],
+    "regulatory_frameworks": [
+      "MIFID_II",
+      "DODD_FRANK",
+      "EMIR",
+      "CAT",
+      "TRACE",
+      "SFTR",
+      "BASEL_III"
+    ]
+  }
+}
