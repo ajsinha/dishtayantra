@@ -1,4 +1,4 @@
-I'll create a `ReconnectAwareKafkaProducer` class that extends `KafkaProducer` with automatic reconnection and message buffering to ensure no messages are lost during reconnection attempts.I've created a comprehensive `ReconnectAwareKafkaProducer` class that extends `KafkaProducer` with automatic reconnection and crucial message buffering to prevent data loss. Here are the key features:
+The `ReconnectAwareKafkaProducer` class extends `KafkaProducer` with automatic reconnection and message buffering to ensure no messages are lost during reconnection attempts.It features automatic reconnection and crucial message buffering to prevent data loss. Here are the key features:
 
 ## Key Features:
 

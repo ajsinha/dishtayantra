@@ -4,7 +4,7 @@
 
 The gRPC implementation provides publisher and subscriber classes that communicate via gRPC protocol, enabling efficient, bidirectional streaming communication for your pub/sub system.
 
-## Files Created
+## Files
 
 1. **grpc_datapubsub.py** - Contains `GRPCDataPublisher` and `GRPCDataSubscriber` classes
 2. **pubsub.proto** - Protocol buffer definition for the gRPC service

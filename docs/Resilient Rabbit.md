@@ -1,4 +1,4 @@
-I'll create a `ResilientRabbitBlockingConnection` class that extends `pika.BlockingConnection` with automatic reconnection and message buffering capabilities for RabbitMQ.I've created a comprehensive `ResilientRabbitBlockingConnection` class that extends `pika.BlockingConnection` with automatic reconnection and message buffering capabilities. Here are the key features:
+The `ResilientRabbitBlockingConnection` class extends `pika.BlockingConnection` with automatic reconnection and message buffering capabilities for RabbitMQ.It is a comprehensive `ResilientRabbitBlockingConnection` class that extends `pika.BlockingConnection` with automatic reconnection and message buffering capabilities. Here are the key features:
 
 ## Key Features:
 

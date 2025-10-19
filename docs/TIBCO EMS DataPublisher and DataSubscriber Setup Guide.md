@@ -4,7 +4,7 @@
 
 The TIBCO EMS (Enterprise Message Service) implementation provides publisher and subscriber classes that support both **queue** and **topic** messaging patterns. TIBCO EMS is an enterprise-grade message broker that implements the JMS (Java Message Service) standard.
 
-## Files Created
+## Files
 
 1. **tibcoems_datapubsub.py** - Contains `TibcoEMSDataPublisher` and `TibcoEMSDataSubscriber` classes
 2. **Updated pubsubfactory.py** - Factory methods now support `tibcoems://` destinations/sources

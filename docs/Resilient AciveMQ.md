@@ -1,4 +1,4 @@
-I'll create a `ResilientActiveMQConnection` class that extends `stomp.Connection` with automatic reconnection and message buffering capabilities for ActiveMQ.I've created a comprehensive `ResilientActiveMQConnection` class that extends `stomp.Connection` with automatic reconnection and message buffering capabilities. Here are the key features:
+The `ResilientActiveMQConnection` is a comprehensive class  extends `stomp.Connection` with automatic reconnection and message buffering capabilities for ActiveMQ.It has automatic reconnection and message buffering capabilities. Here are the key features:
 
 ## Key Features:
 

@@ -1,4 +1,4 @@
-I'll create a `ResilientRedisClient` class that extends `redis.Redis` with automatic reconnection and command buffering capabilities.I've created a comprehensive `ResilientRedisClient` class that extends `redis.Redis` with automatic reconnection and command buffering capabilities. Here are the key features:
+The `ResilientRedisClient` class extends `redis.Redis` with automatic reconnection and command buffering capabilities.It is a class that extends `redis.Redis` with automatic reconnection and command buffering capabilities. Here are the key features:
 
 ## Key Features:
 

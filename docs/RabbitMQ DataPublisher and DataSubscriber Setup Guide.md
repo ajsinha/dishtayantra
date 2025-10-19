@@ -4,7 +4,7 @@
 
 The RabbitMQ implementation provides publisher and subscriber classes that support both **queue** and **topic** messaging patterns, similar to ActiveMQ. The implementation uses RabbitMQ's AMQP protocol through the pika library.
 
-## Files Created
+## Files
 
 1. **rabbitmq_datapubsub.py** - Contains `RabbitMQDataPublisher` and `RabbitMQDataSubscriber` classes
 2. **Updated pubsubfactory.py** - Factory methods now support `rabbitmq://` destinations/sources

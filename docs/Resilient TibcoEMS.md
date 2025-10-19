@@ -1,4 +1,4 @@
-I'll create a `ResilientTibcoEMSConnection` class that provides resilient connectivity for TIBCO EMS with automatic reconnection and message buffering capabilities. Since TIBCO EMS uses JMS-like APIs in Python through the TIBCO EMS Python client, I'll create a wrapper that handles the common connection patterns.I've created a comprehensive `ResilientTibcoEMSConnection` class that provides resilient connectivity for TIBCO EMS with automatic reconnection and message buffering capabilities. Here are the key features:
+The `ResilientTibcoEMSConnection` class provides resilient connectivity for TIBCO EMS with automatic reconnection and message buffering capabilities. Since TIBCO EMS uses JMS-like APIs in Python through the TIBCO EMS Python client, this wrapper handles the common connection patterns.This comprehensive `ResilientTibcoEMSConnection` class provides resilient connectivity for TIBCO EMS with automatic reconnection and message buffering capabilities. Here are the key features:
 
 ## Key Features:
 

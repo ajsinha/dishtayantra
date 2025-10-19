@@ -4,7 +4,7 @@
 
 The WebSphere MQ (now IBM MQ) implementation provides publisher and subscriber classes that support both **queue** and **topic** messaging patterns. IBM MQ is an enterprise-grade message broker widely used in enterprise environments for reliable message delivery.
 
-## Files Created
+## Files
 
 1. **websphere_datapubsub.py** - Contains `WebSphereMQDataPublisher` and `WebSphereMQDataSubscriber` classes
 2. **Updated pubsubfactory.py** - Factory methods now support `websphere://` destinations/sources
