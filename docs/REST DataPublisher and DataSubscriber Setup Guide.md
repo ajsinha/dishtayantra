@@ -1092,3 +1092,10 @@ print("  Demonstrates automatic retry mechanism")
 6. **No Push**: Subscriber must poll (no push model)
 
 The REST implementation provides a flexible foundation for API-based messaging, ideal for integrating with external services and HTTP-based architectures!
+
+
+## Copyright Notice
+
+© 2025 - 2030 Ashutosh Sinha.
+
+All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the publisher, except in the case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.

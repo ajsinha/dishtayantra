@@ -550,3 +550,10 @@ Would you like me to:
 2. Provide deployment and testing guidelines?
 3. Create sample DAG configurations?
 4. Focus on the Flask web UI implementation?
+
+
+## Copyright Notice
+
+© 2025 - 2030 Ashutosh Sinha.
+
+All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the publisher, except in the case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.

@@ -1384,3 +1384,10 @@ print("\n✓ Example 4 completed!")
 4. **Overhead**: Database overhead for simple messaging
 
 The SQL implementation provides a database-native foundation for workflows requiring queryable message history, ACID transactions, and integration with existing database systems!
+
+
+## Copyright Notice
+
+© 2025 - 2030 Ashutosh Sinha.
+
+All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the publisher, except in the case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.
