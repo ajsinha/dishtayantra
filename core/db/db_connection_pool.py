@@ -119,6 +119,7 @@ class ConnectionWrapper:
         return time_since_test > test_interval_seconds
 
 
+
 @dataclass
 class PoolConfig:
     """Configuration for the connection pool."""

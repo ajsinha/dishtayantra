@@ -21,6 +21,9 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+class RabbitMQConnectionError(Exception):
+    """Custom exception for RabbitMQ connection issues"""
+    pass
 
 class RabbitMQDataPublisher(DataPublisher):
     """Publisher for RabbitMQ queues and topics"""
@@ -43,6 +46,8 @@ class RabbitMQDataPublisher(DataPublisher):
         self.virtual_host = config.get('virtual_host', '/')
 
         # Connection settings
+        self.max_retries = 5
+        self.retry_delay = 10
         self.connection = None
         self.channel = None
         self._connect()
@@ -67,7 +72,7 @@ class RabbitMQDataPublisher(DataPublisher):
         logger.info(f"RabbitMQ publisher connected to {self.host}:{self.port}, "
                     f"dest_type={self.dest_type}, dest_name={self.dest_name}")
 
-    def _connect(self):
+    def _do_connect(self):
         """Establish connection to RabbitMQ"""
         try:
             credentials = pika.PlainCredentials(self.username, self.password)
@@ -86,8 +91,31 @@ class RabbitMQDataPublisher(DataPublisher):
             logger.info(f"Connected to RabbitMQ at {self.host}:{self.port}")
 
         except Exception as e:
-            logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
+            logger.error(f"Failed to connect to RabbitMQ ({self.name}): {str(e)}")
             raise
+
+    def _connect(self):
+        """Establish connection to RabbitMQ with retry logic"""
+        last_error = None
+
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                self._do_connect()
+                if self.channel and not self.channel.is_closed:
+                    return  # Success
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"Connection attempt {attempt}/{self.max_retries} failed: {str(e)}"
+                )
+                if attempt < self.max_retries:
+                    time.sleep(self.retry_delay * attempt)  # Exponential backoff
+
+        # All retries failed
+        error_msg = f"Failed to connect to RabbitMQ after {self.max_retries} attempts"
+        if last_error:
+            error_msg += f": {str(last_error)}"
+        raise RabbitMQConnectionError(error_msg)
 
     def _ensure_connection(self):
         """Ensure connection is alive, reconnect if needed"""
@@ -168,6 +196,8 @@ class RabbitMQDataSubscriber(DataSubscriber):
         self.virtual_host = config.get('virtual_host', '/')
 
         # Connection settings
+        self.max_retries = 5
+        self.retry_delay = 10
         self.connection = None
         self.channel = None
         self._connect()
@@ -212,7 +242,7 @@ class RabbitMQDataSubscriber(DataSubscriber):
         logger.info(f"RabbitMQ subscriber connected to {self.host}:{self.port}, "
                     f"dest_type={self.dest_type}, queue={self.queue_name}")
 
-    def _connect(self):
+    def _do_connect(self):
         """Establish connection to RabbitMQ"""
         try:
             credentials = pika.PlainCredentials(self.username, self.password)
@@ -234,6 +264,29 @@ class RabbitMQDataSubscriber(DataSubscriber):
         except Exception as e:
             logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
             raise
+
+    def _connect(self):
+        """Establish connection to RabbitMQ with retry logic"""
+        last_error = None
+
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                self._do_connect()
+                if self.channel and not self.channel.is_closed:
+                    return  # Success
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"Connection attempt {attempt}/{self.max_retries} failed: {str(e)}"
+                )
+                if attempt < self.max_retries:
+                    time.sleep(self.retry_delay * attempt)  # Exponential backoff
+
+        # All retries failed
+        error_msg = f"Failed to connect to RabbitMQ after {self.max_retries} attempts"
+        if last_error:
+            error_msg += f": {str(last_error)}"
+        raise RabbitMQConnectionError(error_msg)
 
     def _do_subscribe(self):
         """Subscribe from RabbitMQ"""

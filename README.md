@@ -1,5 +1,7 @@
 # DAG Compute Server
 
+## © 2025-2030 Ashutosh Sinha
+
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers and data sources.
 
 ## Features
@@ -490,3 +492,13 @@ For issues and questions:
 - Time-windowed execution
 - DAG cloning
 - Message publishing from UI
+
+For issues, questions, or contributions, please contact:
+- Email: ajsinha@gmail.com
+- GitHub: https://github.com/yourusername/sajhamcpserver
+
+## License
+
+© 2025-2030 Ashutosh Sinha. All rights reserved.
+
+This software is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.

@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 import threading
 import queue
@@ -7,6 +8,15 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+class DestinationAwarePayload():
+    """Class that carries a payload - typically a dictionary - along with destination i.e. queue or topic."""
+    def __init__(self, destination, payload):
+        self.destination = destination
+        self.payload = payload
+
+    def __str__(self):
+        local_dict = {'destination': self.destination, 'payload': self.payload}
+        return json.dumps(local_dict)
 
 class DataPublisher(ABC):
     """Abstract base class for data publishers"""

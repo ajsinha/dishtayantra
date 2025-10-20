@@ -3,7 +3,7 @@ import logging
 import time
 from datetime import datetime
 import stomp
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, DestinationAwarePayload
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +35,21 @@ class ActiveMQDataPublisher(DataPublisher):
         """Publish to ActiveMQ queue or topic"""
         try:
             destination = f'/queue/{self.dest_name}' if self.dest_type == 'queue' else f'/topic/{self.dest_name}'
-            self.connection.send(destination, json.dumps(data))
+
+            local_destination = destination
+            local_data = data
+            if isinstance(data, DestinationAwarePayload):
+                if data.destination is not None:
+                    local_destination = data.destination
+                    local_data = data.payload
+
+            self.connection.send(local_destination, json.dumps(local_data))
 
             with self._lock:
                 self._last_publish = datetime.now().isoformat()
                 self._publish_count += 1
 
-            logger.debug(f"Published to ActiveMQ {destination}")
+            logger.debug(f"Published to ActiveMQ {self.name}/{local_destination}")
         except Exception as e:
             logger.error(f"Error publishing to ActiveMQ: {str(e)}")
             raise
