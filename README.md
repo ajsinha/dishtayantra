@@ -495,7 +495,7 @@ For issues and questions:
 
 For issues, questions, or contributions, please contact:
 - Email: ajsinha@gmail.com
-- GitHub: https://github.com/yourusername/sajhamcpserver
+- GitHub: https://github.com/ajsinha/dagcomputeserver_v2
 
 ## License
 
