@@ -1,5 +1,8 @@
 The `ResilientActiveMQConnection` is a comprehensive class  extends `stomp.Connection` with automatic reconnection and message buffering capabilities for ActiveMQ.It has automatic reconnection and message buffering capabilities. Here are the key features:
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Key Features:
 
 1. **Automatic Reconnection**: Handles connection failures during any operation with configurable retry logic

@@ -1,5 +1,7 @@
 # DAG Compute Server - Complete Implementation
 
+## © 2025-2030 Ashutosh Sinha
+
 This document provides the complete implementation structure for the DAG Compute Server system.
 
 ## Project Structure

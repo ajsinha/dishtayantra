@@ -1,5 +1,8 @@
 # RabbitMQ DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Overview
 
 The RabbitMQ implementation provides publisher and subscriber classes that support both **queue** and **topic** messaging patterns, similar to ActiveMQ. The implementation uses RabbitMQ's AMQP protocol through the pika library.

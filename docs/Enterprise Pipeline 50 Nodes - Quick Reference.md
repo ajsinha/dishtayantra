@@ -1,5 +1,7 @@
 # Enterprise Pipeline 50 Nodes - Quick Reference
 
+## © 2025-2030 Ashutosh Sinha
+
 ## ✅ Requirements Met
 
 | Requirement | Status | Details |

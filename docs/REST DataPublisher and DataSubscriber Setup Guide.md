@@ -1,5 +1,8 @@
 # REST DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Overview
 
 The REST implementation provides publisher and subscriber classes for REST API-based messaging. Publishers send data to REST endpoints via HTTP POST/PUT/PATCH, and subscribers poll REST endpoints via HTTP GET/POST. This pattern is ideal for integrating with external REST APIs, microservices communication, webhook-style publishing, API-first architectures, and cloud service integration.

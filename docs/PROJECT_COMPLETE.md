@@ -1,5 +1,7 @@
 # DAG Compute Server - Project Complete ✅
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 A comprehensive, production-ready DAG (Directed Acyclic Graph) compute server implementation with full support for message brokers, databases, and custom data sources. The system features a Flask-based web UI for monitoring and management.

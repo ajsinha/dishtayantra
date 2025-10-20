@@ -1,5 +1,7 @@
 # File DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 The File implementation provides publisher and subscriber classes for file-based messaging. Publishers append JSON messages to files, and subscribers read them in real-time (similar to `tail -f`). This pattern is ideal for logging, data pipelines, file-based integration, and scenarios where you need persistent message storage without a message broker.

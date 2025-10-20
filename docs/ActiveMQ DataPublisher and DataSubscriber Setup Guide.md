@@ -1,5 +1,7 @@
 # ActiveMQ DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 The ActiveMQ implementation provides publisher and subscriber classes for Apache ActiveMQ, a popular open-source message broker. ActiveMQ supports both **queue** (point-to-point) and **topic** (publish-subscribe) messaging patterns through the STOMP protocol. It's widely used for enterprise messaging with excellent Java integration and cross-platform support.

@@ -1,5 +1,7 @@
 # InMemoryPubSub Manager Comprehensive Guide
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 The `InMemoryPubSub` class is a **singleton manager** that provides the underlying infrastructure for in-memory messaging. It directly manages Python `queue.Queue` objects for both point-to-point (queues) and publish-subscribe (topics) messaging patterns. This guide covers direct usage of the singleton manager, which provides more control than the DataPublisher/DataSubscriber wrappers.

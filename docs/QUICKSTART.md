@@ -1,5 +1,8 @@
 # DAG Compute Server - Quick Start Guide
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Prerequisites
 
 - Python 3.8 or higher

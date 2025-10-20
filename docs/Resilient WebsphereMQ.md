@@ -1,5 +1,8 @@
 The`ResilientWebSphereMQQueueManager` class extends `pymqi.QueueManager` with automatic reconnection and message buffering capabilities for IBM WebSphere MQ (now IBM MQ).The comprehensive `ResilientWebSphereMQQueueManager` class which extends `pymqi.QueueManager` with automatic reconnection and message buffering capabilities for IBM MQ (WebSphere MQ). Here are the key features:
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Key Features:
 
 1. **Drop-in Replacement**: Fully extends `pymqi.QueueManager` maintaining compatibility with existing code

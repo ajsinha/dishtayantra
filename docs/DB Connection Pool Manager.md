@@ -1,5 +1,7 @@
 A singleton `DBConnectionPoolManager` class that manages multiple connection pool instances, using connection configurations as keys for pool identification and reuse.This comprehensive singleton `DBConnectionPoolManager` class manages multiple database connection pools efficiently. Here are the key features:
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Key Features
 
 ### 1. **Singleton Pattern**

@@ -1,5 +1,7 @@
 # Kafka DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 The Kafka implementation provides publisher and subscriber classes for Apache Kafka, a distributed streaming platform. Unlike traditional message brokers, Kafka is designed for high-throughput, fault-tolerant, and scalable event streaming. Kafka uses a **topic-based** publish-subscribe model with support for consumer groups and partitioning.

@@ -1,5 +1,7 @@
 A comprehensive `DatabaseConnectionPool` class that implements connection pooling similar to Apache DBCP with connection validation, eviction, and replenishment capabilities for multiple database backends.This comprehensive `DatabaseConnectionPool` class that implements enterprise-grade connection pooling similar to Apache DBCP has following key features:
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Key Features
 
 ### 1. **Multi-Database Support**

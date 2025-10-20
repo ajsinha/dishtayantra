@@ -1,5 +1,7 @@
 # Multi-Role User System - Implementation Summary
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Files
 
 ### 1. **users.json** - New Structure

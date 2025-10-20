@@ -1,5 +1,8 @@
 The `ReconnectAwareKafkaProducer` class extends `KafkaProducer` with automatic reconnection and message buffering to ensure no messages are lost during reconnection attempts.It features automatic reconnection and crucial message buffering to prevent data loss. Here are the key features:
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Key Features:
 
 1. **Message Buffering**: Messages sent during connection failures are automatically buffered in a thread-safe queue, ensuring no data loss during reconnection attempts.

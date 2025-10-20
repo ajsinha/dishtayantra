@@ -1,5 +1,7 @@
 # gRPC DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 The gRPC implementation provides publisher and subscriber classes that communicate via gRPC protocol, enabling efficient, bidirectional streaming communication for your pub/sub system.

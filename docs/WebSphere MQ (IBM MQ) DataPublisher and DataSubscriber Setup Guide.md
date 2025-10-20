@@ -1,5 +1,8 @@
 # WebSphere MQ (IBM MQ) DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Overview
 
 The WebSphere MQ (now IBM MQ) implementation provides publisher and subscriber classes that support both **queue** and **topic** messaging patterns. IBM MQ is an enterprise-grade message broker widely used in enterprise environments for reliable message delivery.

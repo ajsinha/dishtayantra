@@ -1,5 +1,8 @@
 # SQL DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Overview
 
 The SQL implementation provides publisher and subscriber classes for database-based messaging. Publishers insert messages as rows into database tables, and subscribers poll and retrieve them. This pattern is ideal for database-driven workflows, event sourcing with SQL storage, integrating with existing database systems, and scenarios where you need queryable message history.

@@ -1,5 +1,7 @@
 # In-Memory DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
 ## Overview
 
 The In-Memory implementation provides publisher and subscriber classes for in-process messaging using Python's native data structures. Messages are stored in memory queues and topics without any external dependencies. This pattern is ideal for development, testing, microservices within the same process, fast inter-thread communication, and scenarios where persistence is not required.

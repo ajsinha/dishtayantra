@@ -1,5 +1,8 @@
 The `ResilientRedisClient` class extends `redis.Redis` with automatic reconnection and command buffering capabilities.It is a class that extends `redis.Redis` with automatic reconnection and command buffering capabilities. Here are the key features:
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Key Features:
 
 1. **Drop-in Replacement**: Fully compatible with `redis.Redis`, all existing code works without modification

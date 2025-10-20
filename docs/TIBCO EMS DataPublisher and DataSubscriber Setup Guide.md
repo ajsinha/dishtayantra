@@ -1,5 +1,8 @@
 # TIBCO EMS DataPublisher and DataSubscriber Setup Guide
 
+## © 2025-2030 Ashutosh Sinha
+
+
 ## Overview
 
 The TIBCO EMS (Enterprise Message Service) implementation provides publisher and subscriber classes that support both **queue** and **topic** messaging patterns. TIBCO EMS is an enterprise-grade message broker that implements the JMS (Java Message Service) standard.
