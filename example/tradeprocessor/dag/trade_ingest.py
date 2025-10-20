@@ -6,7 +6,7 @@ from core.dag.graph_elements import Node
 
 logger = logging.getLogger(__name__)
 
-class PublicationGMTCTradeDiscriminatorNode(Node):
+class TradeDiscriminatorNode(Node):
     """Node that publishes gmtc trades to product specific kafka topics"""
 
     def __init__(self, name, config):
