@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from kafka import KafkaProducer, KafkaConsumer
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber,DestinationAwarePayload
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber,DataAwarePayload
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +26,11 @@ class KafkaDataPublisher(DataPublisher):
         """Publish to Kafka topic"""
         local_topic = self.topic
         local_data = data
-        if isinstance(data, DestinationAwarePayload):
-            if data.destination is not None:
-                local_topic = data.destination
-                local_data = data.payload
+        if isinstance(data, DataAwarePayload):
+            local_topic, local_data = data.get_data_for_publication()
+            if local_topic is None or len(local_topic) == 0:
+                local_topic = self.destination
+
 
         self.producer.send(local_topic, value=local_data)
         self.producer.flush()

@@ -73,6 +73,7 @@ class DAGComputeServer:
                 logger.error(f"Error loading DAG from {filepath}: {str(e)}")
                 import traceback
                 logger.error(traceback.format_exc())
+                raise
 
     def _setup_leader_election_async(self, zookeeper_hosts):
         """Setup Zookeeper leader election asynchronously"""

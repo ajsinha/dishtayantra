@@ -105,6 +105,12 @@ class ComputeGraph:
     def publisher_by_name(self, pub_name):
         return self.subscribers[pub_name]
 
+    def get_publiisher_by_name(self, publisher_name):
+        return self.publishers[publisher_name]
+
+    def publish(self, publisher_name, data_to_send):
+        self.publishers[publisher_name].publish(data_to_send)
+
     def build_dag(self):
         """Build the DAG from config"""
         # Build nodes

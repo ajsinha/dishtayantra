@@ -8,14 +8,30 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-class DestinationAwarePayload():
+class DataAwarePayload():
     """Class that carries a payload - typically a dictionary - along with destination i.e. queue or topic."""
-    def __init__(self, destination, payload):
+    def __init__(self, destination, cde, payload):
         self.destination = destination
+        self.cde = cde
         self.payload = payload
 
+    def to_dict(self):
+        return {"destination": self.destination, 'cde': self.cde, 'payload': self.payload}
+
+    def get_data_for_publication(self):
+        if self.destination is None or len(self.destination) ==0:
+            if self.cde is None or len(self.cde) == 0:
+                return '', self.payload
+            else:
+                return '', {'cde': self.cde, 'payload': self.payload}
+        else:
+            if self.cde is None or len(self.cde) == 0:
+                return self.destination, self.payload
+            else:
+                return self.destination, {'cde': self.cde, 'payload': self.payload}
+
     def __str__(self):
-        local_dict = {'destination': self.destination, 'payload': self.payload}
+        local_dict = {'destination': self.destination,'cde': self.cde, 'payload': self.payload}
         return json.dumps(local_dict)
 
 class DataPublisher(ABC):

@@ -3,7 +3,7 @@ import logging
 import time
 from datetime import datetime
 import stomp
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber, DestinationAwarePayload
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, DataAwarePayload
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +38,10 @@ class ActiveMQDataPublisher(DataPublisher):
 
             local_destination = destination
             local_data = data
-            if isinstance(data, DestinationAwarePayload):
-                if data.destination is not None:
-                    local_destination = data.destination
-                    local_data = data.payload
+            if isinstance(data, DataAwarePayload):
+                local_destination, local_data = data.get_data_for_publication()
+                if local_destination is None or len(local_destination) == 0:
+                    local_destination = destination
 
             self.connection.send(local_destination, json.dumps(local_data))
 

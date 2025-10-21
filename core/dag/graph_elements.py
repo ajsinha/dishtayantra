@@ -149,11 +149,15 @@ class Node(ABC):
 class Edge:
     """Edge connecting two nodes in compute graph"""
 
-    def __init__(self, from_node, to_node, data_transformer=None):
+    def __init__(self, from_node, to_node, data_transformer=None, config:dict =None):
         self.from_node = from_node
         self.to_node = to_node
         self.data_transformer = data_transformer
-        self.name = f"{from_node.name}_to_{to_node.name}"
+        self.config = config
+        if self.config is not None:
+            self.name = self.config.get("name", f"{from_node.name}_to_{to_node.name}")
+        else:
+            self.name = f"{from_node.name}_to_{to_node.name}"
 
         # Register edge with nodes
         from_node.add_outgoing_edge(self)

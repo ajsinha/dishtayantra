@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber,DataAwarePayload
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,12 @@ class FileDataPublisher(DataPublisher):
         """Append data to file"""
         try:
             with open(self.filepath, 'a') as f:
-                f.write(json.dumps(data) + '\n')
+                if hasattr(data, 'to_dict'):
+                    to_json = json.dumps(data.to_dict(), separators=(',', ':'))
+                    f.write(to_json + '\n')
+                else:
+                    to_json = json.dumps(data, separators=(',', ':'))
+                    f.write( to_json + '\n')
 
             with self._lock:
                 self._last_publish = datetime.now().isoformat()

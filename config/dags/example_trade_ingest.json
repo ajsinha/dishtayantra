@@ -1,0 +1,63 @@
+{
+  "name": "example_trade_ingest",
+  "start_time": "0600",
+  "end_time": "2200",
+  "subscribers": [
+    {
+      "name": "kafka_trade_input",
+      "config": {
+        "source": "kafka://topic/kafka_trade_input_topic",
+        "bootstrap_servers": [
+          "localhost:9092"
+        ],
+        "group_id": "dag_consumer_group",
+        "max_depth": 5000
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "kafka_output",
+      "config": {
+        "destination": "kafka://topic/output_topic",
+        "bootstrap_servers": [
+          "localhost:9092"
+        ]
+      }
+    },
+    {
+      "name": "file_backup",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/output.json",
+        "publish_interval": 10,
+        "batch_size": 100
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "name": "kafka_trade_input_node",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_trade_input"
+    },
+    {
+      "name": "kafka_trade_discriminator",
+      "type": "example.tradeprocessor.dag.trade_ingest.TradeDiscriminatorNode",
+      "config": {"publishers": ["kafka_output", "file_backup"]}
+    },
+    {
+      "name": "kafka_trade_discriminator_publisher",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["kafka_output", "file_backup"],
+      "input_transformers": ["passthru"]
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "kafka_trade_input_node",
+      "to_node": "kafka_trade_discriminator"
+    }
+  ]
+}
