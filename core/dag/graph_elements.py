@@ -170,7 +170,7 @@ class Edge:
 
         self.name = f"{from_node.name}_to_{to_node.name}"
         self.pname = ""
-        if pname is not None:
+        if  pname is not None:
             self.pname = pname.strip()  ##pseudoname associated with an edge
 
 
