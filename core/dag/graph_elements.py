@@ -70,6 +70,24 @@ class Node(ABC):
         """Pre-compute hook - can be overridden by subclasses"""
         pass
 
+    def consolidate_edge_inputs(self):
+        # Gather inputs from incoming edges
+        merged_input = {}
+        for edge in self._incoming_edges:
+            edge_data = edge.get_data()
+            edge_pname = edge.pname
+            if edge_pname is None:
+                edge_pname = ''
+            edge_pname = edge_pname.strip()
+            if edge_data:
+                if len(edge_pname) == 0:
+                    merged_input.update(edge_data)
+                else:
+                    if edge_pname not in merged_input.keys():
+                        merged_input[edge_pname] = {}
+                    merged_input[edge_pname].update(edge_data)
+        return merged_input
+
     def compute(self):
         """Compute node output based on inputs"""
         if not self._isdirty:
@@ -77,11 +95,7 @@ class Node(ABC):
 
         try:
             # Gather inputs from incoming edges
-            merged_input = {}
-            for edge in self._incoming_edges:
-                edge_data = edge.get_data()
-                if edge_data:
-                    merged_input.update(edge_data)
+            merged_input = self.consolidate_edge_inputs()
 
             # Apply input transformers
             transformed_input = merged_input
@@ -149,15 +163,16 @@ class Node(ABC):
 class Edge:
     """Edge connecting two nodes in compute graph"""
 
-    def __init__(self, from_node, to_node, data_transformer=None, config:dict =None):
+    def __init__(self, from_node, to_node, data_transformer=None, pname =None):
         self.from_node = from_node
         self.to_node = to_node
         self.data_transformer = data_transformer
-        self.config = config
-        if self.config is not None:
-            self.name = self.config.get("name", f"{from_node.name}_to_{to_node.name}")
-        else:
-            self.name = f"{from_node.name}_to_{to_node.name}"
+
+        self.name = f"{from_node.name}_to_{to_node.name}"
+        self.pname = ""
+        if pname is not None:
+            self.pname = pname.strip()  ##pseudoname associated with an edge
+
 
         # Register edge with nodes
         from_node.add_outgoing_edge(self)

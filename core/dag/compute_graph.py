@@ -168,12 +168,13 @@ class ComputeGraph:
             from_node_name = edge_config['from_node']
             to_node_name = edge_config['to_node']
             transformer_name = edge_config.get('data_transformer')
+            pname = edge_config.get('pname')
 
             from_node = self.nodes[from_node_name]
             to_node = self.nodes[to_node_name]
             transformer = self.transformers.get(transformer_name) if transformer_name else None
 
-            edge = Edge(from_node, to_node, transformer)
+            edge = Edge(from_node, to_node, transformer,pname)
             self.edges.append(edge)
             logger.info(f"Created edge: {edge.name}")
 
