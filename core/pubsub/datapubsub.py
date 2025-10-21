@@ -15,6 +15,9 @@ class DataAwarePayload():
         self.cde = cde
         self.payload = payload
 
+    def add_to_cde(self, k, v):
+        self.cde[k] = v
+
     def to_dict(self):
         return {"destination": self.destination, 'cde': self.cde, 'payload': self.payload}
 

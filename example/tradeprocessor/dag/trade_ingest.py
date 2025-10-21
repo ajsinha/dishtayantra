@@ -18,6 +18,11 @@ class TradeDiscriminatorNode(CalculationNode):
         self._last_published_output = None
 
 
+    def __build_event_id(self):
+        import uuid
+        # Generate a random UUID (version 4)
+        random_uuid = uuid.uuid4()
+        return str(random_uuid)
 
     def compute(self):
         """Compute and publish if output changed"""
@@ -34,7 +39,7 @@ class TradeDiscriminatorNode(CalculationNode):
                 product_type = self._output ['product_type']
                 subproduct = self._output ['subproduct']
                 k_topic = f'{product_type}_{subproduct}'.replace(' ', '_').lower()
-                cde = {'target_topic': k_topic}
+                cde = {'target_topic': k_topic, 'event_id': self.__build_event_id(), 'processing_agent':self.name}
                 payload = deepcopy(self._output)
                 d_payload = DataAwarePayload(destination=k_topic, cde=cde, payload=payload)
                 for publisher_name in self.publishers:
