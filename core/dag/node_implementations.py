@@ -6,6 +6,12 @@ from core.dag.graph_elements import Node
 
 logger = logging.getLogger(__name__)
 
+class SinkNode(Node):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+
+    def compute(self):
+        pass
 
 class SubscriptionNode(Node):
     """Node that pulls data from a DataSubscriber"""
