@@ -13,6 +13,42 @@ class SinkNode(Node):
     def compute(self):
         pass
 
+class PublisherSinkNode(Node):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self.publishers = config.get("publishers", [])
+        self._edge_tracker = {}
+
+    def compute(self):
+        """Compute node output based on inputs"""
+        if not self._isdirty:
+            return
+
+        try:
+            # Gather inputs from incoming edges
+            edge_data_collection = []
+            for edge in self._incoming_edges:
+                edge_data = edge.get_data()
+                edge_name = edge.name
+                if edge_name not in self._edge_tracker.keys():
+                    self._edge_tracker[edge_name] = edge_data
+                    edge_data_collection.append(edge_data)
+                else:
+                    known = self._edge_tracker[edge_name]
+                    if known == edge_data:
+                        pass
+                    else:
+                        self._edge_tracker[edge_name] = edge_data
+                        edge_data_collection.append(edge_data)
+            if len(edge_data_collection) >0:
+                self_graph = self._graph
+                for data in edge_data_collection:
+                    for publisher_name in self.publishers:
+                        local_publisher = self_graph.get_publiisher_by_name(publisher_name)
+                        local_publisher.publish(data)
+
+
+
 class SubscriptionNode(Node):
     """Node that pulls data from a DataSubscriber"""
 
