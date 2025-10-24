@@ -1,0 +1,701 @@
+{% extends "base.html" %}
+
+{% block title %}Cache Management - DAG Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cache-stats {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        text-align: center;
+        padding: 15px;
+    }
+    .stat-value {
+        font-size: 2em;
+        font-weight: bold;
+    }
+    .stat-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+    }
+    .query-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .admin-controls {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .value-cell {
+        font-family: 'Courier New', monospace;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .value-cell:hover {
+        background-color: #f0f0f0;
+    }
+    .ttl-badge {
+        font-size: 0.85em;
+    }
+    .pagination-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+    }
+    .rows-per-page {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .modal-body pre {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .btn-group-actions {
+        display: flex;
+        gap: 5px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    .empty-state i {
+        font-size: 4em;
+        margin-bottom: 20px;
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-hdd-rack"></i> Cache Management</h2>
+            <div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cache Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="cache-stats">
+            <div class="row" id="statsRow">
+                <div class="col-md-3 stat-card">
+                    <div class="stat-value" id="totalKeys">-</div>
+                    <div class="stat-label">Total Keys</div>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <div class="stat-value" id="keysWithTTL">-</div>
+                    <div class="stat-label">Keys with TTL</div>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <div class="stat-value" id="keysWithoutTTL">-</div>
+                    <div class="stat-label">Keys without TTL</div>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <div class="stat-value">
+                        <button class="btn btn-light btn-sm" onclick="loadStats()" title="Refresh stats">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="stat-label">Refresh</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Query Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="query-section">
+            <h5><i class="bi bi-search"></i> Query Cache</h5>
+            <p class="text-muted">Search for keys using patterns. Use * for wildcard matching (e.g., user:*, *:session, *)</p>
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" id="searchPattern" class="form-control" 
+                           placeholder="Enter key pattern (e.g., user:*, *:session, *)" value="*">
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary w-100" onclick="searchCache()">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Controls -->
+{% if is_admin %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="admin-controls">
+            <h5><i class="bi bi-shield-lock"></i> Admin Controls</h5>
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#createModal">
+                        <i class="bi bi-plus-circle"></i> Create Entry
+                    </button>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <button class="btn btn-info w-100" onclick="downloadCache()">
+                        <i class="bi bi-download"></i> Download Cache
+                    </button>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <button class="btn btn-danger w-100" onclick="confirmClearCache()">
+                        <i class="bi bi-trash"></i> Clear Entire Cache
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Results Table -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Cache Entries</h5>
+                <div class="rows-per-page">
+                    <label class="mb-0">Show:</label>
+                    <select id="perPageSelect" class="form-select form-select-sm" style="width: auto;" onchange="changePerPage()">
+                        <option value="10" selected>10</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                    <label class="mb-0">entries</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="loadingSpinner" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No entries found</h4>
+                    <p>Try adjusting your search pattern or create a new cache entry.</p>
+                </div>
+
+                <div id="resultsContainer">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="resultsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 25%;">Key</th>
+                                    <th style="width: 35%;">Value</th>
+                                    <th style="width: 10%;">Type</th>
+                                    <th style="width: 15%;">TTL</th>
+                                    <th style="width: 15%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <!-- Results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination-controls">
+                        <div>
+                            <span id="paginationInfo" class="text-muted">Showing 0 of 0 entries</span>
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0" id="paginationLinks">
+                                <!-- Pagination links will be populated here -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Full Value Modal -->
+<div class="modal fade" id="valueModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Full Value</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Key:</strong> <code id="modalKey"></code></p>
+                <p><strong>Type:</strong> <span id="modalType"></span></p>
+                <p><strong>TTL:</strong> <span id="modalTTL"></span></p>
+                <hr>
+                <p><strong>Value:</strong></p>
+                <pre id="modalValue"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyToClipboard()">
+                    <i class="bi bi-clipboard"></i> Copy Value
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Entry Modal -->
+{% if is_admin %}
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Cache Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <div class="mb-3">
+                        <label class="form-label">Key *</label>
+                        <input type="text" class="form-control" id="createKey" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Value *</label>
+                        <textarea class="form-control" id="createValue" rows="4" required></textarea>
+                        <small class="text-muted">Enter string value (will be stored as-is)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">TTL (seconds)</label>
+                        <input type="number" class="form-control" id="createTTL" min="-1" placeholder="Leave empty for no expiry">
+                        <small class="text-muted">Use -1 for no expiry, or positive number for seconds</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="createEntry()">
+                    <i class="bi bi-plus-circle"></i> Create
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update TTL Modal -->
+<div class="modal fade" id="ttlModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update TTL</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Key:</strong> <code id="ttlKey"></code></p>
+                <p><strong>Current TTL:</strong> <span id="ttlCurrent"></span></p>
+                <hr>
+                <form id="ttlForm">
+                    <div class="mb-3">
+                        <label class="form-label">New TTL (seconds) *</label>
+                        <input type="number" class="form-control" id="ttlValue" min="-1" required>
+                        <small class="text-muted">Use -1 to remove expiry, or positive number for seconds</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateTTL()">
+                    <i class="bi bi-clock"></i> Update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentPerPage = 10;
+let currentPattern = '*';
+let currentResults = [];
+
+// Load cache statistics
+function loadStats() {
+    fetch('/cache/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('totalKeys').textContent = data.stats.total_keys;
+                document.getElementById('keysWithTTL').textContent = data.stats.keys_with_ttl;
+                document.getElementById('keysWithoutTTL').textContent = data.stats.keys_without_ttl;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+        });
+}
+
+// Search cache
+function searchCache(page = 1) {
+    const pattern = document.getElementById('searchPattern').value || '*';
+    const perPage = document.getElementById('perPageSelect').value;
+    
+    currentPage = page;
+    currentPattern = pattern;
+    currentPerPage = perPage;
+    
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+    
+    fetch(`/cache/api/query?pattern=${encodeURIComponent(pattern)}&page=${page}&per_page=${perPage}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            if (data.success) {
+                currentResults = data.results;
+                displayResults(data);
+                loadStats(); // Refresh stats
+            } else {
+                showAlert('Error querying cache: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            showAlert('Error querying cache: ' + error, 'danger');
+        });
+}
+
+// Display results in table
+function displayResults(data) {
+    const tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = '';
+    
+    if (data.results.length === 0) {
+        document.getElementById('resultsContainer').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+    }
+    
+    document.getElementById('resultsContainer').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+    
+    data.results.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><code>${escapeHtml(item.key)}</code></td>
+            <td class="value-cell" onclick="showFullValue(${index})" title="Click to view full value">
+                ${escapeHtml(item.value || '')}
+            </td>
+            <td><span class="badge bg-info">${item.type}</span></td>
+            <td><span class="badge ttl-badge ${item.ttl > 0 ? 'bg-warning' : 'bg-secondary'}">${item.ttl_display}</span></td>
+            <td>
+                <div class="btn-group-actions">
+                    <button class="btn btn-sm btn-info" onclick="showFullValue(${index})" title="View">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    {% if is_admin %}
+                    <button class="btn btn-sm btn-warning" onclick="showTTLModal('${escapeHtml(item.key)}', '${item.ttl_display}')" title="Update TTL">
+                        <i class="bi bi-clock"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteEntry('${escapeHtml(item.key)}')" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update pagination info
+    const start = (data.page - 1) * data.per_page + 1;
+    const end = Math.min(data.page * data.per_page, data.total);
+    document.getElementById('paginationInfo').textContent = `Showing ${start}-${end} of ${data.total} entries`;
+    
+    // Update pagination links
+    updatePagination(data.page, data.total_pages);
+}
+
+// Update pagination links
+function updatePagination(currentPage, totalPages) {
+    const paginationLinks = document.getElementById('paginationLinks');
+    paginationLinks.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${currentPage - 1}); return false;">Previous</a>`;
+    paginationLinks.appendChild(prevLi);
+    
+    // Page numbers
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    if (startPage > 1) {
+        const firstLi = document.createElement('li');
+        firstLi.className = 'page-item';
+        firstLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(1); return false;">1</a>`;
+        paginationLinks.appendChild(firstLi);
+        
+        if (startPage > 2) {
+            const ellipsisLi = document.createElement('li');
+            ellipsisLi.className = 'page-item disabled';
+            ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
+            paginationLinks.appendChild(ellipsisLi);
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${i}); return false;">${i}</a>`;
+        paginationLinks.appendChild(li);
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsisLi = document.createElement('li');
+            ellipsisLi.className = 'page-item disabled';
+            ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
+            paginationLinks.appendChild(ellipsisLi);
+        }
+        
+        const lastLi = document.createElement('li');
+        lastLi.className = 'page-item';
+        lastLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${totalPages}); return false;">${totalPages}</a>`;
+        paginationLinks.appendChild(lastLi);
+    }
+    
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${currentPage + 1}); return false;">Next</a>`;
+    paginationLinks.appendChild(nextLi);
+}
+
+// Change rows per page
+function changePerPage() {
+    searchCache(1); // Reset to page 1 when changing per page
+}
+
+// Show full value in modal
+function showFullValue(index) {
+    const item = currentResults[index];
+    document.getElementById('modalKey').textContent = item.key;
+    document.getElementById('modalType').textContent = item.type;
+    document.getElementById('modalTTL').textContent = item.ttl_display;
+    document.getElementById('modalValue').textContent = item.full_value;
+    
+    const modal = new bootstrap.Modal(document.getElementById('valueModal'));
+    modal.show();
+}
+
+// Copy value to clipboard
+function copyToClipboard() {
+    const value = document.getElementById('modalValue').textContent;
+    navigator.clipboard.writeText(value).then(() => {
+        showAlert('Value copied to clipboard', 'success');
+    });
+}
+
+{% if is_admin %}
+// Show TTL modal
+function showTTLModal(key, currentTTL) {
+    document.getElementById('ttlKey').textContent = key;
+    document.getElementById('ttlCurrent').textContent = currentTTL;
+    document.getElementById('ttlValue').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('ttlModal'));
+    modal.show();
+}
+
+// Create new entry
+function createEntry() {
+    const key = document.getElementById('createKey').value;
+    const value = document.getElementById('createValue').value;
+    const ttl = document.getElementById('createTTL').value;
+    
+    if (!key || !value) {
+        showAlert('Key and value are required', 'warning');
+        return;
+    }
+    
+    fetch('/cache/api/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key, value, ttl: ttl || null})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
+            document.getElementById('createForm').reset();
+            searchCache(currentPage);
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error creating entry: ' + error, 'danger');
+    });
+}
+
+// Update TTL
+function updateTTL() {
+    const key = document.getElementById('ttlKey').textContent;
+    const ttl = document.getElementById('ttlValue').value;
+    
+    if (!ttl) {
+        showAlert('TTL is required', 'warning');
+        return;
+    }
+    
+    fetch('/cache/api/ttl', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key, ttl})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('ttlModal')).hide();
+            searchCache(currentPage);
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error updating TTL: ' + error, 'danger');
+    });
+}
+
+// Delete entry
+function deleteEntry(key) {
+    if (!confirm(`Are you sure you want to delete key "${key}"?`)) {
+        return;
+    }
+    
+    fetch('/cache/api/delete', {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            searchCache(currentPage);
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error deleting entry: ' + error, 'danger');
+    });
+}
+
+// Clear entire cache
+function confirmClearCache() {
+    if (!confirm('⚠️ WARNING: This will delete ALL cache entries!\n\nAre you absolutely sure you want to clear the entire cache?')) {
+        return;
+    }
+    
+    fetch('/cache/api/clear', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            searchCache(1);
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error clearing cache: ' + error, 'danger');
+    });
+}
+
+// Download cache
+function downloadCache() {
+    window.location.href = '/cache/api/download';
+    showAlert('Cache download started...', 'info');
+}
+{% endif %}
+
+// Helper function to show alerts
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const flashContainer = document.querySelector('.flash-messages');
+    flashContainer.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Handle Enter key in search box
+document.getElementById('searchPattern').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchCache();
+    }
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    searchCache();
+});
+</script>
+{% endblock %}

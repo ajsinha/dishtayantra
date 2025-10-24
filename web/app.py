@@ -4,6 +4,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
 from core.dag.dag_server import DAGComputeServer
+from core.pubsub.inmemory_redisclone import InMemoryRedisClone
 
 # Configure logging
 logging.basicConfig(
@@ -45,6 +46,9 @@ if not os.path.exists(USERS_FILE):
 
 dag_server = DAGComputeServer(DAG_CONFIG_FOLDER, ZOOKEEPER_HOSTS)
 
+# Initialize shared InMemoryRedis instance
+# This should be the same instance used by DAG nodes
+redis_cache = InMemoryRedisClone()
 
 # Load users
 def load_users():
@@ -415,6 +419,261 @@ def publish_message(dag_name, subscriber_name):
     except Exception as e:
         logger.error(f"Error publishing message: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+
+# ==================== CACHE MANAGEMENT ROUTES ====================
+
+@app.route('/cache')
+@login_required
+def cache_management():
+    """Display cache management page"""
+    return render_template('cache_management.html',
+                           is_admin='admin' in session.get('roles', []))
+
+
+@app.route('/cache/api/query', methods=['GET'])
+@login_required
+def cache_query():
+    """Query cache with optional pattern matching"""
+    try:
+        pattern = request.args.get('pattern', '*')
+        page = int(request.args.get('page', 1))
+        per_page = request.args.get('per_page', '10')
+
+        # Handle 'all' option
+        if per_page == 'all':
+            per_page = None
+        else:
+            per_page = int(per_page)
+
+        # Get all keys matching pattern
+        all_keys = redis_cache.keys(pattern)
+        total_keys = len(all_keys)
+
+        # Sort keys for consistent pagination
+        all_keys.sort()
+
+        # Apply pagination
+        if per_page:
+            start_idx = (page - 1) * per_page
+            end_idx = start_idx + per_page
+            keys_page = all_keys[start_idx:end_idx]
+            total_pages = (total_keys + per_page - 1) // per_page
+        else:
+            keys_page = all_keys
+            total_pages = 1
+
+        # Get details for each key
+        results = []
+        for key in keys_page:
+            try:
+                value = redis_cache.get(key)
+                key_type = redis_cache.type(key)
+                ttl = redis_cache.ttl(key)
+
+                # Format TTL
+                if ttl == -1:
+                    ttl_display = 'No expiry'
+                elif ttl == -2:
+                    ttl_display = 'Expired/Not found'
+                else:
+                    ttl_display = f'{ttl}s'
+
+                results.append({
+                    'key': key,
+                    'value': value[:100] + '...' if value and len(value) > 100 else value,
+                    'full_value': value,
+                    'type': key_type,
+                    'ttl': ttl,
+                    'ttl_display': ttl_display
+                })
+            except Exception as e:
+                logger.error(f"Error getting key {key}: {str(e)}")
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': total_keys,
+            'page': page,
+            'per_page': per_page if per_page else total_keys,
+            'total_pages': total_pages
+        })
+    except Exception as e:
+        logger.error(f"Error querying cache: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/create', methods=['POST'])
+@admin_required
+def cache_create():
+    """Create a new cache entry"""
+    try:
+        data = request.get_json()
+        key = data.get('key')
+        value = data.get('value')
+        ttl = data.get('ttl')
+
+        if not key:
+            return jsonify({'success': False, 'error': 'Key is required'}), 400
+
+        if value is None:
+            return jsonify({'success': False, 'error': 'Value is required'}), 400
+
+        # Set the value
+        if ttl and int(ttl) > 0:
+            redis_cache.set(key, value, ex=int(ttl))
+        else:
+            redis_cache.set(key, value)
+
+        logger.info(f"Cache entry created: {key}")
+        return jsonify({'success': True, 'message': f'Entry {key} created successfully'})
+    except Exception as e:
+        logger.error(f"Error creating cache entry: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/delete', methods=['DELETE'])
+@admin_required
+def cache_delete():
+    """Delete a cache entry"""
+    try:
+        data = request.get_json()
+        key = data.get('key')
+
+        if not key:
+            return jsonify({'success': False, 'error': 'Key is required'}), 400
+
+        deleted = redis_cache.delete(key)
+
+        if deleted:
+            logger.info(f"Cache entry deleted: {key}")
+            return jsonify({'success': True, 'message': f'Entry {key} deleted successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'Key not found'}), 404
+    except Exception as e:
+        logger.error(f"Error deleting cache entry: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/ttl', methods=['PUT'])
+@admin_required
+def cache_update_ttl():
+    """Update TTL for a cache entry"""
+    try:
+        data = request.get_json()
+        key = data.get('key')
+        ttl = data.get('ttl')
+
+        if not key:
+            return jsonify({'success': False, 'error': 'Key is required'}), 400
+
+        if ttl is None:
+            return jsonify({'success': False, 'error': 'TTL is required'}), 400
+
+        # Check if key exists
+        if not redis_cache.exists(key):
+            return jsonify({'success': False, 'error': 'Key not found'}), 404
+
+        ttl_int = int(ttl)
+        if ttl_int > 0:
+            redis_cache.expire(key, ttl_int)
+            logger.info(f"TTL updated for key {key}: {ttl_int}s")
+            return jsonify({'success': True, 'message': f'TTL for {key} updated to {ttl_int}s'})
+        elif ttl_int == -1:
+            redis_cache.persist(key)
+            logger.info(f"TTL removed for key {key}")
+            return jsonify({'success': True, 'message': f'TTL removed for {key}'})
+        else:
+            return jsonify({'success': False, 'error': 'TTL must be positive or -1 for no expiry'}), 400
+    except Exception as e:
+        logger.error(f"Error updating TTL: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/clear', methods=['POST'])
+@admin_required
+def cache_clear():
+    """Clear entire cache"""
+    try:
+        redis_cache.flushall()
+        logger.warning("Cache cleared by admin")
+        return jsonify({'success': True, 'message': 'Cache cleared successfully'})
+    except Exception as e:
+        logger.error(f"Error clearing cache: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/download', methods=['GET'])
+@admin_required
+def cache_download():
+    """Download entire cache as JSON"""
+    try:
+        all_keys = redis_cache.keys('*')
+        cache_data = {}
+
+        for key in all_keys:
+            try:
+                value = redis_cache.get(key)
+                ttl = redis_cache.ttl(key)
+                key_type = redis_cache.type(key)
+
+                cache_data[key] = {
+                    'value': value,
+                    'type': key_type,
+                    'ttl': ttl if ttl > 0 else None
+                }
+            except Exception as e:
+                logger.error(f"Error reading key {key}: {str(e)}")
+
+        # Create JSON file in memory
+        json_str = json.dumps(cache_data, indent=2)
+        json_bytes = BytesIO(json_str.encode('utf-8'))
+
+        logger.info(f"Cache downloaded: {len(all_keys)} keys")
+
+        return send_file(
+            json_bytes,
+            mimetype='application/json',
+            as_attachment=True,
+            download_name=f'cache_export_{int(os.times().elapsed)}.json'
+        )
+    except Exception as e:
+        logger.error(f"Error downloading cache: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/stats', methods=['GET'])
+@login_required
+def cache_stats():
+    """Get cache statistics"""
+    try:
+        all_keys = redis_cache.keys('*')
+        total_keys = len(all_keys)
+
+        # Count keys by type
+        type_counts = {}
+        keys_with_ttl = 0
+
+        for key in all_keys:
+            key_type = redis_cache.type(key)
+            type_counts[key_type] = type_counts.get(key_type, 0) + 1
+
+            ttl = redis_cache.ttl(key)
+            if ttl > 0:
+                keys_with_ttl += 1
+
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_keys': total_keys,
+                'keys_with_ttl': keys_with_ttl,
+                'keys_without_ttl': total_keys - keys_with_ttl,
+                'types': type_counts
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error getting cache stats: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

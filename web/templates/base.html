@@ -48,6 +48,20 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if session.username %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('cache_management') }}">
+                            <i class="bi bi-hdd-rack"></i> Cache
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if session.username %}
                     <li class="nav-item">
