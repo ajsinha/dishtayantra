@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 from web.app import app, dag_server
+from core.properties_configurator import PropertiesConfigurator
 
 # Configure logging
 logging.basicConfig(
@@ -25,6 +26,7 @@ def main():
     """Main entry point"""
     logger.info("Starting DAG Compute Server")
 
+
     # Create necessary directories
     directories = ['logs', 'config', 'config/dags']
     for directory in directories:
@@ -33,11 +35,16 @@ def main():
             logger.info(f"Created directory: {directory}")
 
     try:
+        print("\n✓ Loading application properties...")
+        props = PropertiesConfigurator(['config/application.properties'])
+
+        host = props.get('server.host', '0.0.0.0')
+        port = props.get_int('server.port', 5002)
+        debug = props.get('server.debug', 'False').lower() == 'true'
+
         # Run Flask app
         app.run(
-            debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true',
-            host=os.environ.get('FLASK_HOST', '0.0.0.0'),
-            port=int(os.environ.get('FLASK_PORT', 5000))
+            app.run(host=host, port=port, debug=debug)
         )
     except KeyboardInterrupt:
         logger.info("Shutting down DAG Compute Server")
