@@ -1,16 +1,8 @@
 import logging
-import re
+
+from core.core_utils import validate_name
 
 logger = logging.getLogger(__name__)
-
-
-def validate_name(name):
-    """Validate that name contains only alphanumeric and underscore with at least one alphabetic character"""
-    if not re.match(r'^(?=.*[a-zA-Z])[a-zA-Z0-9_]+$', name):
-        raise ValueError(
-            f"Invalid name: {name}. Must contain only alphanumeric and underscore with at least one alphabetic character")
-    return True
-
 
 def create_publisher(name, config):
     """
