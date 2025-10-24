@@ -104,25 +104,37 @@
     <div class="col-md-12">
         <div class="cache-stats">
             <div class="row" id="statsRow">
-                <div class="col-md-3 stat-card">
+                <div class="col-md-2 stat-card">
                     <div class="stat-value" id="totalKeys">-</div>
                     <div class="stat-label">Total Keys</div>
                 </div>
-                <div class="col-md-3 stat-card">
+                <div class="col-md-2 stat-card">
                     <div class="stat-value" id="keysWithTTL">-</div>
                     <div class="stat-label">Keys with TTL</div>
                 </div>
-                <div class="col-md-3 stat-card">
+                <div class="col-md-2 stat-card">
                     <div class="stat-value" id="keysWithoutTTL">-</div>
                     <div class="stat-label">Keys without TTL</div>
                 </div>
                 <div class="col-md-3 stat-card">
-                    <div class="stat-value">
-                        <button class="btn btn-light btn-sm" onclick="loadStats()" title="Refresh stats">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
-                    <div class="stat-label">Refresh</div>
+                    <div class="stat-value" style="font-size: 0.9em;" id="lastDump">-</div>
+                    <div class="stat-label">Last Dump</div>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <div class="stat-value" style="font-size: 0.9em;" id="dumpInterval">-</div>
+                    <div class="stat-label">Dump Interval</div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-12 text-center">
+                    <button class="btn btn-light btn-sm me-2" onclick="loadStats()" title="Refresh stats">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Stats
+                    </button>
+                    {% if is_admin %}
+                    <button class="btn btn-warning btn-sm" onclick="triggerManualDump()" title="Manually dump cache now">
+                        <i class="bi bi-save"></i> Dump Now
+                    </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -137,7 +149,7 @@
             <p class="text-muted">Search for keys using patterns. Use * for wildcard matching (e.g., user:*, *:session, *)</p>
             <div class="row">
                 <div class="col-md-8">
-                    <input type="text" id="searchPattern" class="form-control" 
+                    <input type="text" id="searchPattern" class="form-control"
                            placeholder="Enter key pattern (e.g., user:*, *:session, *)" value="*">
                 </div>
                 <div class="col-md-4">
@@ -201,7 +213,7 @@
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-                
+
                 <div id="emptyState" class="empty-state" style="display: none;">
                     <i class="bi bi-inbox"></i>
                     <h4>No entries found</h4>
@@ -225,7 +237,7 @@
                             </tbody>
                         </table>
                     </div>
-                    
+
                     <div class="pagination-controls">
                         <div>
                             <span id="paginationInfo" class="text-muted">Showing 0 of 0 entries</span>
@@ -354,6 +366,40 @@ function loadStats() {
                 document.getElementById('totalKeys').textContent = data.stats.total_keys;
                 document.getElementById('keysWithTTL').textContent = data.stats.keys_with_ttl;
                 document.getElementById('keysWithoutTTL').textContent = data.stats.keys_without_ttl;
+
+                // Display dump info
+                if (data.dump_info) {
+                    const dumpInfo = data.dump_info;
+
+                    // Format last dump time
+                    if (dumpInfo.last_dump_time) {
+                        const dumpDate = new Date(dumpInfo.last_dump_time);
+                        const now = new Date();
+                        const diffMs = now - dumpDate;
+                        const diffMins = Math.floor(diffMs / 60000);
+
+                        if (diffMins < 1) {
+                            document.getElementById('lastDump').textContent = 'Just now';
+                        } else if (diffMins < 60) {
+                            document.getElementById('lastDump').textContent = `${diffMins}m ago`;
+                        } else {
+                            const diffHours = Math.floor(diffMins / 60);
+                            document.getElementById('lastDump').textContent = `${diffHours}h ago`;
+                        }
+                    } else {
+                        document.getElementById('lastDump').textContent = 'Never';
+                    }
+
+                    // Format dump interval
+                    const intervalSec = dumpInfo.dump_interval;
+                    if (intervalSec < 60) {
+                        document.getElementById('dumpInterval').textContent = `${intervalSec}s`;
+                    } else if (intervalSec < 3600) {
+                        document.getElementById('dumpInterval').textContent = `${Math.floor(intervalSec / 60)}m`;
+                    } else {
+                        document.getElementById('dumpInterval').textContent = `${Math.floor(intervalSec / 3600)}h`;
+                    }
+                }
             }
         })
         .catch(error => {
@@ -365,20 +411,20 @@ function loadStats() {
 function searchCache(page = 1) {
     const pattern = document.getElementById('searchPattern').value || '*';
     const perPage = document.getElementById('perPageSelect').value;
-    
+
     currentPage = page;
     currentPattern = pattern;
     currentPerPage = perPage;
-    
+
     document.getElementById('loadingSpinner').style.display = 'block';
     document.getElementById('resultsContainer').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
-    
+
     fetch(`/cache/api/query?pattern=${encodeURIComponent(pattern)}&page=${page}&per_page=${perPage}`)
         .then(response => response.json())
         .then(data => {
             document.getElementById('loadingSpinner').style.display = 'none';
-            
+
             if (data.success) {
                 currentResults = data.results;
                 displayResults(data);
@@ -397,16 +443,16 @@ function searchCache(page = 1) {
 function displayResults(data) {
     const tbody = document.getElementById('resultsBody');
     tbody.innerHTML = '';
-    
+
     if (data.results.length === 0) {
         document.getElementById('resultsContainer').style.display = 'none';
         document.getElementById('emptyState').style.display = 'block';
         return;
     }
-    
+
     document.getElementById('resultsContainer').style.display = 'block';
     document.getElementById('emptyState').style.display = 'none';
-    
+
     data.results.forEach((item, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -434,12 +480,12 @@ function displayResults(data) {
         `;
         tbody.appendChild(row);
     });
-    
+
     // Update pagination info
     const start = (data.page - 1) * data.per_page + 1;
     const end = Math.min(data.page * data.per_page, data.total);
     document.getElementById('paginationInfo').textContent = `Showing ${start}-${end} of ${data.total} entries`;
-    
+
     // Update pagination links
     updatePagination(data.page, data.total_pages);
 }
@@ -448,30 +494,30 @@ function displayResults(data) {
 function updatePagination(currentPage, totalPages) {
     const paginationLinks = document.getElementById('paginationLinks');
     paginationLinks.innerHTML = '';
-    
+
     if (totalPages <= 1) return;
-    
+
     // Previous button
     const prevLi = document.createElement('li');
     prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
     prevLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${currentPage - 1}); return false;">Previous</a>`;
     paginationLinks.appendChild(prevLi);
-    
+
     // Page numbers
     const maxVisible = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-    
+
     if (endPage - startPage < maxVisible - 1) {
         startPage = Math.max(1, endPage - maxVisible + 1);
     }
-    
+
     if (startPage > 1) {
         const firstLi = document.createElement('li');
         firstLi.className = 'page-item';
         firstLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(1); return false;">1</a>`;
         paginationLinks.appendChild(firstLi);
-        
+
         if (startPage > 2) {
             const ellipsisLi = document.createElement('li');
             ellipsisLi.className = 'page-item disabled';
@@ -479,14 +525,14 @@ function updatePagination(currentPage, totalPages) {
             paginationLinks.appendChild(ellipsisLi);
         }
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
         const li = document.createElement('li');
         li.className = `page-item ${i === currentPage ? 'active' : ''}`;
         li.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${i}); return false;">${i}</a>`;
         paginationLinks.appendChild(li);
     }
-    
+
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
             const ellipsisLi = document.createElement('li');
@@ -494,13 +540,13 @@ function updatePagination(currentPage, totalPages) {
             ellipsisLi.innerHTML = `<span class="page-link">...</span>`;
             paginationLinks.appendChild(ellipsisLi);
         }
-        
+
         const lastLi = document.createElement('li');
         lastLi.className = 'page-item';
         lastLi.innerHTML = `<a class="page-link" href="#" onclick="searchCache(${totalPages}); return false;">${totalPages}</a>`;
         paginationLinks.appendChild(lastLi);
     }
-    
+
     // Next button
     const nextLi = document.createElement('li');
     nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
@@ -520,7 +566,7 @@ function showFullValue(index) {
     document.getElementById('modalType').textContent = item.type;
     document.getElementById('modalTTL').textContent = item.ttl_display;
     document.getElementById('modalValue').textContent = item.full_value;
-    
+
     const modal = new bootstrap.Modal(document.getElementById('valueModal'));
     modal.show();
 }
@@ -533,15 +579,63 @@ function copyToClipboard() {
     });
 }
 
+// Helper function to handle fetch responses (used by admin functions)
+function handleFetchResponse(response) {
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        return response.json();
+    } else if (contentType && contentType.includes('text/html')) {
+        // Probably a redirect to login or error page
+        if (!response.ok) {
+            throw new Error('Authentication required or access denied. Please refresh and try again.');
+        }
+        return response.text().then(text => {
+            throw new Error('Received HTML instead of JSON - possibly a redirect. Please refresh the page.');
+        });
+    } else {
+        return response.text().then(text => {
+            throw new Error('Unexpected response type: ' + text.substring(0, 200));
+        });
+    }
+}
+
 {% if is_admin %}
 // Show TTL modal
 function showTTLModal(key, currentTTL) {
     document.getElementById('ttlKey').textContent = key;
     document.getElementById('ttlCurrent').textContent = currentTTL;
     document.getElementById('ttlValue').value = '';
-    
+
     const modal = new bootstrap.Modal(document.getElementById('ttlModal'));
     modal.show();
+}
+
+// Trigger manual dump
+function triggerManualDump() {
+    if (!confirm('This will immediately dump the cache to disk. Continue?')) {
+        return;
+    }
+
+    fetch('/cache/api/dump/trigger', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'  // Ensure cookies are sent
+    })
+    .then(response => handleFetchResponse(response))
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            loadStats(); // Refresh stats to show new dump time
+        } else {
+            showAlert('Error: ' + (data.error || 'Unknown error'), 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Dump error:', error);
+        showAlert('Error triggering dump: ' + error.message, 'danger');
+    });
 }
 
 // Create new entry
@@ -549,18 +643,19 @@ function createEntry() {
     const key = document.getElementById('createKey').value;
     const value = document.getElementById('createValue').value;
     const ttl = document.getElementById('createTTL').value;
-    
+
     if (!key || !value) {
         showAlert('Key and value are required', 'warning');
         return;
     }
-    
+
     fetch('/cache/api/create', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
         body: JSON.stringify({key, value, ttl: ttl || null})
     })
-    .then(response => response.json())
+    .then(response => handleFetchResponse(response))
     .then(data => {
         if (data.success) {
             showAlert(data.message, 'success');
@@ -572,7 +667,7 @@ function createEntry() {
         }
     })
     .catch(error => {
-        showAlert('Error creating entry: ' + error, 'danger');
+        showAlert('Error creating entry: ' + error.message, 'danger');
     });
 }
 
@@ -580,18 +675,19 @@ function createEntry() {
 function updateTTL() {
     const key = document.getElementById('ttlKey').textContent;
     const ttl = document.getElementById('ttlValue').value;
-    
+
     if (!ttl) {
         showAlert('TTL is required', 'warning');
         return;
     }
-    
+
     fetch('/cache/api/ttl', {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
         body: JSON.stringify({key, ttl})
     })
-    .then(response => response.json())
+    .then(response => handleFetchResponse(response))
     .then(data => {
         if (data.success) {
             showAlert(data.message, 'success');
@@ -602,7 +698,7 @@ function updateTTL() {
         }
     })
     .catch(error => {
-        showAlert('Error updating TTL: ' + error, 'danger');
+        showAlert('Error updating TTL: ' + error.message, 'danger');
     });
 }
 
@@ -611,13 +707,14 @@ function deleteEntry(key) {
     if (!confirm(`Are you sure you want to delete key "${key}"?`)) {
         return;
     }
-    
+
     fetch('/cache/api/delete', {
         method: 'DELETE',
         headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
         body: JSON.stringify({key})
     })
-    .then(response => response.json())
+    .then(response => handleFetchResponse(response))
     .then(data => {
         if (data.success) {
             showAlert(data.message, 'success');
@@ -627,7 +724,7 @@ function deleteEntry(key) {
         }
     })
     .catch(error => {
-        showAlert('Error deleting entry: ' + error, 'danger');
+        showAlert('Error deleting entry: ' + error.message, 'danger');
     });
 }
 
@@ -636,11 +733,12 @@ function confirmClearCache() {
     if (!confirm('⚠️ WARNING: This will delete ALL cache entries!\n\nAre you absolutely sure you want to clear the entire cache?')) {
         return;
     }
-    
+
     fetch('/cache/api/clear', {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'same-origin'
     })
-    .then(response => response.json())
+    .then(response => handleFetchResponse(response))
     .then(data => {
         if (data.success) {
             showAlert(data.message, 'success');
@@ -650,7 +748,7 @@ function confirmClearCache() {
         }
     })
     .catch(error => {
-        showAlert('Error clearing cache: ' + error, 'danger');
+        showAlert('Error clearing cache: ' + error.message, 'danger');
     });
 }
 

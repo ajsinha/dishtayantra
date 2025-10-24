@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from functools import wraps
 from core.dag.dag_server import DAGComputeServer
 from core.pubsub.inmemory_redisclone import InMemoryRedisClone
@@ -631,11 +631,16 @@ def cache_download():
 
         logger.info(f"Cache downloaded: {len(all_keys)} keys")
 
+        # Generate filename with timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'cache_export_{timestamp}.json'
+
         return send_file(
             json_bytes,
             mimetype='application/json',
             as_attachment=True,
-            download_name=f'cache_export_{int(os.times().elapsed)}.json'
+            download_name=filename
         )
     except Exception as e:
         logger.error(f"Error downloading cache: {str(e)}")
@@ -662,6 +667,9 @@ def cache_stats():
             if ttl > 0:
                 keys_with_ttl += 1
 
+        # Get dump info
+        dump_info = redis_cache.get_dump_info()
+
         return jsonify({
             'success': True,
             'stats': {
@@ -669,11 +677,47 @@ def cache_stats():
                 'keys_with_ttl': keys_with_ttl,
                 'keys_without_ttl': total_keys - keys_with_ttl,
                 'types': type_counts
-            }
+            },
+            'dump_info': dump_info
         })
     except Exception as e:
         logger.error(f"Error getting cache stats: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/dump/trigger', methods=['POST'])
+@admin_required
+def trigger_manual_dump():
+    """Manually trigger a cache dump"""
+    try:
+        logger.info(f"Manual dump triggered by user: {session.get('username', 'unknown')}")
+        success = redis_cache.dump_to_file()
+        if success:
+            dump_info = redis_cache.get_dump_info()
+            logger.info(f"Manual dump successful")
+            return jsonify({
+                'success': True,
+                'message': 'Cache dumped successfully',
+                'dump_info': dump_info
+            })
+        else:
+            logger.error("Manual dump failed")
+            return jsonify({'success': False, 'error': 'Dump failed'}), 500
+    except Exception as e:
+        logger.error(f"Error triggering dump: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/cache/api/session-check', methods=['GET'])
+@login_required
+def check_session():
+    """Check if user session is valid"""
+    return jsonify({
+        'success': True,
+        'username': session.get('username'),
+        'is_admin': 'admin' in session.get('roles', []),
+        'roles': session.get('roles', [])
+    })
 
 
 if __name__ == '__main__':

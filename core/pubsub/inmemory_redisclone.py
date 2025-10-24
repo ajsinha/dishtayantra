@@ -2,24 +2,38 @@
 In-Memory Redis Clone
 A thread-safe, in-memory implementation of Redis cache supporting all major operations.
 No network connectivity required - pure Python implementation.
+With periodic JSON dump and auto-reload functionality.
 """
 
 import threading
 import time
 import copy
+import json
+import os
 from typing import Any, List, Dict, Set, Tuple, Optional, Union
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import heapq
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class InMemoryRedisClone:
     """
     A complete in-memory Redis implementation with thread-safe operations.
     Supports: Strings, Lists, Sets, Sorted Sets, Hashes, Expiration, Transactions, Pub/Sub
+    Features: Periodic JSON dump and auto-reload on restart
     """
 
-    def __init__(self):
+    def __init__(self, dump_file: Optional[str] = None, dump_interval: int = 300):
+        """
+        Initialize InMemoryRedisClone with periodic dump support
+
+        Args:
+            dump_file: Path to JSON file for periodic dumps (default: data/inmemory_redisclone.json)
+            dump_interval: Interval in seconds between dumps (default: 300 = 5 minutes)
+        """
         # Main data store
         self._data: Dict[str, Any] = {}
 
@@ -42,9 +56,33 @@ class InMemoryRedisClone:
         self._pattern_subscribers: Dict[str, List] = defaultdict(list)
         self._pubsub_lock = threading.RLock()
 
+        # Periodic dump configuration
+        self._dump_file = dump_file if dump_file else 'data/inmemory_redisclone.json'
+        self._dump_interval = dump_interval
+        self._dump_enabled = True
+        self._last_dump_time = None
+
+        # Ensure dump directory exists
+        dump_dir = os.path.dirname(self._dump_file)
+        if dump_dir and not os.path.exists(dump_dir):
+            try:
+                os.makedirs(dump_dir, exist_ok=True)
+                logger.info(f"Created dump directory: {dump_dir}")
+            except Exception as e:
+                logger.error(f"Failed to create dump directory {dump_dir}: {e}")
+
+        # Load existing data if dump file exists
+        self._load_from_dump()
+
         # Background expiration cleanup
         self._cleanup_thread = threading.Thread(target=self._cleanup_expired, daemon=True)
         self._cleanup_thread.start()
+
+        # Background periodic dump
+        self._dump_thread = threading.Thread(target=self._periodic_dump, daemon=True)
+        self._dump_thread.start()
+
+        logger.info(f"InMemoryRedisClone initialized: dump_file={self._dump_file}, dump_interval={self._dump_interval}s")
 
     # ==================== UTILITY METHODS ====================
 
@@ -81,6 +119,193 @@ class InMemoryRedisClone:
         if key not in self._types:
             return True
         return self._types[key] == expected_type
+
+    # ==================== PERIODIC DUMP METHODS ====================
+
+    def _periodic_dump(self):
+        """Background thread to periodically dump cache to JSON file"""
+        while self._dump_enabled:
+            try:
+                time.sleep(self._dump_interval)
+                if self._dump_enabled:
+                    self.dump_to_file()
+            except Exception as e:
+                logger.error(f"Error in periodic dump: {e}")
+
+    def dump_to_file(self, file_path: Optional[str] = None) -> bool:
+        """
+        Dump current cache state to JSON file
+
+        Args:
+            file_path: Optional custom file path (uses configured dump_file if None)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        target_file = file_path if file_path else self._dump_file
+
+        try:
+            with self._lock:
+                dump_data = {
+                    'metadata': {
+                        'dump_time': datetime.now().isoformat(),
+                        'total_keys': len(self._data),
+                        'version': '1.0'
+                    },
+                    'data': {}
+                }
+
+                # Serialize each key with its metadata
+                for key in list(self._data.keys()):
+                    try:
+                        value = self._data.get(key)
+                        key_type = self._types.get(key, 'string')
+
+                        # Calculate TTL (time to live in seconds)
+                        ttl = None
+                        if key in self._expiry:
+                            remaining = self._expiry[key] - time.time()
+                            ttl = max(0, int(remaining)) if remaining > 0 else None
+
+                        # Serialize complex types
+                        serialized_value = value
+                        if key_type == 'list' and isinstance(value, deque):
+                            serialized_value = list(value)
+                        elif key_type == 'set' and isinstance(value, set):
+                            serialized_value = list(value)
+                        elif key_type == 'zset' and isinstance(value, list):
+                            # Convert zset to serializable format
+                            serialized_value = [[member, score] for member, score in value]
+                        elif key_type == 'hash' and isinstance(value, dict):
+                            serialized_value = value
+
+                        dump_data['data'][key] = {
+                            'value': serialized_value,
+                            'type': key_type,
+                            'ttl': ttl
+                        }
+                    except Exception as e:
+                        logger.warning(f"Failed to serialize key {key}: {e}")
+
+                # Write to temporary file first (atomic operation)
+                temp_file = target_file + '.tmp'
+                with open(temp_file, 'w') as f:
+                    json.dump(dump_data, f, indent=2)
+
+                # Atomic rename
+                os.replace(temp_file, target_file)
+
+                self._last_dump_time = datetime.now()
+                logger.info(f"Successfully dumped {len(self._data)} keys to {target_file}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to dump cache to {target_file}: {e}")
+            return False
+
+    def _load_from_dump(self, file_path: Optional[str] = None) -> bool:
+        """
+        Load cache state from JSON file
+
+        Args:
+            file_path: Optional custom file path (uses configured dump_file if None)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        source_file = file_path if file_path else self._dump_file
+
+        if not os.path.exists(source_file):
+            logger.info(f"No dump file found at {source_file}, starting with empty cache")
+            return False
+
+        try:
+            with open(source_file, 'r') as f:
+                dump_data = json.load(f)
+
+            with self._lock:
+                loaded_count = 0
+                skipped_count = 0
+
+                for key, key_data in dump_data.get('data', {}).items():
+                    try:
+                        value = key_data['value']
+                        key_type = key_data.get('type', 'string')
+                        ttl = key_data.get('ttl')
+
+                        # Restore complex types
+                        if key_type == 'list':
+                            value = deque(value)
+                        elif key_type == 'set':
+                            value = set(value)
+                        elif key_type == 'zset':
+                            # Restore zset from list of lists
+                            value = [(member, score) for member, score in value]
+                        elif key_type == 'hash':
+                            value = dict(value)
+
+                        # Set the value
+                        self._data[key] = value
+                        self._types[key] = key_type
+
+                        # Set TTL if present and valid
+                        if ttl and ttl > 0:
+                            self._expiry[key] = time.time() + ttl
+
+                        loaded_count += 1
+
+                    except Exception as e:
+                        logger.warning(f"Failed to load key {key}: {e}")
+                        skipped_count += 1
+
+                metadata = dump_data.get('metadata', {})
+                dump_time = metadata.get('dump_time', 'unknown')
+                logger.info(f"Loaded {loaded_count} keys from {source_file} (dump from {dump_time}, skipped {skipped_count})")
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to load cache from {source_file}: {e}")
+            return False
+
+    def set_dump_config(self, dump_file: Optional[str] = None, dump_interval: Optional[int] = None):
+        """
+        Update dump configuration
+
+        Args:
+            dump_file: New dump file path
+            dump_interval: New dump interval in seconds
+        """
+        if dump_file:
+            self._dump_file = dump_file
+            dump_dir = os.path.dirname(dump_file)
+            if dump_dir and not os.path.exists(dump_dir):
+                os.makedirs(dump_dir, exist_ok=True)
+            logger.info(f"Updated dump file to: {dump_file}")
+
+        if dump_interval is not None:
+            self._dump_interval = dump_interval
+            logger.info(f"Updated dump interval to: {dump_interval}s")
+
+    def get_dump_info(self) -> Dict[str, Any]:
+        """
+        Get information about dump configuration and status
+
+        Returns:
+            Dictionary with dump configuration and status
+        """
+        return {
+            'dump_file': self._dump_file,
+            'dump_interval': self._dump_interval,
+            'dump_enabled': self._dump_enabled,
+            'last_dump_time': self._last_dump_time.isoformat() if self._last_dump_time else None,
+            'file_exists': os.path.exists(self._dump_file),
+            'file_size': os.path.getsize(self._dump_file) if os.path.exists(self._dump_file) else 0
+        }
+
+    def stop_dump(self):
+        """Stop the periodic dump thread"""
+        self._dump_enabled = False
+        logger.info("Periodic dump stopped")
 
     # ==================== STRING OPERATIONS ====================
 
