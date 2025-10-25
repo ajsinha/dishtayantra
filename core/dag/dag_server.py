@@ -287,6 +287,7 @@ class DAGComputeServer:
                     'is_suspended': not dag._suspend_event.is_set() if dag._compute_thread else False,
                     'start_time': dag.start_time,
                     'end_time': dag.end_time,
+                    'duration': dag.duration,  # Add duration field
                     'node_count': len(dag.nodes),
                     'in_time_window': in_time_window,
                     'is_autocloned': parent_dag is not None,
