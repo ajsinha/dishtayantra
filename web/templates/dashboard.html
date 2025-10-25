@@ -256,43 +256,48 @@
                                         <a href="{{ url_for('dag_state', dag_name=dag.name) }}" class="btn btn-secondary">
                                             <i class="bi bi-eye"></i> State
                                         </a>
-                                        {% if is_admin and not dag.is_autocloned %}
+                                        {% if is_admin %}
+                                        <!-- Clone button only for non-autocloned DAGs -->
+                                        {% if not dag.is_autocloned %}
                                         <a href="{{ url_for('clone_dag', dag_name=dag.name) }}" class="btn btn-primary">
                                             <i class="bi bi-files"></i> Clone
                                         </a>
+                                        {% endif %}
+                                        <!-- Start/Stop/Suspend/Delete buttons for ALL DAGs (including autocloned) -->
                                         {% if dag.is_running %}
                                             {% if dag.is_suspended %}
                                             <form method="POST" action="{{ url_for('resume_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-success">
+                                                <button type="submit" class="btn btn-success" title="Resume DAG">
                                                     <i class="bi bi-play-fill"></i> Resume
                                                 </button>
                                             </form>
                                             {% else %}
                                             <form method="POST" action="{{ url_for('suspend_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-warning">
+                                                <button type="submit" class="btn btn-warning" title="Suspend DAG">
                                                     <i class="bi bi-pause-fill"></i> Suspend
                                                 </button>
                                             </form>
                                             {% endif %}
                                             <form method="POST" action="{{ url_for('stop_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-danger">
+                                                <button type="submit" class="btn btn-danger" title="Stop DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
                                                     <i class="bi bi-stop-fill"></i> Stop
                                                 </button>
                                             </form>
                                         {% else %}
                                             <form method="POST" action="{{ url_for('start_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-success">
+                                                <button type="submit" class="btn btn-success" title="Start DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
                                                     <i class="bi bi-play-fill"></i> Start
                                                 </button>
                                             </form>
                                             <form id="delete-form-{{ dag.name }}" method="POST" action="{{ url_for('delete_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ dag.name }}')">
+                                                <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ dag.name }}'){% if dag.is_autocloned %}, true{% endif %}" title="Delete DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </button>
                                             </form>
                                         {% endif %}
-                                        {% elif is_admin and dag.is_autocloned %}
-                                        <span class="text-muted"><small><i class="bi bi-info-circle"></i> Auto-managed</small></span>
+                                        {% if dag.is_autocloned %}
+                                        <span class="badge bg-warning text-dark" title="This is an auto-created clone"><i class="bi bi-robot"></i> Auto-created</span>
+                                        {% endif %}
                                         {% endif %}
                                     </div>
                                 </td>
@@ -539,8 +544,16 @@ function setupTablePagination(tableName) {
     });
 }
 
-function confirmDelete(dagName) {
-    if (confirm('Are you sure you want to delete DAG "' + dagName + '"? This action cannot be undone.')) {
+function confirmDelete(dagName, isAutocloned) {
+    var message = 'Are you sure you want to delete DAG "' + dagName + '"?';
+
+    if (isAutocloned) {
+        message += '\n\nNOTE: This is an auto-created clone. It may be recreated by the autoclone system if the parent DAG\'s autoclone is still active.';
+    }
+
+    message += '\n\nThis action cannot be undone.';
+
+    if (confirm(message)) {
         document.getElementById('delete-form-' + dagName).submit();
     }
 }

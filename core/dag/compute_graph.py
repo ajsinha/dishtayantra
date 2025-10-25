@@ -459,18 +459,22 @@ class ComputeGraph:
             - If start_time is provided but duration is None: Use default duration (-5m)
             - If start_time is None: Remove time window (ignore duration)
             - If both provided: Set new time window
+            - Autoclone config is ALWAYS removed from clones (prevents recursive cloning)
         """
         from datetime import datetime
 
         # Create timestamp for unique name
         cloned_config = self.config.copy()
-        if "autoclone" in cloned_config:
-            cloned_config.pop("autoclone")
-
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 
         new_name = f"{self.name}_{timestamp}"
         cloned_config['name'] = new_name
+
+        # CRITICAL: Remove autoclone config from cloned DAG
+        # Cloned and autocloned DAGs should never be able to autoclone
+        if 'autoclone' in cloned_config:
+            cloned_config.pop('autoclone')
+            logger.info(f"Removed autoclone config from cloned DAG {new_name} (clones cannot autoclone)")
 
         # Handle time window
         if start_time is None:
