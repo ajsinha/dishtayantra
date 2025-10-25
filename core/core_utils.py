@@ -1,8 +1,25 @@
 import importlib
 import logging
 import re
+import threading
 
 logger = logging.getLogger(__name__)
+
+class SingletonMeta(type):
+    # Dictionary to store instances of classes
+    _instances = {}
+    _lock = threading.Lock()
+
+    # Override the __call__ method of the metaclass
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            if cls not in cls._instances:
+                # If not, create a new instance and store it in _instances dictionary
+                cls._instances[cls] = super().__call__(*args, **kwargs)
+
+
+        # Return the existing instance if already instantiated
+        return cls._instances[cls]
 
 def validate_name(name):
     """Validate that name contains only alphanumeric and underscore with at least one alphabetic character"""

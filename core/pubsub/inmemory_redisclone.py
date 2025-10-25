@@ -15,11 +15,12 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import heapq
 import logging
+from core.core_utils import SingletonMeta
 
 logger = logging.getLogger(__name__)
 
 
-class InMemoryRedisClone:
+class InMemoryRedisClone(metaclass=SingletonMeta):
     """
     A complete in-memory Redis implementation with thread-safe operations.
     Supports: Strings, Lists, Sets, Sorted Sets, Hashes, Expiration, Transactions, Pub/Sub
