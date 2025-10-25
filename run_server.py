@@ -38,6 +38,32 @@ def main():
         print("\n✓ Loading application properties...")
         props = PropertiesConfigurator(['config/application.properties'])
 
+        # Load external module paths and add to sys.path for dynamic imports
+        external_module_paths = props.get_values_by_pattern(r'^external\.module\.path\.')
+
+        if external_module_paths:
+            print(f"\n✓ Loading external module paths...")
+            for module_path in external_module_paths:
+                # Expand environment variables and resolve path
+                resolved_path = os.path.expandvars(module_path)
+                resolved_path = os.path.expanduser(resolved_path)
+
+                # Convert to absolute path if relative
+                if not os.path.isabs(resolved_path):
+                    resolved_path = os.path.abspath(resolved_path)
+
+                # Add to sys.path if it exists and not already present
+                if os.path.exists(resolved_path):
+                    if resolved_path not in sys.path:
+                        sys.path.insert(0, resolved_path)
+                        logger.info(f"Added to Python path: {resolved_path}")
+                        print(f"  • {resolved_path}")
+                    else:
+                        logger.debug(f"Path already in sys.path: {resolved_path}")
+                else:
+                    logger.warning(f"External module path does not exist: {resolved_path}")
+                    print(f"  ⚠ Warning: Path does not exist: {resolved_path}")
+
         host = props.get('server.host', '0.0.0.0')
         port = props.get_int('server.port', 5002)
         debug = props.get('server.debug', 'False').lower() == 'true'

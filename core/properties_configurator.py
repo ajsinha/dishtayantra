@@ -302,6 +302,54 @@ class PropertiesConfigurator:
 
         return result if result else None
 
+    def get_values_by_pattern(self, pattern: str) -> List[str]:
+        """
+        Get all property values whose keys match the given regex pattern
+
+        Args:
+            pattern: Regex pattern to match against property keys
+
+        Returns:
+            List of property values for matching keys (empty list if no matches)
+        """
+        with self._properties_lock:
+            try:
+                regex = re.compile(pattern)
+                matching_values = []
+
+                for key, value in self._properties.items():
+                    if regex.match(key):
+                        matching_values.append(value)
+
+                return matching_values
+            except re.error as e:
+                print(f"Invalid regex pattern '{pattern}': {e}")
+                return []
+
+    def get_properties_by_pattern(self, pattern: str) -> Dict[str, str]:
+        """
+        Get all properties (key-value pairs) whose keys match the given regex pattern
+
+        Args:
+            pattern: Regex pattern to match against property keys
+
+        Returns:
+            Dictionary of matching properties (empty dict if no matches)
+        """
+        with self._properties_lock:
+            try:
+                regex = re.compile(pattern)
+                matching_properties = {}
+
+                for key, value in self._properties.items():
+                    if regex.match(key):
+                        matching_properties[key] = value
+
+                return matching_properties
+            except re.error as e:
+                print(f"Invalid regex pattern '{pattern}': {e}")
+                return {}
+
     def stop_reload(self):
         """Stop the auto-reload thread"""
         self._stop_reload.set()
