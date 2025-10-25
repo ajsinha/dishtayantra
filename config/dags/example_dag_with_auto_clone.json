@@ -1,0 +1,83 @@
+{
+  "name": "dag_with_auto_clone",
+  "start_time": "0800",
+  "end_time": "1800",
+
+  "autoclone": {
+    "ramp_up_time": "1012",
+    "ramp_down_time": "1016",
+    "ramp_count": 5
+  },
+
+  "subscribers": [
+    {
+      "name": "kafka_input",
+      "type": "KafkaDataSubscriber",
+      "config": {
+        "source": "kafka://topic/input_data",
+        "bootstrap_servers": "localhost:9092",
+        "group_id": "etl_consumer",
+        "max_depth": 10000
+      }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "file_output",
+      "type": "FileDataPublisher",
+      "config": {
+        "destination": "file:///tmp/data/output.json",
+        "publish_interval": 60
+      }
+    }
+  ],
+
+  "calculators": [
+    {
+      "name": "data_transformer",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+
+  "transformers": [
+    {
+      "name": "null_transformer",
+      "type": "NullDataTransformer",
+      "config": {}
+    }
+  ],
+
+  "nodes": [
+    {
+      "name": "input_node",
+      "type": "SubscriptionNode",
+      "subscriber": "kafka_input",
+      "config": {}
+    },
+    {
+      "name": "calc_node",
+      "type": "CalculationNode",
+      "calculator": "data_transformer",
+      "config": {}
+    },
+    {
+      "name": "output_node",
+      "type": "PublicationNode",
+      "publishers": ["file_output"],
+      "config": {}
+    }
+  ],
+
+  "edges": [
+    {
+      "from_node": "input_node",
+      "to_node": "calc_node"
+    },
+    {
+      "from_node": "calc_node",
+      "to_node": "output_node"
+    }
+  ]
+}

@@ -68,13 +68,19 @@
                                 <th>Time Window</th>
                                 <th>Window Status</th>
                                 <th>Nodes</th>
+                                <th>AutoClone</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for dag in dags %}
-                            <tr>
-                                <td><strong>{{ dag.name }}</strong></td>
+                            <tr class="{% if dag.is_autocloned %}table-info{% endif %}">
+                                <td>
+                                    <strong>{{ dag.name }}</strong>
+                                    {% if dag.is_autocloned %}
+                                    <br><small class="text-muted"><i class="bi bi-arrow-return-right"></i> Clone of: {{ dag.parent_dag }}</small>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if dag.is_running %}
                                         {% if dag.is_suspended %}
@@ -108,6 +114,27 @@
                                 </td>
                                 <td>{{ dag.node_count }}</td>
                                 <td>
+                                    {% if dag.autoclone_enabled %}
+                                    <div>
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-clock-history"></i> Enabled
+                                        </span>
+                                        {% if dag.autoclone_status %}
+                                        <br><small class="text-muted">{{ dag.autoclone_status }}</small>
+                                        {% if dag.autoclone_clone_count > 0 %}
+                                        <br><span class="badge bg-info">{{ dag.autoclone_clone_count }} clone(s)</span>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    {% elif dag.is_autocloned %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-robot"></i> Auto-Created
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ url_for('dag_details', dag_name=dag.name) }}" class="btn btn-info">
                                             <i class="bi bi-info-circle"></i> Details
@@ -115,7 +142,7 @@
                                         <a href="{{ url_for('dag_state', dag_name=dag.name) }}" class="btn btn-secondary">
                                             <i class="bi bi-eye"></i> State
                                         </a>
-                                        {% if is_admin %}
+                                        {% if is_admin and not dag.is_autocloned %}
                                         <a href="{{ url_for('clone_dag', dag_name=dag.name) }}" class="btn btn-primary">
                                             <i class="bi bi-files"></i> Clone
                                         </a>
@@ -150,13 +177,15 @@
                                                 </button>
                                             </form>
                                         {% endif %}
+                                        {% elif is_admin and dag.is_autocloned %}
+                                        <span class="text-muted"><small><i class="bi bi-info-circle"></i> Auto-managed</small></span>
                                         {% endif %}
                                     </div>
                                 </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center">No DAGs available</td>
+                                <td colspan="7" class="text-center">No DAGs available</td>
                             </tr>
                             {% endfor %}
                         </tbody>
