@@ -1,13 +1,13 @@
-# DAG Compute Server - Complete Implementation
+# DishtaYantra Compute Server - Complete Implementation
 
 ## © 2025-2030 Ashutosh Sinha
 
-This document provides the complete implementation structure for the DAG Compute Server system.
+This document provides the complete implementation structure for the DishtaYantra Compute Server system.
 
 ## Project Structure
 
 ```
-dagcomputeserver/
+dishtayantra/
 ├── core/
 │   ├── __init__.py
 │   ├── core_utils.py

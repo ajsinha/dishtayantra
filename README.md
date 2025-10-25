@@ -1,4 +1,4 @@
-# DAG Compute Server
+# DishtaYantra Compute Server
 
 ## © 2025-2030 Ashutosh Sinha
 
@@ -17,7 +17,7 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 ## Project Structure
 
 ```
-dagcomputeserver/
+dishtayantra/
 ├── core/
 │   ├── core_utils.py
 │   ├── pubsub/
@@ -495,7 +495,7 @@ For issues and questions:
 
 For issues, questions, or contributions, please contact:
 - Email: ajsinha@gmail.com
-- GitHub: https://github.com/ajsinha/dagcomputeserver_v2
+- GitHub: https://github.com/ajsinha/dishtayantra
 
 ## License
 

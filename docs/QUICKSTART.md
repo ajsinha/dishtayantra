@@ -1,4 +1,4 @@
-# DAG Compute Server - Quick Start Guide
+# DishtaYantra Compute Server - Quick Start Guide
 
 ## © 2025-2030 Ashutosh Sinha
 
@@ -398,7 +398,7 @@ docker-compose logs -f      # Follow logs
 
 ---
 
-**Congratulations!** You're now ready to build data pipelines with DAG Compute Server! 🚀
+**Congratulations!** You're now ready to build data pipelines with DishtaYantra Compute Server! 🚀
 
 
 ## Copyright Notice

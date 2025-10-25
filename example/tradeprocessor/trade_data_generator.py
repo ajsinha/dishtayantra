@@ -316,7 +316,7 @@ for subproduct, count in product_counts.items():
 random.shuffle(trades)
 
 # Save to JSON file
-with open("/home/ashutosh/PycharmProjects/dagcomputeserver_v2/config/example/data/sample_trades.json", "w") as f:
+with open("/home/ashutosh/PycharmProjects/dishtayantra/config/example/data/sample_trades.json", "w") as f:
     json.dump(trades, f, indent=4)
 
-print("Generated 1000 trades and saved to /home/ashutosh/PycharmProjects/dagcomputeserver_v2/config/example/data/sample_trades.json")
+print("Generated 1000 trades and saved to /home/ashutosh/PycharmProjects/dishtayantra/config/example/data/sample_trades.json")

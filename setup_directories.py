@@ -166,7 +166,7 @@ def create_sample_dag():
 def main():
     """Main setup function"""
     logger.info("=" * 60)
-    logger.info("Starting DAG Compute Server Setup")
+    logger.info("Starting DishtaYantra Compute Server Setup")
     logger.info("=" * 60)
 
     logger.info("\n1. Creating directories...")

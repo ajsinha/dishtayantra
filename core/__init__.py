@@ -1,4 +1,4 @@
 # core/__init__.py
 """
-DAG Compute Server - Core Module
+DishtaYantra Compute Server - Core Module
 """

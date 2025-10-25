@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Main entry point for DAG Compute Server
+Main entry point for DishtaYantra Compute Server
 """
 
 import os
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Main entry point"""
-    logger.info("Starting DAG Compute Server")
+    logger.info("Starting DishtaYantra Compute Server")
 
 
     # Create necessary directories
@@ -47,7 +47,7 @@ def main():
             app.run(host=host, port=port, debug=debug)
         )
     except KeyboardInterrupt:
-        logger.info("Shutting down DAG Compute Server")
+        logger.info("Shutting down DishtaYantra Compute Server")
         dag_server.shutdown()
     except Exception as e:
         logger.error(f"Error running server: {str(e)}")

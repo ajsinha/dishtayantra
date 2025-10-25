@@ -681,7 +681,7 @@ class DAGComputeServer:
 
     def shutdown(self):
         """Shutdown the server"""
-        logger.info("Shutting down DAG compute server")
+        logger.info("Shutting down DishtaYantra Compute Server")
 
         # Stop autoclone manager
         self._autoclone_stop_event.set()
@@ -695,4 +695,4 @@ class DAGComputeServer:
             self.zk_client.stop()
             self.zk_client.close()
 
-        logger.info("DAG compute server shutdown complete")
+        logger.info("DishtaYantra Compute Server shutdown complete")

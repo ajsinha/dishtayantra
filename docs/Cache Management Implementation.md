@@ -2,7 +2,7 @@
 
 ## © 2025-2030 Ashutosh Sinha
 
-This implementation adds comprehensive cache management functionality to your DAG Compute Server application, allowing users to interact with the InMemoryRedis cache through a web interface.
+This implementation adds comprehensive cache management functionality to your DishtaYantra Compute Server application, allowing users to interact with the InMemoryRedis cache through a web interface.
 
 ## Files Created/Modified
 

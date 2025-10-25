@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Setup script for DAG Compute Server
+# Setup script for DishtaYantra Compute Server
 
-echo "=== DAG Compute Server Setup ==="
+echo "=== DishtaYantra Compute Server Setup ==="
 
 # Create directory structure
 echo "Creating directory structure..."

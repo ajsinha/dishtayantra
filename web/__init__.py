@@ -1,4 +1,4 @@
 # web/__init__.py
 """
-Web UI module for DAG Compute Server
+Web UI module for DishtaYantra Compute Server
 """

@@ -1,4 +1,4 @@
-# DAG Compute Server - Project Complete ✅
+# DishtaYantra Compute Server - Project Complete ✅
 
 ## © 2025-2030 Ashutosh Sinha
 
@@ -93,7 +93,7 @@ A comprehensive, production-ready DAG (Directed Acyclic Graph) compute server im
 ## 📁 File Structure
 
 ```
-dagcomputeserver/
+dishtayantra/
 ├── core/
 │   ├── __init__.py
 │   ├── core_utils.py                    ✅
@@ -302,7 +302,7 @@ All code follows best practices:
 
 ## ✨ Summary
 
-This is a **complete, production-ready implementation** of the DAG Compute Server with all requested features:
+This is a **complete, production-ready implementation** of the DishtaYantra Compute Server with all requested features:
 
 - ✅ Multi-threaded, thread-safe execution
 - ✅ 10 publisher types + 9 subscriber types
