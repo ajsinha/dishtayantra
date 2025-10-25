@@ -274,6 +274,11 @@ class DAGComputeServer:
     def clone_dag(self, dag_name, start_time=None, end_time=None):
         """Clone a DAG with optional time window"""
         self._check_primary()
+        # Convert empty strings to None
+        if start_time == '' or start_time == 'None':
+            start_time = None
+        if end_time == '' or end_time == 'None':
+            end_time = None
 
         with self._lock:
             if dag_name not in self.dags:

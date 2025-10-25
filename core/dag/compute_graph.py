@@ -406,17 +406,37 @@ class ComputeGraph:
             time.sleep(0.01)  # Small delay to prevent CPU spinning
 
     def clone(self, start_time=None, end_time=None):
+        """Clone the DAG with optional time window override"""
+        from datetime import datetime
+
+        # Create timestamp for unique name
         """Clone the compute graph with optional time window"""
         cloned_config = self.config.copy()
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        cloned_config['name'] = f"{self.name}_{timestamp}"
 
-        if start_time:
+        new_name = f"{self.name}_{timestamp}"
+        cloned_config['name'] = new_name
+
+        # Handle time window - if both are None, remove time window
+        # If both are provided, set them
+        # If only one is provided, keep original values
+        if start_time is None and end_time is None:
+            # Remove time window completely
+            cloned_config.pop('start_time', None)
+            cloned_config.pop('end_time', None)
+        elif start_time is not None and end_time is not None:
+            # Set both new values
             cloned_config['start_time'] = start_time
-        if end_time:
             cloned_config['end_time'] = end_time
+        # else: keep original values (don't modify config)
 
-        return ComputeGraph(cloned_config)
+        cloned_dag = ComputeGraph(cloned_config)
+
+        logger.info(f"Cloned DAG {self.name} to {new_name}")
+        logger.info(f"  Original: start_time={self.start_time}, end_time={self.end_time}")
+        logger.info(f"  Cloned: start_time={cloned_dag.start_time}, end_time={cloned_dag.end_time}")
+
+        return cloned_dag
 
     def show_json(self):
         """Return configuration as JSON string"""

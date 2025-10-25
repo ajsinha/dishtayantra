@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+from io import BytesIO
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
 from functools import wraps
 from core.dag.dag_server import DAGComputeServer
@@ -277,8 +279,14 @@ def clone_dag(dag_name):
             return redirect(url_for('dashboard'))
 
     try:
-        start_time = request.form.get('start_time')
-        end_time = request.form.get('end_time')
+        start_time = request.form.get('start_time', '').strip()
+        end_time = request.form.get('end_time', '').strip()
+
+        # Convert empty strings to None
+        if not start_time:
+            start_time = None
+        if not end_time:
+            end_time = None
 
         cloned_name = dag_server.clone_dag(dag_name, start_time, end_time)
         flash(f'DAG cloned to {cloned_name}', 'success')
