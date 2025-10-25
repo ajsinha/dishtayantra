@@ -4,9 +4,9 @@
   "end_time": "1800",
 
   "autoclone": {
-    "ramp_up_time": "1012",
-    "ramp_down_time": "1016",
-    "ramp_count": 5
+    "ramp_up_time": "1120",
+    "ramp_down_time": "1130",
+    "ramp_count": 15
   },
 
   "subscribers": [

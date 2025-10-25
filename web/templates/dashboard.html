@@ -17,29 +17,61 @@
     .time-window-inactive {
         background-color: #dc3545;
     }
-    .auto-refresh-control {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
+    .table-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: flex-end;
+    }
+    .pagination-info {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    .page-btn {
+        padding: 5px 10px;
+        border: 1px solid #dee2e6;
         background: white;
-        padding: 15px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .page-btn:hover:not(:disabled) {
+        background: #e9ecef;
+    }
+    .auto-refresh-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+        background: #f8f9fa;
         border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         border: 1px solid #dee2e6;
     }
-    .countdown-timer {
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    .countdown-badge {
         font-size: 12px;
-        color: #6c757d;
-        margin-top: 5px;
+        padding: 4px 8px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <h2><i class="bi bi-diagram-3"></i> DAG Dashboard</h2>
             <div>
                 <span class="badge {{ 'bg-success' if server_status.is_primary else 'bg-secondary' }} fs-6">
@@ -52,16 +84,42 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Auto-refresh toggle -->
+        <div class="auto-refresh-toggle">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                <label class="form-check-label" for="autoRefreshToggle">
+                    <strong>Auto-refresh</strong>
+                </label>
+            </div>
+            <span id="refreshCountdown" class="badge bg-secondary countdown-badge">Next refresh in: 30s</span>
+        </div>
     </div>
 </div>
 
-<div class="row">
+<!-- DAGs Section -->
+<div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-diagram-3"></i> DAGs</h5>
+            </div>
             <div class="card-body">
+                <div class="table-controls">
+                    <div>
+                        <label for="dagsPageSize">Show:</label>
+                        <select id="dagsPageSize" class="form-select form-select-sm d-inline-block" style="width: auto;">
+                            <option value="10" selected>10 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                            <option value="all">All rows</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-dark">
+                    <table class="table table-bordered" id="dagsTable">
+                        <thead class="table-light">
                             <tr>
                                 <th>Name</th>
                                 <th>Status</th>
@@ -72,7 +130,7 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="dagsTableBody">
                             {% for dag in dags %}
                             <tr class="{% if dag.is_autocloned %}table-info{% endif %}">
                                 <td>
@@ -191,23 +249,211 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="pagination-controls" id="dagsPagination">
+                    <span class="pagination-info" id="dagsInfo"></span>
+                    <div>
+                        <button class="page-btn" id="dagsFirst"><i class="bi bi-chevron-bar-left"></i></button>
+                        <button class="page-btn" id="dagsPrev"><i class="bi bi-chevron-left"></i></button>
+                        <span class="pagination-info" id="dagsPage"></span>
+                        <button class="page-btn" id="dagsNext"><i class="bi bi-chevron-right"></i></button>
+                        <button class="page-btn" id="dagsLast"><i class="bi bi-chevron-bar-right"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Auto-Refresh Control Widget -->
+{% endblock %}
 
+{% block extra_js %}
 <script>
+// Table pagination state
+var tables = {};
+
+function initTable(tableName) {
+    var tbody = document.getElementById(tableName + 'TableBody');
+    var rows = Array.prototype.slice.call(tbody.getElementsByTagName('tr'));
+
+    tables[tableName] = {
+        allRows: rows,
+        totalRows: rows.length,
+        currentPage: 1,
+        pageSize: 10  // Default page size
+    };
+
+    updateTable(tableName);
+}
+
+function updateTable(tableName) {
+    var state = tables[tableName];
+    var tbody = document.getElementById(tableName + 'TableBody');
+
+    // Clear tbody
+    tbody.innerHTML = '';
+
+    // Calculate pagination
+    var start, end;
+    if (state.pageSize === 'all') {
+        start = 0;
+        end = state.totalRows;
+        state.currentPage = 1;
+    } else {
+        start = (state.currentPage - 1) * state.pageSize;
+        end = Math.min(start + state.pageSize, state.totalRows);
+    }
+
+    // Add rows
+    for (var i = start; i < end; i++) {
+        tbody.appendChild(state.allRows[i].cloneNode(true));
+    }
+
+    // Update pagination controls
+    updatePaginationControls(tableName);
+}
+
+function updatePaginationControls(tableName) {
+    var state = tables[tableName];
+    var totalPages = state.pageSize === 'all' ? 1 : Math.ceil(state.totalRows / state.pageSize);
+
+    // Update info text
+    var start = state.pageSize === 'all' ? 1 : (state.currentPage - 1) * state.pageSize + 1;
+    var end = state.pageSize === 'all' ? state.totalRows : Math.min(state.currentPage * state.pageSize, state.totalRows);
+    document.getElementById(tableName + 'Info').textContent =
+        'Showing ' + start + ' to ' + end + ' of ' + state.totalRows + ' entries';
+    document.getElementById(tableName + 'Page').textContent =
+        'Page ' + state.currentPage + ' of ' + totalPages;
+
+    // Update button states
+    document.getElementById(tableName + 'First').disabled = state.currentPage === 1 || state.pageSize === 'all';
+    document.getElementById(tableName + 'Prev').disabled = state.currentPage === 1 || state.pageSize === 'all';
+    document.getElementById(tableName + 'Next').disabled = state.currentPage === totalPages || state.pageSize === 'all';
+    document.getElementById(tableName + 'Last').disabled = state.currentPage === totalPages || state.pageSize === 'all';
+}
+
+function setupTablePagination(tableName) {
+    // Page size dropdown
+    document.getElementById(tableName + 'PageSize').addEventListener('change', function() {
+        var value = this.value;
+        tables[tableName].pageSize = value === 'all' ? 'all' : parseInt(value);
+        tables[tableName].currentPage = 1;
+        updateTable(tableName);
+    });
+
+    // First page
+    document.getElementById(tableName + 'First').addEventListener('click', function() {
+        tables[tableName].currentPage = 1;
+        updateTable(tableName);
+    });
+
+    // Previous page
+    document.getElementById(tableName + 'Prev').addEventListener('click', function() {
+        if (tables[tableName].currentPage > 1) {
+            tables[tableName].currentPage--;
+            updateTable(tableName);
+        }
+    });
+
+    // Next page
+    document.getElementById(tableName + 'Next').addEventListener('click', function() {
+        var totalPages = Math.ceil(tables[tableName].totalRows / tables[tableName].pageSize);
+        if (tables[tableName].currentPage < totalPages) {
+            tables[tableName].currentPage++;
+            updateTable(tableName);
+        }
+    });
+
+    // Last page
+    document.getElementById(tableName + 'Last').addEventListener('click', function() {
+        var totalPages = Math.ceil(tables[tableName].totalRows / tables[tableName].pageSize);
+        tables[tableName].currentPage = totalPages;
+        updateTable(tableName);
+    });
+}
+
 function confirmDelete(dagName) {
     if (confirm('Are you sure you want to delete DAG "' + dagName + '"? This action cannot be undone.')) {
-        // Create a form and submit it
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/dag/' + encodeURIComponent(dagName) + '/delete';
-        document.body.appendChild(form);
-        form.submit();
+        document.getElementById('delete-form-' + dagName).submit();
     }
 }
+
+// Auto-refresh functionality
+var autoRefreshEnabled = true;
+var refreshInterval = 30; // seconds
+var countdownTimer;
+var refreshTimer;
+var secondsRemaining = refreshInterval;
+
+function startCountdown() {
+    secondsRemaining = refreshInterval;
+    updateCountdownDisplay();
+
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+    }
+
+    countdownTimer = setInterval(function() {
+        secondsRemaining--;
+        updateCountdownDisplay();
+
+        if (secondsRemaining <= 0) {
+            clearInterval(countdownTimer);
+        }
+    }, 1000);
+}
+
+function updateCountdownDisplay() {
+    var countdownElement = document.getElementById('refreshCountdown');
+    if (autoRefreshEnabled) {
+        countdownElement.textContent = 'Next refresh in: ' + secondsRemaining + 's';
+        countdownElement.className = 'badge bg-primary countdown-badge';
+    } else {
+        countdownElement.textContent = 'Auto-refresh disabled';
+        countdownElement.className = 'badge bg-secondary countdown-badge';
+    }
+}
+
+function scheduleRefresh() {
+    if (refreshTimer) {
+        clearTimeout(refreshTimer);
+    }
+
+    if (autoRefreshEnabled) {
+        startCountdown();
+        refreshTimer = setTimeout(function() {
+            location.reload();
+        }, refreshInterval * 1000);
+    }
+}
+
+function toggleAutoRefresh() {
+    autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
+
+    if (autoRefreshEnabled) {
+        scheduleRefresh();
+    } else {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+        if (refreshTimer) {
+            clearTimeout(refreshTimer);
+        }
+        updateCountdownDisplay();
+    }
+}
+
+// Initialize on page load
+$(document).ready(function() {
+    initTable('dags');
+    setupTablePagination('dags');
+
+    // Set up auto-refresh toggle
+    document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
+    // Start auto-refresh if enabled
+    if (autoRefreshEnabled) {
+        scheduleRefresh();
+    }
+});
 </script>
 {% endblock %}
