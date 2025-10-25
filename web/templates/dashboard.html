@@ -89,6 +89,12 @@
         content: '↓';
         opacity: 1;
     }
+    /* NEW: Duration badge styling */
+    .duration-badge {
+        font-size: 0.85em;
+        padding: 0.25em 0.6em;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -184,11 +190,27 @@
                                     <span class="badge bg-secondary status-badge">Stopped</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if dag.start_time and dag.end_time %}
-                                    {{ dag.start_time[:2] }}:{{ dag.start_time[2:] }} - {{ dag.end_time[:2] }}:{{ dag.end_time[2:] }}
+                                <!-- UPDATED: Time Window Column - Shows Duration Instead of End Time -->
+                                <td class="text-nowrap">
+                                    {% if dag.start_time %}
+                                        <div>
+                                            <i class="bi bi-clock"></i> {{ dag.start_time[:2] }}:{{ dag.start_time[2:] }}
+                                            {% if dag.duration %}
+                                                <span class="badge bg-info duration-badge">{{ dag.duration }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary duration-badge"
+                                                      data-bs-toggle="tooltip"
+                                                      data-bs-placement="top"
+                                                      title="Default: -5 minutes before start">-5m</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if dag.end_time %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-arrow-right"></i> Until {{ dag.end_time[:2] }}:{{ dag.end_time[2:] }}
+                                        </small>
+                                        {% endif %}
                                     {% else %}
-                                    <span class="text-muted">Always Active</span>
+                                        <span class="text-muted"><i class="bi bi-infinity"></i> Always Active</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -302,6 +324,12 @@
 
 {% block extra_js %}
 <script>
+// NEW: Initialize Bootstrap tooltips for duration badges
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
 // Table pagination state
 var tables = {};
 

@@ -1,0 +1,15 @@
+{
+  "name": "perpetual_dag",
+  "nodes": [
+    {
+      "name": "continuous_processor",
+      "type": "CalculationNode",
+      "config": {}
+    }
+  ],
+  "edges": [],
+  "subscribers": [],
+  "publishers": [],
+  "calculators": [],
+  "transformers": []
+}

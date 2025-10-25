@@ -1,0 +1,16 @@
+{
+  "name": "default_duration_dag",
+  "start_time": "0600",
+  "nodes": [
+    {
+      "name": "prep_node",
+      "type": "CalculationNode",
+      "config": {}
+    }
+  ],
+  "edges": [],
+  "subscribers": [],
+  "publishers": [],
+  "calculators": [],
+  "transformers": []
+}

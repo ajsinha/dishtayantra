@@ -297,8 +297,26 @@ class DAGComputeServer:
                 })
             return dag_list
 
-    def clone_dag(self, dag_name, start_time=None, end_time=None):
-        """Clone a DAG with optional time window"""
+    # Modified clone_dag method for dag_server.py
+    # Replace the existing clone_dag method (around line 300-314) with this code
+
+    def clone_dag(self, dag_name, start_time=None, duration=None):
+        """
+        Clone a DAG with optional time window using duration.
+
+        Args:
+            dag_name: Name of DAG to clone
+            start_time: New start time in HHMM format, or None
+            duration: New duration string (e.g., "1h", "30m", "1h30m"), or None
+
+        Returns:
+            str: Name of cloned DAG
+
+        Behavior:
+            - If both start_time and duration are None: Perpetual running (no time window)
+            - If start_time provided but duration is None: Use default duration (-5 minutes)
+            - If both provided: Use specified time window
+        """
         self._check_primary()
 
         with self._lock:
@@ -306,10 +324,19 @@ class DAGComputeServer:
                 raise ValueError(f"DAG {dag_name} not found")
 
             original_dag = self.dags[dag_name]
-            cloned_dag = original_dag.clone(start_time, end_time)
+
+            # Clone with duration-based time window
+            cloned_dag = original_dag.clone(start_time, duration)
 
             self.dags[cloned_dag.name] = cloned_dag
             logger.info(f"Cloned DAG {dag_name} to {cloned_dag.name}")
+
+            if start_time and duration:
+                logger.info(f"  Cloned with: start_time={start_time}, duration={duration}")
+            elif start_time:
+                logger.info(f"  Cloned with: start_time={start_time} (default duration: -5 minutes)")
+            else:
+                logger.info(f"  Cloned with: perpetual running (no time window)")
 
             return cloned_dag.name
 

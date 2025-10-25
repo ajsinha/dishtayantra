@@ -1,0 +1,36 @@
+{
+  "name": "example_dag_with_duration",
+  "start_time": "0600",
+  "duration": "1h30m",
+  "nodes": [
+    {
+      "name": "input_node",
+      "type": "CalculationNode",
+      "config": {}
+    },
+    {
+      "name": "process_node",
+      "type": "CalculationNode",
+      "config": {}
+    },
+    {
+      "name": "output_node",
+      "type": "CalculationNode",
+      "config": {}
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "input_node",
+      "to_node": "process_node"
+    },
+    {
+      "from_node": "process_node",
+      "to_node": "output_node"
+    }
+  ],
+  "subscribers": [],
+  "publishers": [],
+  "calculators": [],
+  "transformers": []
+}

@@ -272,27 +272,68 @@ def clone_dag(dag_name):
             return render_template('clone_dag.html',
                                    dag_name=dag_name,
                                    original_start=dag.start_time,
-                                   original_end=dag.end_time)
+                                   original_end=dag.end_time,
+                                   original_duration=dag.duration)
         except Exception as e:
             logger.error(f"Error loading clone page: {str(e)}")
             flash(f'Error: {str(e)}', 'error')
             return redirect(url_for('dashboard'))
 
     try:
+        # Get form data
         start_time = request.form.get('start_time', '').strip()
-        end_time = request.form.get('end_time', '').strip()
+        duration = request.form.get('duration', '').strip()
 
         # Convert empty strings to None
         if not start_time:
             start_time = None
-        if not end_time:
-            end_time = None
+        if not duration:
+            duration = None
 
-        cloned_name = dag_server.clone_dag(dag_name, start_time, end_time)
-        flash(f'DAG cloned to {cloned_name}', 'success')
+        # Clean start_time - remove colons if present
+        if start_time:
+            start_time = start_time.replace(':', '')
+
+            # Validate start_time format
+            if len(start_time) != 4 or not start_time.isdigit():
+                flash('Invalid start_time format. Use HHMM format (e.g., 0900)', 'error')
+                return redirect(url_for('clone_dag', dag_name=dag_name))
+
+            hour = int(start_time[:2])
+            minute = int(start_time[2:])
+            if hour > 23 or minute > 59:
+                flash('Invalid start_time. Hour must be 0-23, minute must be 0-59', 'error')
+                return redirect(url_for('clone_dag', dag_name=dag_name))
+
+        # Validate duration format if provided
+        if duration:
+            import re
+            duration_pattern = r'^(\d+h)?(\d+m)?$'
+            if not re.match(duration_pattern, duration.lower()):
+                flash('Invalid duration format. Use format like: 1h, 30m, or 1h30m', 'error')
+                return redirect(url_for('clone_dag', dag_name=dag_name))
+
+            # Check that duration has at least hours or minutes
+            if 'h' not in duration.lower() and 'm' not in duration.lower():
+                flash('Duration must include hours (h) or minutes (m)', 'error')
+                return redirect(url_for('clone_dag', dag_name=dag_name))
+
+        # Clone the DAG with new time window
+        cloned_name = dag_server.clone_dag(dag_name, start_time, duration)
+
+        # Prepare success message
+        if start_time and duration:
+            flash(f'DAG cloned to {cloned_name} with start_time={start_time}, duration={duration}', 'success')
+        elif start_time:
+            flash(f'DAG cloned to {cloned_name} with start_time={start_time} (default duration: -5 minutes)', 'success')
+        else:
+            flash(f'DAG cloned to {cloned_name} with perpetual running (24/7)', 'success')
+
         return redirect(url_for('dashboard'))
     except Exception as e:
         logger.error(f"Error cloning DAG: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         flash(f'Error cloning DAG: {str(e)}', 'error')
         return redirect(url_for('clone_dag', dag_name=dag_name))
 

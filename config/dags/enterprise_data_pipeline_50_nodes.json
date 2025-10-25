@@ -1,7 +1,7 @@
 {
   "name": "enterprise_data_pipeline_50_nodes",
   "start_time": "0600",
-  "end_time": "2300",
+  "duration": "15h",
   "subscribers": [
     {
       "name": "kafka_sub_transactions",

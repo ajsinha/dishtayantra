@@ -24,10 +24,19 @@
                     <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Cloning Information</h6>
                     <p class="mb-1"><strong>Original DAG:</strong> {{ dag_name }}</p>
                     <p class="mb-1"><strong>Original Time Window:</strong> 
-                        {% if original_start and original_end %}
-                        {{ original_start[:2] }}:{{ original_start[2:] }} - {{ original_end[:2] }}:{{ original_end[2:] }}
+                        {% if original_start %}
+                            {% if original_duration %}
+                                Start: {{ original_start[:2] }}:{{ original_start[2:] }}, Duration: {{ original_duration }}
+                                {% if original_end %}
+                                    (Until: {{ original_end[:2] }}:{{ original_end[2:] }})
+                                {% endif %}
+                            {% elif original_end %}
+                                {{ original_start[:2] }}:{{ original_start[2:] }} - {{ original_end[:2] }}:{{ original_end[2:] }}
+                            {% else %}
+                                Start: {{ original_start[:2] }}:{{ original_start[2:] }} (Default duration: -5 minutes)
+                            {% endif %}
                         {% else %}
-                        Always Active
+                        Always Active (Perpetual Running)
                         {% endif %}
                     </p>
                     <hr>
@@ -36,45 +45,51 @@
                     </p>
                 </div>
 
-                <form method="POST" action="{{ url_for('clone_dag', dag_name=dag_name) }}">
+                <form method="POST" action="{{ url_for('clone_dag', dag_name=dag_name) }}" id="cloneForm">
                     <div class="mb-4">
                         <label for="start_time" class="form-label">
-                            <strong>Start Time (HHMM format)</strong>
+                            <strong>Start Time (HH:MM or HHMM format)</strong>
                         </label>
-                        <input type="text" 
-                               class="form-control form-control-lg" 
-                               id="start_time" 
-                               name="start_time" 
-                               placeholder="e.g., 0900" 
-                               pattern="[0-9]{4}"
+                        <input type="text"
+                               class="form-control form-control-lg"
+                               id="start_time"
+                               name="start_time"
+                               placeholder="e.g., 0900 or 09:00"
                                value="{{ original_start or '' }}">
                         <div class="form-text">
-                            <i class="bi bi-clock"></i> Leave empty to keep original or for always-active DAG. Format: HHMM (24-hour)
+                            <i class="bi bi-clock"></i> Leave empty for perpetual running (24/7). Format: HHMM or HH:MM (24-hour)
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label for="end_time" class="form-label">
-                            <strong>End Time (HHMM format)</strong>
+                        <label for="duration" class="form-label">
+                            <strong>Duration</strong>
                         </label>
-                        <input type="text" 
-                               class="form-control form-control-lg" 
-                               id="end_time" 
-                               name="end_time" 
-                               placeholder="e.g., 1700" 
-                               pattern="[0-9]{4}"
-                               value="{{ original_end or '' }}">
+                        <input type="text"
+                               class="form-control form-control-lg"
+                               id="duration"
+                               name="duration"
+                               placeholder="e.g., 1h, 30m, 1h30m"
+                               pattern="^(\d+h)?(\d+m)?$"
+                               value="{{ original_duration or '' }}">
                         <div class="form-text">
-                            <i class="bi bi-clock"></i> Leave empty to keep original or for always-active DAG. Format: HHMM (24-hour)
+                            <i class="bi bi-hourglass-split"></i> Leave empty for default (-5 minutes) if start_time is provided.
+                            <strong>Format examples:</strong>
+                            <code>1h</code> (1 hour),
+                            <code>30m</code> (30 minutes),
+                            <code>1h30m</code> (1 hour 30 minutes),
+                            <code>7h</code> (7 hours)
                         </div>
                     </div>
 
                     <div class="alert alert-warning">
                         <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Important Notes</h6>
                         <ul class="mb-0">
-                            <li>Both start_time and end_time must be provided for time window to be active</li>
-                            <li>If you leave both empty, the cloned DAG will use original settings or be always active</li>
-                            <li>Time format: HHMM (e.g., 0900 for 9:00 AM, 1730 for 5:30 PM)</li>
+                            <li><strong>Perpetual Running:</strong> Leave both start_time and duration empty for 24/7 operation</li>
+                            <li><strong>Default Duration:</strong> If you provide start_time but no duration, the default is -5 minutes (ends 5 minutes before start)</li>
+                            <li><strong>Custom Duration:</strong> Provide both start_time and duration for a specific time window</li>
+                            <li><strong>Time Format:</strong> Start time in HHMM or HH:MM (e.g., 0900 or 09:00 for 9:00 AM)</li>
+                            <li><strong>Duration Format:</strong> Use h for hours, m for minutes (e.g., 1h30m for 1 hour 30 minutes)</li>
                             <li>The cloned DAG will NOT automatically start - you must start it manually</li>
                         </ul>
                     </div>
@@ -100,6 +115,7 @@
                     <thead>
                         <tr>
                             <th>Start Time</th>
+                            <th>Duration</th>
                             <th>End Time</th>
                             <th>Description</th>
                         </tr>
@@ -107,28 +123,125 @@
                     <tbody>
                         <tr>
                             <td><code>0900</code></td>
-                            <td><code>1700</code></td>
+                            <td><code>8h</code></td>
+                            <td>17:00</td>
                             <td>Business hours (9 AM to 5 PM)</td>
                         </tr>
                         <tr>
-                            <td><code>0000</code></td>
                             <td><code>0600</code></td>
-                            <td>Night processing (Midnight to 6 AM)</td>
+                            <td><code>1h30m</code></td>
+                            <td>07:30</td>
+                            <td>Morning batch (6 AM for 1.5 hours)</td>
                         </tr>
                         <tr>
-                            <td><code>1800</code></td>
-                            <td><code>2359</code></td>
-                            <td>Evening hours (6 PM to 11:59 PM)</td>
+                            <td><code>0000</code></td>
+                            <td><code>6h</code></td>
+                            <td>06:00</td>
+                            <td>Night processing (Midnight for 6 hours)</td>
+                        </tr>
+                        <tr>
+                            <td><code>1400</code></td>
+                            <td><code>30m</code></td>
+                            <td>14:30</td>
+                            <td>Quick afternoon task (2 PM for 30 min)</td>
+                        </tr>
+                        <tr>
+                            <td><code>0900</code></td>
+                            <td><em>empty</em></td>
+                            <td>08:55</td>
+                            <td>Default duration (-5 min before start)</td>
                         </tr>
                         <tr>
                             <td><em>empty</em></td>
                             <td><em>empty</em></td>
-                            <td>Always active (24/7)</td>
+                            <td>-</td>
+                            <td>Always active (24/7 operation)</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="bi bi-lightbulb"></i> Quick Duration Reference</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Common Durations</h6>
+                        <ul class="list-unstyled">
+                            <li><code>15m</code> - 15 minutes</li>
+                            <li><code>30m</code> - 30 minutes</li>
+                            <li><code>1h</code> - 1 hour</li>
+                            <li><code>2h</code> - 2 hours</li>
+                            <li><code>4h</code> - 4 hours</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Mixed Durations</h6>
+                        <ul class="list-unstyled">
+                            <li><code>1h15m</code> - 1 hour 15 minutes</li>
+                            <li><code>1h30m</code> - 1 hour 30 minutes</li>
+                            <li><code>2h30m</code> - 2 hours 30 minutes</li>
+                            <li><code>7h30m</code> - 7 hours 30 minutes</li>
+                            <li><code>12h</code> - 12 hours</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+// Form validation and helper
+document.getElementById('cloneForm').addEventListener('submit', function(e) {
+    const startTime = document.getElementById('start_time').value.trim();
+    const duration = document.getElementById('duration').value.trim();
+
+    // If start_time is provided, validate format
+    if (startTime) {
+        const timePattern = /^([0-1][0-9]|2[0-3]):?[0-5][0-9]$/;
+        if (!timePattern.test(startTime)) {
+            e.preventDefault();
+            alert('Invalid start time format. Please use HHMM or HH:MM format (e.g., 0900 or 09:00)');
+            return false;
+        }
+    }
+
+    // If duration is provided, validate format
+    if (duration) {
+        const durationPattern = /^(\d+h)?(\d+m)?$/;
+        if (!durationPattern.test(duration) || duration === '') {
+            e.preventDefault();
+            alert('Invalid duration format. Please use format like: 1h, 30m, or 1h30m');
+            return false;
+        }
+
+        // Check that duration has at least hours or minutes
+        if (!duration.includes('h') && !duration.includes('m')) {
+            e.preventDefault();
+            alert('Duration must include hours (h) or minutes (m), e.g., 1h or 30m');
+            return false;
+        }
+    }
+
+    return true;
+});
+
+// Real-time duration preview
+document.getElementById('start_time').addEventListener('input', updatePreview);
+document.getElementById('duration').addEventListener('input', updatePreview);
+
+function updatePreview() {
+    const startTime = document.getElementById('start_time').value.trim();
+    const duration = document.getElementById('duration').value.trim();
+
+    // This is just a client-side preview
+    // Actual calculation happens on server side
+}
+</script>
+{% endblock %}
 {% endblock %}

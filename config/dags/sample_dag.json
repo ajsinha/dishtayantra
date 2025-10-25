@@ -1,7 +1,7 @@
 {
   "name": "sample_data_pipeline",
   "start_time": "0900",
-  "end_time": "1700",
+  "duration": "8h",
   "subscribers": [
     {
       "name": "input_subscriber",

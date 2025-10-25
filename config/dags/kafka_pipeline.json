@@ -1,7 +1,7 @@
 {
   "name": "kafka_data_pipeline",
   "start_time": null,
-  "end_time": null,
+  "duration": null,
   "subscribers": [
     {
       "name": "kafka_input",

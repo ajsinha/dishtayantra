@@ -10,6 +10,7 @@ from core.transformer.core_transformer import *
 from core.dag.graph_elements import Node, Edge
 from core.dag.node_implementations import *
 from core.core_utils import instantiate_module
+from core.dag.time_window_utils import calculate_end_time, get_time_window_info
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,44 @@ class ComputeGraph:
 
         self.config = config
         self.name = config.get('name')
-        self.start_time = config.get('start_time')
-        self.end_time = config.get('end_time')
+
+        # Handle time window with duration
+        raw_start_time = config.get('start_time')
+        duration = config.get('duration')
+
+        # DEPRECATED: Support legacy end_time for backward compatibility
+        # If end_time is present but duration is not, calculate duration from end_time
+        legacy_end_time = config.get('end_time')
+
+        if raw_start_time:
+            # New duration-based approach
+            if duration is not None:
+                # Use duration to calculate end_time
+                self.start_time = raw_start_time.replace(':', '')
+                self.duration = duration
+                self.end_time = calculate_end_time(self.start_time, duration)
+                logger.info(f"DAG {self.name}: Using duration-based time window")
+                logger.info(f"  start_time={self.start_time}, duration={duration}, end_time={self.end_time}")
+            elif legacy_end_time is not None:
+                # Legacy mode: end_time provided
+                self.start_time = raw_start_time.replace(':', '')
+                self.end_time = legacy_end_time.replace(':', '')
+                self.duration = None  # No duration in legacy mode
+                logger.warning(f"DAG {self.name}: Using DEPRECATED end_time. Please migrate to duration.")
+                logger.info(f"  start_time={self.start_time}, end_time={self.end_time}")
+            else:
+                # Duration not provided, use default (-5 minutes)
+                self.start_time = raw_start_time.replace(':', '')
+                self.duration = None  # None means use default
+                self.end_time = calculate_end_time(self.start_time, None)
+                logger.info(f"DAG {self.name}: No duration provided, using default (-5 minutes)")
+                logger.info(f"  start_time={self.start_time}, end_time={self.end_time}")
+        else:
+            # No start_time: perpetual running (ignore duration)
+            self.start_time = None
+            self.end_time = None
+            self.duration = None
+            logger.info(f"DAG {self.name}: No start_time provided, running perpetually")
 
         self.subscribers = {}
         self.publishers = {}
@@ -101,7 +138,7 @@ class ComputeGraph:
 
     def subscriber_by_name(self, sub_name):
         return self.subscribers[sub_name]
-    
+
     def publisher_by_name(self, pub_name):
         return self.subscribers[pub_name]
 
@@ -174,7 +211,7 @@ class ComputeGraph:
             to_node = self.nodes[to_node_name]
             transformer = self.transformers.get(transformer_name) if transformer_name else None
 
-            edge = Edge(from_node, to_node, transformer,pname)
+            edge = Edge(from_node, to_node, transformer, pname)
             self.edges.append(edge)
             logger.info(f"Created edge: {edge.name}")
 
@@ -215,26 +252,30 @@ class ComputeGraph:
         return False
 
     def _find_cycle(self):
-        """Find and return cycle path"""
+        """Find a cycle in the graph for error reporting"""
         visited = set()
-        rec_stack = []
+        rec_stack = set()
+        path = []
 
         def dfs(node):
             visited.add(node.name)
-            rec_stack.append(node.name)
+            rec_stack.add(node.name)
+            path.append(node.name)
 
             for edge in node._outgoing_edges:
                 child = edge.to_node
                 if child.name not in visited:
-                    result = dfs(child)
-                    if result:
-                        return result
+                    if dfs(child):
+                        return True
                 elif child.name in rec_stack:
-                    cycle_start = rec_stack.index(child.name)
-                    return rec_stack[cycle_start:] + [child.name]
+                    # Found cycle - find start of cycle in path
+                    cycle_start = path.index(child.name)
+                    path.append(child.name)
+                    return path[cycle_start:]
 
-            rec_stack.pop()
-            return None
+            rec_stack.remove(node.name)
+            path.pop()
+            return False
 
         for node in self.nodes.values():
             if node.name not in visited:
@@ -245,7 +286,7 @@ class ComputeGraph:
         return []
 
     def topological_sort(self):
-        """Return nodes in topologically sorted order"""
+        """Return nodes in topological order"""
         in_degree = {name: 0 for name in self.nodes}
 
         for node in self.nodes.values():
@@ -405,36 +446,54 @@ class ComputeGraph:
 
             time.sleep(0.01)  # Small delay to prevent CPU spinning
 
-    def clone(self, start_time=None, end_time=None):
-        """Clone the DAG with optional time window override"""
+    def clone(self, start_time=None, duration=None):
+        """
+        Clone the DAG with optional time window override.
+
+        Args:
+            start_time: New start time in HHMM format, or None to remove time window
+            duration: New duration string (e.g., "1h", "30m"), or None for default (-5m)
+
+        Rules:
+            - If both start_time and duration are None: Remove time window (perpetual running)
+            - If start_time is provided but duration is None: Use default duration (-5m)
+            - If start_time is None: Remove time window (ignore duration)
+            - If both provided: Set new time window
+        """
         from datetime import datetime
 
         # Create timestamp for unique name
-        """Clone the compute graph with optional time window"""
         cloned_config = self.config.copy()
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 
         new_name = f"{self.name}_{timestamp}"
         cloned_config['name'] = new_name
 
-        # Handle time window - if both are None, remove time window
-        # If both are provided, set them
-        # If only one is provided, keep original values
-        if start_time is None and end_time is None:
-            # Remove time window completely
+        # Handle time window
+        if start_time is None:
+            # Remove time window completely (perpetual running)
             cloned_config.pop('start_time', None)
-            cloned_config.pop('end_time', None)
-        elif start_time is not None and end_time is not None:
-            # Set both new values
+            cloned_config.pop('end_time', None)  # Remove legacy
+            cloned_config.pop('duration', None)
+            logger.info(f"Cloning {self.name} to {new_name} with NO time window (perpetual)")
+        else:
+            # Set new time window with duration
             cloned_config['start_time'] = start_time
-            cloned_config['end_time'] = end_time
-        # else: keep original values (don't modify config)
+            cloned_config['duration'] = duration
+            # Remove legacy end_time if present
+            cloned_config.pop('end_time', None)
+
+            if duration:
+                logger.info(f"Cloning {self.name} to {new_name} with start_time={start_time}, duration={duration}")
+            else:
+                logger.info(f"Cloning {self.name} to {new_name} with start_time={start_time}, duration=default (-5m)")
 
         cloned_dag = ComputeGraph(cloned_config)
 
         logger.info(f"Cloned DAG {self.name} to {new_name}")
-        logger.info(f"  Original: start_time={self.start_time}, end_time={self.end_time}")
-        logger.info(f"  Cloned: start_time={cloned_dag.start_time}, end_time={cloned_dag.end_time}")
+        logger.info(f"  Original: start_time={self.start_time}, duration={self.duration}, end_time={self.end_time}")
+        logger.info(
+            f"  Cloned: start_time={cloned_dag.start_time}, duration={cloned_dag.duration}, end_time={cloned_dag.end_time}")
 
         return cloned_dag
 
@@ -448,6 +507,7 @@ class ComputeGraph:
             'name': self.name,
             'start_time': self.start_time,
             'end_time': self.end_time,
+            'duration': self.duration,
             'is_running': self._compute_thread and self._compute_thread.is_alive(),
             'is_suspended': not self._suspend_event.is_set(),
             'nodes': {name: node.details() for name, node in self.nodes.items()},

@@ -1,7 +1,7 @@
 {
   "name": "example_trade_ingest",
   "start_time": "0600",
-  "end_time": "2200",
+  "duration": "12h15m",
   "subscribers": [
     {
       "name": "kafka_trade_input",

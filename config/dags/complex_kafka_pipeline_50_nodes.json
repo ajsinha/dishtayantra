@@ -1,7 +1,7 @@
 {
   "name": "complex_kafka_pipeline_50_nodes",
   "start_time": "0600",
-  "end_time": "2200",
+  "duration": "14h",
   "subscribers": [
     {
       "name": "kafka_input_orders",
