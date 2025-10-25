@@ -86,7 +86,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5><i class="bi bi-box"></i> Nodes (Topologically Sorted)</h5>
+                <h5><i class="bi bi-box"></i> Nodes (Topologically Sorted, Total: {{ node_details | length }})</h5>
             </div>
             <div class="card-body">
                 <div class="table-controls">
@@ -187,7 +187,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-success text-white">
-                <h5><i class="bi bi-arrow-down-circle"></i> Subscribers</h5>
+                <h5><i class="bi bi-arrow-down-circle"></i> Subscribers (Total: {{ details.subscribers | length }})</h5>
             </div>
             <div class="card-body">
                 <div class="table-controls">
@@ -253,7 +253,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-warning text-dark">
-                <h5><i class="bi bi-arrow-up-circle"></i> Publishers</h5>
+                <h5><i class="bi bi-arrow-up-circle"></i> Publishers (Total: {{ details.publishers | length }})</h5>
             </div>
             <div class="card-body">
                 <div class="table-controls">
@@ -311,7 +311,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-info text-white">
-                <h5><i class="bi bi-shuffle"></i> Transformers</h5>
+                <h5><i class="bi bi-shuffle"></i> Transformers (Total: {{ details.transformers | length }})</h5>
             </div>
             <div class="card-body">
                 <div class="table-controls">
@@ -367,7 +367,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-danger text-white">
-                <h5><i class="bi bi-calculator"></i> Calculators</h5>
+                <h5><i class="bi bi-calculator"></i> Calculators (Total: {{ details.calculators | length }})</h5>
             </div>
             <div class="card-body">
                 <div class="table-controls">

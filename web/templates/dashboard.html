@@ -65,6 +65,30 @@
         font-size: 12px;
         padding: 4px 8px;
     }
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 20px !important;
+    }
+    .sortable:hover {
+        background-color: #e9ecef;
+    }
+    .sortable::after {
+        content: '⇅';
+        position: absolute;
+        right: 8px;
+        opacity: 0.3;
+        font-size: 12px;
+    }
+    .sortable.asc::after {
+        content: '↑';
+        opacity: 1;
+    }
+    .sortable.desc::after {
+        content: '↓';
+        opacity: 1;
+    }
 </style>
 {% endblock %}
 
@@ -103,7 +127,10 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5><i class="bi bi-diagram-3"></i> DAGs</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3"></i> DAGs (Total: {{ dags|length }})</h5>
+                    <span id="headerClock" style="color: #d1d1d1; font-size: 14px; font-family: monospace;"></span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-controls">
@@ -116,23 +143,30 @@
                             <option value="all">All rows</option>
                         </select>
                     </div>
+                    <div>
+                        <input type="text" id="dagsSearch" class="form-control form-control-sm" placeholder="Search DAGs..." style="width: 250px;">
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered" id="dagsTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Status</th>
+                                <th class="sortable" data-sort="name">Name</th>
+                                <th class="sortable" data-sort="status">Status</th>
                                 <th>Time Window</th>
-                                <th>Window Status</th>
-                                <th>Nodes</th>
+                                <th class="sortable" data-sort="window-status">Window Status</th>
+                                <th class="sortable" data-sort="nodes">Nodes</th>
                                 <th>AutoClone</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="dagsTableBody">
                             {% for dag in dags %}
-                            <tr class="{% if dag.is_autocloned %}table-info{% endif %}">
+                            <tr class="{% if dag.is_autocloned %}table-info{% endif %}"
+                                data-name="{{ dag.name|lower }}"
+                                data-status="{% if dag.is_running %}{% if dag.is_suspended %}suspended{% else %}running{% endif %}{% else %}stopped{% endif %}"
+                                data-nodes="{{ dag.node_count }}"
+                                data-window-status="{% if dag.start_time and dag.end_time %}{% if dag.in_time_window %}in-window{% else %}outside-window{% endif %}{% else %}na{% endif %}">
                                 <td>
                                     <strong>{{ dag.name }}</strong>
                                     {% if dag.is_autocloned %}
@@ -277,11 +311,76 @@ function initTable(tableName) {
 
     tables[tableName] = {
         allRows: rows,
+        filteredRows: rows.slice(), // Copy of all rows for filtering
         totalRows: rows.length,
         currentPage: 1,
-        pageSize: 10  // Default page size
+        pageSize: 10,  // Default page size
+        sortColumn: null,
+        sortDirection: 'asc'
     };
 
+    updateTable(tableName);
+}
+
+function filterRows(tableName, searchText) {
+    var state = tables[tableName];
+    searchText = searchText.toLowerCase();
+
+    if (searchText === '') {
+        state.filteredRows = state.allRows.slice();
+    } else {
+        state.filteredRows = [];
+        for (var i = 0; i < state.allRows.length; i++) {
+            var rowText = state.allRows[i].textContent.toLowerCase();
+            if (rowText.indexOf(searchText) !== -1) {
+                state.filteredRows.push(state.allRows[i]);
+            }
+        }
+    }
+
+    state.currentPage = 1;
+    updateTable(tableName);
+}
+
+function sortRows(tableName, column) {
+    var state = tables[tableName];
+
+    // Toggle sort direction if clicking same column
+    if (state.sortColumn === column) {
+        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        state.sortColumn = column;
+        state.sortDirection = 'asc';
+    }
+
+    // Sort the filtered rows
+    state.filteredRows.sort(function(a, b) {
+        var aVal = a.getAttribute('data-' + column);
+        var bVal = b.getAttribute('data-' + column);
+
+        // Handle numeric sorting for nodes
+        if (column === 'nodes') {
+            aVal = parseInt(aVal) || 0;
+            bVal = parseInt(bVal) || 0;
+        }
+
+        var comparison = 0;
+        if (aVal < bVal) comparison = -1;
+        if (aVal > bVal) comparison = 1;
+
+        return state.sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    // Update sort indicators in header
+    var headers = document.querySelectorAll('#' + tableName + 'Table th.sortable');
+    headers.forEach(function(header) {
+        header.classList.remove('asc', 'desc');
+        if (header.getAttribute('data-sort') === column) {
+            header.classList.add(state.sortDirection);
+        }
+    });
+
+    state.currentPage = 1;
     updateTable(tableName);
 }
 
@@ -292,20 +391,33 @@ function updateTable(tableName) {
     // Clear tbody
     tbody.innerHTML = '';
 
+    // Show "no results" if filtered rows is empty
+    if (state.filteredRows.length === 0) {
+        var row = document.createElement('tr');
+        var cell = document.createElement('td');
+        cell.colSpan = 7;
+        cell.className = 'text-center text-muted';
+        cell.textContent = 'No matching DAGs found';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        updatePaginationControls(tableName);
+        return;
+    }
+
     // Calculate pagination
     var start, end;
     if (state.pageSize === 'all') {
         start = 0;
-        end = state.totalRows;
+        end = state.filteredRows.length;
         state.currentPage = 1;
     } else {
         start = (state.currentPage - 1) * state.pageSize;
-        end = Math.min(start + state.pageSize, state.totalRows);
+        end = Math.min(start + state.pageSize, state.filteredRows.length);
     }
 
     // Add rows
     for (var i = start; i < end; i++) {
-        tbody.appendChild(state.allRows[i].cloneNode(true));
+        tbody.appendChild(state.filteredRows[i].cloneNode(true));
     }
 
     // Update pagination controls
@@ -314,13 +426,24 @@ function updateTable(tableName) {
 
 function updatePaginationControls(tableName) {
     var state = tables[tableName];
-    var totalPages = state.pageSize === 'all' ? 1 : Math.ceil(state.totalRows / state.pageSize);
+    var totalPages = state.pageSize === 'all' ? 1 : Math.ceil(state.filteredRows.length / state.pageSize);
 
     // Update info text
     var start = state.pageSize === 'all' ? 1 : (state.currentPage - 1) * state.pageSize + 1;
-    var end = state.pageSize === 'all' ? state.totalRows : Math.min(state.currentPage * state.pageSize, state.totalRows);
-    document.getElementById(tableName + 'Info').textContent =
-        'Showing ' + start + ' to ' + end + ' of ' + state.totalRows + ' entries';
+    var end = state.pageSize === 'all' ? state.filteredRows.length : Math.min(state.currentPage * state.pageSize, state.filteredRows.length);
+
+    // Handle empty results
+    if (state.filteredRows.length === 0) {
+        start = 0;
+        end = 0;
+    }
+
+    var infoText = 'Showing ' + start + ' to ' + end + ' of ' + state.filteredRows.length + ' entries';
+    if (state.filteredRows.length < state.totalRows) {
+        infoText += ' (filtered from ' + state.totalRows + ' total)';
+    }
+    document.getElementById(tableName + 'Info').textContent = infoText;
+
     document.getElementById(tableName + 'Page').textContent =
         'Page ' + state.currentPage + ' of ' + totalPages;
 
@@ -356,7 +479,7 @@ function setupTablePagination(tableName) {
 
     // Next page
     document.getElementById(tableName + 'Next').addEventListener('click', function() {
-        var totalPages = Math.ceil(tables[tableName].totalRows / tables[tableName].pageSize);
+        var totalPages = Math.ceil(tables[tableName].filteredRows.length / tables[tableName].pageSize);
         if (tables[tableName].currentPage < totalPages) {
             tables[tableName].currentPage++;
             updateTable(tableName);
@@ -365,9 +488,26 @@ function setupTablePagination(tableName) {
 
     // Last page
     document.getElementById(tableName + 'Last').addEventListener('click', function() {
-        var totalPages = Math.ceil(tables[tableName].totalRows / tables[tableName].pageSize);
+        var totalPages = Math.ceil(tables[tableName].filteredRows.length / tables[tableName].pageSize);
         tables[tableName].currentPage = totalPages;
         updateTable(tableName);
+    });
+
+    // Search functionality
+    var searchInput = document.getElementById(tableName + 'Search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterRows(tableName, this.value);
+        });
+    }
+
+    // Sort functionality
+    var sortableHeaders = document.querySelectorAll('#' + tableName + 'Table th.sortable');
+    sortableHeaders.forEach(function(header) {
+        header.addEventListener('click', function() {
+            var column = this.getAttribute('data-sort');
+            sortRows(tableName, column);
+        });
     });
 }
 
@@ -442,6 +582,27 @@ function toggleAutoRefresh() {
     }
 }
 
+// Header clock functionality
+function updateHeaderClock() {
+    var now = new Date();
+    var hours = now.getHours().toString().padStart(2, '0');
+    var minutes = now.getMinutes().toString().padStart(2, '0');
+    var timeString = hours + ':' + minutes;
+
+    var clockElement = document.getElementById('headerClock');
+    if (clockElement) {
+        clockElement.textContent = timeString;
+    }
+}
+
+function startHeaderClock() {
+    // Update immediately
+    updateHeaderClock();
+
+    // Then update every minute (60000 ms)
+    setInterval(updateHeaderClock, 60000);
+}
+
 // Initialize on page load
 $(document).ready(function() {
     initTable('dags');
@@ -454,6 +615,9 @@ $(document).ready(function() {
     if (autoRefreshEnabled) {
         scheduleRefresh();
     }
+
+    // Start the header clock
+    startHeaderClock();
 });
 </script>
 {% endblock %}
