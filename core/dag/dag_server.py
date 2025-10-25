@@ -5,6 +5,7 @@ import threading
 from kazoo.client import KazooClient
 from kazoo.recipe.election import Election
 from core.dag.compute_graph import ComputeGraph
+from core.dag.time_window_utils import parse_duration, calculate_end_time
 
 logger = logging.getLogger(__name__)
 
@@ -350,22 +351,55 @@ class DAGComputeServer:
         }
 
     def _is_autoclone_enabled(self, dag_config):
-        """Check if autoclone is enabled for a DAG configuration"""
+        """Check if autoclone is enabled for a DAG configuration
+
+        New format (preferred):
+            "autoclone": {
+                "ramp_up_time": "1255",
+                "duration": "1h30m",  # Optional, defaults to "8h"
+                "ramp_count": 10
+            }
+
+        Legacy format (still supported):
+            "autoclone": {
+                "ramp_up_time": "1255",
+                "ramp_down_time": "1310",
+                "ramp_count": 10
+            }
+        """
         if 'autoclone' not in dag_config:
             return False
 
         autoclone = dag_config['autoclone']
 
-        # All three keys must be present and non-empty
-        required_keys = ['ramp_up_time', 'ramp_down_time', 'ramp_count']
-        for key in required_keys:
-            if key not in autoclone or not autoclone[key]:
-                return False
+        # Check required keys
+        if 'ramp_up_time' not in autoclone or not autoclone['ramp_up_time']:
+            return False
+
+        if 'ramp_count' not in autoclone or not autoclone['ramp_count']:
+            return False
+
+        # Must have either duration (new) or ramp_down_time (legacy)
+        has_duration = 'duration' in autoclone and autoclone['duration']
+        has_ramp_down = 'ramp_down_time' in autoclone and autoclone['ramp_down_time']
+
+        if not has_duration and not has_ramp_down:
+            # Neither provided - use default duration of 8h
+            # This is valid, we'll use default
+            pass
 
         try:
             # Validate ramp_count is a positive integer
             if int(autoclone['ramp_count']) <= 0:
                 return False
+
+            # Validate duration if provided (new format)
+            if has_duration:
+                duration_minutes = parse_duration(autoclone['duration'])
+                if duration_minutes is None or duration_minutes <= 0:
+                    logger.warning(f"Invalid autoclone duration: {autoclone['duration']}")
+                    return False
+
             return True
         except (ValueError, TypeError):
             return False
@@ -418,7 +452,25 @@ class DAGComputeServer:
 
                         autoclone_config = dag.config['autoclone']
                         ramp_up_time = autoclone_config['ramp_up_time']
-                        ramp_down_time = autoclone_config['ramp_down_time']
+
+                        # NEW: Support duration instead of ramp_down_time
+                        # Calculate ramp_down_time from ramp_up_time + duration
+                        if 'duration' in autoclone_config and autoclone_config['duration']:
+                            # New format with duration
+                            duration = autoclone_config['duration']
+                            ramp_down_time = calculate_end_time(ramp_up_time, duration)
+                            logger.debug(
+                                f"AutoClone {dag_name}: Using duration {duration}, ramp_down_time={ramp_down_time}")
+                        elif 'ramp_down_time' in autoclone_config and autoclone_config['ramp_down_time']:
+                            # Legacy format with explicit ramp_down_time
+                            ramp_down_time = autoclone_config['ramp_down_time']
+                            logger.debug(f"AutoClone {dag_name}: Using legacy ramp_down_time={ramp_down_time}")
+                        else:
+                            # No duration or ramp_down_time provided - use default 8h
+                            ramp_down_time = calculate_end_time(ramp_up_time, "8h")
+                            logger.debug(
+                                f"AutoClone {dag_name}: No duration/ramp_down_time, using default 8h, ramp_down_time={ramp_down_time}")
+
                         ramp_count = int(autoclone_config['ramp_count'])
 
                         # Initialize autoclone info if not exists

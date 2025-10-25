@@ -1,0 +1,44 @@
+{
+  "name": "dag_with_autoclone_default_duration",
+  "start_time": "0800",
+  "duration": "10h",
+
+  "autoclone": {
+    "ramp_up_time": "1000",
+    "ramp_count": 5
+  },
+
+  "subscribers": [],
+  "publishers": [],
+  "calculators": [],
+  "transformers": [],
+
+  "nodes": [
+    {
+      "name": "input_node",
+      "type": "CalculationNode",
+      "config": {}
+    },
+    {
+      "name": "process_node",
+      "type": "CalculationNode",
+      "config": {}
+    },
+    {
+      "name": "output_node",
+      "type": "CalculationNode",
+      "config": {}
+    }
+  ],
+
+  "edges": [
+    {
+      "from_node": "input_node",
+      "to_node": "process_node"
+    },
+    {
+      "from_node": "process_node",
+      "to_node": "output_node"
+    }
+  ]
+}

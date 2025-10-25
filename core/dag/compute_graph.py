@@ -464,6 +464,9 @@ class ComputeGraph:
 
         # Create timestamp for unique name
         cloned_config = self.config.copy()
+        if "autoclone" in cloned_config:
+            cloned_config.pop("autoclone")
+
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 
         new_name = f"{self.name}_{timestamp}"

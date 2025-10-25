@@ -1,11 +1,11 @@
 {
-  "name": "dag_with_auto_clone",
+  "name": "ash_dag_with_auto_clone",
   "start_time": "0800",
   "duration": "10h15m",
 
   "autoclone": {
-    "ramp_up_time": "1255",
-    "ramp_down_time": "1310",
+    "ramp_up_time": "1358",
+    "duration": "10m",
     "ramp_count": 10
   },
 
