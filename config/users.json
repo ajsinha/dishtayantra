@@ -2,21 +2,55 @@
   "admin": {
     "password": "admin123",
     "full_name": "System Administrator",
-    "roles": ["admin", "user"]
+    "roles": [
+      "admin",
+      "user"
+    ]
   },
-  "user1": {
+  "user": {
     "password": "user123",
     "full_name": "John Doe",
-    "roles": ["user"]
+    "roles": [
+      "user"
+    ]
   },
-  "operator": {
-    "password": "operator123",
-    "full_name": "Jane Smith",
-    "roles": ["operator", "user"]
+  "ash": {
+    "password": "test",
+    "full_name": "Ashutosh Sinha",
+    "roles": [
+      "operator",
+      "user"
+    ]
   },
-  "jdoe": {
-    "password": "pass123",
-    "full_name": "Jane Doe",
-    "roles": ["admin", "operator", "user"]
+  "saad": {
+    "password": "test",
+    "full_name": "Saad Ahmed",
+    "roles": [
+      "admin",
+      "operator",
+      "user"
+    ]
+  },
+  "moorthi": {
+    "password": "test",
+    "full_name": "Moorthi Rajagopalan",
+    "roles": [
+      "admin",
+      "operator",
+      "user"
+    ]
+  },
+  "greg": {
+    "password": "test",
+    "full_name": "Greg Vaysman",
+    "roles": [
+      "user",
+      "operator",
+      "admin"
+    ],
+    "created_at": "2025-10-27T21:14:29.068496",
+    "created_by": "admin",
+    "modified_at": "2025-10-27T21:15:10.073749",
+    "modified_by": "admin"
   }
 }

@@ -434,6 +434,21 @@ class UserRegistry:
         with self._users_lock:
             return username in self._users
 
+    def force_reload(self) -> bool:
+        """
+        Force an immediate reload of users from the file
+
+        Returns:
+            True if reload was successful, False otherwise
+        """
+        try:
+            logger.info("Force reload triggered")
+            self._load_users()
+            return True
+        except Exception as e:
+            logger.error(f"Error in force reload: {str(e)}")
+            return False
+
     def stop_reload(self):
         """Stop the auto-reload thread"""
         self._stop_reload.set()

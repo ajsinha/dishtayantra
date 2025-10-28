@@ -115,7 +115,7 @@
             </div>
             <div class="row mt-2">
                 <div class="col-md-12 text-center">
-                    <button class="btn btn-light btn-sm" onclick="loadStats(); loadUsers();" title="Refresh data">
+                    <button class="btn btn-light btn-sm" onclick="refreshUsers();" title="Refresh data from file">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -294,6 +294,35 @@ function loadStats() {
     })
     .catch(error => {
         showAlert('Error loading stats: ' + error.message, 'danger');
+    });
+}
+
+// Refresh users from file
+function refreshUsers() {
+    // Show loading indicator
+    showAlert('Reloading users from file...', 'info');
+
+    // Call reload endpoint first
+    fetch('/users/api/reload', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            // Now reload the UI data
+            loadStats();
+            loadUsers();
+        } else {
+            showAlert('Error reloading users: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Error reloading users: ' + error.message, 'danger');
     });
 }
 

@@ -946,6 +946,28 @@ def users_list():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/users/api/reload', methods=['POST'])
+@admin_required
+def users_reload():
+    """Force reload users from file"""
+    try:
+        logger.info(f"User registry reload triggered by: {session.get('username', 'unknown')}")
+        success = user_registry.force_reload()
+
+        if success:
+            user_count = user_registry.get_user_count()
+            logger.info(f"User registry reloaded successfully. Total users: {user_count}")
+            return jsonify({
+                'success': True,
+                'message': f'User registry reloaded. Total users: {user_count}'
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Failed to reload user registry'}), 500
+    except Exception as e:
+        logger.error(f"Error reloading user registry: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/users/api/create', methods=['POST'])
 @admin_required
 def users_create():
