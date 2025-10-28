@@ -1,8 +1,14 @@
 {
   "metadata": {
-    "dump_time": "2025-10-27T20:15:44.158822",
-    "total_keys": 0,
+    "dump_time": "2025-10-27T20:20:44.160178",
+    "total_keys": 1,
     "version": "1.0"
   },
-  "data": {}
+  "data": {
+    "A": {
+      "value": "B",
+      "type": "string",
+      "ttl": null
+    }
+  }
 }

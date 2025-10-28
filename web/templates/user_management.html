@@ -262,54 +262,6 @@
     </div>
 </div>
 
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editUserForm">
-                    <input type="hidden" id="editUsername">
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" class="form-control" id="editUsernameDisplay" disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editPassword" class="form-label">Password (leave blank to keep current)</label>
-                        <input type="password" class="form-control" id="editPassword">
-                    </div>
-                    <div class="mb-3">
-                        <label for="editFullName" class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="editFullName">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Roles *</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="user" id="editRoleUser">
-                            <label class="form-check-label" for="editRoleUser">User</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="operator" id="editRoleOperator">
-                            <label class="form-check-label" for="editRoleOperator">Operator</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="admin" id="editRoleAdmin">
-                            <label class="form-check-label" for="editRoleAdmin">Administrator</label>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="updateUser()">Update User</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -484,18 +436,37 @@ function updateTable() {
 
         // Actions
         const actionsCell = document.createElement('td');
-        const editBtn = document.createElement('button');
+
+        // Check if this is the protected admin user
+        const isAdminUser = user.username.toLowerCase() === 'admin';
+
+        const editBtn = document.createElement('a');
         editBtn.className = 'btn btn-sm btn-primary me-1';
         editBtn.innerHTML = '<i class="bi bi-pencil"></i>';
-        editBtn.title = 'Edit user';
-        editBtn.onclick = () => showEditModal(user);
+        editBtn.title = isAdminUser ? 'Cannot edit protected admin user' : 'Edit user';
+
+        if (isAdminUser) {
+            editBtn.classList.add('disabled');
+            editBtn.style.pointerEvents = 'none';
+            editBtn.style.opacity = '0.5';
+        } else {
+            editBtn.href = `/users/edit/${user.username}`;
+        }
+
         actionsCell.appendChild(editBtn);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn-sm btn-danger';
         deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-        deleteBtn.title = 'Delete user';
-        deleteBtn.onclick = () => deleteUser(user.username);
+        deleteBtn.title = isAdminUser ? 'Cannot delete protected admin user' : 'Delete user';
+
+        if (isAdminUser) {
+            deleteBtn.disabled = true;
+            deleteBtn.style.opacity = '0.5';
+        } else {
+            deleteBtn.onclick = () => deleteUser(user.username);
+        }
+
         actionsCell.appendChild(deleteBtn);
 
         row.appendChild(actionsCell);
@@ -531,22 +502,6 @@ function goToPage(page) {
         currentPage = page;
         updateTable();
     }
-}
-
-// Show edit modal
-function showEditModal(user) {
-    document.getElementById('editUsername').value = user.username;
-    document.getElementById('editUsernameDisplay').value = user.username;
-    document.getElementById('editPassword').value = '';
-    document.getElementById('editFullName').value = user.full_name || '';
-
-    // Set roles
-    document.getElementById('editRoleUser').checked = user.roles.includes('user');
-    document.getElementById('editRoleOperator').checked = user.roles.includes('operator');
-    document.getElementById('editRoleAdmin').checked = user.roles.includes('admin');
-
-    const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
-    modal.show();
 }
 
 // Create user
@@ -596,49 +551,6 @@ function createUser() {
     })
     .catch(error => {
         showAlert('Error creating user: ' + error.message, 'danger');
-    });
-}
-
-// Update user
-function updateUser() {
-    const username = document.getElementById('editUsername').value;
-    const password = document.getElementById('editPassword').value.trim();
-    const fullName = document.getElementById('editFullName').value.trim();
-
-    const roles = [];
-    if (document.getElementById('editRoleUser').checked) roles.push('user');
-    if (document.getElementById('editRoleOperator').checked) roles.push('operator');
-    if (document.getElementById('editRoleAdmin').checked) roles.push('admin');
-
-    if (roles.length === 0) {
-        showAlert('At least one role is required', 'warning');
-        return;
-    }
-
-    const data = {username, full_name: fullName, roles};
-    if (password) {
-        data.password = password;
-    }
-
-    fetch('/users/api/update', {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'same-origin',
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
-            loadStats();
-            loadUsers();
-        } else {
-            showAlert('Error: ' + data.error, 'danger');
-        }
-    })
-    .catch(error => {
-        showAlert('Error updating user: ' + error.message, 'danger');
     });
 }
 

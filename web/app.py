@@ -768,12 +768,26 @@ def users_create():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/users/api/update', methods=['PUT'])
+@app.route('/users/api/update', methods=['PUT', 'POST'])
 @admin_required
 def users_update():
     """Update an existing user"""
     try:
-        data = request.get_json()
+        # Handle both JSON (API) and form data (from edit page)
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+            # Convert roles from form checkboxes
+            roles = []
+            if request.form.get('role_user') == 'on':
+                roles.append('user')
+            if request.form.get('role_operator') == 'on':
+                roles.append('operator')
+            if request.form.get('role_admin') == 'on':
+                roles.append('admin')
+            data['roles'] = roles
+
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         full_name = data.get('full_name', '').strip()
@@ -781,10 +795,26 @@ def users_update():
 
         # Validation
         if not username:
-            return jsonify({'success': False, 'error': 'Username is required'}), 400
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Username is required'}), 400
+            else:
+                flash('Username is required', 'error')
+                return redirect(url_for('user_edit_page', username=username))
+
+        # Protect admin user
+        if username.lower() == 'admin':
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Cannot edit the protected admin user'}), 403
+            else:
+                flash('Cannot edit the protected admin user', 'error')
+                return redirect(url_for('user_management'))
 
         if not user_registry.user_exists(username):
-            return jsonify({'success': False, 'error': f'User {username} not found'}), 404
+            if request.is_json:
+                return jsonify({'success': False, 'error': f'User {username} not found'}), 404
+            else:
+                flash(f'User {username} not found', 'error')
+                return redirect(url_for('user_management'))
 
         # Build update data
         user_data = {}
@@ -793,6 +823,12 @@ def users_update():
         if full_name:
             user_data['full_name'] = full_name
         if roles is not None:
+            if len(roles) == 0:
+                if request.is_json:
+                    return jsonify({'success': False, 'error': 'At least one role is required'}), 400
+                else:
+                    flash('At least one role is required', 'error')
+                    return redirect(url_for('user_edit_page', username=username))
             user_data['roles'] = roles
 
         # Prevent removing admin role from the last admin
@@ -802,21 +838,37 @@ def users_update():
                 all_users = user_registry.list_all_users()
                 admin_count = sum(1 for u in all_users.values() if 'admin' in u.get('roles', []))
                 if admin_count <= 1:
-                    return jsonify(
-                        {'success': False, 'error': 'Cannot remove admin role from the last admin user'}), 400
+                    if request.is_json:
+                        return jsonify(
+                            {'success': False, 'error': 'Cannot remove admin role from the last admin user'}), 400
+                    else:
+                        flash('Cannot remove admin role from the last admin user', 'error')
+                        return redirect(url_for('user_edit_page', username=username))
 
         # Update user
         success = user_registry.modify_user(username, user_data, session.get('username'))
 
         if success:
             logger.info(f"User {username} updated by {session.get('username')}")
-            return jsonify({'success': True, 'message': f'User {username} updated successfully'})
+            if request.is_json:
+                return jsonify({'success': True, 'message': f'User {username} updated successfully'})
+            else:
+                flash(f'User {username} updated successfully', 'success')
+                return redirect(url_for('user_management'))
         else:
-            return jsonify({'success': False, 'error': 'Failed to update user'}), 500
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Failed to update user'}), 500
+            else:
+                flash('Failed to update user', 'error')
+                return redirect(url_for('user_edit_page', username=username))
 
     except Exception as e:
         logger.error(f"Error updating user: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash(f'Error updating user: {str(e)}', 'error')
+            return redirect(url_for('user_management'))
 
 
 @app.route('/users/api/delete', methods=['DELETE'])
@@ -830,6 +882,10 @@ def users_delete():
         # Validation
         if not username:
             return jsonify({'success': False, 'error': 'Username is required'}), 400
+
+        # Protect admin user
+        if username.lower() == 'admin':
+            return jsonify({'success': False, 'error': 'Cannot delete the protected admin user'}), 403
 
         # Prevent self-deletion
         if username == session.get('username'):
@@ -876,6 +932,31 @@ def users_stats():
     except Exception as e:
         logger.error(f"Error getting user stats: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/users/edit/<username>', methods=['GET'])
+@admin_required
+def user_edit_page(username):
+    """User edit page"""
+    try:
+        # Check if user exists
+        if not user_registry.user_exists(username):
+            flash(f'User {username} not found', 'error')
+            return redirect(url_for('user_management'))
+
+        # Protect admin user
+        if username.lower() == 'admin':
+            flash('Cannot edit the protected admin user', 'error')
+            return redirect(url_for('user_management'))
+
+        # Get user data
+        user_data = user_registry.get_user(username, include_password=False)
+
+        return render_template('user_edit.html', user_data=user_data)
+    except Exception as e:
+        logger.error(f"Error loading user edit page: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('user_management'))
 
 
 if __name__ == '__main__':

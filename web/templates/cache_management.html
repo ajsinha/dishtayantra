@@ -360,7 +360,7 @@ let currentResults = [];
 // Load cache statistics
 function loadStats() {
     fetch('/cache/api/stats')
-        .then(response => response.json())
+        .then(response => handleFetchResponse(response))
         .then(data => {
             if (data.success) {
                 document.getElementById('totalKeys').textContent = data.stats.total_keys;
@@ -404,6 +404,7 @@ function loadStats() {
         })
         .catch(error => {
             console.error('Error loading stats:', error);
+            showAlert('Error loading cache statistics: ' + error.message, 'danger');
         });
 }
 
@@ -420,8 +421,19 @@ function searchCache(page = 1) {
     document.getElementById('resultsContainer').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
 
-    fetch(`/cache/api/query?pattern=${encodeURIComponent(pattern)}&page=${page}&per_page=${perPage}`)
-        .then(response => response.json())
+    fetch('/cache/api/query', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+            pattern: pattern,
+            page: page,
+            per_page: perPage
+        })
+    })
+        .then(response => handleFetchResponse(response))
         .then(data => {
             document.getElementById('loadingSpinner').style.display = 'none';
 

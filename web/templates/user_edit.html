@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - DishtaYantra Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    .role-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    .info-badge {
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #0066cc;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-pencil-square"></i> Edit User</h2>
+            <div>
+                <a href="{{ url_for('user_management') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to User Management
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="edit-form-container">
+    <div class="form-section">
+        <div class="form-header">
+            <h4 class="mb-0">
+                <i class="bi bi-person-circle"></i> Edit User: <strong>{{ user_data.username }}</strong>
+            </h4>
+        </div>
+
+        <div class="info-badge">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> Leave password field blank to keep the current password.
+        </div>
+
+        <form method="POST" action="{{ url_for('users_update') }}">
+            <input type="hidden" name="username" value="{{ user_data.username }}">
+
+            <div class="mb-4">
+                <label class="form-label"><strong>Username</strong></label>
+                <input type="text" class="form-control" value="{{ user_data.username }}" disabled>
+                <small class="form-text text-muted">Username cannot be changed</small>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label">
+                    <strong>Password</strong>
+                    <span class="text-muted">(optional)</span>
+                </label>
+                <input type="password" class="form-control" id="password" name="password" 
+                       placeholder="Leave blank to keep current password">
+                <small class="form-text text-muted">Enter a new password only if you want to change it</small>
+            </div>
+
+            <div class="mb-4">
+                <label for="full_name" class="form-label"><strong>Full Name</strong></label>
+                <input type="text" class="form-control" id="full_name" name="full_name" 
+                       value="{{ user_data.full_name }}" required>
+            </div>
+
+            <div class="role-section">
+                <label class="form-label mb-3">
+                    <strong><i class="bi bi-shield-check"></i> User Roles</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <div class="form-text text-muted mb-3">
+                    Select at least one role. Users can have multiple roles.
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="role_user" id="role_user" 
+                           {% if 'user' in user_data.roles %}checked{% endif %}>
+                    <label class="form-check-label" for="role_user">
+                        <span class="badge bg-secondary me-2">User</span>
+                        <span class="text-muted">Basic access to view DAGs and cache</span>
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="role_operator" id="role_operator"
+                           {% if 'operator' in user_data.roles %}checked{% endif %}>
+                    <label class="form-check-label" for="role_operator">
+                        <span class="badge bg-warning text-dark me-2">Operator</span>
+                        <span class="text-muted">Can view and operate DAGs</span>
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="role_admin" id="role_admin"
+                           {% if 'admin' in user_data.roles %}checked{% endif %}>
+                    <label class="form-check-label" for="role_admin">
+                        <span class="badge bg-danger me-2">Admin</span>
+                        <span class="text-muted">Full system access including user management</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg me-2">
+                    <i class="bi bi-check-circle"></i> Update User
+                </button>
+                <a href="{{ url_for('user_management') }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    {% if user_data.created_at or user_data.modified_at %}
+    <div class="form-section mt-4">
+        <h5 class="mb-3"><i class="bi bi-clock-history"></i> Audit Information</h5>
+        <div class="row">
+            {% if user_data.created_at %}
+            <div class="col-md-6">
+                <strong>Created:</strong><br>
+                {{ user_data.created_at[:10] }} {{ user_data.created_at[11:19] }}
+                {% if user_data.created_by %}
+                <br><small class="text-muted">by {{ user_data.created_by }}</small>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if user_data.modified_at %}
+            <div class="col-md-6">
+                <strong>Last Modified:</strong><br>
+                {{ user_data.modified_at[:10] }} {{ user_data.modified_at[11:19] }}
+                {% if user_data.modified_by %}
+                <br><small class="text-muted">by {{ user_data.modified_by }}</small>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    // Check if at least one role is selected
+    const userChecked = document.getElementById('role_user').checked;
+    const operatorChecked = document.getElementById('role_operator').checked;
+    const adminChecked = document.getElementById('role_admin').checked;
+    
+    if (!userChecked && !operatorChecked && !adminChecked) {
+        e.preventDefault();
+        alert('Please select at least one role for the user.');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}
