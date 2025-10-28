@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Create Cache Entry - DishtaYantra Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    .info-badge {
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #0066cc;
+        margin-bottom: 20px;
+    }
+    .code-example {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-plus-circle"></i> Create Cache Entry</h2>
+            <div>
+                <a href="{{ url_for('cache_management') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Cache Management
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="create-form-container">
+    <div class="form-section">
+        <div class="form-header">
+            <h4 class="mb-0">
+                <i class="bi bi-database-add"></i> Add New Cache Entry
+            </h4>
+        </div>
+
+        <div class="info-badge">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> Cache entries are stored in the in-memory Redis clone. Set a TTL (time-to-live) to automatically expire entries, or leave it empty for persistent storage.
+        </div>
+
+        <form method="POST" action="{{ url_for('cache_create') }}">
+            <div class="mb-4">
+                <label for="key" class="form-label">
+                    <strong>Key</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="key" name="key" required 
+                       placeholder="e.g., user:123, session:abc, data:temperature">
+                <small class="form-text text-muted">
+                    The unique identifier for this cache entry. Use namespacing with colons for organization.
+                </small>
+            </div>
+
+            <div class="mb-4">
+                <label for="value" class="form-label">
+                    <strong>Value</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" id="value" name="value" rows="6" required
+                          placeholder="Enter the value to cache (can be text, JSON, etc.)"></textarea>
+                <small class="form-text text-muted">
+                    The data to store. Can be plain text, JSON, or any string value.
+                </small>
+                <div class="code-example">
+                    <strong>Example JSON:</strong> {"name": "John", "age": 30, "active": true}
+                </div>
+            </div>
+
+            <div class="info-section">
+                <label for="ttl" class="form-label">
+                    <strong><i class="bi bi-clock"></i> TTL (Time To Live)</strong>
+                    <span class="text-muted">(optional)</span>
+                </label>
+                <div class="input-group mb-3">
+                    <input type="number" class="form-control" id="ttl" name="ttl" min="-1"
+                           placeholder="Enter seconds (leave blank for no expiry)">
+                    <span class="input-group-text">seconds</span>
+                </div>
+                
+                <div class="alert alert-info mb-0">
+                    <strong>TTL Options:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Empty/Blank:</strong> No expiration - entry persists indefinitely</li>
+                        <li><strong>-1:</strong> No expiration (explicit)</li>
+                        <li><strong>Positive number:</strong> Expires after this many seconds</li>
+                    </ul>
+                    <div class="code-example mt-2">
+                        <strong>Common values:</strong><br>
+                        • 60 = 1 minute<br>
+                        • 300 = 5 minutes<br>
+                        • 3600 = 1 hour<br>
+                        • 86400 = 1 day<br>
+                        • 604800 = 1 week
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success btn-lg me-2">
+                    <i class="bi bi-check-circle"></i> Create Entry
+                </button>
+                <a href="{{ url_for('cache_management') }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-section mt-4">
+        <h5 class="mb-3"><i class="bi bi-lightbulb"></i> Tips & Best Practices</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Key Naming Conventions</h6>
+                <ul>
+                    <li>Use colons for namespacing: <code>user:123</code></li>
+                    <li>Be descriptive: <code>session:user_auth</code></li>
+                    <li>Use lowercase: <code>data:temperature</code></li>
+                    <li>Avoid spaces and special chars</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Value Storage</h6>
+                <ul>
+                    <li>Store JSON for structured data</li>
+                    <li>Use strings for simple values</li>
+                    <li>Consider compression for large data</li>
+                    <li>Validate JSON before storing</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6>TTL Guidelines</h6>
+                <ul>
+                    <li>Use TTL for temporary data</li>
+                    <li>Session data: 1-24 hours</li>
+                    <li>API cache: 5-60 minutes</li>
+                    <li>No TTL for reference data</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Performance Tips</h6>
+                <ul>
+                    <li>Keep keys short but meaningful</li>
+                    <li>Use appropriate TTL to free memory</li>
+                    <li>Avoid storing huge values</li>
+                    <li>Use patterns for bulk operations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const key = document.getElementById('key').value.trim();
+    const value = document.getElementById('value').value.trim();
+    const ttl = document.getElementById('ttl').value.trim();
+    
+    if (!key) {
+        e.preventDefault();
+        alert('Key is required.');
+        return false;
+    }
+    
+    if (!value) {
+        e.preventDefault();
+        alert('Value is required.');
+        return false;
+    }
+    
+    // Check if TTL is valid
+    if (ttl && ttl !== '' && ttl !== '-1') {
+        const ttlNum = parseInt(ttl);
+        if (isNaN(ttlNum) || ttlNum < -1) {
+            e.preventDefault();
+            alert('TTL must be -1 (no expiry) or a positive number of seconds.');
+            return false;
+        }
+    }
+    
+    return true;
+});
+
+// Optional: Try to format JSON in value field
+document.getElementById('value').addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (value.startsWith('{') || value.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(value);
+            this.value = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            // Not valid JSON, leave as is
+        }
+    }
+});
+</script>
+{% endblock %}

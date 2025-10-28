@@ -170,9 +170,9 @@
             <h5><i class="bi bi-shield-lock"></i> Admin Controls</h5>
             <div class="row">
                 <div class="col-md-4 mb-2">
-                    <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <a href="{{ url_for('cache_create_page') }}" class="btn btn-success w-100">
                         <i class="bi bi-plus-circle"></i> Create Entry
-                    </button>
+                    </a>
                 </div>
                 <div class="col-md-4 mb-2">
                     <button class="btn btn-info w-100" onclick="downloadCache()">
@@ -280,44 +280,8 @@
     </div>
 </div>
 
-<!-- Create Entry Modal -->
-{% if is_admin %}
-<div class="modal fade" id="createModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create Cache Entry</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="createForm">
-                    <div class="mb-3">
-                        <label class="form-label">Key *</label>
-                        <input type="text" class="form-control" id="createKey" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Value *</label>
-                        <textarea class="form-control" id="createValue" rows="4" required></textarea>
-                        <small class="text-muted">Enter string value (will be stored as-is)</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">TTL (seconds)</label>
-                        <input type="number" class="form-control" id="createTTL" min="-1" placeholder="Leave empty for no expiry">
-                        <small class="text-muted">Use -1 for no expiry, or positive number for seconds</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="createEntry()">
-                    <i class="bi bi-plus-circle"></i> Create
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Update TTL Modal -->
+{% if is_admin %}
 <div class="modal fade" id="ttlModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -647,39 +611,6 @@ function triggerManualDump() {
     .catch(error => {
         console.error('Dump error:', error);
         showAlert('Error triggering dump: ' + error.message, 'danger');
-    });
-}
-
-// Create new entry
-function createEntry() {
-    const key = document.getElementById('createKey').value;
-    const value = document.getElementById('createValue').value;
-    const ttl = document.getElementById('createTTL').value;
-
-    if (!key || !value) {
-        showAlert('Key and value are required', 'warning');
-        return;
-    }
-
-    fetch('/cache/api/create', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'same-origin',
-        body: JSON.stringify({key, value, ttl: ttl || null})
-    })
-    .then(response => handleFetchResponse(response))
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            bootstrap.Modal.getInstance(document.getElementById('createModal')).hide();
-            document.getElementById('createForm').reset();
-            searchCache(currentPage);
-        } else {
-            showAlert('Error: ' + data.error, 'danger');
-        }
-    })
-    .catch(error => {
-        showAlert('Error creating entry: ' + error.message, 'danger');
     });
 }
 

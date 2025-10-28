@@ -477,33 +477,75 @@ def cache_query():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/cache/create', methods=['GET'])
+@admin_required
+def cache_create_page():
+    """Cache entry create page"""
+    return render_template('cache_create.html')
+
+
 @app.route('/cache/api/create', methods=['POST'])
 @admin_required
 def cache_create():
     """Create a new cache entry"""
     try:
-        data = request.get_json()
-        key = data.get('key')
-        value = data.get('value')
-        ttl = data.get('ttl')
+        # Handle both JSON (API) and form data (from create page)
+        if request.is_json:
+            data = request.get_json()
+            key = data.get('key')
+            value = data.get('value')
+            ttl = data.get('ttl')
+        else:
+            key = request.form.get('key', '').strip()
+            value = request.form.get('value', '').strip()
+            ttl = request.form.get('ttl', '').strip()
 
         if not key:
-            return jsonify({'success': False, 'error': 'Key is required'}), 400
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Key is required'}), 400
+            else:
+                flash('Key is required', 'error')
+                return redirect(url_for('cache_create_page'))
 
-        if value is None:
-            return jsonify({'success': False, 'error': 'Value is required'}), 400
+        if value is None or value == '':
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Value is required'}), 400
+            else:
+                flash('Value is required', 'error')
+                return redirect(url_for('cache_create_page'))
 
         # Set the value
-        if ttl and int(ttl) > 0:
-            redis_cache.set(key, value, ex=int(ttl))
+        if ttl and ttl != '' and ttl != '-1':
+            try:
+                ttl_int = int(ttl)
+                if ttl_int > 0:
+                    redis_cache.set(key, value, ex=ttl_int)
+                else:
+                    redis_cache.set(key, value)
+            except ValueError:
+                if request.is_json:
+                    return jsonify({'success': False, 'error': 'Invalid TTL value'}), 400
+                else:
+                    flash('Invalid TTL value', 'error')
+                    return redirect(url_for('cache_create_page'))
         else:
             redis_cache.set(key, value)
 
         logger.info(f"Cache entry created: {key}")
-        return jsonify({'success': True, 'message': f'Entry {key} created successfully'})
+
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'Entry {key} created successfully'})
+        else:
+            flash(f'Cache entry "{key}" created successfully', 'success')
+            return redirect(url_for('cache_management'))
+
     except Exception as e:
         logger.error(f"Error creating cache entry: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash(f'Error creating cache entry: {str(e)}', 'error')
+            return redirect(url_for('cache_create_page'))
 
 
 @app.route('/cache/api/delete', methods=['DELETE'])
