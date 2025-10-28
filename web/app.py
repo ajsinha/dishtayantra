@@ -526,6 +526,68 @@ def cache_edit_page(key):
         return redirect(url_for('cache_management'))
 
 
+@app.route('/cache/view/<path:key>', methods=['GET'])
+@login_required
+def cache_view_page(key):
+    """Cache entry view page"""
+    try:
+        # Check if key exists
+        if not redis_cache.exists(key):
+            flash(f'Cache key "{key}" not found', 'error')
+            return redirect(url_for('cache_management'))
+
+        # Get value, type, and TTL
+        value = redis_cache.get(key)
+        entry_type = redis_cache.type(key)
+        ttl = redis_cache.ttl(key)
+
+        # Format TTL display
+        if ttl > 0:
+            hours = ttl // 3600
+            minutes = (ttl % 3600) // 60
+            seconds = ttl % 60
+
+            if hours > 0:
+                ttl_display = f'{hours}h {minutes}m {seconds}s'
+            elif minutes > 0:
+                ttl_display = f'{minutes}m {seconds}s'
+            else:
+                ttl_display = f'{seconds}s'
+        elif ttl == -1:
+            ttl_display = 'No expiration'
+        else:
+            ttl_display = 'No expiration'
+
+        # Check if value is JSON
+        is_json = False
+        value_formatted = value
+        try:
+            import json
+            parsed = json.loads(value)
+            is_json = True
+            value_formatted = json.dumps(parsed, indent=2)
+        except:
+            pass
+
+        # Calculate value size
+        value_size = len(value.encode('utf-8')) if value else 0
+
+        return render_template('cache_view.html',
+                               key=key,
+                               value=value,
+                               value_formatted=value_formatted,
+                               value_size=value_size,
+                               entry_type=entry_type,
+                               ttl=ttl,
+                               ttl_display=ttl_display,
+                               is_json=is_json,
+                               is_admin=user_registry.has_role(session.get('username'), 'admin'))
+    except Exception as e:
+        logger.error(f"Error loading cache view page: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('cache_management'))
+
+
 @app.route('/cache/api/create', methods=['POST'])
 @admin_required
 def cache_create():

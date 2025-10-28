@@ -42,10 +42,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        cursor: pointer;
-    }
-    .value-cell:hover {
-        background-color: #f0f0f0;
     }
     .ttl-badge {
         font-size: 0.85em;
@@ -254,32 +250,6 @@
     </div>
 </div>
 
-<!-- View Full Value Modal -->
-<div class="modal fade" id="valueModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Full Value</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Key:</strong> <code id="modalKey"></code></p>
-                <p><strong>Type:</strong> <span id="modalType"></span></p>
-                <p><strong>TTL:</strong> <span id="modalTTL"></span></p>
-                <hr>
-                <p><strong>Value:</strong></p>
-                <pre id="modalValue"></pre>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="copyToClipboard()">
-                    <i class="bi bi-clipboard"></i> Copy Value
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 {% endblock %}
 
@@ -402,16 +372,16 @@ function displayResults(data) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><code>${escapeHtml(item.key)}</code></td>
-            <td class="value-cell" onclick="showFullValue(${index})" title="Click to view full value">
+            <td class="value-cell" title="Click to view full value">
                 ${escapeHtml(item.value || '')}
             </td>
             <td><span class="badge bg-info">${item.type}</span></td>
             <td><span class="badge ttl-badge ${item.ttl > 0 ? 'bg-warning' : 'bg-secondary'}">${item.ttl_display}</span></td>
             <td>
                 <div class="btn-group-actions">
-                    <button class="btn btn-sm btn-info" onclick="showFullValue(${index})" title="View">
+                    <a href="/cache/view/${encodeURIComponent(item.key)}" class="btn btn-sm btn-info" title="View">
                         <i class="bi bi-eye"></i>
-                    </button>
+                    </a>
                     {% if is_admin %}
                     <a href="/cache/edit/${encodeURIComponent(item.key)}" class="btn btn-sm btn-primary" title="Edit">
                         <i class="bi bi-pencil"></i>
@@ -502,26 +472,6 @@ function updatePagination(currentPage, totalPages) {
 // Change rows per page
 function changePerPage() {
     searchCache(1); // Reset to page 1 when changing per page
-}
-
-// Show full value in modal
-function showFullValue(index) {
-    const item = currentResults[index];
-    document.getElementById('modalKey').textContent = item.key;
-    document.getElementById('modalType').textContent = item.type;
-    document.getElementById('modalTTL').textContent = item.ttl_display;
-    document.getElementById('modalValue').textContent = item.full_value;
-
-    const modal = new bootstrap.Modal(document.getElementById('valueModal'));
-    modal.show();
-}
-
-// Copy value to clipboard
-function copyToClipboard() {
-    const value = document.getElementById('modalValue').textContent;
-    navigator.clipboard.writeText(value).then(() => {
-        showAlert('Value copied to clipboard', 'success');
-    });
 }
 
 // Helper function to handle fetch responses (used by admin functions)

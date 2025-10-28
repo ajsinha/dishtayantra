@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}View Cache Entry - DishtaYantra Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .view-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .view-section {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .view-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    .info-row {
+        padding: 15px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .info-value {
+        font-size: 1.05em;
+    }
+    .key-display {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1em;
+        word-break: break-all;
+        border-left: 4px solid #667eea;
+    }
+    .value-display {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95em;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 600px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+    }
+    .stats-card {
+        background: #e7f3ff;
+        border-left: 4px solid #0066cc;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+    .stat-item {
+        background: white;
+        padding: 12px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .stat-label {
+        font-size: 0.85em;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .stat-value {
+        font-size: 1.3em;
+        font-weight: 600;
+        color: #212529;
+    }
+    .action-buttons {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .json-display {
+        background: #282c34;
+        color: #abb2bf;
+        padding: 20px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 600px;
+        overflow-y: auto;
+        border: 1px solid #1e2127;
+    }
+    .copy-success {
+        display: none;
+        color: #28a745;
+        font-size: 0.9em;
+        margin-left: 10px;
+    }
+    .copy-success.show {
+        display: inline;
+    }
+    .badge-custom {
+        padding: 8px 12px;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-eye"></i> View Cache Entry</h2>
+            <div>
+                <a href="{{ url_for('cache_management') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Cache Management
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="view-container">
+    <div class="view-section">
+        <div class="view-header">
+            <h4 class="mb-0">
+                <i class="bi bi-database"></i> Cache Entry Details
+            </h4>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="stats-card">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Type</div>
+                    <div class="stat-value">
+                        <span class="badge bg-info badge-custom">{{ entry_type }}</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">TTL</div>
+                    <div class="stat-value">
+                        <span class="badge badge-custom {% if ttl > 0 %}bg-warning{% else %}bg-secondary{% endif %}">
+                            {{ ttl_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Value Size</div>
+                    <div class="stat-value">{{ value_size }} bytes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key -->
+        <div class="info-row">
+            <div class="info-label">
+                <i class="bi bi-key"></i> Key
+            </div>
+            <div class="info-value">
+                <div class="key-display">{{ key }}</div>
+            </div>
+        </div>
+
+        <!-- Value -->
+        <div class="info-row">
+            <div class="info-label">
+                <i class="bi bi-file-text"></i> Value
+            </div>
+            <div class="info-value">
+                {% if is_json %}
+                <div class="json-display">{{ value_formatted }}</div>
+                {% else %}
+                <div class="value-display">{{ value }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button type="button" class="btn btn-primary" onclick="copyToClipboard()">
+                <i class="bi bi-clipboard"></i> Copy Value
+            </button>
+            <span class="copy-success" id="copySuccess">
+                <i class="bi bi-check-circle-fill"></i> Copied!
+            </span>
+            
+            {% if is_admin %}
+            <a href="{{ url_for('cache_edit_page', key=key) }}" class="btn btn-success">
+                <i class="bi bi-pencil"></i> Edit Entry
+            </a>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                <i class="bi bi-trash"></i> Delete Entry
+            </button>
+            {% endif %}
+            
+            <a href="{{ url_for('cache_management') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Additional Information Section -->
+    <div class="view-section mt-4">
+        <h5 class="mb-3"><i class="bi bi-info-circle"></i> Entry Information</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Cache Details</h6>
+                <ul class="list-unstyled">
+                    <li><strong>Key:</strong> <code>{{ key }}</code></li>
+                    <li><strong>Type:</strong> {{ entry_type }}</li>
+                    <li><strong>Size:</strong> {{ value_size }} bytes</li>
+                    {% if is_json %}
+                    <li><strong>Format:</strong> JSON</li>
+                    {% else %}
+                    <li><strong>Format:</strong> Plain Text</li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Expiration</h6>
+                <ul class="list-unstyled">
+                    {% if ttl > 0 %}
+                    <li><strong>TTL:</strong> {{ ttl }} seconds</li>
+                    <li><strong>Formatted:</strong> {{ ttl_display }}</li>
+                    <li><strong>Status:</strong> <span class="badge bg-warning">Expiring</span></li>
+                    {% elif ttl == -1 %}
+                    <li><strong>TTL:</strong> No expiration</li>
+                    <li><strong>Status:</strong> <span class="badge bg-success">Persistent</span></li>
+                    {% else %}
+                    <li><strong>TTL:</strong> No expiration</li>
+                    <li><strong>Status:</strong> <span class="badge bg-secondary">Persistent</span></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="view-section mt-4">
+        <h5 class="mb-3"><i class="bi bi-lightbulb"></i> Quick Actions</h5>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="d-grid">
+                    <button class="btn btn-outline-primary" onclick="copyToClipboard()">
+                        <i class="bi bi-clipboard"></i> Copy Value
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-2 text-center">Copy the value to clipboard</small>
+            </div>
+            {% if is_admin %}
+            <div class="col-md-4">
+                <div class="d-grid">
+                    <a href="{{ url_for('cache_edit_page', key=key) }}" class="btn btn-outline-success">
+                        <i class="bi bi-pencil"></i> Edit Entry
+                    </a>
+                </div>
+                <small class="text-muted d-block mt-2 text-center">Modify value or TTL</small>
+            </div>
+            <div class="col-md-4">
+                <div class="d-grid">
+                    <button class="btn btn-outline-info" onclick="downloadAsFile()">
+                        <i class="bi bi-download"></i> Download
+                    </button>
+                </div>
+                <small class="text-muted d-block mt-2 text-center">Save value as file</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Copy value to clipboard
+function copyToClipboard() {
+    const value = {{ value | tojson }};
+    navigator.clipboard.writeText(value).then(() => {
+        const successMsg = document.getElementById('copySuccess');
+        successMsg.classList.add('show');
+        setTimeout(() => {
+            successMsg.classList.remove('show');
+        }, 2000);
+    }).catch(err => {
+        alert('Failed to copy to clipboard: ' + err);
+    });
+}
+
+// Download value as file
+function downloadAsFile() {
+    const key = {{ key | tojson }};
+    const value = {{ value | tojson }};
+    const isJson = {{ is_json | tojson }};
+    
+    const blob = new Blob([value], { type: isJson ? 'application/json' : 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = key.replace(/[^a-zA-Z0-9]/g, '_') + (isJson ? '.json' : '.txt');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+{% if is_admin %}
+// Confirm delete
+function confirmDelete() {
+    const key = {{ key | tojson }};
+    if (confirm(`Are you sure you want to delete cache entry "${key}"?`)) {
+        fetch('/cache/api/delete', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ key: key })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Entry deleted successfully');
+                window.location.href = '{{ url_for("cache_management") }}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error deleting entry: ' + error);
+        });
+    }
+}
+{% endif %}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + C to copy
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !window.getSelection().toString()) {
+        e.preventDefault();
+        copyToClipboard();
+    }
+    
+    // ESC to go back
+    if (e.key === 'Escape') {
+        window.location.href = '{{ url_for("cache_management") }}';
+    }
+});
+</script>
+{% endblock %}
