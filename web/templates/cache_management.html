@@ -280,37 +280,6 @@
     </div>
 </div>
 
-<!-- Update TTL Modal -->
-{% if is_admin %}
-<div class="modal fade" id="ttlModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Update TTL</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Key:</strong> <code id="ttlKey"></code></p>
-                <p><strong>Current TTL:</strong> <span id="ttlCurrent"></span></p>
-                <hr>
-                <form id="ttlForm">
-                    <div class="mb-3">
-                        <label class="form-label">New TTL (seconds) *</label>
-                        <input type="number" class="form-control" id="ttlValue" min="-1" required>
-                        <small class="text-muted">Use -1 to remove expiry, or positive number for seconds</small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="updateTTL()">
-                    <i class="bi bi-clock"></i> Update
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 {% endblock %}
 
@@ -444,9 +413,9 @@ function displayResults(data) {
                         <i class="bi bi-eye"></i>
                     </button>
                     {% if is_admin %}
-                    <button class="btn btn-sm btn-warning" onclick="showTTLModal('${escapeHtml(item.key)}', '${item.ttl_display}')" title="Update TTL">
-                        <i class="bi bi-clock"></i>
-                    </button>
+                    <a href="/cache/edit/${encodeURIComponent(item.key)}" class="btn btn-sm btn-primary" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </a>
                     <button class="btn btn-sm btn-danger" onclick="deleteEntry('${escapeHtml(item.key)}')" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -576,16 +545,6 @@ function handleFetchResponse(response) {
 }
 
 {% if is_admin %}
-// Show TTL modal
-function showTTLModal(key, currentTTL) {
-    document.getElementById('ttlKey').textContent = key;
-    document.getElementById('ttlCurrent').textContent = currentTTL;
-    document.getElementById('ttlValue').value = '';
-
-    const modal = new bootstrap.Modal(document.getElementById('ttlModal'));
-    modal.show();
-}
-
 // Trigger manual dump
 function triggerManualDump() {
     if (!confirm('This will immediately dump the cache to disk. Continue?')) {
@@ -611,37 +570,6 @@ function triggerManualDump() {
     .catch(error => {
         console.error('Dump error:', error);
         showAlert('Error triggering dump: ' + error.message, 'danger');
-    });
-}
-
-// Update TTL
-function updateTTL() {
-    const key = document.getElementById('ttlKey').textContent;
-    const ttl = document.getElementById('ttlValue').value;
-
-    if (!ttl) {
-        showAlert('TTL is required', 'warning');
-        return;
-    }
-
-    fetch('/cache/api/ttl', {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'same-origin',
-        body: JSON.stringify({key, ttl})
-    })
-    .then(response => handleFetchResponse(response))
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            bootstrap.Modal.getInstance(document.getElementById('ttlModal')).hide();
-            searchCache(currentPage);
-        } else {
-            showAlert('Error: ' + data.error, 'danger');
-        }
-    })
-    .catch(error => {
-        showAlert('Error updating TTL: ' + error.message, 'danger');
     });
 }
 

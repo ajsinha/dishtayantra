@@ -484,6 +484,48 @@ def cache_create_page():
     return render_template('cache_create.html')
 
 
+@app.route('/cache/edit/<path:key>', methods=['GET'])
+@admin_required
+def cache_edit_page(key):
+    """Cache entry edit page"""
+    try:
+        # Check if key exists
+        if not redis_cache.exists(key):
+            flash(f'Cache key "{key}" not found', 'error')
+            return redirect(url_for('cache_management'))
+
+        # Get current value and TTL
+        current_value = redis_cache.get(key)
+        current_ttl = redis_cache.ttl(key)
+
+        # Format TTL display
+        if current_ttl > 0:
+            hours = current_ttl // 3600
+            minutes = (current_ttl % 3600) // 60
+            seconds = current_ttl % 60
+
+            if hours > 0:
+                ttl_display = f'{hours}h {minutes}m {seconds}s'
+            elif minutes > 0:
+                ttl_display = f'{minutes}m {seconds}s'
+            else:
+                ttl_display = f'{seconds}s'
+        elif current_ttl == -1:
+            ttl_display = 'No expiration'
+        else:
+            ttl_display = 'No expiration'
+
+        return render_template('cache_edit.html',
+                               key=key,
+                               current_value=current_value,
+                               current_ttl=current_ttl,
+                               current_ttl_display=ttl_display)
+    except Exception as e:
+        logger.error(f"Error loading cache edit page: {str(e)}")
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('cache_management'))
+
+
 @app.route('/cache/api/create', methods=['POST'])
 @admin_required
 def cache_create():
@@ -546,6 +588,80 @@ def cache_create():
         else:
             flash(f'Error creating cache entry: {str(e)}', 'error')
             return redirect(url_for('cache_create_page'))
+
+
+@app.route('/cache/update/<path:key>', methods=['POST'])
+@admin_required
+def cache_update(key):
+    """Update an existing cache entry"""
+    try:
+        # Check if key exists
+        if not redis_cache.exists(key):
+            flash(f'Cache key "{key}" not found', 'error')
+            return redirect(url_for('cache_management'))
+
+        # Handle both JSON (API) and form data (from edit page)
+        if request.is_json:
+            data = request.get_json()
+            value = data.get('value')
+            ttl = data.get('ttl')
+        else:
+            value = request.form.get('value', '').strip()
+            ttl = request.form.get('ttl', '').strip()
+
+        if value is None or value == '':
+            if request.is_json:
+                return jsonify({'success': False, 'error': 'Value is required'}), 400
+            else:
+                flash('Value is required', 'error')
+                return redirect(url_for('cache_edit_page', key=key))
+
+        # Update the value (this preserves TTL if we're not changing it)
+        if ttl and ttl != '':
+            try:
+                ttl_int = int(ttl)
+                if ttl_int > 0:
+                    # Set with new TTL
+                    redis_cache.set(key, value, ex=ttl_int)
+                    logger.info(f"Cache entry updated with new TTL: {key} (TTL: {ttl_int}s)")
+                elif ttl_int == -1:
+                    # Set without TTL (persistent)
+                    redis_cache.set(key, value)
+                    logger.info(f"Cache entry updated (persistent): {key}")
+                else:
+                    if request.is_json:
+                        return jsonify({'success': False, 'error': 'Invalid TTL value'}), 400
+                    else:
+                        flash('Invalid TTL value', 'error')
+                        return redirect(url_for('cache_edit_page', key=key))
+            except ValueError:
+                if request.is_json:
+                    return jsonify({'success': False, 'error': 'Invalid TTL value'}), 400
+                else:
+                    flash('Invalid TTL value', 'error')
+                    return redirect(url_for('cache_edit_page', key=key))
+        else:
+            # Update value but keep existing TTL
+            current_ttl = redis_cache.ttl(key)
+            if current_ttl > 0:
+                redis_cache.set(key, value, ex=current_ttl)
+            else:
+                redis_cache.set(key, value)
+            logger.info(f"Cache entry updated (keeping TTL): {key}")
+
+        if request.is_json:
+            return jsonify({'success': True, 'message': f'Entry {key} updated successfully'})
+        else:
+            flash(f'Cache entry "{key}" updated successfully', 'success')
+            return redirect(url_for('cache_management'))
+
+    except Exception as e:
+        logger.error(f"Error updating cache entry: {str(e)}")
+        if request.is_json:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        else:
+            flash(f'Error updating cache entry: {str(e)}', 'error')
+            return redirect(url_for('cache_edit_page', key=key))
 
 
 @app.route('/cache/api/delete', methods=['DELETE'])

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Cache Entry - DishtaYantra Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    .info-badge {
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #0066cc;
+        margin-bottom: 20px;
+    }
+    .key-display {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 6px;
+        border-left: 4px solid #28a745;
+        font-family: 'Courier New', monospace;
+        font-size: 1.1em;
+        margin-bottom: 20px;
+    }
+    .warning-badge {
+        background: #fff3cd;
+        color: #856404;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #ffc107;
+        margin-bottom: 20px;
+    }
+    .code-example {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-pencil-square"></i> Edit Cache Entry</h2>
+            <div>
+                <a href="{{ url_for('cache_management') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Cache Management
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="edit-form-container">
+    <div class="form-section">
+        <div class="form-header">
+            <h4 class="mb-0">
+                <i class="bi bi-database-fill-gear"></i> Edit Cache Entry
+            </h4>
+        </div>
+
+        <div class="warning-badge">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Note:</strong> The key cannot be modified. To change a key, delete this entry and create a new one.
+        </div>
+
+        <div class="key-display">
+            <strong>Key:</strong> {{ key }}
+        </div>
+
+        <form method="POST" action="{{ url_for('cache_update', key=key) }}">
+            <div class="mb-4">
+                <label for="value" class="form-label">
+                    <strong>Value</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" id="value" name="value" rows="10" required
+                          placeholder="Enter the value to cache (can be text, JSON, etc.)">{{ current_value }}</textarea>
+                <small class="form-text text-muted">
+                    Update the data stored in this cache entry. Can be plain text, JSON, or any string value.
+                </small>
+                <div class="code-example">
+                    <strong>Example JSON:</strong> {"name": "John", "age": 30, "active": true}
+                </div>
+            </div>
+
+            <div class="info-section">
+                <label for="ttl" class="form-label">
+                    <strong><i class="bi bi-clock"></i> TTL (Time To Live)</strong>
+                    <span class="text-muted">(optional)</span>
+                </label>
+                
+                {% if current_ttl > 0 %}
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle"></i> <strong>Current TTL:</strong> {{ current_ttl_display }}
+                </div>
+                {% elif current_ttl == -1 %}
+                <div class="alert alert-secondary mb-3">
+                    <i class="bi bi-infinity"></i> <strong>Current TTL:</strong> No expiration (persistent)
+                </div>
+                {% else %}
+                <div class="alert alert-secondary mb-3">
+                    <i class="bi bi-infinity"></i> <strong>Current TTL:</strong> No expiration
+                </div>
+                {% endif %}
+
+                <div class="input-group mb-3">
+                    <input type="number" class="form-control" id="ttl" name="ttl" min="-1"
+                           placeholder="Enter new TTL in seconds (or leave blank to keep current)">
+                    <span class="input-group-text">seconds</span>
+                </div>
+                
+                <div class="alert alert-info mb-0">
+                    <strong>TTL Options:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Empty/Blank:</strong> Keep current TTL setting</li>
+                        <li><strong>-1:</strong> Remove expiration (make persistent)</li>
+                        <li><strong>Positive number:</strong> Set new expiration time in seconds</li>
+                    </ul>
+                    <div class="code-example mt-2">
+                        <strong>Common values:</strong><br>
+                        • 60 = 1 minute<br>
+                        • 300 = 5 minutes<br>
+                        • 3600 = 1 hour<br>
+                        • 86400 = 1 day<br>
+                        • 604800 = 1 week
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success btn-lg me-2">
+                    <i class="bi bi-check-circle"></i> Update Entry
+                </button>
+                <a href="{{ url_for('cache_management') }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-section mt-4">
+        <h5 class="mb-3"><i class="bi bi-lightbulb"></i> Tips & Best Practices</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Value Updates</h6>
+                <ul>
+                    <li>Validate JSON before saving</li>
+                    <li>Consider data format consistency</li>
+                    <li>Keep values reasonably sized</li>
+                    <li>Use proper encoding for special chars</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>TTL Management</h6>
+                <ul>
+                    <li>Use -1 to make data persistent</li>
+                    <li>Set appropriate TTL for data type</li>
+                    <li>Consider refresh frequency</li>
+                    <li>Monitor memory usage</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6>Version Control</h6>
+                <ul>
+                    <li>Document significant changes</li>
+                    <li>Test updates in staging first</li>
+                    <li>Keep backups of critical data</li>
+                    <li>Use download feature before edits</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Performance</h6>
+                <ul>
+                    <li>Batch updates when possible</li>
+                    <li>Avoid frequent small changes</li>
+                    <li>Consider cache invalidation</li>
+                    <li>Monitor access patterns</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const value = document.getElementById('value').value.trim();
+    const ttl = document.getElementById('ttl').value.trim();
+    
+    if (!value) {
+        e.preventDefault();
+        alert('Value is required.');
+        return false;
+    }
+    
+    // Check if TTL is valid (if provided)
+    if (ttl && ttl !== '') {
+        const ttlNum = parseInt(ttl);
+        if (isNaN(ttlNum) || ttlNum < -1) {
+            e.preventDefault();
+            alert('TTL must be -1 (no expiry) or a positive number of seconds.');
+            return false;
+        }
+    }
+    
+    return true;
+});
+
+// Optional: Try to format JSON in value field
+document.getElementById('value').addEventListener('blur', function() {
+    const value = this.value.trim();
+    if (value.startsWith('{') || value.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(value);
+            this.value = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            // Not valid JSON, leave as is
+        }
+    }
+});
+
+// Add confirmation for significant changes
+document.querySelector('form').addEventListener('submit', function(e) {
+    const originalValue = `{{ current_value | tojson }}`;
+    const newValue = document.getElementById('value').value;
+    
+    // If value has changed significantly (more than 50% different)
+    if (originalValue && newValue && originalValue !== newValue) {
+        if (Math.abs(originalValue.length - newValue.length) > Math.max(originalValue.length, newValue.length) * 0.5) {
+            if (!confirm('The value has changed significantly. Are you sure you want to update?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}
