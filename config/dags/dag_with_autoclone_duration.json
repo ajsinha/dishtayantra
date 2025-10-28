@@ -1,10 +1,10 @@
 {
   "name": "dag_with_autoclone_duration",
   "start_time": "0800",
-  "duration": "10h",
+  "duration": "14h",
 
   "autoclone": {
-    "ramp_up_time": "1255",
+    "ramp_up_time": "2142",
     "duration": "1h30m",
     "ramp_count": 10
   },

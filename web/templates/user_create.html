@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Create User - DishtaYantra Compute Server{% endblock %}
+
+{% block extra_css %}
+<style>
+    .create-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #dee2e6;
+    }
+    .info-badge {
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 4px solid #0066cc;
+        margin-bottom: 20px;
+    }
+    .role-checkbox-group {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .role-option {
+        background: white;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+    .role-option:hover {
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    .role-option input[type="checkbox"]:checked + label {
+        color: #667eea;
+        font-weight: 600;
+    }
+    .role-description {
+        font-size: 0.85em;
+        color: #6c757d;
+        margin-top: 5px;
+        margin-left: 28px;
+    }
+    .password-strength {
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+    .password-strength-bar {
+        height: 100%;
+        width: 0%;
+        transition: all 0.3s ease;
+    }
+    .strength-weak { background: #dc3545; width: 33%; }
+    .strength-medium { background: #ffc107; width: 66%; }
+    .strength-strong { background: #28a745; width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="bi bi-person-plus"></i> Create User</h2>
+            <div>
+                <a href="{{ url_for('user_management') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to User Management
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="create-form-container">
+    <div class="form-section">
+        <div class="form-header">
+            <h4 class="mb-0">
+                <i class="bi bi-person-plus-fill"></i> Add New User
+            </h4>
+        </div>
+
+        <div class="info-badge">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> Create a new user account with specific roles and permissions. Ensure username is unique and password meets security requirements.
+        </div>
+
+        <form method="POST" action="{{ url_for('user_create_page') }}" id="createUserForm">
+            <div class="mb-4">
+                <label for="username" class="form-label">
+                    <strong>Username</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <input type="text" class="form-control" id="username" name="username" required 
+                       placeholder="e.g., john.doe, operator1"
+                       pattern="[a-zA-Z0-9._-]+"
+                       title="Only letters, numbers, dots, underscores, and hyphens allowed">
+                <small class="form-text text-muted">
+                    Must be unique. Use only letters, numbers, dots, underscores, and hyphens.
+                </small>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label">
+                    <strong>Password</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <input type="password" class="form-control" id="password" name="password" required 
+                       placeholder="Enter a secure password"
+                       minlength="6">
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                </div>
+                <small class="form-text text-muted" id="passwordStrengthText">
+                    Minimum 6 characters. Use a mix of letters, numbers, and special characters.
+                </small>
+            </div>
+
+            <div class="mb-4">
+                <label for="full_name" class="form-label">
+                    <strong>Full Name</strong>
+                    <span class="text-muted">(optional)</span>
+                </label>
+                <input type="text" class="form-control" id="full_name" name="full_name"
+                       placeholder="e.g., John Doe">
+                <small class="form-text text-muted">
+                    Display name for this user. If not provided, username will be displayed.
+                </small>
+            </div>
+
+            <div class="role-checkbox-group">
+                <label class="form-label">
+                    <strong><i class="bi bi-shield-check"></i> User Roles</strong>
+                    <span class="text-danger">*</span>
+                </label>
+                <small class="form-text text-muted mb-3 d-block">
+                    Select at least one role for this user. Multiple roles can be assigned.
+                </small>
+
+                <div class="role-option">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="role_user" name="role_user" value="user" checked>
+                        <label class="form-check-label" for="role_user">
+                            <i class="bi bi-person"></i> <strong>User</strong>
+                        </label>
+                    </div>
+                    <div class="role-description">
+                        Basic access to view dashboards and DAG information. Can view cache entries but cannot modify them.
+                    </div>
+                </div>
+
+                <div class="role-option">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="role_operator" name="role_operator" value="operator">
+                        <label class="form-check-label" for="role_operator">
+                            <i class="bi bi-gear"></i> <strong>Operator</strong>
+                        </label>
+                    </div>
+                    <div class="role-description">
+                        Can perform operations on DAGs and manage cache entries. Has elevated permissions for system operations.
+                    </div>
+                </div>
+
+                <div class="role-option">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="role_admin" name="role_admin" value="admin">
+                        <label class="form-check-label" for="role_admin">
+                            <i class="bi bi-shield-lock-fill"></i> <strong>Administrator</strong>
+                        </label>
+                    </div>
+                    <div class="role-description">
+                        Full system access. Can manage users, configure system settings, and perform all operations.
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success btn-lg me-2">
+                    <i class="bi bi-check-circle"></i> Create User
+                </button>
+                <a href="{{ url_for('user_management') }}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-section mt-4">
+        <h5 class="mb-3"><i class="bi bi-lightbulb"></i> User Management Guidelines</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Username Best Practices</h6>
+                <ul>
+                    <li>Use lowercase letters</li>
+                    <li>Keep it simple and memorable</li>
+                    <li>Avoid special characters except dots, underscores, hyphens</li>
+                    <li>Use format: firstname.lastname or role-based names</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Password Security</h6>
+                <ul>
+                    <li>Minimum 6 characters (longer is better)</li>
+                    <li>Mix uppercase and lowercase letters</li>
+                    <li>Include numbers and special characters</li>
+                    <li>Avoid common words or patterns</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6>Role Assignment</h6>
+                <ul>
+                    <li><strong>User:</strong> For read-only access</li>
+                    <li><strong>Operator:</strong> For operational tasks</li>
+                    <li><strong>Admin:</strong> For system administration</li>
+                    <li>Multiple roles can be combined</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Security Tips</h6>
+                <ul>
+                    <li>Review user roles regularly</li>
+                    <li>Remove unused accounts promptly</li>
+                    <li>Use principle of least privilege</li>
+                    <li>Monitor admin account activity</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Password strength checker
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthText = document.getElementById('passwordStrengthText');
+    
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.length >= 10) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    
+    strengthBar.className = 'password-strength-bar';
+    
+    if (strength <= 2) {
+        strengthBar.classList.add('strength-weak');
+        strengthText.textContent = 'Weak password. Add more characters and variety.';
+        strengthText.style.color = '#dc3545';
+    } else if (strength <= 4) {
+        strengthBar.classList.add('strength-medium');
+        strengthText.textContent = 'Medium strength. Consider adding more special characters.';
+        strengthText.style.color = '#ffc107';
+    } else {
+        strengthBar.classList.add('strength-strong');
+        strengthText.textContent = 'Strong password!';
+        strengthText.style.color = '#28a745';
+    }
+});
+
+// Form validation
+document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    // Check if at least one role is selected
+    const roles = [];
+    if (document.getElementById('role_user').checked) roles.push('user');
+    if (document.getElementById('role_operator').checked) roles.push('operator');
+    if (document.getElementById('role_admin').checked) roles.push('admin');
+    
+    if (!username) {
+        e.preventDefault();
+        alert('Username is required.');
+        return false;
+    }
+    
+    if (!password) {
+        e.preventDefault();
+        alert('Password is required.');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long.');
+        return false;
+    }
+    
+    if (roles.length === 0) {
+        e.preventDefault();
+        alert('At least one role must be selected.');
+        return false;
+    }
+    
+    return true;
+});
+
+// Username validation on input
+document.getElementById('username').addEventListener('input', function() {
+    this.value = this.value.toLowerCase().replace(/[^a-z0-9._-]/g, '');
+});
+</script>
+{% endblock %}

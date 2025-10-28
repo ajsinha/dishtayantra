@@ -394,6 +394,71 @@ def resume_dag(dag_name):
 
     return redirect(url_for('dashboard'))
 
+@app.route('/dag/<dag_name>/subscriber/<subscriber_name>/publish', methods=['GET', 'POST'])
+@admin_required
+def publish_message(dag_name, subscriber_name):
+    """Display the publish message page (GET) or handle message submission (POST)"""
+    if request.method == 'GET':
+        try:
+            details = dag_server.details(dag_name)
+
+            # Check if subscriber exists
+            if subscriber_name not in details.get('subscribers', {}):
+                flash(f'Subscriber {subscriber_name} not found', 'error')
+                return redirect(url_for('dag_details', dag_name=dag_name))
+
+            subscriber_info = details['subscribers'][subscriber_name]
+
+            return render_template(
+                'publish_message.html',
+                dag_name=dag_name,
+                subscriber_name=subscriber_name,
+                subscriber_info=subscriber_info,
+                is_admin=True
+            )
+        except Exception as e:
+            logger.error(f"Error loading publish message page: {str(e)}")
+            flash(f'Error: {str(e)}', 'error')
+            return redirect(url_for('dag_details', dag_name=dag_name))
+
+    # POST method - handle message submission
+    try:
+        message = request.form.get('message')
+        if not message:
+            return jsonify({'error': 'No message provided'}), 400
+
+        message_data = json.loads(message)
+
+        # Get the subscriber from DAG
+        dag = dag_server.dags.get(dag_name)
+        if not dag:
+            return jsonify({'error': 'DAG not found'}), 404
+
+        subscriber = dag.subscribers.get(subscriber_name)
+        if not subscriber:
+            return jsonify({'error': 'Subscriber not found'}), 404
+
+        # Check if subscriber type supports publishing
+        source = subscriber.source
+        if not any(prefix in source for prefix in ['mem://', 'kafka://', 'redischannel://', 'activemq://']):
+            return jsonify({'error': 'Subscriber type does not support publishing'}), 400
+
+        # Create a temporary publisher to the same source
+        from core.pubsub.pubsubfactory import create_publisher
+        config = subscriber.config.copy()
+        config['destination'] = source
+
+        temp_publisher = create_publisher(f'temp_pub_{subscriber_name}', config)
+        temp_publisher.publish(message_data)
+        temp_publisher.stop()
+
+        return jsonify({'success': True, 'message': 'Message published successfully'})
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON: {str(e)}")
+        return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
+    except Exception as e:
+        logger.error(f"Error publishing message: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # Cache Management Routes
 @app.route('/cache')
@@ -968,10 +1033,77 @@ def users_reload():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/users/create', methods=['GET', 'POST'])
+@admin_required
+def user_create_page():
+    """User creation page"""
+    if request.method == 'GET':
+        return render_template('user_create.html')
+
+    # POST - Handle form submission
+    try:
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        full_name = request.form.get('full_name', '').strip()
+
+        # Convert roles from form checkboxes
+        roles = []
+        if request.form.get('role_user'):
+            roles.append('user')
+        if request.form.get('role_operator'):
+            roles.append('operator')
+        if request.form.get('role_admin'):
+            roles.append('admin')
+
+        # Validation
+        if not username:
+            flash('Username is required', 'error')
+            return redirect(url_for('user_create_page'))
+
+        if not password:
+            flash('Password is required', 'error')
+            return redirect(url_for('user_create_page'))
+
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long', 'error')
+            return redirect(url_for('user_create_page'))
+
+        if not roles or len(roles) == 0:
+            flash('At least one role is required', 'error')
+            return redirect(url_for('user_create_page'))
+
+        if user_registry.user_exists(username):
+            flash(f'User {username} already exists', 'error')
+            return redirect(url_for('user_create_page'))
+
+        # Create user data
+        user_data = {
+            'password': password,
+            'full_name': full_name if full_name else username,
+            'roles': roles
+        }
+
+        # Create user
+        success = user_registry.create_user(username, user_data, session.get('username'))
+
+        if success:
+            logger.info(f"User {username} created by {session.get('username')}")
+            flash(f'User {username} created successfully', 'success')
+            return redirect(url_for('user_management'))
+        else:
+            flash('Failed to create user', 'error')
+            return redirect(url_for('user_create_page'))
+
+    except Exception as e:
+        logger.error(f"Error creating user: {str(e)}")
+        flash(f'Error creating user: {str(e)}', 'error')
+        return redirect(url_for('user_create_page'))
+
+
 @app.route('/users/api/create', methods=['POST'])
 @admin_required
 def users_create():
-    """Create a new user"""
+    """Create a new user (API endpoint for backward compatibility)"""
     try:
         data = request.get_json()
         username = data.get('username', '').strip()
@@ -985,6 +1117,9 @@ def users_create():
 
         if not password:
             return jsonify({'success': False, 'error': 'Password is required'}), 400
+
+        if not roles or len(roles) == 0:
+            return jsonify({'success': False, 'error': 'At least one role is required'}), 400
 
         if user_registry.user_exists(username):
             return jsonify({'success': False, 'error': f'User {username} already exists'}), 400
