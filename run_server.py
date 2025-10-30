@@ -68,10 +68,14 @@ def main():
         port = props.get_int('server.port', 5002)
         debug = props.get('server.debug', 'False').lower() == 'true'
 
+        cert_file = props.get('server.cert.file', None)
+        key_file = props.get('server.key.file', None)
         # Run Flask app
-        app.run(
+        if not cert_file and not key_file:
             app.run(host=host, port=port, debug=debug)
-        )
+        else:
+            app.run(host=host, port=port, debug=debug,ssl_context=(cert_file,key_file))
+
     except KeyboardInterrupt:
         logger.info("Shutting down DishtaYantra Compute Server")
         dag_server.shutdown()
