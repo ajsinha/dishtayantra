@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Login - DishtaYantra Compute Server{% endblock %}
+{% block title %}Login - {{ app_name }} Compute Server{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-4">
         <div class="card shadow">
             <div class="card-header bg-dark text-white text-center">
-                <h4><i class="bi bi-diagram-3"></i> DishtaYantra Compute Server</h4>
+                <h4><i class="bi bi-diagram-3"></i> {{ app_name }} Compute Server</h4>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('login') }}">
