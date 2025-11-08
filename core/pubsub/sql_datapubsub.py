@@ -3,7 +3,7 @@ import logging
 import time
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 logger = logging.getLogger(__name__)
 
 
@@ -90,8 +90,8 @@ class SQLDataPublisher(DataPublisher):
 class SQLDataSubscriber(DataSubscriber):
     """Subscriber that reads data from SQL database"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         self.sql_source_name = source.replace('sql://', '')
         self.sql_config_file = config.get('sql_config_file')

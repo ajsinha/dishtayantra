@@ -4,7 +4,7 @@ import os
 import time
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber,DataAwarePayload
-
+import queue
 logger = logging.getLogger(__name__)
 
 
@@ -46,8 +46,8 @@ class FileDataPublisher(DataPublisher):
 class FileDataSubscriber(DataSubscriber):
     """Subscriber that reads data from a file"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
         self.filepath = source.replace('file://', '')
         self.read_interval = config.get('read_interval', 1)
         self.file_handle = None

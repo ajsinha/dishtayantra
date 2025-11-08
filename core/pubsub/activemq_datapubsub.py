@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 import stomp
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber, DataAwarePayload
-
+import queue
 logger = logging.getLogger(__name__)
 
 
@@ -84,7 +84,7 @@ class ActiveMQListener(stomp.ConnectionListener):
 class ActiveMQDataSubscriber(DataSubscriber):
     """Subscriber for ActiveMQ queues and topics"""
 
-    def __init__(self, name, source, config):
+    def __init__(self, name, source, config, given_queue: queue.Queue=None ):
         # Don't call super().__init__ yet as we need to override the subscription loop
         self.name = name
         self.source = source
@@ -92,7 +92,9 @@ class ActiveMQDataSubscriber(DataSubscriber):
         self.max_depth = config.get('max_depth', 100000)
 
         import queue
-        self._internal_queue = queue.Queue(maxsize=self.max_depth)
+        self._internal_queue = given_queue
+        if given_queue is None:
+            self._internal_queue = queue.Queue(maxsize=self.max_depth)
         self._stop_event = None
         self._suspend_event = None
         self._last_receive = None

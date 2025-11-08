@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 import redis
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 logger = logging.getLogger(__name__)
 
 
@@ -101,8 +101,8 @@ class RedisChannelDataPublisher(DataPublisher):
 class RedisChannelDataSubscriber(DataSubscriber):
     """Subscriber that subscribes to Redis channel"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         self.channel = source.replace('redischannel://', '')
         self.host = config.get('host', 'localhost')

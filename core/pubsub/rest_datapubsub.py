@@ -9,7 +9,7 @@ import logging
 import time
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 try:
     import requests
 except ImportError:
@@ -146,8 +146,8 @@ class RESTDataPublisher(DataPublisher):
 class RESTDataSubscriber(DataSubscriber):
     """Subscriber that polls data from REST API endpoints"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         if not requests:
             raise ImportError("requests library required for REST. Install with: pip install requests")

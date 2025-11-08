@@ -37,7 +37,7 @@ import logging
 import grpc
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 # Import generated gRPC stubs (these would be generated from the proto file)
 # For this implementation, we'll assume they exist
 try:
@@ -134,8 +134,8 @@ class GRPCDataPublisher(DataPublisher):
 class GRPCDataSubscriber(DataSubscriber):
     """Subscriber for gRPC streams"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         # Parse source: grpc://host:port/topic
         self.topic = source.split('/')[-1]

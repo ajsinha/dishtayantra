@@ -123,12 +123,15 @@ class DataPublisher(ABC):
 class DataSubscriber(ABC):
     """Abstract base class for data subscribers"""
 
-    def __init__(self, name, source, config):
+    def __init__(self, name, source, config, given_internal_queue: queue.Queue = None):
         self.name = name
         self.source = source
         self.config = config
         self.max_depth = config.get('max_depth', 100000)
-        self._internal_queue = queue.Queue(maxsize=self.max_depth)
+        self._internal_queue = given_internal_queue
+        if given_internal_queue is None:
+            self._internal_queue = queue.Queue(maxsize=self.max_depth)
+
         self._subscriber_thread = None
         self._stop_event = threading.Event()
         self._suspend_event = threading.Event()

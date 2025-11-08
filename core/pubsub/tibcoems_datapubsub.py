@@ -9,7 +9,7 @@ import logging
 import time
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 try:
     import tibcoems
 except ImportError:
@@ -135,8 +135,8 @@ class TibcoEMSDataPublisher(DataPublisher):
 class TibcoEMSDataSubscriber(DataSubscriber):
     """Subscriber for TIBCO EMS queues and topics"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         if not tibcoems:
             raise ImportError("tibcoems library required for TIBCO EMS. Install TIBCO EMS Python client")

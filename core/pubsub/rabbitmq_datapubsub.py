@@ -9,7 +9,7 @@ import logging
 import time
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 try:
     import pika
     from pika.exceptions import AMQPConnectionError, AMQPChannelError
@@ -178,8 +178,8 @@ class RabbitMQDataPublisher(DataPublisher):
 class RabbitMQDataSubscriber(DataSubscriber):
     """Subscriber for RabbitMQ queues and topics"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         if not pika:
             raise ImportError("pika library required for RabbitMQ. Install with: pip install pika")

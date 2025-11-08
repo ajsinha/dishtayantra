@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
 from core.core_utils import instantiate_module
-
+import queue
 logger = logging.getLogger(__name__)
 
 
@@ -48,8 +48,8 @@ class CustomDataPublisher(DataPublisher):
 class CustomDataSubscriber(DataSubscriber):
     """Subscriber that delegates to a custom class"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue = None):
+        super().__init__(name, source, config, given_queue)
 
         self.custom_name = source.replace('custom://', '')
         delegate_module = config.get('delegate_module')

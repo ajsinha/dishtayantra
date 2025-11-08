@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from ashredis_client import AshRedisClient
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber
-
+import queue
 logger = logging.getLogger(__name__)
 
 
@@ -122,8 +122,8 @@ class AshRedisChannelDataPublisher(DataPublisher):
 class AshRedisChannelDataSubscriber(DataSubscriber):
     """Subscriber that subscribes to AshRedis channel using native subscription"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue=None):
+        super().__init__(name, source, config, given_queue)
 
         # Parse channel from source URL
         self.channel = source.replace('ashredischannel://', '')

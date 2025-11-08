@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime
 from kafka import KafkaProducer, KafkaConsumer
+import queue
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber,DataAwarePayload
 
 logger = logging.getLogger(__name__)
@@ -51,8 +52,8 @@ class KafkaDataPublisher(DataPublisher):
 class KafkaDataSubscriber(DataSubscriber):
     """Subscriber for Kafka topics"""
 
-    def __init__(self, name, source, config):
-        super().__init__(name, source, config)
+    def __init__(self, name, source, config, given_queue: queue.Queue=None):
+        super().__init__(name, source, config, given_queue)
         self.topic = source.split('/')[-1]
         self.bootstrap_servers = config.get('bootstrap_servers', ['localhost:9092'])
         self.group_id = config.get('group_id', f'{name}_group')
