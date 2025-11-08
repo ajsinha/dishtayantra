@@ -142,6 +142,9 @@ class DataSubscriber(ABC):
 
         logger.info(f"DataSubscriber {name} initialized for source {source}")
 
+    def set_internal_queue(self, given_queue):
+        self._internal_queue = given_queue
+
     def start(self):
         """Start the subscriber"""
         if not self._subscriber_thread or not self._subscriber_thread.is_alive():
