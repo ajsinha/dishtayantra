@@ -58,6 +58,9 @@ class DataPublisher(ABC):
 
         logger.info(f"DataPublisher {name} initialized for destination {destination}")
 
+    def is_composite(self):
+        return False
+
     def _start_periodic_publisher(self):
         """Start periodic publisher thread"""
         self._publish_thread = threading.Thread(target=self._periodic_publish_loop, daemon=True)
@@ -144,6 +147,9 @@ class DataSubscriber(ABC):
 
     def set_internal_queue(self, given_queue):
         self._internal_queue = given_queue
+
+    def is_composite(self):
+        return False
 
     def start(self):
         """Start the subscriber"""

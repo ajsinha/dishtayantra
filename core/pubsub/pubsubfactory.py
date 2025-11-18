@@ -176,8 +176,13 @@ def create_subscriber(name, config):
 
     logger.info(f"Creating subscriber {name} for source {source}")
 
+    if source.startswith('composite://'):
+        from core.pubsub.composite_datapubsub import CompositeDataSubscriber
+        source = source[len('composite://'):]
+        return CompositeDataSubscriber(name, source, config)
+
     # In-Memory (queues and topics)
-    if source.startswith('mem://queue/'):
+    elif source.startswith('mem://queue/'):
         from core.pubsub.inmemory_datapubsub import InMemoryDataSubscriber
         return InMemoryDataSubscriber(name, source, config)
     elif source.startswith('mem://topic/'):

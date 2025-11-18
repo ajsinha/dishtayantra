@@ -98,6 +98,15 @@ class ComputeGraph:
             self.subscribers[name] = create_subscriber(name, config)
             logger.info(f"Created subscriber: {name}")
 
+        # Now look for composite subscribers and adjust it.
+        for sub_name in self.subscribers.keys():
+            sub_object = self.subscribers.get(sub_name)
+            if sub_object.is_composite():
+                component_names = [x.strip() for x in sub_object.source.split(',')]
+                for component_name in component_names:
+                    component_sub_object = self.subscribers[component_name]
+                    sub_object.add_data_subscriber(component_sub_object)
+        #
         # Build publishers
         for pub_config in self.config.get('publishers', []):
             name = pub_config['name']

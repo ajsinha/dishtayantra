@@ -4,11 +4,25 @@
   "end_time": null,
   "subscribers": [
     {
-      "name": "heartbeat_subscriber",
+      "name": "heartbeat_subscriber_1",
       "config": {
         "source": "metronome",
         "message": "heartbeat",
         "interval": 60
+      }
+    },
+    {
+      "name": "heartbeat_subscriber_2",
+      "config": {
+        "source": "metronome",
+        "message": "heartbeat",
+        "interval": 60
+      }
+    },
+    {
+      "name": "composite_heartbeat_subscriber",
+      "config": {
+        "source": "composite://heartbeat_subscriber_1,heartbeat_subscriber_2"
       }
     }
   ],
@@ -46,7 +60,7 @@
       "config": {
         "interval": 60
       },
-      "subscriber": "heartbeat_subscriber",
+      "subscriber": "composite_heartbeat_subscriber",
       "publishers": ["heartbeat_publisher", "heartbeat_log"],
       "calculator": "heartbeat_enrichment"
     }
