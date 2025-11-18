@@ -6,7 +6,7 @@ Main entry point for DishtaYantra Compute Server
 import os
 import sys
 import logging
-from web.app import app, dag_server
+from web.app import DishtaYantraWebApp
 from core.properties_configurator import PropertiesConfigurator
 
 # Configure logging
@@ -26,13 +26,15 @@ def main():
     """Main entry point"""
     logger.info("Starting DishtaYantra Compute Server")
 
-
     # Create necessary directories
     directories = ['logs', 'config', 'config/dags']
     for directory in directories:
         if not os.path.exists(directory):
             os.makedirs(directory)
             logger.info(f"Created directory: {directory}")
+
+    # Initialize web application singleton
+    webapp = None
 
     try:
         print("\n✓ Loading application properties...")
@@ -64,24 +66,44 @@ def main():
                     logger.warning(f"External module path does not exist: {resolved_path}")
                     print(f"  ⚠ Warning: Path does not exist: {resolved_path}")
 
+        # Get web application instance
+        print("\n✓ Initializing DishtaYantra Web Application...")
+        webapp = DishtaYantraWebApp.get_instance()
+
+        # Get server configuration
         host = props.get('server.host', '0.0.0.0')
         port = props.get_int('server.port', 5002)
         debug = props.get('server.debug', 'False').lower() == 'true'
 
         cert_file = props.get('server.cert.file', None)
         key_file = props.get('server.key.file', None)
-        # Run Flask app
-        if not cert_file and not key_file:
-            app.run(host=host, port=port, debug=debug)
-        else:
-            app.run(host=host, port=port, debug=debug,ssl_context=(cert_file,key_file))
+
+        # Prepare SSL context if certificates are provided
+        ssl_context = None
+        if cert_file and key_file:
+            ssl_context = (cert_file, key_file)
+            logger.info(f"SSL enabled with cert: {cert_file}, key: {key_file}")
+
+        # Start the web application
+        print(f"\n✓ Starting server on {host}:{port}")
+        print(f"  Debug mode: {debug}")
+        print(f"  SSL: {'Enabled' if ssl_context else 'Disabled'}")
+        print("\n" + "=" * 60)
+
+        webapp.start(host=host, port=port, debug=debug, ssl_context=ssl_context)
 
     except KeyboardInterrupt:
-        logger.info("Shutting down DishtaYantra Compute Server")
-        dag_server.shutdown()
+        logger.info("\nReceived keyboard interrupt - shutting down gracefully...")
+        if webapp:
+            webapp.shutdown()
+        else:
+            logger.warning("Web application not initialized")
     except Exception as e:
-        logger.error(f"Error running server: {str(e)}")
-        dag_server.shutdown()
+        logger.error(f"Error running server: {str(e)}", exc_info=True)
+        if webapp:
+            webapp.shutdown()
+        else:
+            logger.warning("Web application not initialized, cannot perform shutdown")
         sys.exit(1)
 
 
