@@ -11,7 +11,7 @@ from core.dag.graph_elements import Node, Edge
 from core.dag.node_implementations import *
 from core.core_utils import instantiate_module
 from core.dag.time_window_utils import calculate_end_time, get_time_window_info
-
+from core.properties_configurator import PropertiesConfigurator
 logger = logging.getLogger(__name__)
 
 
@@ -19,10 +19,15 @@ class ComputeGraph:
     """Compute graph for DAG execution"""
 
     def __init__(self, config):
+        self.prop_conf = PropertiesConfigurator()
         # Load config if it's a file path
         if isinstance(config, str):
+            '''
             with open(config, 'r') as f:
                 config = json.load(f)
+            '''
+            file_path = config
+            config = self.prop_conf.load_and_resolve_json_file_content(file_path)
 
         self.config = config
         self.name = config.get('name')
