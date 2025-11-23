@@ -151,6 +151,9 @@ class DataSubscriber(ABC):
     def is_composite(self):
         return False
 
+    def is_message_router(self):
+        return False
+
     def start(self):
         """Start the subscriber"""
         if not self._subscriber_thread or not self._subscriber_thread.is_alive():
@@ -237,3 +240,49 @@ class DataSubscriber(ABC):
         if self._subscriber_thread:
             self._subscriber_thread.join(timeout=5)
         logger.info(f"Subscriber {self.name} stopped")
+
+
+class HolderDataSubscriber:
+    """Mock DataSubscriber for testing"""
+
+    def __init__(self, name, max_depth=1000):
+        self.name = name
+        self._internal_queue = queue.Queue(maxsize=max_depth)
+        self._stop_event = threading.Event()
+        self._suspend_event = threading.Event()
+        self._suspend_event.set()
+        self.max_depth = max_depth
+
+    def start(self):
+        print(f"  Mock: Started {self.name}")
+
+    def stop(self):
+        print(f"  Mock: Stopped {self.name}")
+        self._stop_event.set()
+
+    def suspend(self):
+        self._suspend_event.clear()
+
+    def resume(self):
+        self._suspend_event.set()
+
+    def get_queue_size(self):
+        return self._internal_queue.qsize()
+
+    def get_data(self, block_time=None):
+        try:
+            if block_time is None:
+                return self._internal_queue.get_nowait()
+            else:
+                return self._internal_queue.get(timeout=block_time)
+        except queue.Empty:
+            return None
+
+    def details(self):
+        return {
+            'name': self.name,
+            'source': 'mock',
+            'current_depth': self.get_queue_size(),
+            'max_depth': self.max_depth,
+            'receive_count': 0
+        }
