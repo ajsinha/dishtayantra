@@ -74,7 +74,9 @@ class MessageRouterDataSubscriber(DataSubscriber):
     def _get_child_subscription_config(self):
         return deepcopy(self.child_subscriber_configs)
 
-    def _set_subscriptions(self, source_subscriber: DataSubscriber, child_subscription_objects: Dict[str, DataSubscriber]):
+    def _set_subscriptions(self, source_subscriber: DataSubscriber) -> Dict[str, DataSubscriber]:
+        from core.pubsub.holder_datapubsub import create_holder_subscriber
+        child_subscription_objects: Dict[str, DataSubscriber] = {}
         if not isinstance(source_subscriber, DataSubscriber):
             raise TypeError(f"Expected DataSubscriber instance, got {type(source_subscriber)}")
 
@@ -82,13 +84,15 @@ class MessageRouterDataSubscriber(DataSubscriber):
 
         # Validate child subscribers
         for key, child_name in self.child_subscriber_configs.items():
-            child = child_subscription_objects.get(child_name)
+            child = create_holder_subscriber(child_name)
+            child_subscription_objects[child_name] = child
             if not isinstance(child, DataSubscriber):
                 raise TypeError(f"Child subscriber '{key}' is not a DataSubscriber instance")
-            self.child_subscribers[key] = child
+            self.add_child_subscriber(key, child)
 
         logger.info(
             f"MessageRouterDataSubscriber '{self.name}' initialized with {len(self.child_subscribers)} child subscribers")
+        return child_subscription_objects
 
     def _load_resolver(self, class_path):
         """
@@ -239,6 +243,8 @@ class MessageRouterDataSubscriber(DataSubscriber):
                         self._receive_count += 1
                 else:
                     # No data available, short sleep
+                    import time
+                    time.sleep(0.1)
                     continue
 
             except Exception as e:
