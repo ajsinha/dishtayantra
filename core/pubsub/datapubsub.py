@@ -5,85 +5,104 @@ import queue
 import time
 import logging
 from datetime import datetime
+from typing import Any
+
+from core import instantiate_from_full_name
 
 logger = logging.getLogger(__name__)
 
+class PriorityExtractor(ABC):
 
-def extract_priority(data, priority_key='_dag_priority'):
-    """
-    Extract priority from data.
+    def __init__(self):
+        self.default_priority = 5
+        self.priority_key='_dag_priority'
 
-    Rules:
-    1. Only priorities 1, 2, 3, 4, 5 are allowed
-    2. Default priority is 5
-    3. Priority extraction order:
-       a. If data is DataAwarePayload instance, use its dag_priority attribute
-       b. If data is a dictionary and has the priority key, use that value
-       c. Otherwise default to 5
-    4. Validation rules (apply to all sources):
-       - If value is <= 0 (zero or negative), default to 5
-       - If value is > 5, cap to 5
-       - If conversion fails, default to 5
+    @abstractmethod
+    def resolve(self, data: Any) -> int:
+        pass
 
-    Args:
-        data: The data to extract priority from (DataAwarePayload, dict, or other)
-        priority_key: Name of the key to look for priority in dictionaries (default: '_dag_priority')
+class DefaultPriorityExtractor(PriorityExtractor):
 
-    Returns:
-        int: Priority value between 1-5 (lower number = higher priority)
-             1 = highest priority, 5 = lowest priority
-    """
-    default_priority = 5
+    def __init__(self, priority_key='_dag_priority'):
+        PriorityExtractor.__init__(self)
+        self.priority_key = priority_key
 
-    # Check if data is DataAwarePayload instance
-    if isinstance(data, DataAwarePayload):
+
+    def resolve(self, data):
+        """
+        Extract priority from data.
+
+        Rules:
+        1. Only priorities 1, 2, 3, 4, 5 are allowed
+        2. Default priority is 5
+        3. Priority extraction order:
+           a. If data is DataAwarePayload instance, use its dag_priority attribute
+           b. If data is a dictionary and has the priority key, use that value
+           c. Otherwise default to 5
+        4. Validation rules (apply to all sources):
+           - If value is <= 0 (zero or negative), default to 5
+           - If value is > 5, cap to 5
+           - If conversion fails, default to 5
+
+        Args:
+            data: The data to extract priority from (DataAwarePayload, dict, or other)
+            priority_key: Name of the key to look for priority in dictionaries (default: '_dag_priority')
+
+        Returns:
+            int: Priority value between 1-5 (lower number = higher priority)
+                 1 = highest priority, 5 = lowest priority
+        """
+
+
+        # Check if data is DataAwarePayload instance
+        if isinstance(data, DataAwarePayload):
+            try:
+                priority = int(data.dag_priority)
+
+                # Zero or negative values default to 5
+                if priority <= 0:
+                    logger.warning(
+                        f"DataAwarePayload priority {priority} is zero or negative, using default: {self.default_priority}")
+                    return self.default_priority
+
+                # Values greater than 5 are capped to 5
+                if priority > 5:
+                    logger.warning(f"DataAwarePayload priority {priority} exceeds maximum, capping to: 5")
+                    return 5
+
+                # Valid priority (1-5)
+                return priority
+
+            except (ValueError, TypeError, AttributeError):
+                logger.warning(f"Failed to extract priority from DataAwarePayload, using default: {self.default_priority}")
+                return self.default_priority
+
+        # Check if data is dictionary
+        if not isinstance(data, dict):
+            return self.default_priority
+
+        if self.priority_key not in data:
+            return self.default_priority
+
         try:
-            priority = int(data.dag_priority)
+            priority = int(data[self.priority_key])
 
             # Zero or negative values default to 5
             if priority <= 0:
-                logger.warning(
-                    f"DataAwarePayload priority {priority} is zero or negative, using default: {default_priority}")
-                return default_priority
+                logger.warning(f"Priority {priority} is zero or negative, using default: {self.default_priority}")
+                return self.default_priority
 
             # Values greater than 5 are capped to 5
             if priority > 5:
-                logger.warning(f"DataAwarePayload priority {priority} exceeds maximum, capping to: 5")
+                logger.warning(f"Priority {priority} exceeds maximum, capping to: 5")
                 return 5
 
             # Valid priority (1-5)
             return priority
 
-        except (ValueError, TypeError, AttributeError):
-            logger.warning(f"Failed to extract priority from DataAwarePayload, using default: {default_priority}")
-            return default_priority
-
-    # Check if data is dictionary
-    if not isinstance(data, dict):
-        return default_priority
-
-    if priority_key not in data:
-        return default_priority
-
-    try:
-        priority = int(data[priority_key])
-
-        # Zero or negative values default to 5
-        if priority <= 0:
-            logger.warning(f"Priority {priority} is zero or negative, using default: {default_priority}")
-            return default_priority
-
-        # Values greater than 5 are capped to 5
-        if priority > 5:
-            logger.warning(f"Priority {priority} exceeds maximum, capping to: 5")
-            return 5
-
-        # Valid priority (1-5)
-        return priority
-
-    except (ValueError, TypeError):
-        logger.warning(f"Failed to convert {priority_key} to int, using default: {default_priority}")
-        return default_priority
+        except (ValueError, TypeError):
+            logger.warning(f"Failed to convert {self.priority_key} to int, using default: {self.default_priority}")
+            return self.default_priority
 
 
 class DataAwarePayload:
@@ -119,22 +138,51 @@ class DataAwarePayload:
                       'dag_priority': self.dag_priority}
         return json.dumps(local_dict)
 
+class AbstractDataPubSub(ABC):
 
-class DataPublisher(ABC):
+    def __init__(self, name, config: dict):
+        self.name = name
+        self.config = config
+
+        # Get priority key name from config (defaults to '_dag_priority')
+        self.queue_type = config.get('queue_type', 'fifo').lower()
+        self.priority_key = config.get('dag_priority', '_dag_priority')
+        priority_extractor_module = config.get('priority_extractor', 'core.pubsub.datapubsub.DefaultPriorityExtractor')
+        self.priority_extractor = instantiate_from_full_name(priority_extractor_module)
+        if 'dag_priority_key' in self.config.keys():
+            self.priority_key = config.get('dag_priority_key')
+            self.priority_extractor.priority_key = self.priority_key
+        else:
+            self.priority_key = self.priority_extractor.priority_key
+
+    def is_priority_queue(self):
+        return self.queue_type == 'priority'
+
+    def set_priority_extractor(self, extractor: PriorityExtractor):
+            self.priority_extractor = extractor
+
+
+class DataPublisher(AbstractDataPubSub):
     """Abstract base class for data publishers"""
 
     def __init__(self, name, destination, config):
-        self.name = name
+        AbstractDataPubSub.__init__(self, name, config)
+
         self.destination = destination
-        self.config = config
         self.publish_interval = config.get('publish_interval', 0)
         self.batch_size = config.get('batch_size', None)
 
-        # Get priority key name from config (defaults to '_dag_priority')
-        self.priority_key = config.get('dag_priority', '_dag_priority')
 
         # Use PriorityQueue instead of regular Queue
-        self._publish_queue = queue.PriorityQueue() if self.publish_interval > 0 else None
+        if self.publish_interval > 0:
+            if self.is_priority_queue():
+                self._publish_queue = queue.PriorityQueue()
+            else:
+                self._publish_queue = queue.Queue()
+        else:
+            self._publish_queue = None
+
+
         self._max_queue_depth = config.get('max_queue_depth', 100000)
 
         self._publish_thread = None
@@ -145,11 +193,15 @@ class DataPublisher(ABC):
         self._sequence_counter = 0  # For maintaining insertion order within same priority
         self._is_priority_queue = isinstance(self._publish_queue, queue.PriorityQueue)
 
+
         if self.publish_interval > 0:
             self._start_periodic_publisher()
 
         logger.info(
             f"DataPublisher {name} initialized for destination {destination} (Priority: {self._is_priority_queue}, Key: {self.priority_key})")
+
+    def set_priority_extractor(self, extractor: PriorityExtractor):
+        self.priority_extractor = extractor
 
     def is_composite(self):
         return False
@@ -248,7 +300,7 @@ class DataPublisher(ABC):
 
             if self._is_priority_queue:
                 # Priority queue behavior: extract priority and sequence
-                priority = extract_priority(data, self.priority_key)
+                priority = self.priority_extractor.resolve(data)
 
                 # Use sequence counter to maintain insertion order within same priority
                 # Lower values processed first, so we want FIFO within same priority
@@ -297,23 +349,26 @@ class DataPublisher(ABC):
             self._publish_thread.join(timeout=5)
 
 
-class DataSubscriber(ABC):
+
+class DataSubscriber(AbstractDataPubSub):
     """Abstract base class for data subscribers"""
 
     def __init__(self, name, source, config, given_internal_queue: queue.Queue = None):
-        self.name = name
-        self.source = source
-        self.config = config
-        self.max_depth = config.get('max_depth', 100000)
+        AbstractDataPubSub.__init__(self, name, config)
 
-        # Get priority key name from config (defaults to '_dag_priority')
-        self.priority_key = config.get('dag_priority', '_dag_priority')
+        self.source = source
+        self.max_depth = config.get('max_depth', 100000)
 
         # Use PriorityQueue if not provided, otherwise use given queue
         # Note: If given_internal_queue is provided, it should be a PriorityQueue for priority support
-        self._internal_queue = given_internal_queue
+
         if given_internal_queue is None:
-            self._internal_queue = queue.PriorityQueue(maxsize=self.max_depth)
+            if self.is_priority_queue():
+                self._internal_queue =queue.PriorityQueue(maxsize=self.max_depth)
+            else:
+                self._internal_queue = queue.Queue(maxsize=self.max_depth)
+        else:
+            self._internal_queue = given_internal_queue
 
         self._subscriber_thread = None
         self._stop_event = threading.Event()
@@ -327,6 +382,9 @@ class DataSubscriber(ABC):
 
         logger.info(
             f"DataSubscriber {name} initialized for source {source} (Priority: {self._is_priority_queue}, Key: {self.priority_key})")
+
+    def set_priority_extractor(self, extractor: PriorityExtractor):
+        self.priority_extractor = extractor
 
     def set_internal_queue(self, given_queue):
         """
@@ -388,7 +446,7 @@ class DataSubscriber(ABC):
                 if data is not None:
                     if self._is_priority_queue:
                         # Priority queue behavior: extract priority and add with sequence for FIFO within priority
-                        priority = extract_priority(data, self.priority_key)
+                        priority = self.priority_extractor.resolve(data)
                         with self._lock:
                             sequence = self._sequence_counter
                             self._sequence_counter += 1

@@ -180,6 +180,10 @@ def create_subscriber(name, config):
         from core.pubsub.fanin_datapubsub import FaninDataSubscriber
         source = source[len('fanin://'):]
         return FaninDataSubscriber(name, source, config)
+    elif source.startswith('composite://'):
+        from core.pubsub.fanin_datapubsub import FaninDataSubscriber
+        source = source[len('composite://'):]
+        return FaninDataSubscriber(name, source, config)
 
     # In-Memory (queues and topics)
     elif source.startswith('mem://queue/'):
