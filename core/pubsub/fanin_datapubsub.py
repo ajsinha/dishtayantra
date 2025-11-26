@@ -18,7 +18,7 @@ class FaninDataSubscriber(DataSubscriber):
 
         Args:
             name: Name of the composite subscriber
-            source: Source identifier (typically 'composite://')
+            source: Source identifier (typically 'fanin://')
             config: Configuration dictionary containing:
                 - max_depth: Maximum queue depth (default: 100000)
                 - Any other config params for the composite
@@ -270,7 +270,7 @@ class FaninDataPublisher(DataPublisher):
 
         Args:
             name: Name of the composite publisher
-            destination: Destination identifier (typically 'composite://')
+            destination: Destination identifier (typically 'fanin://')
             config: Configuration dictionary containing:
                 - publish_interval: Interval for periodic publishing (default: 0)
                 - batch_size: Batch size for publishing (default: None)

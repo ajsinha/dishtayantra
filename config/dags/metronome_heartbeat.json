@@ -8,7 +8,7 @@
       "config": {
         "source": "metronome",
         "message": "heartbeat",
-        "interval": 60
+        "interval": 120
       }
     },
     {
@@ -20,9 +20,17 @@
       }
     },
     {
+      "name": "heartbeat_subscriber_3",
+      "config": {
+        "source": "metronome",
+        "message": "heartbeat",
+        "interval": 30
+      }
+    },
+    {
       "name": "composite_heartbeat_subscriber",
       "config": {
-        "source": "composite://heartbeat_subscriber_1,heartbeat_subscriber_2"
+        "source": "fanin://heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3"
       }
     }
   ],
