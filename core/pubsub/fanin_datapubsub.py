@@ -5,7 +5,7 @@ from core.pubsub.datapubsub import DataSubscriber, DataPublisher
 logger = logging.getLogger(__name__)
 
 
-class CompositeDataSubscriber(DataSubscriber):
+class FaninDataSubscriber(DataSubscriber):
     """
     Composite subscriber that aggregates data from multiple child subscribers.
     All child subscribers share the same internal queue, allowing data from
@@ -257,7 +257,7 @@ class CompositeDataSubscriber(DataSubscriber):
         return status
 
 
-class CompositeDataPublisher(DataPublisher):
+class FaninDataPublisher(DataPublisher):
     """
     Composite publisher that broadcasts data to multiple child publishers.
     When publish() is called, the data is sent to all child publishers,

@@ -11,7 +11,7 @@ from core.pubsub.datapubsub import DataSubscriber, DataPublisher, DataAwarePaylo
 logger = logging.getLogger(__name__)
 
 
-class MessageRouterDataSubscriber(DataSubscriber):
+class FanoutDataSubscriber(DataSubscriber):
     """
     Routes messages from a source subscriber to multiple child subscribers based on a routing strategy.
 
@@ -560,7 +560,7 @@ class MessageRouterDataSubscriber(DataSubscriber):
             return -1
 
 
-class MessageRouterDataPublisher(DataPublisher):
+class FanoutDataPublisher(DataPublisher):
     """
     Routes outgoing messages to different child publishers based on a routing strategy.
 

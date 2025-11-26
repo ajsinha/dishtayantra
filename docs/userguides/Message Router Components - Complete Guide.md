@@ -78,7 +78,7 @@ Application → MessageRouterDataPublisher → Multiple Destinations
 ### MessageRouterDataSubscriber Example
 
 ```python
-from core.pubsub.message_router_datapubsub import MessageRouterDataSubscriber
+from core.pubsub.fanout_datapubsub import FanoutDataSubscriber
 from core.pubsub.pubsubfactory import create_subscriber
 
 # Create source and child subscribers
@@ -93,7 +93,7 @@ config = {
 }
 
 # Create and start
-router = MessageRouterDataSubscriber('router', source, config)
+router = FanoutDataSubscriber('router', source, config)
 router.start()
 
 # Messages with {'type': 'order'} → order_sub
@@ -103,7 +103,7 @@ router.start()
 ### MessageRouterDataPublisher Example
 
 ```python
-from core.pubsub.message_router_datapubsub import MessageRouterDataPublisher
+from core.pubsub.fanout_datapubsub import FanoutDataPublisher
 from core.pubsub.pubsubfactory import create_publisher
 
 # Create child publishers for different destinations
@@ -123,7 +123,7 @@ config = {
 }
 
 # Create router
-router = MessageRouterDataPublisher('order_router', 'router://order_router', config)
+router = FanoutDataPublisher('order_router', 'router://order_router', config)
 
 # Publish - automatically routes to appropriate destination
 router.publish({'type': 'database', 'order_id': 123, 'amount': 99.99})
@@ -653,10 +653,11 @@ class RobustResolver:
 ## Complete Example: Order Processing System
 
 ```python
-from core.pubsub.message_router_datapubsub import (
-    MessageRouterDataSubscriber,
-    MessageRouterDataPublisher
+from core.pubsub.fanout_datapubsub import (
+    FanoutDataSubscriber,
+    FanoutDataPublisher
 )
+
 
 # Custom resolver for order processing
 class OrderResolver:
@@ -668,10 +669,11 @@ class OrderResolver:
         else:
             return 'standard'
 
+
 # 1. Create incoming message router
 order_source = create_subscriber('orders', {'source': 'kafka://orders_topic'})
 
-order_input_router = MessageRouterDataSubscriber(
+order_input_router = FanoutDataSubscriber(
     'order_input',
     order_source,
     {
@@ -685,7 +687,7 @@ order_input_router = MessageRouterDataSubscriber(
 )
 
 # 2. Create outgoing message router
-order_output_router = MessageRouterDataPublisher(
+order_output_router = FanoutDataPublisher(
     'order_output',
     'router://order_output',
     {
@@ -701,17 +703,19 @@ order_output_router = MessageRouterDataPublisher(
 # 3. Start the pipeline
 order_input_router.start()
 
+
 # 4. Processors use the output router
 def process_order(order):
     # ... processing logic ...
     result = {'processed': True, 'order': order}
     order_output_router.publish(result)
 
+
 # 5. Monitor health
 def health_check():
     input_stats = order_input_router.get_routing_statistics()
     output_stats = order_output_router.get_routing_statistics()
-    
+
     print(f"Input efficiency: {input_stats['routing_efficiency']:.1f}%")
     print(f"Output efficiency: {output_stats['routing_efficiency']:.1f}%")
 ```
