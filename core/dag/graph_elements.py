@@ -43,10 +43,6 @@ class Node(ABC):
         with self._lock:
             return self._isdirty
 
-    def set_dirty(self):
-        with self._lock:
-            self._isdirty = True
-
     def set_graph(self, g):
         self._graph = g
 
@@ -59,6 +55,10 @@ class Node(ABC):
         """Mark node as dirty"""
         with self._lock:
             self._isdirty = True
+
+    def set_clean(self):
+        with self._lock:
+            self._isdirty = False
 
     def set_calculator(self, calculator):
         """Set the calculator for this node"""
@@ -104,7 +104,7 @@ class Node(ABC):
 
     def compute(self):
         """Compute node output based on inputs"""
-        if not self._isdirty:
+        if not self.isdirty():
             return
 
         try:
@@ -118,7 +118,7 @@ class Node(ABC):
 
             # Check if input has changed
             if transformed_input == self._input:
-                self._isdirty = False
+                self.set_clean()
                 return
 
             self._input = copy.deepcopy(transformed_input)
@@ -142,7 +142,7 @@ class Node(ABC):
                 for edge in self._outgoing_edges:
                     edge.to_node.set_dirty()
 
-            self._isdirty = False
+            self.set_clean()
             self.increment_compute_count()
 
 
