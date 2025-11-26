@@ -26,7 +26,7 @@ class TradeDiscriminatorNode(CalculationNode):
 
     def compute(self):
         """Compute and publish if output changed"""
-        if not self._isdirty:
+        if not self.isdirty():
             return
 
         try:

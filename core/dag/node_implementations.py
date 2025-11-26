@@ -21,7 +21,7 @@ class PublisherSinkNode(Node):
 
     def compute(self):
         """Compute node output based on inputs"""
-        if not self._isdirty:
+        if not self.isdirty():
             return
 
 
@@ -46,7 +46,7 @@ class PublisherSinkNode(Node):
                 for publisher_name in self.publishers:
                     local_publisher = self_graph.get_publiisher_by_name(publisher_name)
                     local_publisher.publish(data)
-
+        self.increment_compute_count()
 
 
 class SubscriptionNode(Node):
@@ -67,7 +67,7 @@ class SubscriptionNode(Node):
 
     def compute(self):
         """Pull data from subscriber and compute"""
-        if not self._isdirty or not self.subscriber:
+        if not self.isdirty() or not self.subscriber:
             return
 
         try:
@@ -104,9 +104,9 @@ class SubscriptionNode(Node):
                 for edge in self._outgoing_edges:
                     edge.to_node.set_dirty()
 
-            self._isdirty = False
-            self._last_compute = datetime.now().isoformat()
-            self._compute_count += 1
+            self.increment_compute_count()
+            self.set_dirty()
+
 
         except Exception as e:
             error_info = {
@@ -131,7 +131,7 @@ class PublicationNode(Node):
 
     def compute(self):
         """Compute and publish if output changed"""
-        if not self._isdirty:
+        if not self.isdirty():
             return
 
         try:
@@ -147,7 +147,7 @@ class PublicationNode(Node):
                         logger.error(f"Error publishing from node {self.name}: {str(e)}")
 
                 self._last_published_output = self._output.copy() if self._output else None
-
+            self.increment_compute_count()
         except Exception as e:
             error_info = {
                 'time': datetime.now().isoformat(),
@@ -183,17 +183,25 @@ class MetronomeNode(Node):
             self._stop_event.clear()
             self._metronome_thread = threading.Thread(target=self._metronome_loop, daemon=True)
             self._metronome_thread.start()
+            logger.info(f"Metronome node {self.name} started with interval {self.interval}s")
 
     def _metronome_loop(self):
         """Metronome execution loop"""
         while not self._stop_event.is_set():
             current_time = time.time()
+            elapsed = current_time - self._last_execution
 
-            if current_time - self._last_execution >= self.interval:
+            if elapsed >= self.interval:
+                # Time to tick - mark node as dirty
                 self.set_dirty()
                 self._last_execution = current_time
-
-            time.sleep(0.1)
+                logger.debug(f"Metronome node {self.name} tick at {current_time}")
+                # Small sleep before next check
+                time.sleep(0.1)
+            else:
+                # Sleep until next interval (or check every 0.1s, whichever is smaller)
+                time_to_sleep = min(self.interval - elapsed, 0.1)
+                time.sleep(time_to_sleep)
 
     def pre_compute(self):
         """Check subscriber if available"""
@@ -202,7 +210,7 @@ class MetronomeNode(Node):
 
     def compute(self):
         """Execute calculation and publish"""
-        if not self._isdirty:
+        if not self.isdirty():
             return
 
         try:
@@ -229,9 +237,9 @@ class MetronomeNode(Node):
             for edge in self._outgoing_edges:
                 edge.to_node.set_dirty()
 
+            # Mark this node as clean (not dirty) - it will be marked dirty again by metronome
             self._isdirty = False
-            self._last_compute = datetime.now().isoformat()
-            self._compute_count += 1
+            self.increment_compute_count()
 
         except Exception as e:
             error_info = {
@@ -246,6 +254,7 @@ class MetronomeNode(Node):
         self._stop_event.set()
         if self._metronome_thread:
             self._metronome_thread.join(timeout=2)
+        logger.info(f"Metronome node {self.name} stopped")
 
 
 class CalculationNode(Node):

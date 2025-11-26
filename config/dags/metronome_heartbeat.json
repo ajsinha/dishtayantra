@@ -58,6 +58,12 @@
           "status": "healthy"
         }
       }
+    },
+    {
+      "name": "random_calculator",
+      "type": "core.calculator.random_calculator.RandomCalculator",
+      "config": {
+      }
     }
   ],
   "transformers": [],
@@ -68,10 +74,19 @@
       "config": {
         "interval": 60
       },
-      "subscriber": "composite_heartbeat_subscriber",
+      "subscriber": "heartbeat_subscriber_3",
       "publishers": ["heartbeat_publisher", "heartbeat_log"],
       "calculator": "heartbeat_enrichment"
+    },
+    {
+      "name": "random_calculator_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "random_calculator"
+
     }
   ],
-  "edges": []
+  "edges": [
+    {"from_node": "metronome_node", "to_node": "random_calculator_node"}
+  ]
 }

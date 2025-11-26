@@ -128,7 +128,7 @@ class ComputeGraph:
                 parts = calc_type.rsplit('.', 1)
                 module_path = parts[0]
                 class_name = parts[1] if len(parts) > 1 else calc_type
-                self.calculators[name] = instantiate_module(module_path, class_name, {'name': name, 'config': config})
+                self.calculators[name]: DataCalculatorLike = instantiate_module(module_path, class_name, {'name': name, 'config': config})
 
             logger.info(f"Created calculator: {name}")
 

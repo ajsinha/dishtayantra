@@ -5,11 +5,15 @@ import queue
 import time
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any,Protocol, runtime_checkable
 
 from core import instantiate_from_full_name
 
 logger = logging.getLogger(__name__)
+
+class PriorityExtractorLike(Protocol):
+    def resolve(self, data: Any) -> int:
+        ... # The '...' indicates an abstract/required method
 
 class PriorityExtractor(ABC):
 
@@ -148,7 +152,7 @@ class AbstractDataPubSub(ABC):
         self.queue_type = config.get('queue_type', 'fifo').lower()
         self.priority_key = config.get('dag_priority', '_dag_priority')
         priority_extractor_module = config.get('priority_extractor', 'core.pubsub.datapubsub.DefaultPriorityExtractor')
-        self.priority_extractor = instantiate_from_full_name(priority_extractor_module)
+        self.priority_extractor: PriorityExtractorLike = instantiate_from_full_name(priority_extractor_module)
         if 'dag_priority_key' in self.config.keys():
             self.priority_key = config.get('dag_priority_key')
             self.priority_extractor.priority_key = self.priority_key
@@ -158,7 +162,7 @@ class AbstractDataPubSub(ABC):
     def is_priority_queue(self):
         return self.queue_type == 'priority'
 
-    def set_priority_extractor(self, extractor: PriorityExtractor):
+    def set_priority_extractor(self, extractor: PriorityExtractorLike):
             self.priority_extractor = extractor
 
 
@@ -199,9 +203,6 @@ class DataPublisher(AbstractDataPubSub):
 
         logger.info(
             f"DataPublisher {name} initialized for destination {destination} (Priority: {self._is_priority_queue}, Key: {self.priority_key})")
-
-    def set_priority_extractor(self, extractor: PriorityExtractor):
-        self.priority_extractor = extractor
 
     def is_composite(self):
         return False
@@ -383,8 +384,6 @@ class DataSubscriber(AbstractDataPubSub):
         logger.info(
             f"DataSubscriber {name} initialized for source {source} (Priority: {self._is_priority_queue}, Key: {self.priority_key})")
 
-    def set_priority_extractor(self, extractor: PriorityExtractor):
-        self.priority_extractor = extractor
 
     def set_internal_queue(self, given_queue):
         """

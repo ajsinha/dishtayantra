@@ -4,12 +4,15 @@ import queue
 import importlib
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Any, Protocol, runtime_checkable
 
 from core.pubsub.datapubsub import DataSubscriber, DataPublisher, DataAwarePayload
 
 logger = logging.getLogger(__name__)
 
+class RoutingKeyResolverLike(Protocol):
+    def resolve(self, data: Any) -> str:
+        ...     # The '...' indicates an abstract/required method
 
 class FanoutDataSubscriber(DataSubscriber):
     """
@@ -603,7 +606,7 @@ class FanoutDataPublisher(DataPublisher):
         if not resolver_class_path:
             raise ValueError("resolver_class must be specified in config")
 
-        self.resolver = self._load_resolver(resolver_class_path)
+        self.resolver: RoutingKeyResolverLike = self._load_resolver(resolver_class_path)
 
         # Statistics tracking
         self._routed_count = {}  # key -> count
@@ -618,7 +621,7 @@ class FanoutDataPublisher(DataPublisher):
         logger.info(
             f"MessageRouterDataPublisher '{name}' initialized with {len(self.child_publishers)} child publishers")
 
-    def _load_resolver(self, class_path):
+    def _load_resolver(self, class_path) -> RoutingKeyResolverLike:
         """
         Dynamically load and instantiate the resolver class
 
@@ -636,7 +639,7 @@ class FanoutDataPublisher(DataPublisher):
             module_path, class_name = class_path.rsplit('.', 1)
             module = importlib.import_module(module_path)
             resolver_class = getattr(module, class_name)
-            resolver_instance = resolver_class()
+            resolver_instance: RoutingKeyResolverLike = resolver_class()
 
             # Validate that resolver has the required resolve method
             if not hasattr(resolver_instance, 'resolve'):

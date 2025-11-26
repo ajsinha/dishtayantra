@@ -2,14 +2,25 @@ import copy
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Dict, Any,Protocol, runtime_checkable
 
 logger = logging.getLogger(__name__)
+
+class DataCalculatorLike(Protocol):
+    def __init__(self, name, config: Dict[str, Any]):
+        ...
+
+    def calculate(self, data: Any) -> Any:
+        ... # The '...' indicates an abstract/required method
+
+    def details(self) -> Dict[str, Any]:
+        ...
 
 
 class DataCalculator(ABC):
     """Abstract base class for data calculators"""
 
-    def __init__(self, name, config):
+    def __init__(self, name, config: Dict[str,Any]):
         self.name = name
         self.config = config
         self._calculation_count = 0
@@ -20,7 +31,7 @@ class DataCalculator(ABC):
         """Calculate and return result"""
         pass
 
-    def details(self):
+    def details(self) -> Dict[str, Any]:
         """Return details in JSON format"""
         return {
             'name': self.name,

@@ -3,6 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 from collections import deque
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -25,26 +26,39 @@ class Node(ABC):
         self._outgoing_edges = []
         self._incoming_edges = []
         self._graph = None
+        self._lock = threading.RLock()
 
     def input(self):
         """Return copy of input data"""
-        return copy.deepcopy(self._input)
+        with self._lock:
+            return copy.deepcopy(self._input)
 
     def output(self):
         """Return copy of output data"""
-        return copy.deepcopy(self._output)
+        with self._lock:
+            return copy.deepcopy(self._output)
 
     def isdirty(self):
         """Return dirty status"""
-        return self._isdirty
+        with self._lock:
+            return self._isdirty
+
+    def set_dirty(self):
+        with self._lock:
+            self._isdirty = True
 
     def set_graph(self, g):
         self._graph = g
 
+    def increment_compute_count(self):
+        with self._lock:
+            self._compute_count +=  1
+            self._last_compute = datetime.now().isoformat()
 
     def set_dirty(self):
         """Mark node as dirty"""
-        self._isdirty = True
+        with self._lock:
+            self._isdirty = True
 
     def set_calculator(self, calculator):
         """Set the calculator for this node"""
@@ -129,8 +143,8 @@ class Node(ABC):
                     edge.to_node.set_dirty()
 
             self._isdirty = False
-            self._last_compute = datetime.now().isoformat()
-            self._compute_count += 1
+            self.increment_compute_count()
+
 
         except Exception as e:
             error_info = {
