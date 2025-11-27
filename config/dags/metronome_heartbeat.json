@@ -72,7 +72,7 @@
       "name": "metronome_node",
       "type": "MetronomeNode",
       "config": {
-        "interval": 60
+        "interval": 10
       },
       "subscriber": "heartbeat_subscriber_3",
       "publishers": ["heartbeat_publisher", "heartbeat_log"],

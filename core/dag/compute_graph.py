@@ -453,10 +453,16 @@ class ComputeGraph:
                 node.pre_compute()
 
             # Compute phase
+            acted_node_set = []
             for node in sorted_nodes:
                 if node.isdirty():
-                    node.compute()
-                    node.post_compute()
+                    computed = node.compute()
+                    if computed:
+                        acted_node_set.append(node)
+                    #node.post_compute()
+            for node in acted_node_set:
+                node.increment_compute_count()
+                node.post_compute()
 
             time.sleep(0.01)  # Small delay to prevent CPU spinning
 

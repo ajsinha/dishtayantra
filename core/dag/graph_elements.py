@@ -102,10 +102,10 @@ class Node(ABC):
                     merged_input[edge_pname].update(edge_data)
         return merged_input
 
-    def compute(self):
+    def compute(self) -> bool:
         """Compute node output based on inputs"""
         if not self.isdirty():
-            return
+            return False
 
         try:
             # Gather inputs from incoming edges
@@ -119,7 +119,7 @@ class Node(ABC):
             # Check if input has changed
             if transformed_input == self._input:
                 self.set_clean()
-                return
+                return False
 
             self._input = copy.deepcopy(transformed_input)
 
@@ -143,8 +143,8 @@ class Node(ABC):
                     edge.to_node.set_dirty()
 
             self.set_clean()
-            self.increment_compute_count()
-
+            #self.increment_compute_count()
+            return True
 
         except Exception as e:
             error_info = {
@@ -153,6 +153,7 @@ class Node(ABC):
             }
             self._errors.append(error_info)
             logger.error(f"Error in node {self.name}: {str(e)}")
+            return False
 
     def post_compute(self):
         """Post-compute hook - can be overridden by subclasses"""

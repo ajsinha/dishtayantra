@@ -19,10 +19,10 @@ class PublisherSinkNode(Node):
         self.publishers = config.get("publishers", [])
         self._edge_tracker = {}
 
-    def compute(self):
+    def compute(self) -> bool:
         """Compute node output based on inputs"""
         if not self.isdirty():
-            return
+            return False
 
 
         # Gather inputs from incoming edges
@@ -40,13 +40,17 @@ class PublisherSinkNode(Node):
                 else:
                     self._edge_tracker[edge_name] = edge_data
                     edge_data_collection.append(edge_data)
+
         if len(edge_data_collection) >0:
             self_graph = self._graph
             for data in edge_data_collection:
                 for publisher_name in self.publishers:
                     local_publisher = self_graph.get_publiisher_by_name(publisher_name)
                     local_publisher.publish(data)
-        self.increment_compute_count()
+            #self.increment_compute_count()
+            return True
+        else:
+            return False
 
 
 class SubscriptionNode(Node):
@@ -65,17 +69,17 @@ class SubscriptionNode(Node):
         if self.subscriber and self.subscriber.get_queue_size() > 0:
             self.set_dirty()
 
-    def compute(self):
+    def compute(self) -> bool:
         """Pull data from subscriber and compute"""
         if not self.isdirty() or not self.subscriber:
-            return
+            return False
 
         try:
             # Get data from subscriber
             data = self.subscriber.get_data(block_time=0)
 
             if data is None:
-                return
+                return False
 
             # Merge with current input
             self._input = data
@@ -104,9 +108,9 @@ class SubscriptionNode(Node):
                 for edge in self._outgoing_edges:
                     edge.to_node.set_dirty()
 
-            self.increment_compute_count()
-            self.set_dirty()
-
+            #self.increment_compute_count()
+            self.set_clean()
+            return True
 
         except Exception as e:
             error_info = {
@@ -115,6 +119,7 @@ class SubscriptionNode(Node):
             }
             self._errors.append(error_info)
             logger.error(f"Error in subscription node {self.name}: {str(e)}")
+            return False
 
 
 class PublicationNode(Node):
@@ -129,10 +134,10 @@ class PublicationNode(Node):
         """Add a data publisher"""
         self.publishers.append(publisher)
 
-    def compute(self):
+    def compute(self) -> bool:
         """Compute and publish if output changed"""
         if not self.isdirty():
-            return
+            return False
 
         try:
             # Run parent compute logic
@@ -147,7 +152,8 @@ class PublicationNode(Node):
                         logger.error(f"Error publishing from node {self.name}: {str(e)}")
 
                 self._last_published_output = self._output.copy() if self._output else None
-            self.increment_compute_count()
+            #self.increment_compute_count()
+            return True
         except Exception as e:
             error_info = {
                 'time': datetime.now().isoformat(),
@@ -155,6 +161,7 @@ class PublicationNode(Node):
             }
             self._errors.append(error_info)
             logger.error(f"Error in publication node {self.name}: {str(e)}")
+            return False
 
 
 class MetronomeNode(Node):
@@ -201,17 +208,21 @@ class MetronomeNode(Node):
             else:
                 # Sleep until next interval (or check every 0.1s, whichever is smaller)
                 time_to_sleep = min(self.interval - elapsed, 0.1)
+                self.set_clean()
                 time.sleep(time_to_sleep)
 
     def pre_compute(self):
         """Check subscriber if available"""
+        '''
         if self.subscriber and self.subscriber.get_queue_size() > 0:
             self.set_dirty()
+        '''
+        pass
 
-    def compute(self):
+    def compute(self) -> bool:
         """Execute calculation and publish"""
         if not self.isdirty():
-            return
+            return False
 
         try:
             # If subscriber is available, get data from it
@@ -220,11 +231,17 @@ class MetronomeNode(Node):
                 if data:
                     self._input = data
 
+            # Add tick counter to ensure output changes
+            if not self._input:
+                self._input = {}
+            self._input['metronome_tick'] = self._compute_count  # Add this line
+
             # Run calculation
             if self._calculator:
                 self._output = self._calculator.calculate(self._input)
             else:
                 self._output = self._input
+
 
             # Publish if publishers are available
             for publisher in self.publishers:
@@ -236,11 +253,12 @@ class MetronomeNode(Node):
             # Mark children as dirty
             for edge in self._outgoing_edges:
                 edge.to_node.set_dirty()
+                logger.info(f'node: {self.name} setting child {edge.to_node.name} as dirty')
 
             # Mark this node as clean (not dirty) - it will be marked dirty again by metronome
-            self._isdirty = False
-            self.increment_compute_count()
-
+            self.set_clean()
+            #self.increment_compute_count()
+            return True
         except Exception as e:
             error_info = {
                 'time': datetime.now().isoformat(),
@@ -248,6 +266,7 @@ class MetronomeNode(Node):
             }
             self._errors.append(error_info)
             logger.error(f"Error in metronome node {self.name}: {str(e)}")
+            return False
 
     def stop_metronome(self):
         """Stop metronome thread"""

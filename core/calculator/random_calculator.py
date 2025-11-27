@@ -18,7 +18,9 @@ class RandomCalculator:
         self._last_calculation = datetime.now().isoformat()
         random_float = random.random()
         copy_dict = deepcopy(data)
+        self._calculation_count += 1
         copy_dict['random'] = random_float
+        copy_dict['counter'] = self._calculation_count
         return copy_dict
 
     def details(self) -> Dict[str, Any]:
