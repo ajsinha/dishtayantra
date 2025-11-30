@@ -4,11 +4,13 @@ from .dashboard_routes import DashboardRoutes
 from .dag_routes import DAGRoutes
 from .cache_routes import CacheRoutes
 from .user_routes import UserRoutes
+from .dagdesigner_routes import DAGDesignerRoutes
 
 __all__ = [
     'AuthRoutes',
     'DashboardRoutes',
     'DAGRoutes',
     'CacheRoutes',
-    'UserRoutes'
+    'UserRoutes',
+    'DAGDesignerRoutes'
 ]

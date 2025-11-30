@@ -91,7 +91,7 @@ This implementation adds comprehensive cache management functionality to your Di
 
 1. **Replace app.py**:
    ```bash
-   cp app.py /path/to/your/project/app.py
+   cp dishtyantra_webapp.py /path/to/your/project/dishtyantra_webapp.py
    ```
 
 2. **Add cache_management.html**:
@@ -135,7 +135,7 @@ redis_cache = InMemoryRedisClone()
 ### Step 4: Run the Application
 
 ```bash
-python app.py
+python dishtyantra_webapp.py
 ```
 
 The application will start on `http://0.0.0.0:5000`

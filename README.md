@@ -120,7 +120,7 @@ Create JSON files in `config/dags/` directory. Example:
 ### Start the DAG Server and Web UI:
 
 ```bash
-python web/app.py
+python web/dishtyantra_webapp.py
 ```
 
 ### Environment Variables:
@@ -134,7 +134,7 @@ Example:
 ```bash
 export DAG_CONFIG_FOLDER=/path/to/dags
 export ZOOKEEPER_HOSTS=zk1:2181,zk2:2181,zk3:2181
-python web/app.py
+python web/dishtyantra_webapp.py
 ```
 
 ## Usage

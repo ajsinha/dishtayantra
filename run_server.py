@@ -6,7 +6,7 @@ Main entry point for DishtaYantra Compute Server
 import os
 import sys
 import logging
-from web.app import DishtaYantraWebApp
+from web.dishtyantra_webapp import DishtaYantraWebApp
 from core.properties_configurator import PropertiesConfigurator
 
 # Configure logging
