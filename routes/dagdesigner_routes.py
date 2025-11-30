@@ -95,6 +95,12 @@ class DAGDesignerRoutes:
                 if edge.get('data_transformer') and edge.get('data_transformer') not in transformer_names:
                     warnings.append(f"Edge from '{edge.get('from_node')}' to '{edge.get('to_node')}' references transformer '{edge.get('data_transformer')}' which may be a custom type")
 
+            # Cycle detection using DFS
+            cycles = self._detect_cycles(dag_config.get('nodes', []), dag_config.get('edges', []))
+            for cycle in cycles:
+                cycle_path = ' -> '.join(cycle)
+                errors.append(f"Cycle detected: {cycle_path}")
+
             # Validate node references
             subscriber_names = {s['name'] for s in dag_config.get('subscribers', [])}
             publisher_names = {p['name'] for p in dag_config.get('publishers', [])}
@@ -147,6 +153,65 @@ class DAGDesignerRoutes:
                 'errors': [f"Validation error: {str(e)}"],
                 'warnings': []
             }), 500
+
+    def _detect_cycles(self, nodes, edges):
+        """
+        Detect cycles in the DAG using depth-first search.
+        Returns a list of cycles found, where each cycle is a list of node names.
+        """
+        # Build adjacency list
+        graph = {}
+        node_names = {n['name'] for n in nodes}
+
+        for name in node_names:
+            graph[name] = []
+
+        for edge in edges:
+            from_node = edge.get('from_node')
+            to_node = edge.get('to_node')
+            if from_node in graph and to_node in node_names:
+                graph[from_node].append(to_node)
+
+        cycles = []
+        visited = set()
+        rec_stack = set()
+        path = []
+
+        def dfs(node):
+            visited.add(node)
+            rec_stack.add(node)
+            path.append(node)
+
+            for neighbor in graph.get(node, []):
+                if neighbor not in visited:
+                    cycle = dfs(neighbor)
+                    if cycle:
+                        return cycle
+                elif neighbor in rec_stack:
+                    # Found a cycle - extract the cycle path
+                    cycle_start_idx = path.index(neighbor)
+                    cycle_path = path[cycle_start_idx:] + [neighbor]
+                    return cycle_path
+
+            path.pop()
+            rec_stack.remove(node)
+            return None
+
+        # Run DFS from each unvisited node
+        for node_name in node_names:
+            if node_name not in visited:
+                cycle = dfs(node_name)
+                if cycle:
+                    cycles.append(cycle)
+                    # Reset for finding additional cycles
+                    visited = set()
+                    rec_stack = set()
+                    path = []
+                    # Mark nodes in found cycle as visited to avoid re-reporting
+                    for n in cycle[:-1]:
+                        visited.add(n)
+
+        return cycles
 
     def get_available_components(self):
         """Get available component types (API endpoint)"""

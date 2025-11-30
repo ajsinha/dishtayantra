@@ -556,21 +556,25 @@
         stroke-width: 2;
         pointer-events: stroke;
         cursor: pointer;
+        marker-end: url(#arrowhead);
     }
 
     .edge-path:hover {
         stroke-width: 4;
         stroke: var(--accent-warning);
+        marker-end: url(#arrowhead-hover);
     }
 
     .edge-path.selected {
         stroke: var(--accent-secondary);
         stroke-width: 3;
+        marker-end: url(#arrowhead-selected);
     }
 
     .edge-path.temp {
         stroke: var(--accent-secondary);
         stroke-dasharray: 5,5;
+        marker-end: url(#arrowhead-temp);
     }
 
     .edge-label {
@@ -1312,7 +1316,26 @@
         </div>
 
         <div class="canvas-wrapper" id="canvasWrapper">
-            <svg id="edges-svg"></svg>
+            <svg id="edges-svg">
+                <defs>
+                    <!-- Arrowhead marker for normal edges -->
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+                    </marker>
+                    <!-- Arrowhead marker for hovered edges -->
+                    <marker id="arrowhead-hover" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+                    </marker>
+                    <!-- Arrowhead marker for selected edges -->
+                    <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+                    </marker>
+                    <!-- Arrowhead marker for temp edges -->
+                    <marker id="arrowhead-temp" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+                    </marker>
+                </defs>
+            </svg>
             <div id="dag-canvas"></div>
 
             <div class="zoom-controls">
