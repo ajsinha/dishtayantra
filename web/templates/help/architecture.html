@@ -1,0 +1,1195 @@
+{% extends "base.html" %}
+
+{% block title %}Architecture - DishtaYantra Help{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('help_index') }}" class="text-decoration-none">Help</a></li>
+                    <li class="breadcrumb-item active">Architecture</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center mb-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-diagram-3 text-primary" style="font-size: 2rem;"></i>
+                </div>
+                <div>
+                    <h1 class="mb-0">System Architecture</h1>
+                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.1.1</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3"><i class="bi bi-list-ul me-2"></i>Quick Navigation</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="#overview" class="btn btn-outline-primary btn-sm">Overview</a>
+                        <a href="#layers" class="btn btn-outline-primary btn-sm">Architecture Layers</a>
+                        <a href="#dag-engine" class="btn btn-outline-primary btn-sm">DAG Engine</a>
+                        <a href="#calculators" class="btn btn-outline-primary btn-sm">Multi-Language Calculators</a>
+                        <a href="#pubsub" class="btn btn-outline-primary btn-sm">Pub/Sub Framework</a>
+                        <a href="#webapp" class="btn btn-outline-primary btn-sm">Web Application</a>
+                        <a href="#monitoring" class="btn btn-outline-primary btn-sm">Monitoring</a>
+                        <a href="#ha" class="btn btn-outline-primary btn-sm">High Availability</a>
+                        <a href="#security" class="btn btn-outline-primary btn-sm">Security</a>
+                        <a href="#performance" class="btn btn-outline-primary btn-sm">Performance</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Overview -->
+    <div class="row mb-4" id="overview">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-globe me-2"></i>System Overview</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) compute server designed for real-time data processing pipelines.</p>
+                    
+                    <div class="row g-4 mt-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="bi bi-diagram-3 text-primary" style="font-size: 2.5rem;"></i>
+                                <h6 class="mt-2 mb-1">DAG Processing</h6>
+                                <small class="text-muted">Parallel node execution with topological sorting</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="bi bi-hdd-network text-success" style="font-size: 2.5rem;"></i>
+                                <h6 class="mt-2 mb-1">Multi-Broker</h6>
+                                <small class="text-muted">Kafka, RabbitMQ, Redis, ActiveMQ, and more</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="bi bi-code-slash text-info" style="font-size: 2.5rem;"></i>
+                                <h6 class="mt-2 mb-1">Multi-Language</h6>
+                                <small class="text-muted">Python, Java, C++, Rust, REST calculators</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="bi bi-shield-check text-warning" style="font-size: 2.5rem;"></i>
+                                <h6 class="mt-2 mb-1">High Availability</h6>
+                                <small class="text-muted">Zookeeper-based leader election</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- High-Level Architecture Diagram -->
+                    <div class="mt-4">
+                        <h6 class="text-muted mb-3">High-Level Architecture</h6>
+                        <div class="bg-dark text-light p-4 rounded" style="font-family: 'Courier New', monospace; font-size: 0.75rem; overflow-x: auto;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DishtaYantra v1.1.1                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Web UI     │  │  REST API    │  │   Admin      │  │   Help Center   │  │
+│  │  Dashboard   │  │  Endpoints   │  │  Monitoring  │  │  Documentation  │  │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └─────────────────┘  │
+│         │                 │                 │                               │
+│  ┌──────┴─────────────────┴─────────────────┴─────────────────────────────┐ │
+│  │                      Flask Application Layer                            │ │
+│  │            (Routes, Authentication, Session Management)                 │ │
+│  └────────────────────────────────┬────────────────────────────────────────┘ │
+│                                   │                                          │
+│  ┌────────────────────────────────┴────────────────────────────────────────┐ │
+│  │                        DAG Compute Server                                │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────────┐  │ │
+│  │  │ComputeGraph │  │   Node      │  │   Time      │  │   Zookeeper    │  │ │
+│  │  │  Manager    │  │  Executor   │  │  Windows    │  │      HA        │  │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────────┘  │ │
+│  └────────────────────────────────┬────────────────────────────────────────┘ │
+│                                   │                                          │
+│  ┌────────────────────────────────┴────────────────────────────────────────┐ │
+│  │                    Core Processing Components                            │ │
+│  │  ┌─────────────────────────────────────────────────────────────────────┐ │ │
+│  │  │                   Calculator Framework                               │ │ │
+│  │  │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐            │ │ │
+│  │  │  │ Python │ │  Java  │ │  C++   │ │  Rust  │ │  REST  │            │ │ │
+│  │  │  │Built-in│ │ (Py4J) │ │pybind11│ │ (PyO3) │ │  API   │            │ │ │
+│  │  │  └────────┘ └────────┘ └────────┘ └────────┘ └────────┘            │ │ │
+│  │  └─────────────────────────────────────────────────────────────────────┘ │ │
+│  │  ┌─────────────────────────────────────────────────────────────────────┐ │ │
+│  │  │                  Pub/Sub Framework                                   │ │ │
+│  │  │  ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐       │ │ │
+│  │  │  │ Kafka │ │Rabbit │ │ Redis │ │Active │ │ File  │ │  SQL  │       │ │ │
+│  │  │  │       │ │  MQ   │ │       │ │  MQ   │ │       │ │       │       │ │ │
+│  │  │  └───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘       │ │ │
+│  │  └─────────────────────────────────────────────────────────────────────┘ │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture Layers -->
+    <div class="row mb-4" id="layers">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-layers me-2"></i>Architecture Layers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Layer</th>
+                                            <th>Components</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge bg-primary">1. Presentation</span></td>
+                                            <td>Web UI, REST API, Admin Interface, Help Center</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-info">2. Application</span></td>
+                                            <td>Flask App, Authentication, Route Handlers</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-success">3. Business Logic</span></td>
+                                            <td>DAG Server, Compute Graph, Node Executor, Time Windows</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-warning text-dark">4. Integration</span></td>
+                                            <td>Calculator Framework, Pub/Sub Framework, Transformers</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-secondary">5. Infrastructure</span></td>
+                                            <td>Zookeeper, Database Connections, Caching</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="bg-light p-4 rounded" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+<pre class="mb-0">
+┌─────────────────────────────────┐
+│    Presentation Layer           │  Web UI, APIs
+├─────────────────────────────────┤
+│    Application Layer            │  Flask, Auth
+├─────────────────────────────────┤
+│    Business Logic Layer         │  DAG Engine
+├─────────────────────────────────┤
+│    Integration Layer            │  Calculators, PubSub
+├─────────────────────────────────┤
+│    Infrastructure Layer         │  Zookeeper, DB
+└─────────────────────────────────┘
+</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DAG Engine -->
+    <div class="row mb-4" id="dag-engine">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>DAG Execution Engine</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- DAG Server -->
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-server me-2"></i>DAG Compute Server</h6>
+                            <p>The central orchestrator managing all DAG operations.</p>
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌────────────────────────────────────────┐
+│         DAGComputeServer               │
+├────────────────────────────────────────┤
+│  ┌────────────┐  ┌──────────────────┐  │
+│  │DAG Registry│  │  Config Loader   │  │
+│  │(Thread-safe│  │                  │  │
+│  └────────────┘  └──────────────────┘  │
+│  ┌────────────┐  ┌──────────────────┐  │
+│  │ HA Manager │  │  DAG Operations  │  │
+│  │ (Zookeeper)│  │  add, start,stop │  │
+│  └────────────┘  └──────────────────┘  │
+└────────────────────────────────────────┘
+</pre>
+                            </div>
+                        </div>
+
+                        <!-- Compute Graph -->
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-diagram-2 me-2"></i>Compute Graph</h6>
+                            <p>Represents a single DAG with all its nodes and edges.</p>
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌────────────────────────────────────────┐
+│           ComputeGraph                 │
+├────────────────────────────────────────┤
+│  Configuration:                        │
+│  ├── name: string                      │
+│  ├── start_time: HHMM                  │
+│  ├── duration: minutes                 │
+│  └── auto_clone: boolean               │
+│                                        │
+│  Components:                           │
+│  ├── nodes: Dict[name, Node]           │
+│  ├── edges: List[Edge]                 │
+│  ├── subscribers, publishers           │
+│  └── calculators, transformers         │
+└────────────────────────────────────────┘
+</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Node Types -->
+                    <h6 class="border-bottom pb-2 mt-3"><i class="bi bi-box me-2"></i>Node Types</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4 col-lg-2">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center p-2">
+                                    <i class="bi bi-box-arrow-in-down text-primary" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">SubscriptionNode</h6>
+                                    <small class="text-muted">Ingests data</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center p-2">
+                                    <i class="bi bi-calculator text-success" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">CalculationNode</h6>
+                                    <small class="text-muted">Processes data</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center p-2">
+                                    <i class="bi bi-arrow-left-right text-info" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">TransformNode</h6>
+                                    <small class="text-muted">Transforms data</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center p-2">
+                                    <i class="bi bi-box-arrow-up text-warning" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">PublicationNode</h6>
+                                    <small class="text-muted">Publishes output</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-body text-center p-2">
+                                    <i class="bi bi-clock text-secondary" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">MetronomeNode</h6>
+                                    <small class="text-muted">Periodic trigger</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="card h-100 border-dark">
+                                <div class="card-body text-center p-2">
+                                    <i class="bi bi-trash text-dark" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">SinkNode</h6>
+                                    <small class="text-muted">Discards data</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Execution Flow -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-arrow-right-circle me-2"></i>Execution Flow</h6>
+                    <div class="bg-light p-4 rounded mt-3">
+                        <div class="row text-center">
+                            <div class="col">
+                                <div class="bg-primary text-white rounded p-2 mb-2">
+                                    <i class="bi bi-file-earmark-code"></i><br>
+                                    <small>1. Load JSON</small>
+                                </div>
+                            </div>
+                            <div class="col-auto d-flex align-items-center">
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </div>
+                            <div class="col">
+                                <div class="bg-info text-white rounded p-2 mb-2">
+                                    <i class="bi bi-diagram-3"></i><br>
+                                    <small>2. Build Graph</small>
+                                </div>
+                            </div>
+                            <div class="col-auto d-flex align-items-center">
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </div>
+                            <div class="col">
+                                <div class="bg-success text-white rounded p-2 mb-2">
+                                    <i class="bi bi-sort-down"></i><br>
+                                    <small>3. Topo Sort</small>
+                                </div>
+                            </div>
+                            <div class="col-auto d-flex align-items-center">
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </div>
+                            <div class="col">
+                                <div class="bg-warning text-dark rounded p-2 mb-2">
+                                    <i class="bi bi-play-circle"></i><br>
+                                    <small>4. Start Subs</small>
+                                </div>
+                            </div>
+                            <div class="col-auto d-flex align-items-center">
+                                <i class="bi bi-arrow-right text-muted"></i>
+                            </div>
+                            <div class="col">
+                                <div class="bg-danger text-white rounded p-2 mb-2">
+                                    <i class="bi bi-arrow-repeat"></i><br>
+                                    <small>5. Process Loop</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Windows -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-clock-history me-2"></i>Time Window Management</h6>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p>DAGs can be configured to run only during specific time windows:</p>
+                            <ul>
+                                <li><strong>start_time</strong>: When DAG should start (HHMM format)</li>
+                                <li><strong>duration</strong>: How long to run (minutes)</li>
+                                <li><strong>auto_clone</strong>: Create next day's DAG automatically</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+Timeline:
+──────────────────────────────────────
+│ BEFORE │   ACTIVE (Running)   │AFTER│
+│        │◀─────────────────────▶│     │
+──────────────────────────────────────
+       0900                    1700
+</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Language Calculators -->
+    <div class="row mb-4" id="calculators">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-code-slash me-2"></i>Multi-Language Calculator Architecture</h5>
+                </div>
+                <div class="card-body">
+                    <p>DishtaYantra v1.1.0+ supports calculators written in multiple programming languages, enabling you to leverage the strengths of each language.</p>
+
+                    <!-- Calculator Factory -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-building me-2"></i>Calculator Factory Pattern</h6>
+                    <div class="bg-dark text-light p-3 rounded mb-4" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────┐
+│                    CalculatorFactory                         │
+├─────────────────────────────────────────────────────────────┤
+│  create(name, type, config) → DataCalculator                 │
+│                                                              │
+│  Decision Flow:                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  if config.calculator == "java"  → JavaCalculator   │    │
+│  │  elif config.calculator == "cpp" → CppCalculator    │    │
+│  │  elif config.calculator == "rust"→ RustCalculator   │    │
+│  │  elif config.calculator == "rest"→ RestCalculator   │    │
+│  │  elif type contains "."          → CustomCalculator │    │
+│  │  else                            → Built-in calc    │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+                    </div>
+
+                    <!-- Calculator Comparison -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-speedometer2 me-2"></i>Performance Comparison</h6>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Language</th>
+                                    <th>Technology</th>
+                                    <th>Overhead</th>
+                                    <th>Throughput</th>
+                                    <th>Best For</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-primary">Python</span></td>
+                                    <td>Built-in</td>
+                                    <td>~100μs</td>
+                                    <td>~10K ops/s</td>
+                                    <td>Prototyping, simple logic</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-danger">Java</span></td>
+                                    <td>Py4J</td>
+                                    <td>100-500μs</td>
+                                    <td>~50K ops/s</td>
+                                    <td>JVM ecosystem, enterprise</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-info">C++</span></td>
+                                    <td>pybind11</td>
+                                    <td>~100ns</td>
+                                    <td>~1M ops/s</td>
+                                    <td>Ultra-low latency, SIMD</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-warning text-dark">Rust</span></td>
+                                    <td>PyO3</td>
+                                    <td>~100ns</td>
+                                    <td>~1M ops/s</td>
+                                    <td>Memory safety, thread safety</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-success">REST</span></td>
+                                    <td>HTTP/JSON</td>
+                                    <td>10-1000ms</td>
+                                    <td>~100 ops/s</td>
+                                    <td>External APIs, microservices</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Individual Calculator Architectures -->
+                    <div class="row mt-4">
+                        <!-- Java -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h6 class="mb-0"><i class="bi bi-cup-hot me-2"></i>Java Calculator (Py4J)</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-dark text-light p-2 rounded mb-3" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #ff6b6b;">
+Python Process         │  JVM Process
+┌─────────────────┐    │  ┌───────────────────┐
+│ JavaCalculator  │◀──▶│  │DishtaYantraGateway│
+│ - gateway_pool  │Py4J│  │ - Calculator reg  │
+│ - calculate()   │TCP │  │ - calculate(Map)  │
+└─────────────────┘    │  └───────────────────┘
+</pre>
+                                    </div>
+                                    <ul class="small mb-0">
+                                        <li>Connection pooling for high throughput</li>
+                                        <li>Thread-safe gateway management</li>
+                                        <li>Automatic reconnection</li>
+                                        <li>Access to full JVM ecosystem</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- C++ -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>C++ Calculator (pybind11)</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-dark text-light p-2 rounded mb-3" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #4ecdc4;">
+Python Process (Same Memory Space)
+┌──────────────────────────────────────┐
+│  ┌─────────────┐  ┌────────────────┐ │
+│  │CppCalculator│──│dishtayantra_cpp│ │
+│  │ - calculate │  │  .so module    │ │
+│  └─────────────┘  │  - Native C++  │ │
+│                   │  - SIMD opts   │ │
+│                   └────────────────┘ │
+└──────────────────────────────────────┘
+</pre>
+                                    </div>
+                                    <ul class="small mb-0">
+                                        <li>~100ns overhead (direct memory access)</li>
+                                        <li>SIMD/AVX optimization support</li>
+                                        <li>Zero-copy NumPy integration</li>
+                                        <li>Ideal for numeric processing</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rust -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="bi bi-shield-check me-2"></i>Rust Calculator (PyO3)</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-dark text-light p-2 rounded mb-3" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #f9ca24;">
+Python Process (Same Memory Space)
+┌──────────────────────────────────────┐
+│  ┌──────────────┐ ┌────────────────┐ │
+│  │RustCalculator│─│dishtayantra_   │ │
+│  │ - calculate  │ │  rust.so       │ │
+│  └──────────────┘ │ - Memory safe  │ │
+│                   │ - Rayon parallel│ │
+│                   └────────────────┘ │
+└──────────────────────────────────────┘
+</pre>
+                                    </div>
+                                    <ul class="small mb-0">
+                                        <li>C++ equivalent performance</li>
+                                        <li>Memory safety guaranteed</li>
+                                        <li>Built-in thread safety</li>
+                                        <li>Rayon for parallelism</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- REST -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-globe me-2"></i>REST Calculator (HTTP)</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-dark text-light p-2 rounded mb-3" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #26de81;">
+DishtaYantra          │ External Service
+┌─────────────────┐   │ ┌─────────────────┐
+│ RestCalculator  │   │ │  REST Endpoint  │
+│ - endpoint      │──▶│ │ /api/calculate  │
+│ - auth_type     │HTTP│ │                 │
+│ - retries       │◀──│ │ - Auth          │
+└─────────────────┘JSON│ │ - Business logic│
+                      │ └─────────────────┘
+</pre>
+                                    </div>
+                                    <ul class="small mb-0">
+                                        <li>API Key, Basic, Bearer auth</li>
+                                        <li>Configurable timeouts & retries</li>
+                                        <li>External service integration</li>
+                                        <li>Microservices architecture</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pub/Sub Framework -->
+    <div class="row mb-4" id="pubsub">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-hdd-network me-2"></i>Pub/Sub Framework</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Factory Pattern -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-building me-2"></i>Publisher/Subscriber Factory</h6>
+                    <div class="bg-dark text-light p-3 rounded mb-4" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────┐
+│                        PubSubFactory                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  URI Parsing:  protocol://type/name                                  │
+│                                                                      │
+│  ┌─────────────┬──────────────────────────────────────────────────┐ │
+│  │ Protocol    │ Implementation                                    │ │
+│  ├─────────────┼──────────────────────────────────────────────────┤ │
+│  │ mem://      │ InMemoryDataPubSub                                │ │
+│  │ memredis:// │ InMemoryRedisDataPubSub                           │ │
+│  │ kafka://    │ KafkaDataPubSub                                   │ │
+│  │ rabbitmq:// │ RabbitMQDataPubSub                                │ │
+│  │ redis://    │ RedisDataPubSub                                   │ │
+│  │ activemq:// │ ActiveMQDataPubSub                                │ │
+│  │ tibcoems:// │ TibcoEMSDataPubSub                                │ │
+│  │ websphere://│ WebSphereMQDataPubSub                             │ │
+│  │ file://     │ FileDataPubSub                                    │ │
+│  │ sql://      │ SQLDataPubSub                                     │ │
+│  │ rest://     │ RESTDataPubSub                                    │ │
+│  │ grpc://     │ GRPCDataPubSub                                    │ │
+│  └─────────────┴──────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+</pre>
+                    </div>
+
+                    <!-- Supported Protocols -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-plug me-2"></i>Supported Protocols</h6>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-hdd text-primary" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">In-Memory</h6>
+                                    <code class="small">mem://queue/name</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-lightning text-warning" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">Kafka</h6>
+                                    <code class="small">kafka://topic/name</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-envelope text-success" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">RabbitMQ</h6>
+                                    <code class="small">rabbitmq://queue/name</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-database text-danger" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">Redis</h6>
+                                    <code class="small">redis://key</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-broadcast text-info" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">ActiveMQ</h6>
+                                    <code class="small">activemq://queue/name</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-file-earmark text-secondary" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">File</h6>
+                                    <code class="small">file:///path/file</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-table text-primary" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">SQL</h6>
+                                    <code class="small">sql://source</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-cloud text-success" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">REST</h6>
+                                    <code class="small">rest://endpoint</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resilient Connections -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-shield-fill-check me-2"></i>Resilient Connections</h6>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p>All message brokers support resilient connection patterns:</p>
+                            <ul>
+                                <li>Primary and failover connections</li>
+                                <li>Health check intervals</li>
+                                <li>Automatic reconnection</li>
+                                <li>Circuit breaker pattern</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light p-3 rounded">
+                                <strong>Supported Resilient Adapters:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>ResilientKafka</li>
+                                    <li>ResilientRabbitMQ</li>
+                                    <li>ResilientRedis</li>
+                                    <li>ResilientActiveMQ</li>
+                                    <li>ResilientTibcoEMS</li>
+                                    <li>ResilientWebSphereMQ</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Application -->
+    <div class="row mb-4" id="webapp">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-window me-2"></i>Web Application Architecture</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-diagram-2 me-2"></i>Flask Application</h6>
+                            <div class="bg-dark text-light p-3 rounded mb-3" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌────────────────────────────────────────┐
+│         DishtaYantraWebApp             │
+├────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐            │
+│  │Flask App │  │Components│            │
+│  │- Config  │  │- DAGSrv  │            │
+│  │- Sessions│  │- UserReg │            │
+│  └──────────┘  └──────────┘            │
+│  ┌────────────────────────────────────┐│
+│  │           Route Handlers           ││
+│  │ Auth│Dashboard│DAG│Admin│Cache     ││
+│  └────────────────────────────────────┘│
+└────────────────────────────────────────┘
+</pre>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-signpost me-2"></i>Route Organization</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Module</th>
+                                            <th>Routes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>AuthRoutes</code></td>
+                                            <td>/login, /logout</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>NoAuthRoutes</code></td>
+                                            <td>/about, /help/*</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>DashboardRoutes</code></td>
+                                            <td>/dashboard, /dag/create</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>DAGRoutes</code></td>
+                                            <td>/dag/&lt;n&gt;, /dag/start, etc.</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>AdminRoutes</code></td>
+                                            <td>/admin/monitoring, /admin/logs</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>UserRoutes</code></td>
+                                            <td>/users, /user/create, /user/edit</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>CacheRoutes</code></td>
+                                            <td>/cache, /cache/create</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin & Monitoring -->
+    <div class="row mb-4" id="monitoring">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-activity me-2"></i>Admin & Monitoring System (v1.1.1)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-speedometer2 me-2"></i>System Monitoring</h6>
+                            <p>Real-time metrics collection using <code>psutil</code>:</p>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-cpu text-primary"></i>
+                                        <small class="d-block">CPU</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-memory text-success"></i>
+                                        <small class="d-block">Memory</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-hdd text-warning"></i>
+                                        <small class="d-block">Disk</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-wifi text-info"></i>
+                                        <small class="d-block">Network</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-journal-text me-2"></i>System Logs</h6>
+                            <p>Log viewer with filtering capabilities:</p>
+                            <ul class="mb-0">
+                                <li>View dagserver.log, application.log, error.log</li>
+                                <li>Filter by level (Info, Warning, Error)</li>
+                                <li>Search log content</li>
+                                <li>Download logs with timestamps</li>
+                                <li>Auto-refresh every 5 seconds</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-dark text-light p-3 rounded mt-4" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────┐
+│                       AdminRoutes                                    │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  /admin/monitoring                                             │  │
+│  │    ├── CPU metrics (psutil.cpu_percent, cpu_count)             │  │
+│  │    ├── Memory metrics (psutil.virtual_memory)                  │  │
+│  │    ├── Disk metrics (psutil.disk_usage, disk_partitions)       │  │
+│  │    ├── Network metrics (psutil.net_io_counters)                │  │
+│  │    ├── DAG Server stats (total, running, stopped, error)       │  │
+│  │    ├── Process info (PID, memory, threads)                     │  │
+│  │    ├── Health checks (services status)                         │  │
+│  │    └── Calculator availability (Java, C++, Rust, REST)         │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  /admin/logs                                                   │  │
+│  │    ├── Log file selection                                      │  │
+│  │    ├── Level filtering (INFO, WARNING, ERROR)                  │  │
+│  │    ├── Search functionality                                    │  │
+│  │    └── Download capability                                     │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- High Availability -->
+    <div class="row mb-4" id="ha">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>High Availability</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-diagram-3 me-2"></i>Leader Election</h6>
+                            <p>Uses Zookeeper for distributed coordination:</p>
+                            <ul>
+                                <li><strong>PRIMARY</strong>: Actively runs DAGs</li>
+                                <li><strong>STANDBY</strong>: Monitors primary, ready for failover</li>
+                            </ul>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                When primary fails, standby automatically becomes primary and resumes all DAGs.
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌────────────┐        ┌────────────┐
+│ Instance A │        │ Instance B │
+│ (PRIMARY)  │        │ (STANDBY)  │
+└─────┬──────┘        └─────┬──────┘
+      │                     │
+      │  ┌───────────────┐  │
+      └──│   Zookeeper   │──┘
+         │   Ensemble    │
+         │               │
+         │ /dishtayantra/│
+         │    leader     │
+         └───────────────┘
+
+Failover Sequence:
+1. PRIMARY fails
+2. Zookeeper detects
+3. STANDBY acquires lock
+4. STANDBY → PRIMARY
+5. DAGs resumed
+</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security -->
+    <div class="row mb-4" id="security">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-lock me-2"></i>Security Architecture</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-person-badge me-2"></i>Authentication & Authorization</h6>
+                            <p>Role-Based Access Control (RBAC):</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Role</th>
+                                            <th>Permissions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="badge bg-danger">admin</span></td>
+                                            <td>All operations, user mgmt, system monitor</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="badge bg-primary">user</span></td>
+                                            <td>View DAGs, start/stop, clone, cache</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-shield-lock me-2"></i>Security Features</h6>
+                            <ul>
+                                <li>Flask sessions with secure cookies</li>
+                                <li>Configurable session timeout</li>
+                                <li>CSRF protection</li>
+                                <li>Input validation on all forms</li>
+                                <li>Role-based route protection</li>
+                            </ul>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Production Note:</strong> Use password hashing (bcrypt/argon2) and HTTPS in production.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance -->
+    <div class="row mb-4" id="performance">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-speedometer me-2"></i>Performance Considerations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-cpu me-2"></i>Threading Model</h6>
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #00ff00;">
+Main Thread
+└── Flask WSGI Server
+
+DAG Executor Threads (per DAG)
+├── DAG-1 Executor
+├── DAG-2 Executor
+└── DAG-N Executor
+
+Subscriber Threads
+├── Kafka Consumer
+├── RabbitMQ Consumer
+└── ...
+
+Background Threads
+├── Zookeeper Session
+├── User Registry Reloader
+└── Time Window Monitor
+
+Python 3.13+ Free-Threading:
+- Optional GIL-free mode
+- True parallel execution
+</pre>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-bar-chart me-2"></i>Performance Benchmarks</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Operation</th>
+                                            <th>Latency</th>
+                                            <th>Throughput</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Node execution</td>
+                                            <td>&lt; 1ms</td>
+                                            <td>10K nodes/s</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Python calculator</td>
+                                            <td>~100μs</td>
+                                            <td>10K ops/s</td>
+                                        </tr>
+                                        <tr>
+                                            <td>C++/Rust calculator</td>
+                                            <td>~100ns</td>
+                                            <td>1M ops/s</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Kafka publish</td>
+                                            <td>~5ms</td>
+                                            <td>100K msg/s</td>
+                                        </tr>
+                                        <tr>
+                                            <td>In-memory queue</td>
+                                            <td>~1μs</td>
+                                            <td>1M msg/s</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h6 class="border-bottom pb-2 mt-3"><i class="bi bi-pc-display me-2"></i>System Requirements</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Component</th>
+                                            <th>Minimum</th>
+                                            <th>Recommended</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>CPU</td>
+                                            <td>2 cores</td>
+                                            <td>8+ cores</td>
+                                        </tr>
+                                        <tr>
+                                            <td>RAM</td>
+                                            <td>2 GB</td>
+                                            <td>8+ GB</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Python</td>
+                                            <td>3.8</td>
+                                            <td>3.13+ (free-threading)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version History -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Version History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Release</th>
+                                    <th>Key Features</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-success">1.1.1</span></td>
+                                    <td>Current</td>
+                                    <td>System Monitoring, Admin Features, Log Viewer</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-primary">1.1.0</span></td>
+                                    <td>Dec 2025</td>
+                                    <td>Java, C++, Rust, REST Calculators, Free-Threading</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge bg-secondary">1.0.0</span></td>
+                                    <td>Nov 2025</td>
+                                    <td>Initial Release, Multi-Broker, Zookeeper HA</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body text-center">
+                    <p class="mb-2">
+                        <a href="{{ url_for('help_index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Help Center
+                        </a>
+                    </p>
+                    <p class="text-muted small mb-0">
+                        © 2025-2030 Ashutosh Sinha. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

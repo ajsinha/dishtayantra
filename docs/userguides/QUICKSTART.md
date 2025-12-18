@@ -1,13 +1,27 @@
 # DishtaYantra Compute Server - Quick Start Guide
 
+## Version 1.1.1
+
 ## © 2025-2030 Ashutosh Sinha
+
+---
+
+## What's New
+
+**v1.1.1**: Admin System Monitoring, Log Viewer, Admin Dropdown Menu
+
+**v1.1.0**: Multi-language calculators (Java, C++, Rust, REST), Free-threading support
+
+---
 
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Python 3.8 or higher (3.13+ recommended for free-threading)
 - pip (Python package manager)
 - (Optional) Docker and Docker Compose for containerized deployment
+- (Optional) Java 8+ for Java calculators
+- (Optional) Rust toolchain for Rust calculators
 
 ## Quick Installation
 
@@ -389,12 +403,97 @@ docker-compose ps           # Check status
 docker-compose logs -f      # Follow logs
 ```
 
+## New in v1.1.x
+
+### Multi-Language Calculators (v1.1.0)
+
+Use high-performance calculators written in different languages:
+
+```json
+{
+  "calculators": [
+    {
+      "name": "java_calc",
+      "type": "com.example.Calculator",
+      "config": { "calculator": "java" }
+    },
+    {
+      "name": "cpp_calc", 
+      "type": "FastCalculator",
+      "config": { "calculator": "cpp" }
+    },
+    {
+      "name": "rust_calc",
+      "type": "SafeCalculator", 
+      "config": { "calculator": "rust" }
+    },
+    {
+      "name": "rest_calc",
+      "config": {
+        "calculator": "rest",
+        "endpoint": "https://api.example.com/calculate",
+        "auth_type": "api_key",
+        "api_key": "${API_KEY}"
+      }
+    }
+  ]
+}
+```
+
+See the [Multi-Language Calculator Integration Guide](Multi-Language%20Calculator%20Integration%20Guide.md) for details.
+
+### Admin System Monitoring (v1.1.1)
+
+Admin users can access system monitoring via **Admin → System Monitoring**:
+
+- Real-time CPU, memory, disk metrics
+- DAG server statistics
+- Service health checks
+- Calculator integration status
+- Auto-refresh every 5 seconds
+
+### System Logs Viewer (v1.1.1)
+
+View and search application logs via **Admin → System Logs**:
+
+- Filter by log level (Info, Warning, Error)
+- Search log content
+- Download logs
+
+See the [Admin and System Monitoring Guide](Admin%20and%20System%20Monitoring%20Guide.md) for details.
+
+### Free-Threading (Python 3.13+)
+
+For true parallel execution without the GIL:
+
+```bash
+# Install Python 3.13+ with free-threading
+# DishtaYantra automatically detects and uses it
+python run_server.py
+```
+
+---
+
 ## Resources
 
 - Main Documentation: `README.md`
+- Architecture Document: `docs/ARCHITECTURE.md`
 - Sample Configurations: `config/dags/`
 - Test Scripts: `test_inmemory_pipeline.py`
 - Docker Setup: `docker-compose.yml`
+
+### User Guides
+- [Multi-Language Calculator Integration Guide](Multi-Language%20Calculator%20Integration%20Guide.md)
+- [Admin and System Monitoring Guide](Admin%20and%20System%20Monitoring%20Guide.md)
+- [User Management Architecture](User%20Management%20Architecture.md)
+
+### Help Center (Web UI)
+- Getting Started
+- DAG Configuration
+- Calculators & Transformers
+- Pub/Sub Setup
+- API Reference
+- Glossary
 
 ---
 

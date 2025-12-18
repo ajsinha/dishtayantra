@@ -30,6 +30,7 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/pybind11-integration', 'help_pybind11_integration', self.help_pybind11_integration)
         self.app.add_url_rule('/help/rust-integration', 'help_rust_integration', self.help_rust_integration)
         self.app.add_url_rule('/help/rest-integration', 'help_rest_integration', self.help_rest_integration)
+        self.app.add_url_rule('/help/architecture', 'help_architecture', self.help_architecture)
     
     def about(self):
         """About page"""
@@ -106,3 +107,7 @@ class NoAuthRoutes:
     def help_rest_integration(self):
         """REST API calculator integration help page"""
         return render_template('help/rest_integration.html')
+    
+    def help_architecture(self):
+        """System architecture help page"""
+        return render_template('help/architecture.html')

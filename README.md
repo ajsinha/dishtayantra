@@ -2,82 +2,203 @@
 
 ## © 2025-2030 Ashutosh Sinha
 
-A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers and data sources.
+A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, and **multi-language calculator integrations**.
+
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+
+---
+
+## What's New in Version 1.1.1
+
+### Admin & System Monitoring
+- **System Monitoring Dashboard**: Real-time CPU, memory, disk, and network monitoring
+- **Admin Dropdown Menu**: Consolidated admin features in navigation bar
+- **System Logs Viewer**: View, filter, search, and download application logs
+- **Service Health Checks**: Monitor DAG server and integration status
+
+### Multi-Language Calculator Support (v1.1.0)
+- **Java (Py4J)**: 10-100x faster, JVM ecosystem access, gateway pooling
+- **C++ (pybind11)**: 50-100x faster, ~100ns overhead, SIMD optimization, zero-copy
+- **Rust (PyO3)**: C++ equivalent performance, memory safety, thread safety with rayon
+- **REST API**: HTTP POST endpoints with API Key, Basic, Bearer authentication
+
+### Python 3.13+ Free-Threading Support
+- Optional GIL-free execution for true parallelism
+- Automatic detection and configuration
+
+---
 
 ## Features
 
+### Core Capabilities
 - **Multi-threaded DAG Execution**: Efficient parallel processing with topologically sorted node execution
-- **Multiple Message Brokers**: Support for Kafka, ActiveMQ, Redis, In-Memory queues/topics
-- **Various Data Sources**: File, SQL databases, Aerospike, Redis, custom implementations
-- **Web UI**: Flask-based dashboard for monitoring and management
+- **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory
+- **Various Data Sources**: File, SQL databases, Aerospike, Redis, REST, gRPC, custom implementations
+- **Web UI**: Professional Flask-based dashboard with role-based access control
 - **High Availability**: Zookeeper-based leader election for primary/failover setup
 - **Time-windowed Execution**: Configure DAGs to run only during specific time windows
 - **Dynamic Cloning**: Clone DAGs with different configurations at runtime
+- **AutoClone**: Automatic DAG duplication with configurable intervals
+
+### Multi-Language Calculators
+| Language | Technology | Performance | Use Case |
+|----------|------------|-------------|----------|
+| Python | Built-in | Baseline | Rapid development, prototyping |
+| Java | Py4J | 10-100x faster | JVM ecosystem, enterprise libraries |
+| C++ | pybind11 | 50-100x faster | Ultra-low latency, SIMD, numeric |
+| Rust | PyO3 | 50-100x faster | Memory safety, thread safety |
+| REST | HTTP/JSON | Network dependent | Microservices, third-party APIs |
+
+### Admin Features (v1.1.1)
+- System monitoring with real-time metrics
+- Process and resource tracking
+- Log viewer with filtering and search
+- Calculator integration status
+- Service health checks
+
+### Documentation & Help
+- 12-page comprehensive help system
+- Interactive DAG Designer
+- 40+ term glossary
+- Sample DAG configurations
+- API reference documentation
+
+---
 
 ## Project Structure
 
 ```
 dishtayantra/
 ├── core/
-│   ├── core_utils.py
-│   ├── pubsub/
-│   │   ├── datapubsub.py          # Abstract base classes
-│   │   ├── pubsubfactory.py       # Factory methods
-│   │   ├── inmemorypubsub.py      # Singleton in-memory pub/sub
-│   │   ├── inmemory_datapubsub.py # In-memory publishers/subscribers
-│   │   ├── file_datapubsub.py     # File-based publishers/subscribers
-│   │   ├── kafka_datapubsub.py    # Kafka publishers/subscribers
-│   │   ├── activemq_datapubsub.py # ActiveMQ publishers/subscribers
-│   │   ├── sql_datapubsub.py      # SQL publishers/subscribers
-│   │   ├── redis_datapubsub.py    # Redis publishers/subscribers
-│   │   ├── aerospike_datapubsub.py # Aerospike publisher
-│   │   ├── custom_datapubsub.py   # Custom delegate publishers/subscribers
-│   │   └── metronome_datapubsub.py # Metronome publishers/subscribers
 │   ├── calculator/
-│   │   └── core_calculator.py     # Calculator implementations
+│   │   ├── core_calculator.py      # Calculator factory & implementations
+│   │   ├── java_calculator.py      # Py4J Java integration
+│   │   ├── cpp_calculator.py       # pybind11 C++ integration
+│   │   ├── rust_calculator.py      # PyO3 Rust integration
+│   │   └── rest_calculator.py      # REST API integration
 │   ├── transformer/
-│   │   └── core_transformer.py    # Transformer implementations
-│   └── dag/
-│       ├── graph_elements.py      # Node and Edge classes
-│       ├── node_implementations.py # Concrete node types
-│       ├── compute_graph.py       # ComputeGraph class
-│       └── dag_server.py          # DAGComputeServer class
+│   │   └── core_transformer.py     # Data transformers
+│   ├── pubsub/
+│   │   ├── datapubsub.py           # Abstract base classes
+│   │   ├── pubsubfactory.py        # Factory methods
+│   │   ├── kafka_datapubsub.py     # Kafka pub/sub
+│   │   ├── rabbitmq_datapubsub.py  # RabbitMQ pub/sub
+│   │   ├── redis_datapubsub.py     # Redis pub/sub
+│   │   ├── inmemory_redisclone.py  # In-memory Redis clone
+│   │   └── ...                     # Other pub/sub implementations
+│   ├── dag/
+│   │   ├── graph_elements.py       # Node and Edge classes
+│   │   ├── node_implementations.py # Concrete node types
+│   │   ├── compute_graph.py        # ComputeGraph class
+│   │   ├── dag_server.py           # DAGComputeServer
+│   │   └── time_window_utils.py    # Time window handling
+│   └── db/
+│       ├── db_connection_pool.py   # Database connection pooling
+│       └── db_connection_pool_manager.py
+├── routes/
+│   ├── auth_routes.py              # Authentication
+│   ├── dashboard_routes.py         # Dashboard
+│   ├── dag_routes.py               # DAG operations
+│   ├── admin_routes.py             # System monitoring (NEW)
+│   └── ...
 ├── web/
-│   ├── app.py                     # Flask application
+│   ├── dishtyantra_webapp.py       # Flask application
 │   └── templates/
-│       ├── base.html
-│       ├── login.html
-│       ├── dashboard.html
-│       ├── dag_details.html
-│       └── dag_state.html
+│       ├── base.html               # Base template with admin dropdown
+│       ├── dashboard.html          # Main dashboard
+│       ├── dag_designer.html       # Visual DAG designer
+│       ├── admin/
+│       │   ├── system_monitoring.html  # System metrics (NEW)
+│       │   └── system_logs.html        # Log viewer (NEW)
+│       └── help/
+│           ├── index.html          # Help center
+│           ├── py4j_integration.html
+│           ├── pybind11_integration.html
+│           ├── rust_integration.html
+│           ├── rest_integration.html
+│           └── ...
+├── java/                           # Java calculator sources
+│   └── src/com/dishtayantra/
+├── cpp/                            # C++ calculator sources
+│   └── src/
+├── rust/                           # Rust calculator sources
+│   └── src/
 ├── config/
-│   ├── users.json                 # User credentials
-│   └── dags/                      # DAG configuration files
-│       └── sample_dag.json
+│   ├── users.json                  # User credentials
+│   └── dags/                       # DAG configurations
+├── docs/
+│   ├── requirements/               # Requirements documents
+│   └── userguides/                 # User guides
 ├── requirements.txt
 └── README.md
 ```
 
+---
+
 ## Installation
 
-1. **Install Python 3.8+**
+### Prerequisites
+- Python 3.8+ (3.13+ recommended for free-threading)
+- pip package manager
 
-2. **Install dependencies**:
+### Basic Installation
+
 ```bash
+# Clone repository
+git clone https://github.com/ajsinha/dishtayantra.git
+cd dishtayantra
+
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Create directories
+python setup_directories.py
+
+# Start server
+python run_server.py
 ```
 
-3. **Setup Zookeeper** (optional, for HA):
+### Optional: Multi-Language Calculator Setup
+
+#### Java (Py4J)
 ```bash
-# Download and start Zookeeper
-# https://zookeeper.apache.org/releases.html
+# Install Py4J
+pip install py4j
+
+# Compile Java classes
+cd java
+javac -cp .:py4j.jar src/com/dishtayantra/**/*.java
+
+# Start Java gateway
+java -cp .:py4j.jar:src com.dishtayantra.gateway.DishtaYantraGateway
 ```
 
-4. **Create necessary directories**:
+#### C++ (pybind11)
 ```bash
-mkdir -p config/dags
-mkdir -p logs
+# Install pybind11
+pip install pybind11
+
+# Build C++ module
+cd cpp
+mkdir build && cd build
+cmake ..
+make
+cp dishtayantra_cpp*.so ../../
 ```
+
+#### Rust (PyO3)
+```bash
+# Install maturin
+pip install maturin
+
+# Build Rust module
+cd rust
+maturin develop --release
+```
+
+---
 
 ## Configuration
 
@@ -88,414 +209,390 @@ Edit `config/users.json`:
 {
   "admin": {
     "password": "admin123",
-    "role": "admin"
+    "roles": ["admin", "user"],
+    "full_name": "System Administrator"
   },
-  "user1": {
-    "password": "user123",
-    "role": "user"
+  "operator": {
+    "password": "operator123",
+    "roles": ["user"],
+    "full_name": "DAG Operator"
   }
 }
 ```
 
 ### DAG Configuration
 
-Create JSON files in `config/dags/` directory. Example:
+Create JSON files in `config/dags/` directory:
 
 ```json
 {
   "name": "my_pipeline",
   "start_time": "0900",
-  "end_time": "1700",
-  "subscribers": [...],
-  "publishers": [...],
-  "calculators": [...],
-  "transformers": [...],
-  "nodes": [...],
-  "edges": [...]
+  "duration": 480,
+  "subscribers": [
+    {
+      "name": "input_sub",
+      "config": { "source": "kafka://topic/input" }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "output_pub",
+      "config": { "destination": "redis://output_key" }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "java_calc",
+      "type": "com.example.MyCalculator",
+      "config": { "calculator": "java" }
+    }
+  ],
+  "nodes": [
+    { "name": "input", "type": "SubscriptionNode", "subscriber": "input_sub" },
+    { "name": "process", "type": "CalculationNode", "calculator": "java_calc" },
+    { "name": "output", "type": "PublicationNode", "publisher": "output_pub" }
+  ],
+  "edges": [
+    { "from": "input", "to": "process" },
+    { "from": "process", "to": "output" }
+  ]
 }
 ```
 
+### Calculator Configuration Examples
+
+#### Java Calculator
+```json
+{
+  "name": "risk_calc",
+  "type": "com.company.RiskCalculator",
+  "config": {
+    "calculator": "java",
+    "gateway_port": 25333,
+    "pool_size": 4
+  }
+}
+```
+
+#### C++ Calculator
+```json
+{
+  "name": "simd_calc",
+  "type": "SimdVectorCalculator",
+  "config": {
+    "calculator": "cpp",
+    "use_simd": true
+  }
+}
+```
+
+#### Rust Calculator
+```json
+{
+  "name": "safe_calc",
+  "type": "ThreadSafeCalculator",
+  "config": {
+    "calculator": "rust",
+    "thread_count": 8
+  }
+}
+```
+
+#### REST Calculator
+```json
+{
+  "name": "api_calc",
+  "config": {
+    "calculator": "rest",
+    "endpoint": "https://api.example.com/calculate",
+    "auth_type": "api_key",
+    "api_key": "${API_KEY}",
+    "timeout": 10,
+    "retries": 3
+  }
+}
+```
+
+---
+
 ## Running the Application
 
-### Start the DAG Server and Web UI:
-
+### Start Server
 ```bash
-python web/dishtyantra_webapp.py
+python run_server.py
 ```
 
-### Environment Variables:
+### Environment Variables
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DAG_CONFIG_FOLDER` | Path to DAG configurations | `./config/dags` |
+| `ZOOKEEPER_HOSTS` | Zookeeper connection string | `localhost:2181` |
+| `USERS_FILE` | Path to users file | `./config/users.json` |
+| `SECRET_KEY` | Flask session secret | (generated) |
+| `FLASK_PORT` | Web server port | `5000` |
 
-- `DAG_CONFIG_FOLDER`: Path to DAG configuration folder (default: `./config/dags`)
-- `ZOOKEEPER_HOSTS`: Zookeeper connection string (default: `localhost:2181`)
-- `USERS_FILE`: Path to users configuration file (default: `./config/users.json`)
-- `SECRET_KEY`: Flask secret key for sessions
+### Access Web Interface
+Navigate to `http://localhost:5000` and login with credentials from `users.json`.
 
-Example:
-```bash
-export DAG_CONFIG_FOLDER=/path/to/dags
-export ZOOKEEPER_HOSTS=zk1:2181,zk2:2181,zk3:2181
-python web/dishtyantra_webapp.py
-```
+---
 
-## Usage
+## Web Interface Guide
 
-### Web Interface
+### Dashboard
+- View all DAGs with status indicators
+- Start/Stop/Suspend/Resume DAGs
+- Clone DAGs with new time windows
+- Archive/Delete DAGs
+- Real-time status updates
 
-1. **Login**: Navigate to `http://localhost:5000` and login with credentials from `users.json`
+### DAG Designer
+- Visual drag-and-drop DAG creation
+- Node palette with all node types
+- Edge connection interface
+- JSON configuration export
 
-2. **Dashboard**: View all DAGs, their status, and perform operations:
-   - Start/Stop DAGs
-   - Suspend/Resume DAGs
-   - Clone DAGs with new time windows
-   - Delete DAGs
-   - View Details and State
+### Admin Features (Admin Role Required)
+Access via **Admin** dropdown in navigation bar:
 
-3. **DAG Details**: View comprehensive information about:
-   - Nodes in topological order
-   - Subscribers and Publishers
-   - Calculators and Transformers
-   - Full JSON configuration
+#### System Monitoring
+- **CPU**: Usage percentage, core count, load average
+- **Memory**: Usage, total, available
+- **Disk**: Usage, partitions, free space
+- **Network**: Bytes sent/received, connections, errors
+- **DAG Server**: Running/stopped/error DAG counts
+- **Process Info**: PID, memory, threads, open files
+- **Calculator Status**: Java, C++, Rust, REST availability
+- **Health Checks**: Service status indicators
+- **Auto-refresh**: 5-second automatic updates
 
-4. **DAG State**: Real-time view of:
-   - Input/Output state of each node
-   - Error logs
-   - Node dirty status
+#### System Logs
+- View application logs (dagserver.log, application.log, error.log)
+- Filter by log level (Info, Warning, Error)
+- Search log content
+- Download logs
 
-### Publishing Messages (Admin Only)
+#### User Management
+- Create/Edit/Delete users
+- Assign roles (admin, user)
+- Password management
 
-For in-memory, Kafka, Redis channel, and ActiveMQ subscribers, admins can publish test messages directly from the UI:
+### Help Center
+Comprehensive documentation including:
+- Getting Started guide
+- DAG Configuration reference
+- Calculator types and configuration
+- Pub/Sub setup guides
+- Multi-language integration guides
+- API reference
+- Glossary (40+ terms)
 
-1. Go to DAG Details page
-2. Find the subscriber in the Subscribers table
-3. Click "Publish" button
-4. Enter JSON message
-5. Submit
+---
 
-## Components
+## Components Reference
 
 ### Publishers and Subscribers
 
-- **InMemory**: `mem://queue/name` or `mem://topic/name`
-- **File**: `file:///path/to/file`
-- **Kafka**: `kafka://topic/topic_name`
-- **ActiveMQ**: `activemq://queue/name` or `activemq://topic/name`
-- **SQL**: `sql://source_name`
-- **Redis**: `redis://keys` or `redischannel://channel_name`
-- **Aerospike**: `aerospike://namespace/set`
-- **Custom**: `custom://custom_name`
-- **Metronome**: `metronome`
+| Protocol | URI Format | Example |
+|----------|------------|---------|
+| In-Memory | `mem://queue/name` | `mem://queue/input` |
+| In-Memory Topic | `mem://topic/name` | `mem://topic/broadcast` |
+| Kafka | `kafka://topic/name` | `kafka://topic/events` |
+| Redis | `redis://key` | `redis://output_data` |
+| Redis Channel | `redischannel://name` | `redischannel://updates` |
+| RabbitMQ | `rabbitmq://queue/name` | `rabbitmq://queue/tasks` |
+| ActiveMQ | `activemq://queue/name` | `activemq://queue/jobs` |
+| File | `file:///path` | `file:///data/output.json` |
+| SQL | `sql://source` | `sql://trades_db` |
+| REST | `rest://endpoint` | `rest://api/data` |
+| Aerospike | `aerospike://ns/set` | `aerospike://test/users` |
 
-### Calculators
+### Built-in Calculators
 
-- **NullCalculator**: Returns deep copy
-- **PassthruCalculator**: Returns input as-is
-- **AttributeFilterAwayCalculator**: Removes specified attributes
-- **AttributeFilterCalculator**: Keeps only specified attributes
-- **ApplyDefaultsCalculator**: Applies default values
-- **AdditionCalculator**: Adds numeric attributes
-- **MultiplicationCalculator**: Multiplies numeric attributes
-- **AttributeNameChangeCalculator**: Renames attributes
+| Calculator | Description |
+|------------|-------------|
+| `NullCalculator` | Returns deep copy of input |
+| `PassthruCalculator` | Returns input unchanged |
+| `AttributeFilterCalculator` | Keeps specified attributes |
+| `AttributeFilterAwayCalculator` | Removes specified attributes |
+| `ApplyDefaultsCalculator` | Applies default values |
+| `AdditionCalculator` | Adds numeric attributes |
+| `MultiplicationCalculator` | Multiplies numeric attributes |
+| `AttributeNameChangeCalculator` | Renames attributes |
+| `RandomCalculator` | Generates random values |
 
 ### Transformers
 
-- **NullDataTransformer**: Returns deep copy
-- **PassthruDataTransformer**: Returns input as-is
-- **AttributeFilterAwayDataTransformer**: Removes specified attributes
-- **AttributeFilterDataTransformer**: Keeps only specified attributes
-- **ApplyDefaultsDataTransformer**: Applies default values
+| Transformer | Description |
+|-------------|-------------|
+| `NullDataTransformer` | Returns deep copy |
+| `PassthruDataTransformer` | Returns unchanged |
+| `AttributeFilterDataTransformer` | Keeps attributes |
+| `AttributeFilterAwayDataTransformer` | Removes attributes |
+| `ApplyDefaultsDataTransformer` | Applies defaults |
 
 ### Node Types
 
-- **SubscriptionNode**: Pulls data from DataSubscriber
-- **PublicationNode**: Publishes data to DataPublishers
-- **MetronomeNode**: Executes at regular intervals
-- **CalculationNode**: Performs calculations on input
+| Node Type | Description |
+|-----------|-------------|
+| `SubscriptionNode` | Ingests data from subscriber |
+| `PublicationNode` | Publishes to publisher(s) |
+| `CalculationNode` | Performs calculations |
+| `TransformationNode` | Transforms data |
+| `MetronomeNode` | Periodic execution |
+| `SinkNode` | Consumes without output |
+
+---
+
+## Performance Characteristics
+
+### Calculator Performance Comparison
+
+| Type | Overhead | Throughput | Best For |
+|------|----------|------------|----------|
+| Python | Baseline | ~10K ops/s | Prototyping, simple logic |
+| Java (Py4J) | 100-500μs | ~50K ops/s | JVM libraries, enterprise |
+| C++ (pybind11) | ~100ns | ~1M ops/s | Ultra-low latency, SIMD |
+| Rust (PyO3) | ~100ns | ~1M ops/s | Safety-critical, parallel |
+| REST | 10-1000ms | ~100 ops/s | External services, APIs |
+
+### System Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| CPU | 2 cores | 8+ cores |
+| RAM | 2 GB | 8+ GB |
+| Disk | 1 GB | 10+ GB |
+| Python | 3.8 | 3.13+ (free-threading) |
+
+---
 
 ## High Availability
 
 The system uses Zookeeper for leader election:
 
-- **Primary Instance**: Actively runs DAGs
-- **Standby Instance**: Keeps DAGs suspended, ready for failover
+1. **Primary Instance**: Actively runs DAGs, processes messages
+2. **Standby Instance**: Monitors primary, ready for failover
 
-When primary fails, standby automatically becomes primary and resumes all DAGs.
+When primary fails, standby automatically:
+- Becomes primary
+- Resumes all suspended DAGs
+- Continues processing
 
-## Naming Conventions
-
-All names in the system must:
-- Contain only alphanumeric characters and underscores
-- Have at least one alphabetic character
-- Examples: `my_dag`, `queue1`, `subscriber_A`
-
-## Logging
-
-All components use Python's logging module. Configure logging level:
-
-```python
-import logging
-logging.basicConfig(level=logging.INFO)
+```bash
+# Start with HA
+export ZOOKEEPER_HOSTS=zk1:2181,zk2:2181,zk3:2181
+python run_server.py
 ```
 
-## Error Handling
-
-- Each node maintains up to 10 most recent errors with timestamps
-- Errors are visible in the DAG State view
-- Failed operations don't crash the entire system
-- Automatic reconnection for database and message broker connections
-
-## Performance Considerations
-
-- **Thread-safe**: All components use proper locking mechanisms
-- **Backpressure Management**: Internal queues with configurable max depths
-- **Efficient Computation**: Only dirty nodes are recomputed
-- **Batch Publishing**: Optional batching for high-throughput scenarios
-
-## Advanced Features
-
-### Periodic Publishing
-
-Publishers can accumulate messages and publish periodically:
-
-```json
-{
-  "name": "batch_publisher",
-  "config": {
-    "destination": "kafka://topic/output",
-    "publish_interval": 5,
-    "batch_size": 100
-  }
-}
-```
-
-### Time-windowed DAGs
-
-DAGs can be configured to run only during specific hours:
-
-```json
-{
-  "name": "business_hours_dag",
-  "start_time": "0900",
-  "end_time": "1700"
-}
-```
-
-### Custom Implementations
-
-Extend the system with custom calculators, transformers, and pub/sub:
-
-```python
-# my_custom_calculator.py
-from core.calculator.core_calculator import DataCalculator
-
-class MyCustomCalculator(DataCalculator):
-    def calculate(self, data):
-        # Your custom logic here
-        return processed_data
-```
-
-Reference in configuration:
-```json
-{
-  "name": "custom_calc",
-  "type": "my_module.my_custom_calculator.MyCustomCalculator",
-  "config": {}
-}
-```
-
-## Example Use Cases
-
-### 1. Real-time Data Pipeline
-
-```
-Kafka Subscriber → Filter Transformer → Calculation → Redis Publisher
-```
-
-### 2. Batch Processing
-
-```
-File Subscriber → Apply Defaults → Aggregation → SQL Publisher
-```
-
-### 3. Multi-source Aggregation
-
-```
-                  → Node A →
-Subscriber 1 →              → Aggregator → Publisher
-Subscriber 2 →  → Node B →
-```
-
-### 4. Scheduled Data Generation
-
-```
-Metronome → Calculation → File Publisher
-```
-
-## Troubleshooting
-
-### DAG won't start
-- Check if instance is PRIMARY (not STANDBY)
-- Verify all configuration files are valid JSON
-- Check logs for error messages
-
-### Messages not flowing
-- Verify subscribers are connected to correct sources
-- Check queue depths in DAG Details
-- Ensure nodes are marked as dirty (check DAG State)
-
-### High memory usage
-- Reduce max_depth for subscribers
-- Check for cycles in DAG (will be rejected at build time)
-- Monitor node error logs
-
-### Connection failures
-- Verify Kafka/ActiveMQ/Redis/SQL connection details
-- Check network connectivity
-- Review firewall rules
+---
 
 ## API Reference
 
 ### DAGComputeServer Methods
 
 ```python
-# Add a new DAG
+# DAG Management
 dag_name = server.add_dag(config_dict, filename)
-
-# Start a DAG
 server.start(dag_name)
-
-# Stop a DAG
 server.stop(dag_name)
-
-# Suspend a DAG
 server.suspend(dag_name)
-
-# Resume a DAG
 server.resume(dag_name)
-
-# Delete a DAG
 server.delete(dag_name)
+new_name = server.clone_dag(dag_name, start_time, end_time)
 
-# Clone a DAG
-new_dag_name = server.clone_dag(dag_name, start_time, end_time)
-
-# Get DAG details
+# Information
 details = server.details(dag_name)
-
-# List all DAGs
 dags = server.list_dags()
-
-# Get server status
 status = server.get_server_status()
 ```
 
-### ComputeGraph Methods
+### REST Endpoints
 
-```python
-# Build the DAG
-graph.build_dag()
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Dashboard |
+| GET | `/dag/<n>` | DAG details |
+| POST | `/dag/<n>/start` | Start DAG |
+| POST | `/dag/<n>/stop` | Stop DAG |
+| POST | `/dag/<n>/suspend` | Suspend DAG |
+| POST | `/dag/<n>/resume` | Resume DAG |
+| DELETE | `/dag/<n>` | Delete DAG |
+| GET | `/admin/monitoring` | System monitoring |
+| GET | `/admin/logs` | System logs |
+| GET | `/help` | Help center |
 
-# Get topologically sorted nodes
-sorted_nodes = graph.topological_sort()
+---
 
-# Start execution
-graph.start()
+## Troubleshooting
 
-# Suspend execution
-graph.suspend()
+### Common Issues
 
-# Resume execution
-graph.resume()
+| Issue | Solution |
+|-------|----------|
+| DAG won't start | Check if PRIMARY, verify JSON syntax |
+| Messages not flowing | Verify subscriber connections, check queue depths |
+| High memory | Reduce max_depth, check for accumulation |
+| Java calc fails | Ensure gateway is running, check port |
+| C++/Rust not found | Verify module compilation, check Python path |
+| REST timeout | Increase timeout, verify endpoint |
 
-# Stop execution
-graph.stop()
+### Log Locations
+- Application: `logs/dagserver.log`
+- Errors: `logs/error.log`
+- Web access: Flask console output
 
-# Clone with new time window
-cloned_graph = graph.clone(start_time='0800', end_time='1800')
-
-# Get JSON configuration
-json_str = graph.show_json()
-
-# Get details
-details = graph.details()
-```
+---
 
 ## Security Considerations
 
-⚠️ **Important**: This implementation uses cleartext passwords for demonstration purposes. For production use:
+⚠️ **For Production Use**:
 
-1. **Hash passwords**: Use bcrypt, argon2, or similar
-2. **Use HTTPS**: Enable SSL/TLS for web interface
-3. **Implement proper authentication**: Consider OAuth2, LDAP, or similar
-4. **Secure Zookeeper**: Use ACLs and authentication
-5. **Network security**: Use firewalls and network segmentation
-6. **Audit logging**: Log all administrative actions
-7. **Input validation**: Already implemented for names, extend as needed
+1. **Hash passwords**: Use bcrypt/argon2 instead of cleartext
+2. **Enable HTTPS**: Use SSL/TLS certificates
+3. **Secure credentials**: Use environment variables for API keys
+4. **Network security**: Configure firewalls, use VPN
+5. **Audit logging**: Enable comprehensive logging
+6. **Regular updates**: Keep dependencies current
 
-## Testing
-
-### Unit Tests
-
-```python
-# test_calculator.py
-import unittest
-from core.calculator.core_calculator import AdditionCalculator
-
-class TestCalculators(unittest.TestCase):
-    def test_addition_calculator(self):
-        calc = AdditionCalculator('test', {
-            'arguments': ['a', 'b'],
-            'output_attribute': 'result'
-        })
-        result = calc.calculate({'a': 5, 'b': 3})
-        self.assertEqual(result['result'], 8)
-```
-
-### Integration Tests
-
-Test with actual message brokers:
-
-```bash
-# Start Kafka locally
-docker run -d --name kafka -p 9092:9092 apache/kafka
-
-# Run tests
-python -m pytest tests/
-```
-
-## Contributing
-
-1. Follow PEP 8 style guidelines
-2. Add logging to all major operations
-3. Write unit tests for new components
-4. Update documentation
-5. Ensure thread safety
-
-## License
-
-[Your License Here]
-
-## Support
-
-For issues and questions:
-- Check logs in the application
-- Review this documentation
-- Check DAG configuration syntax
-- Verify external service connectivity
+---
 
 ## Changelog
 
+### Version 1.1.1 (Current)
+- System Monitoring dashboard with real-time metrics
+- Admin dropdown menu in navigation
+- System logs viewer with filtering
+- Service health checks
+- Calculator integration status display
+- Auto-refresh monitoring
+
+### Version 1.1.0
+- Java calculator integration (Py4J)
+- C++ calculator integration (pybind11)
+- Rust calculator integration (PyO3)
+- REST API calculator integration
+- Python 3.13+ free-threading support
+- Comprehensive help documentation
+- DAG Designer improvements
+
 ### Version 1.0.0
 - Initial release
-- Support for Kafka, ActiveMQ, Redis, SQL, File, Aerospike
+- Multi-broker support
 - Flask web UI
-- Zookeeper-based HA
+- Zookeeper HA
 - Time-windowed execution
 - DAG cloning
-- Message publishing from UI
 
-For issues, questions, or contributions, please contact:
-- Email: ajsinha@gmail.com
-- GitHub: https://github.com/ajsinha/dishtayantra
+---
+
+## Contact & Support
+
+- **Author**: Ashutosh Sinha
+- **Email**: ajsinha@gmail.com
+- **GitHub**: https://github.com/ajsinha/dishtayantra
+
+---
 
 ## License
 
