@@ -261,6 +261,107 @@
     </div>
 </div>
 
+<!-- Advanced Topics Section -->
+<h3 class="section-title"><i class="bi bi-rocket-takeoff"></i> Advanced Topics</h3>
+<div class="row mb-5">
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #f59e0b;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-lightning-charge" style="color: #f59e0b;"></i> Free-Threading & Massive Parallelism
+                    <span class="badge bg-warning text-dark ms-2">New</span>
+                </h5>
+                <p class="card-text">Unlock true multi-core performance with Python 3.13+ free-threading (no GIL). Learn how to build and configure free-threaded Python to make DishtaYantra massively parallel.</p>
+                <ul class="small text-muted mb-3">
+                    <li>What is free-threading and why it matters</li>
+                    <li>Building Python 3.13/3.14 with <code>--disable-gil</code></li>
+                    <li>Configuring DishtaYantra for parallel execution</li>
+                    <li>Best practices for thread-safe calculators</li>
+                </ul>
+                <a href="{{ url_for('help_free_threading') }}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-lightning-charge"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #f89820;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-cup-hot-fill" style="color: #f89820;"></i> Py4J Java Integration
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #f89820, #e07d10);">1.1.0</span>
+                </h5>
+                <p class="card-text">Leverage high-performance Java calculators for real-time processing. Beat Spark with sub-10ms latency using gateway pooling.</p>
+                <ul class="small text-muted mb-3">
+                    <li>10-100x faster than Python for CPU-intensive work</li>
+                    <li>Gateway pooling for concurrent execution</li>
+                    <li>Complete examples: risk, pricing, HFT</li>
+                </ul>
+                <a href="{{ url_for('help_py4j_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #f89820, #e07d10);">
+                    <i class="bi bi-cup-hot-fill"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #00599C;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-braces" style="color: #00599C;"></i> pybind11 C++ Integration
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #00599C, #004482);">1.1.0</span>
+                </h5>
+                <p class="card-text">Native C++ calculators with ~100ns call overhead. SIMD optimization, zero-copy memory, and direct Python integration.</p>
+                <ul class="small text-muted mb-3">
+                    <li>50-100x faster than Python</li>
+                    <li>Direct memory sharing (zero-copy)</li>
+                    <li>Cross-platform: Linux, macOS, Windows</li>
+                </ul>
+                <a href="{{ url_for('help_pybind11_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #00599C, #004482);">
+                    <i class="bi bi-braces"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #CE422B;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-gear-wide-connected" style="color: #CE422B;"></i> Rust PyO3 Integration
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #CE422B, #a33620);">1.1.0</span>
+                </h5>
+                <p class="card-text">Memory-safe, thread-safe high-performance calculators with Rust. Compile-time safety guarantees with C++ level performance.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Memory safety guaranteed at compile time</li>
+                    <li>Fearless concurrency with rayon</li>
+                    <li>Easy deployment with maturin</li>
+                </ul>
+                <a href="{{ url_for('help_rust_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #CE422B, #a33620);">
+                    <i class="bi bi-gear-wide-connected"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #8b5cf6;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-cloud-arrow-up" style="color: #8b5cf6;"></i> REST API Integration
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">1.1.0</span>
+                </h5>
+                <p class="card-text">Invoke external REST endpoints as calculators. Full authentication support including API Key, Basic Auth, and Bearer tokens.</p>
+                <ul class="small text-muted mb-3">
+                    <li>HTTP POST with JSON request/response</li>
+                    <li>API Key, Basic, Bearer authentication</li>
+                    <li>Automatic retries and connection pooling</li>
+                </ul>
+                <a href="{{ url_for('help_rest_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="bi bi-cloud-arrow-up"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Reference -->
 <div class="row mb-4">
     <div class="col-12">

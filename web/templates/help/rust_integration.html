@@ -1,0 +1,1177 @@
+{% extends "base.html" %}
+
+{% block title %}Rust PyO3 Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .code-block.rust {
+        border-left: 4px solid #CE422B;
+    }
+    .code-block.python {
+        border-left: 4px solid #3776ab;
+    }
+    .code-block.toml {
+        border-left: 4px solid #9c4221;
+    }
+    .code-block.bash {
+        border-left: 4px solid #64748b;
+    }
+    .code-block.json {
+        border-left: 4px solid #10b981;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .danger-box {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border-left: 4px solid #ef4444;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .performance-card {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .performance-card h5 {
+        color: #00d4aa;
+        margin-bottom: 1rem;
+    }
+    .performance-metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .performance-metric:last-child {
+        border-bottom: none;
+    }
+    .metric-label {
+        color: rgba(255,255,255,0.8);
+    }
+    .metric-value {
+        color: #00d4aa;
+        font-weight: 600;
+    }
+    .arch-diagram {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        text-align: center;
+    }
+    .arch-box {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        margin: 0.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .arch-python {
+        background: linear-gradient(135deg, #3776ab, #2d5a87);
+        color: white;
+    }
+    .arch-rust {
+        background: linear-gradient(135deg, #CE422B, #a33620);
+        color: white;
+    }
+    .arch-arrow {
+        display: inline-block;
+        font-size: 1.5rem;
+        color: #64748b;
+        margin: 0 1rem;
+    }
+    .platform-tabs .nav-link {
+        color: #64748b;
+    }
+    .platform-tabs .nav-link.active {
+        color: #CE422B;
+        font-weight: 600;
+        border-bottom: 3px solid #CE422B;
+    }
+    .rust-logo {
+        color: #CE422B;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-gear-wide-connected rust-logo"></i> Rust PyO3 Integration</h2>
+<p class="lead">Combine Rust's safety and performance with DishtaYantra's flexibility using PyO3.</p>
+
+<!-- Table of Contents -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Contents</h5>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><a href="#overview">Overview & Architecture</a></li>
+            <li><a href="#why-rust">Why Rust Calculators?</a></li>
+            <li><a href="#setup">Setup Guide</a></li>
+            <li><a href="#rust-calculator">Writing Rust Calculators</a></li>
+            <li><a href="#compilation">Building on Different Platforms</a></li>
+            <li><a href="#python-integration">Python Integration</a></li>
+            <li><a href="#configuration">DAG Configuration</a></li>
+            <li><a href="#examples">Complete Examples</a></li>
+            <li><a href="#best-practices">Best Practices</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4" id="overview">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Overview & Architecture</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>PyO3</strong> is a Rust crate that provides bindings for Python, allowing you to write native Python modules in Rust. Combined with <strong>maturin</strong>, it offers the easiest way to build and distribute Rust-Python extensions.</p>
+        
+        <div class="arch-diagram">
+            <h6 class="mb-3">Architecture</h6>
+            <div>
+                <span class="arch-box arch-python"><i class="bi bi-filetype-py"></i> DishtaYantra (Python)</span>
+                <span class="arch-arrow">⟷</span>
+                <span class="arch-box arch-rust"><i class="bi bi-gear-wide-connected"></i> Rust Module (.so/.pyd)</span>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">Zero-cost abstractions • Memory safety • Fearless concurrency</small>
+            </div>
+        </div>
+        
+        <h6 class="mt-4">Rust vs Other Languages</h6>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Aspect</th>
+                    <th>Rust (PyO3)</th>
+                    <th>C++ (pybind11)</th>
+                    <th>Java (Py4J)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Memory Safety</strong></td>
+                    <td><span class="badge bg-success">Guaranteed at compile time</span></td>
+                    <td>Manual management</td>
+                    <td>GC managed</td>
+                </tr>
+                <tr>
+                    <td><strong>Thread Safety</strong></td>
+                    <td><span class="badge bg-success">Enforced by compiler</span></td>
+                    <td>Manual synchronization</td>
+                    <td>JVM handles</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td><span class="badge bg-success">C/C++ level</span></td>
+                    <td>Native</td>
+                    <td>JIT compiled</td>
+                </tr>
+                <tr>
+                    <td><strong>No Segfaults</strong></td>
+                    <td><span class="badge bg-success">Safe Rust guarantee</span></td>
+                    <td>Possible</td>
+                    <td>Rare</td>
+                </tr>
+                <tr>
+                    <td><strong>Deployment</strong></td>
+                    <td><span class="badge bg-success">Single binary</span></td>
+                    <td>Single binary</td>
+                    <td>Requires JVM</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Why Rust -->
+<div class="card mb-4" id="why-rust">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Why Rust Calculators?</h5>
+    </div>
+    <div class="card-body">
+        <p>Rust offers a unique combination of performance, safety, and modern language features:</p>
+        
+        <div class="performance-card">
+            <h5><i class="bi bi-speedometer2"></i> Performance Characteristics</h5>
+            <div class="performance-metric">
+                <span class="metric-label">Raw Performance</span>
+                <span class="metric-value">Equivalent to C/C++</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Memory Safety</span>
+                <span class="metric-value">Compile-time guaranteed</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Data Race Freedom</span>
+                <span class="metric-value">Enforced by type system</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Zero-Cost Abstractions</span>
+                <span class="metric-value">No runtime overhead</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Call Overhead</span>
+                <span class="metric-value">~100ns per call</span>
+            </div>
+        </div>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> When to Use Rust Calculators:</strong>
+            <ul class="mb-0 mt-2">
+                <li>High-performance, safety-critical calculations</li>
+                <li>Parallel processing with guaranteed thread safety</li>
+                <li>Memory-efficient processing of large datasets</li>
+                <li>Leveraging Rust ecosystem (serde, rayon, ndarray)</li>
+                <li>When you want C++ performance with modern safety guarantees</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Setup Guide -->
+<div class="card mb-4" id="setup">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Setup Guide</h5>
+    </div>
+    <div class="card-body">
+        <h6>Step 1: Install Rust</h6>
+        <div class="code-block bash"># Install Rust via rustup (all platforms)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Restart shell or run:
+source $HOME/.cargo/env
+
+# Verify installation
+rustc --version
+cargo --version</div>
+        
+        <h6 class="mt-4">Step 2: Install maturin (Build Tool)</h6>
+        <div class="code-block bash"># Via pip (recommended)
+pip install maturin
+
+# Via cargo
+cargo install maturin
+
+# Verify
+maturin --version</div>
+
+        <h6 class="mt-4">Step 3: Create Project Structure</h6>
+        <div class="code-block bash"># Create new Rust project
+mkdir dishtayantra_rust
+cd dishtayantra_rust
+
+# Initialize with maturin
+maturin init --bindings pyo3
+
+# Project structure:
+# dishtayantra_rust/
+# ├── Cargo.toml
+# ├── pyproject.toml
+# └── src/
+#     └── lib.rs</div>
+    </div>
+</div>
+
+<!-- Writing Rust Calculators -->
+<div class="card mb-4" id="rust-calculator">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-slash"></i> Writing Rust Calculators</h5>
+    </div>
+    <div class="card-body">
+        <h6>Cargo.toml Configuration</h6>
+        <div class="code-block toml">[package]
+name = "dishtayantra_rust"
+version = "1.1.0"
+edition = "2021"
+
+[lib]
+name = "dishtayantra_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+rayon = "1.8"  # For parallel processing
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1</div>
+
+        <h6 class="mt-4">Base Calculator Trait and Implementations</h6>
+        <div class="code-block rust">// src/lib.rs
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyAny};
+use std::collections::HashMap;
+use chrono::Utc;
+
+/// Trait defining the calculator interface (matches Python DataCalculator)
+trait Calculator {
+    fn calculate(&mut self, data: &PyDict) -> PyResult&lt;PyObject&gt;;
+    fn details(&self, py: Python) -> PyResult&lt;PyObject&gt;;
+}
+
+/// Passthrough Calculator - Returns input as-is
+#[pyclass]
+struct PassthruCalculator {
+    name: String,
+    config: HashMap&lt;String, PyObject&gt;,
+    calculation_count: u64,
+    last_calculation: Option&lt;String&gt;,
+}
+
+#[pymethods]
+impl PassthruCalculator {
+    #[new]
+    fn new(name: String, config: &PyDict) -> PyResult&lt;Self&gt; {
+        let mut config_map = HashMap::new();
+        for (key, value) in config.iter() {
+            let key_str: String = key.extract()?;
+            config_map.insert(key_str, value.into());
+        }
+        
+        Ok(Self {
+            name,
+            config: config_map,
+            calculation_count: 0,
+            last_calculation: None,
+        })
+    }
+    
+    fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        self.calculation_count += 1;
+        self.last_calculation = Some(Utc::now().to_rfc3339());
+        
+        // Return a copy of the input dict
+        let result = PyDict::new(py);
+        for (key, value) in data.iter() {
+            result.set_item(key, value)?;
+        }
+        Ok(result.into())
+    }
+    
+    fn details(&self, py: Python) -> PyResult&lt;PyObject&gt; {
+        let dict = PyDict::new(py);
+        dict.set_item("name", &self.name)?;
+        dict.set_item("type", "PassthruCalculator")?;
+        dict.set_item("language", "Rust")?;
+        dict.set_item("calculation_count", self.calculation_count)?;
+        if let Some(ref last) = self.last_calculation {
+            dict.set_item("last_calculation", last)?;
+        }
+        Ok(dict.into())
+    }
+}
+
+/// Math Calculator with various operations
+#[pyclass]
+struct MathCalculator {
+    name: String,
+    operation: String,
+    arguments: Vec&lt;String&gt;,
+    output_attribute: String,
+    calculation_count: u64,
+    last_calculation: Option&lt;String&gt;,
+}
+
+#[pymethods]
+impl MathCalculator {
+    #[new]
+    fn new(name: String, config: &PyDict) -> PyResult&lt;Self&gt; {
+        let operation: String = config
+            .get_item("operation")?
+            .map(|v| v.extract().unwrap_or("add".to_string()))
+            .unwrap_or("add".to_string());
+        
+        let output_attribute: String = config
+            .get_item("output_attribute")?
+            .map(|v| v.extract().unwrap_or("result".to_string()))
+            .unwrap_or("result".to_string());
+        
+        let arguments: Vec&lt;String&gt; = config
+            .get_item("arguments")?
+            .map(|v| v.extract().unwrap_or(vec![]))
+            .unwrap_or(vec![]);
+        
+        Ok(Self {
+            name,
+            operation,
+            arguments,
+            output_attribute,
+            calculation_count: 0,
+            last_calculation: None,
+        })
+    }
+    
+    fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        self.calculation_count += 1;
+        self.last_calculation = Some(Utc::now().to_rfc3339());
+        
+        // Copy input to result
+        let result = PyDict::new(py);
+        for (key, value) in data.iter() {
+            result.set_item(key, value)?;
+        }
+        
+        // Collect numeric values
+        let mut values: Vec&lt;f64&gt; = Vec::new();
+        for arg in &self.arguments {
+            if let Some(value) = data.get_item(arg)? {
+                if let Ok(num) = value.extract::&lt;f64&gt;() {
+                    values.push(num);
+                }
+            }
+        }
+        
+        // Perform calculation
+        let output = if values.is_empty() {
+            0.0
+        } else {
+            match self.operation.as_str() {
+                "add" | "sum" =&gt; values.iter().sum(),
+                "multiply" | "mul" =&gt; values.iter().product(),
+                "max" =&gt; values.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
+                "min" =&gt; values.iter().cloned().fold(f64::INFINITY, f64::min),
+                "mean" | "avg" =&gt; values.iter().sum::&lt;f64&gt;() / values.len() as f64,
+                "std" =&gt; {
+                    let mean = values.iter().sum::&lt;f64&gt;() / values.len() as f64;
+                    let variance = values.iter()
+                        .map(|v| (v - mean).powi(2))
+                        .sum::&lt;f64&gt;() / values.len() as f64;
+                    variance.sqrt()
+                },
+                _ =&gt; values.iter().sum(),
+            }
+        };
+        
+        result.set_item(&self.output_attribute, output)?;
+        Ok(result.into())
+    }
+    
+    fn details(&self, py: Python) -> PyResult&lt;PyObject&gt; {
+        let dict = PyDict::new(py);
+        dict.set_item("name", &self.name)?;
+        dict.set_item("type", "MathCalculator")?;
+        dict.set_item("language", "Rust")?;
+        dict.set_item("operation", &self.operation)?;
+        dict.set_item("output_attribute", &self.output_attribute)?;
+        dict.set_item("calculation_count", self.calculation_count)?;
+        Ok(dict.into())
+    }
+}</div>
+
+        <h6 class="mt-4">Trade Pricing Calculator (Financial)</h6>
+        <div class="code-block rust">/// High-performance trade pricing calculator
+#[pyclass]
+struct TradePricingCalculator {
+    name: String,
+    commission_rate: f64,
+    tax_rate: f64,
+    include_vat: bool,
+    calculation_count: u64,
+    last_calculation: Option&lt;String&gt;,
+}
+
+#[pymethods]
+impl TradePricingCalculator {
+    #[new]
+    fn new(name: String, config: &PyDict) -> PyResult&lt;Self&gt; {
+        let commission_rate: f64 = config
+            .get_item("commission_rate")?
+            .map(|v| v.extract().unwrap_or(0.001))
+            .unwrap_or(0.001);
+        
+        let tax_rate: f64 = config
+            .get_item("tax_rate")?
+            .map(|v| v.extract().unwrap_or(0.0))
+            .unwrap_or(0.0);
+        
+        let include_vat: bool = config
+            .get_item("include_vat")?
+            .map(|v| v.extract().unwrap_or(false))
+            .unwrap_or(false);
+        
+        Ok(Self {
+            name,
+            commission_rate,
+            tax_rate,
+            include_vat,
+            calculation_count: 0,
+            last_calculation: None,
+        })
+    }
+    
+    fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        self.calculation_count += 1;
+        self.last_calculation = Some(Utc::now().to_rfc3339());
+        
+        // Copy input to result
+        let result = PyDict::new(py);
+        for (key, value) in data.iter() {
+            result.set_item(key, value)?;
+        }
+        
+        // Extract trade values
+        let price: f64 = data.get_item("price")?
+            .ok_or_else(|| PyErr::new::&lt;pyo3::exceptions::PyKeyError, _&gt;("price"))?
+            .extract()?;
+        
+        let quantity: f64 = data.get_item("quantity")?
+            .ok_or_else(|| PyErr::new::&lt;pyo3::exceptions::PyKeyError, _&gt;("quantity"))?
+            .extract()?;
+        
+        // Calculate values
+        let gross_value = price * quantity;
+        let commission = gross_value * self.commission_rate;
+        let tax = if self.tax_rate > 0.0 { gross_value * self.tax_rate } else { 0.0 };
+        let vat = if self.include_vat { (gross_value + commission) * 0.20 } else { 0.0 };
+        let net_value = gross_value + commission + tax + vat;
+        
+        // Set results
+        result.set_item("gross_value", gross_value)?;
+        result.set_item("commission", commission)?;
+        result.set_item("tax", tax)?;
+        result.set_item("vat", vat)?;
+        result.set_item("net_value", net_value)?;
+        result.set_item("calculated_at", Utc::now().timestamp())?;
+        
+        Ok(result.into())
+    }
+    
+    fn details(&self, py: Python) -> PyResult&lt;PyObject&gt; {
+        let dict = PyDict::new(py);
+        dict.set_item("name", &self.name)?;
+        dict.set_item("type", "TradePricingCalculator")?;
+        dict.set_item("language", "Rust")?;
+        dict.set_item("commission_rate", self.commission_rate)?;
+        dict.set_item("tax_rate", self.tax_rate)?;
+        dict.set_item("include_vat", self.include_vat)?;
+        dict.set_item("calculation_count", self.calculation_count)?;
+        Ok(dict.into())
+    }
+}</div>
+
+        <h6 class="mt-4">Module Registration</h6>
+        <div class="code-block rust">/// Python module definition
+#[pymodule]
+fn dishtayantra_rust(_py: Python, m: &PyModule) -> PyResult&lt;()&gt; {
+    m.add_class::&lt;PassthruCalculator&gt;()?;
+    m.add_class::&lt;MathCalculator&gt;()?;
+    m.add_class::&lt;TradePricingCalculator&gt;()?;
+    // Add more calculators here
+    Ok(())
+}</div>
+    </div>
+</div>
+
+<!-- Compilation -->
+<div class="card mb-4" id="compilation">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-hammer"></i> Building on Different Platforms</h5>
+    </div>
+    <div class="card-body">
+        <h6>Using maturin (Recommended)</h6>
+        
+        <ul class="nav nav-tabs platform-tabs" id="buildTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#build-dev">Development</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#build-release">Release</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#build-wheel">Wheel Package</a>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="build-dev">
+                <div class="code-block bash"># Build and install in current environment (development)
+maturin develop
+
+# With release optimizations
+maturin develop --release
+
+# The module is now importable
+python -c "import dishtayantra_rust; print(dir(dishtayantra_rust))"</div>
+            </div>
+            <div class="tab-pane fade" id="build-release">
+                <div class="code-block bash"># Build release wheel
+maturin build --release
+
+# Output: target/wheels/dishtayantra_rust-1.1.0-*.whl
+
+# Install the wheel
+pip install target/wheels/dishtayantra_rust-*.whl</div>
+            </div>
+            <div class="tab-pane fade" id="build-wheel">
+                <div class="code-block bash"># Build wheels for multiple Python versions
+maturin build --release --interpreter python3.10 python3.11 python3.12
+
+# Build manylinux wheel (for distribution)
+maturin build --release --manylinux 2014
+
+# Upload to PyPI
+maturin upload target/wheels/*</div>
+            </div>
+        </div>
+
+        <h6 class="mt-4">Platform-Specific Notes</h6>
+        
+        <ul class="nav nav-tabs platform-tabs" id="platformTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#platform-linux">Linux</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#platform-macos">macOS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#platform-windows">Windows</a>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="platform-linux">
+                <div class="code-block bash"># No additional dependencies needed
+# Output: dishtayantra_rust.cpython-311-x86_64-linux-gnu.so
+
+# For manylinux compatibility
+maturin build --release --manylinux 2014
+
+# Copy to DishtaYantra
+cp target/release/libdishtayantra_rust.so \
+   /path/to/dishtayantra/core/calculator/dishtayantra_rust.so</div>
+            </div>
+            <div class="tab-pane fade" id="platform-macos">
+                <div class="code-block bash"># Xcode Command Line Tools required
+xcode-select --install
+
+# Build for Apple Silicon (M1/M2)
+maturin build --release --target aarch64-apple-darwin
+
+# Build for Intel
+maturin build --release --target x86_64-apple-darwin
+
+# Build universal binary
+maturin build --release --target universal2-apple-darwin</div>
+            </div>
+            <div class="tab-pane fade" id="platform-windows">
+                <div class="code-block bash"># Visual Studio Build Tools required
+# Output: dishtayantra_rust.cp311-win_amd64.pyd
+
+# Build
+maturin build --release
+
+# Copy to DishtaYantra
+copy target\release\dishtayantra_rust.dll ^
+     C:\path\to\dishtayantra\core\calculator\dishtayantra_rust.pyd</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Python Integration -->
+<div class="card mb-4" id="python-integration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-filetype-py"></i> Python Integration</h5>
+    </div>
+    <div class="card-body">
+        <h6>RustCalculator Wrapper Class</h6>
+        <div class="code-block python"># core/calculator/rust_calculator.py
+import importlib
+import logging
+from typing import Dict, Any
+
+logger = logging.getLogger(__name__)
+
+class RustCalculator:
+    """
+    Wrapper for Rust calculators compiled with PyO3.
+    
+    The Rust struct must implement:
+    - #[new] fn new(name: String, config: &PyDict) -> Self
+    - fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt;
+    - fn details(&self, py: Python) -> PyResult&lt;PyObject&gt;
+    """
+    
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """
+        Initialize Rust calculator wrapper.
+        
+        Args:
+            name: Calculator name
+            config: Configuration dict, must include:
+                    - rust_module: Name of the compiled module (e.g., 'dishtayantra_rust')
+                    - rust_class: Name of the Rust struct (e.g., 'MathCalculator')
+        """
+        self.name = name
+        self.config = config
+        
+        rust_module = config.get('rust_module', 'dishtayantra_rust')
+        rust_class = config.get('rust_class')
+        
+        if not rust_class:
+            raise ValueError("rust_class must be specified for Rust calculators")
+        
+        try:
+            # Import the compiled module
+            module = importlib.import_module(rust_module)
+            calculator_class = getattr(module, rust_class)
+            
+            # Create Rust calculator instance
+            self._rust_instance = calculator_class(name, config)
+            
+            logger.info(f"RustCalculator '{name}' initialized: {rust_module}.{rust_class}")
+            
+        except ImportError as e:
+            raise RuntimeError(f"Failed to import Rust module '{rust_module}': {e}")
+        except AttributeError as e:
+            raise RuntimeError(f"Struct '{rust_class}' not found in module '{rust_module}': {e}")
+    
+    def calculate(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute calculation on the Rust side."""
+        return dict(self._rust_instance.calculate(data))
+    
+    def details(self) -> Dict[str, Any]:
+        """Get calculator details."""
+        details = dict(self._rust_instance.details())
+        details['wrapper'] = 'RustCalculator'
+        return details</div>
+
+        <h6 class="mt-4">Using Rust Calculators in Python</h6>
+        <div class="code-block python"># Direct usage
+from core.calculator.rust_calculator import RustCalculator
+
+# Create calculator
+config = {
+    'rust_module': 'dishtayantra_rust',
+    'rust_class': 'MathCalculator',
+    'operation': 'mean',
+    'arguments': ['price1', 'price2', 'price3'],
+    'output_attribute': 'avg_price'
+}
+calc = RustCalculator('price_avg', config)
+
+# Use calculator
+data = {'price1': 100.0, 'price2': 105.0, 'price3': 98.0}
+result = calc.calculate(data)
+print(result)  # {'price1': 100.0, 'price2': 105.0, 'price3': 98.0, 'avg_price': 101.0}
+
+# Get details
+print(calc.details())</div>
+
+        <h6 class="mt-4">CalculatorFactory Integration</h6>
+        <div class="code-block python"># The CalculatorFactory automatically handles Rust calculators
+from core.calculator.core_calculator import CalculatorFactory
+
+config = {
+    'calculator': 'rust',
+    'rust_module': 'dishtayantra_rust',
+    'rust_class': 'TradePricingCalculator',
+    'commission_rate': 0.002
+}
+
+calc = CalculatorFactory.create('pricing_calc', config)</div>
+    </div>
+</div>
+
+<!-- DAG Configuration -->
+<div class="card mb-4" id="configuration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-filetype-json"></i> DAG Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p>Configure a Rust calculator in your DAG JSON:</p>
+        
+        <div class="code-block json">{
+  "name": "rust_powered_dag",
+  "start_time": "0900",
+  "duration": "8h",
+  "nodes": [
+    {
+      "id": "subscriber",
+      "type": "SubscriptionNode",
+      "subscribers": [
+        {"uri": "kafka://trades:raw_trades"}
+      ]
+    },
+    {
+      "id": "rust_pricing",
+      "type": "CalculationNode",
+      "calculator": "rust",
+      "rust_module": "dishtayantra_rust",
+      "rust_class": "TradePricingCalculator",
+      "commission_rate": 0.001,
+      "tax_rate": 0.0,
+      "include_vat": false
+    },
+    {
+      "id": "publisher",
+      "type": "PublicationNode",
+      "publishers": [
+        {"uri": "kafka://trades:priced_trades"}
+      ]
+    }
+  ],
+  "edges": [
+    {"from": "subscriber", "to": "rust_pricing"},
+    {"from": "rust_pricing", "to": "publisher"}
+  ]
+}</div>
+
+        <h6 class="mt-4">Configuration Options</h6>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Property</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>calculator</code></td>
+                    <td>Yes</td>
+                    <td>Set to <code>"rust"</code> for Rust calculators</td>
+                </tr>
+                <tr>
+                    <td><code>rust_module</code></td>
+                    <td>No</td>
+                    <td>Module name (default: <code>dishtayantra_rust</code>)</td>
+                </tr>
+                <tr>
+                    <td><code>rust_class</code></td>
+                    <td>Yes</td>
+                    <td>Rust struct name to instantiate</td>
+                </tr>
+                <tr>
+                    <td><em>any other</em></td>
+                    <td>No</td>
+                    <td>Passed to Rust constructor as config dict</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Examples -->
+<div class="card mb-4" id="examples">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-square"></i> Complete Examples</h5>
+    </div>
+    <div class="card-body">
+        <h6>Example: Parallel Processing with Rayon</h6>
+        <div class="code-block rust">use rayon::prelude::*;
+
+#[pyclass]
+struct ParallelCalculator {
+    name: String,
+    calculation_count: u64,
+}
+
+#[pymethods]
+impl ParallelCalculator {
+    #[new]
+    fn new(name: String, _config: &PyDict) -> Self {
+        Self { name, calculation_count: 0 }
+    }
+    
+    fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        self.calculation_count += 1;
+        
+        // Get input array
+        let values: Vec&lt;f64&gt; = data
+            .get_item("values")?
+            .ok_or_else(|| PyErr::new::&lt;pyo3::exceptions::PyKeyError, _&gt;("values"))?
+            .extract()?;
+        
+        // Release GIL and process in parallel
+        let results: Vec&lt;f64&gt; = py.allow_threads(|| {
+            values.par_iter()
+                .map(|&x| x.powi(2) + x.sqrt())  // Some computation
+                .collect()
+        });
+        
+        let result = PyDict::new(py);
+        result.set_item("processed", results)?;
+        result.set_item("count", values.len())?;
+        Ok(result.into())
+    }
+    
+    fn details(&self, py: Python) -> PyResult&lt;PyObject&gt; {
+        let dict = PyDict::new(py);
+        dict.set_item("name", &self.name)?;
+        dict.set_item("type", "ParallelCalculator")?;
+        dict.set_item("language", "Rust")?;
+        dict.set_item("parallelism", "rayon")?;
+        dict.set_item("calculation_count", self.calculation_count)?;
+        Ok(dict.into())
+    }
+}</div>
+
+        <h6 class="mt-4">Example: Risk Calculator with ndarray</h6>
+        <div class="code-block rust">// Add to Cargo.toml: ndarray = "0.15"
+use ndarray::{Array1, Array2};
+
+#[pyclass]
+struct RiskCalculator {
+    name: String,
+    confidence_level: f64,
+    calculation_count: u64,
+}
+
+#[pymethods]
+impl RiskCalculator {
+    #[new]
+    fn new(name: String, config: &PyDict) -> PyResult&lt;Self&gt; {
+        let confidence_level: f64 = config
+            .get_item("confidence_level")?
+            .map(|v| v.extract().unwrap_or(0.95))
+            .unwrap_or(0.95);
+        
+        Ok(Self {
+            name,
+            confidence_level,
+            calculation_count: 0,
+        })
+    }
+    
+    fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        self.calculation_count += 1;
+        
+        let returns: Vec&lt;f64&gt; = data.get_item("returns")?.unwrap().extract()?;
+        let weights: Vec&lt;f64&gt; = data.get_item("weights")?.unwrap().extract()?;
+        
+        // Convert to ndarray
+        let ret = Array1::from_vec(returns);
+        let wgt = Array1::from_vec(weights);
+        
+        // Portfolio calculations
+        let portfolio_return = ret.dot(&wgt);
+        let mean = ret.mean().unwrap_or(0.0);
+        let variance = ret.mapv(|x| (x - mean).powi(2)).mean().unwrap_or(0.0);
+        let volatility = variance.sqrt();
+        
+        // VaR calculation
+        let z_score = if self.confidence_level >= 0.99 { 2.326 }
+                      else if self.confidence_level >= 0.95 { 1.645 }
+                      else { 1.282 };
+        let var = portfolio_return - z_score * volatility;
+        
+        let result = PyDict::new(py);
+        result.set_item("portfolio_return", portfolio_return)?;
+        result.set_item("volatility", volatility)?;
+        result.set_item("var", var)?;
+        Ok(result.into())
+    }
+    
+    fn details(&self, py: Python) -> PyResult&lt;PyObject&gt; {
+        let dict = PyDict::new(py);
+        dict.set_item("name", &self.name)?;
+        dict.set_item("type", "RiskCalculator")?;
+        dict.set_item("language", "Rust")?;
+        dict.set_item("confidence_level", self.confidence_level)?;
+        Ok(dict.into())
+    }
+}</div>
+    </div>
+</div>
+
+<!-- Best Practices -->
+<div class="card mb-4" id="best-practices">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Best Practices</h5>
+    </div>
+    <div class="card-body">
+        <h6>1. Release the GIL for CPU-Bound Work</h6>
+        <div class="code-block rust">fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+    // Extract data while holding GIL
+    let values: Vec&lt;f64&gt; = data.get_item("values")?.unwrap().extract()?;
+    
+    // Release GIL for computation
+    let result = py.allow_threads(|| {
+        // This runs without GIL - other Python threads can execute
+        values.iter().map(|x| x * 2.0).collect::&lt;Vec&lt;_&gt;&gt;()
+    });
+    
+    // GIL reacquired here
+    let output = PyDict::new(py);
+    output.set_item("result", result)?;
+    Ok(output.into())
+}</div>
+
+        <h6 class="mt-4">2. Use Proper Error Handling</h6>
+        <div class="code-block rust">fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+    // Use ? for proper error propagation to Python
+    let price: f64 = data
+        .get_item("price")?
+        .ok_or_else(|| PyErr::new::&lt;pyo3::exceptions::PyKeyError, _&gt;("Missing 'price' field"))?
+        .extract()
+        .map_err(|_| PyErr::new::&lt;pyo3::exceptions::PyTypeError, _&gt;("'price' must be a number"))?;
+    
+    // ...
+}</div>
+
+        <h6 class="mt-4">3. Use Interior Mutability for Thread Safety</h6>
+        <div class="code-block rust">use std::sync::Mutex;
+
+#[pyclass]
+struct ThreadSafeCalculator {
+    running_total: Mutex&lt;f64&gt;,
+}
+
+#[pymethods]
+impl ThreadSafeCalculator {
+    fn calculate(&self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        let value: f64 = data.get_item("value")?.unwrap().extract()?;
+        
+        // Safe access with Mutex
+        let mut total = self.running_total.lock().unwrap();
+        *total += value;
+        let current = *total;
+        drop(total);  // Release lock early
+        
+        let result = PyDict::new(py);
+        result.set_item("running_total", current)?;
+        Ok(result.into())
+    }
+}</div>
+
+        <h6 class="mt-4">4. Optimize Cargo.toml for Production</h6>
+        <div class="code-block toml">[profile.release]
+opt-level = 3          # Maximum optimization
+lto = true             # Link-time optimization
+codegen-units = 1      # Better optimization, slower compile
+panic = "abort"        # Smaller binary
+strip = true           # Strip symbols</div>
+    </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="card mb-4" id="troubleshooting">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+    </div>
+    <div class="card-body">
+        <h6>Issue: Module Not Found</h6>
+        <div class="code-block bash"># Ensure module is installed
+pip list | grep dishtayantra
+
+# Or ensure it's in Python path
+export PYTHONPATH="/path/to/module:$PYTHONPATH"
+
+# Verify import
+python -c "import dishtayantra_rust"</div>
+
+        <h6 class="mt-4">Issue: Maturin Build Fails</h6>
+        <div class="code-block bash"># Update maturin
+pip install --upgrade maturin
+
+# Check Rust version
+rustup update stable
+
+# Clear target directory
+cargo clean</div>
+
+        <h6 class="mt-4">Issue: Type Conversion Errors</h6>
+        <ul>
+            <li>Use <code>.extract::&lt;Type&gt;()</code> with explicit type annotation</li>
+            <li>Handle <code>None</code> values with <code>.ok_or_else()</code></li>
+            <li>Check that Python and Rust types are compatible</li>
+        </ul>
+
+        <h6 class="mt-4">Issue: Performance Not as Expected</h6>
+        <ul>
+            <li>Ensure using <code>--release</code> flag</li>
+            <li>Profile with <code>cargo flamegraph</code></li>
+            <li>Release GIL for CPU-bound work</li>
+            <li>Use <code>rayon</code> for parallelism</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #CE422B, #a33620); color: white;">
+        <h5 class="mb-0"><i class="bi bi-gear-wide-connected"></i> Summary</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td width="30%"><strong>Technology</strong></td>
+                    <td>PyO3 + maturin - Rust to Python bindings</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td>C/C++ equivalent, with memory safety guarantees</td>
+                </tr>
+                <tr>
+                    <td><strong>Safety</strong></td>
+                    <td>Memory safety and thread safety enforced at compile time</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Cases</strong></td>
+                    <td>Safe high-performance computing, parallel processing</td>
+                </tr>
+                <tr>
+                    <td><strong>Configuration</strong></td>
+                    <td>Set <code>calculator: "rust"</code> and <code>rust_class</code> in DAG config</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-rocket"></i> Pro Tip:</strong> Use Rust's <code>rayon</code> crate with <code>py.allow_threads()</code> for embarrassingly parallel workloads. Combined with Python's free-threading, you get maximum parallelism with zero data races!
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -63,6 +63,32 @@
             margin-right: 6px;
         }
         
+        /* Admin Dropdown */
+        .dropdown-menu-dark {
+            background: var(--primary-dark);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .dropdown-menu-dark .dropdown-item {
+            color: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem 1rem;
+        }
+        
+        .dropdown-menu-dark .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .dropdown-menu-dark .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+        }
+        
+        .dropdown-menu-dark .dropdown-divider {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        
         .navbar-text {
             font-weight: 500;
         }
@@ -465,10 +491,28 @@
                         </a>
                     </li>
                     {% if 'admin' in session.get('roles', []) %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('user_management') }}">
-                            <i class="bi bi-people"></i> Users
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-shield-lock"></i> Admin
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('user_management') }}">
+                                    <i class="bi bi-people"></i> User Management
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('system_monitoring') }}">
+                                    <i class="bi bi-activity"></i> System Monitoring
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('system_logs') }}">
+                                    <i class="bi bi-file-text"></i> System Logs
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     {% endif %}
                     {% endif %}

@@ -1,0 +1,985 @@
+{% extends "base.html" %}
+
+{% block title %}REST API Calculator Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .code-block.python {
+        border-left: 4px solid #3776ab;
+    }
+    .code-block.json {
+        border-left: 4px solid #10b981;
+    }
+    .code-block.bash {
+        border-left: 4px solid #64748b;
+    }
+    .code-block.http {
+        border-left: 4px solid #8b5cf6;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .danger-box {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border-left: 4px solid #ef4444;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .security-box {
+        background: linear-gradient(135deg, #faf5ff, #ede9fe);
+        border-left: 4px solid #8b5cf6;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .performance-card {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .performance-card h5 {
+        color: #00d4aa;
+        margin-bottom: 1rem;
+    }
+    .performance-metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .performance-metric:last-child {
+        border-bottom: none;
+    }
+    .metric-label {
+        color: rgba(255,255,255,0.8);
+    }
+    .metric-value {
+        color: #00d4aa;
+        font-weight: 600;
+    }
+    .arch-diagram {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        text-align: center;
+    }
+    .arch-box {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        margin: 0.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .arch-python {
+        background: linear-gradient(135deg, #3776ab, #2d5a87);
+        color: white;
+    }
+    .arch-rest {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+    .arch-arrow {
+        display: inline-block;
+        font-size: 1.5rem;
+        color: #64748b;
+        margin: 0 1rem;
+    }
+    .auth-tabs .nav-link {
+        color: #64748b;
+    }
+    .auth-tabs .nav-link.active {
+        color: #8b5cf6;
+        font-weight: 600;
+        border-bottom: 3px solid #8b5cf6;
+    }
+    .auth-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .auth-badge.api-key {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+    .auth-badge.basic {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .auth-badge.bearer {
+        background: #fae8ff;
+        color: #86198f;
+    }
+    .auth-badge.none {
+        background: #f1f5f9;
+        color: #475569;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-cloud-arrow-up" style="color: #8b5cf6;"></i> REST API Calculator Integration</h2>
+<p class="lead">Invoke external REST endpoints as calculators with full authentication support.</p>
+
+<!-- Table of Contents -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Contents</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="mb-0">
+                    <li><a href="#overview">Overview & Architecture</a></li>
+                    <li><a href="#why-rest">Why REST Calculators?</a></li>
+                    <li><a href="#authentication">Authentication Methods</a></li>
+                    <li><a href="#configuration">Configuration Options</a></li>
+                    <li><a href="#dag-config">DAG Configuration</a></li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="mb-0">
+                    <li><a href="#examples">Complete Examples</a></li>
+                    <li><a href="#server-examples">Server-Side Examples</a></li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4" id="overview">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Overview & Architecture</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>REST Calculators</strong> allow you to invoke external HTTP endpoints as part of your DAG processing. This enables integration with microservices, third-party APIs, and legacy systems.</p>
+        
+        <div class="arch-diagram">
+            <h6 class="mb-3">Architecture</h6>
+            <div>
+                <span class="arch-box arch-python"><i class="bi bi-diagram-3"></i> DishtaYantra DAG</span>
+                <span class="arch-arrow">→</span>
+                <span class="arch-box arch-rest"><i class="bi bi-cloud"></i> REST Endpoint</span>
+                <span class="arch-arrow">→</span>
+                <span class="arch-box arch-python"><i class="bi bi-diagram-3"></i> Continue DAG</span>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">HTTP POST • JSON Request/Response • Connection Pooling • Retry Logic</small>
+            </div>
+        </div>
+        
+        <h6 class="mt-4">Key Features</h6>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td width="30%"><strong>Protocol</strong></td>
+                    <td>HTTP/HTTPS POST with JSON body</td>
+                </tr>
+                <tr>
+                    <td><strong>Authentication</strong></td>
+                    <td>API Key, Basic Auth, Bearer Token, Custom Headers</td>
+                </tr>
+                <tr>
+                    <td><strong>Reliability</strong></td>
+                    <td>Automatic retries with exponential backoff</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td>Connection pooling, configurable timeouts</td>
+                </tr>
+                <tr>
+                    <td><strong>Error Handling</strong></td>
+                    <td>Fallback values, error suppression options</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Why REST Calculators -->
+<div class="card mb-4" id="why-rest">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-question-circle"></i> Why REST Calculators?</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-check-circle text-success"></i> Use Cases</h6>
+                <ul>
+                    <li><strong>Microservices Integration:</strong> Call existing services in your architecture</li>
+                    <li><strong>Third-Party APIs:</strong> Integrate pricing feeds, market data, risk engines</li>
+                    <li><strong>Legacy Systems:</strong> Bridge to systems with REST wrappers</li>
+                    <li><strong>Language Agnostic:</strong> Call services written in any language</li>
+                    <li><strong>Cloud Services:</strong> Integrate AWS Lambda, Azure Functions, etc.</li>
+                    <li><strong>Compliance:</strong> Use approved enterprise APIs</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-exclamation-triangle text-warning"></i> Considerations</h6>
+                <ul>
+                    <li><strong>Latency:</strong> Network round-trip adds 10-100ms+</li>
+                    <li><strong>Reliability:</strong> Depends on external service availability</li>
+                    <li><strong>Rate Limits:</strong> External APIs may have quotas</li>
+                    <li><strong>Security:</strong> Credentials must be managed securely</li>
+                </ul>
+                
+                <div class="tip-box mt-3">
+                    <strong><i class="bi bi-lightbulb"></i> Tip:</strong> For latency-sensitive calculations, consider Java, C++, or Rust calculators instead.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Authentication Methods -->
+<div class="card mb-4" id="authentication">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Authentication Methods</h5>
+    </div>
+    <div class="card-body">
+        <p>REST calculators support multiple authentication methods:</p>
+        
+        <ul class="nav nav-tabs auth-tabs" id="authTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#auth-apikey">
+                    <span class="auth-badge api-key">API Key</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#auth-basic">
+                    <span class="auth-badge basic">Basic Auth</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#auth-bearer">
+                    <span class="auth-badge bearer">Bearer Token</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#auth-none">
+                    <span class="auth-badge none">No Auth</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="tab-content mt-3">
+            <!-- API Key -->
+            <div class="tab-pane fade show active" id="auth-apikey">
+                <h6>API Key Authentication</h6>
+                <p>Sends an API key in a configurable HTTP header. Most common for third-party APIs.</p>
+                
+                <div class="code-block json">{
+  "calculator": "rest",
+  "endpoint": "https://api.example.com/calculate",
+  "auth_type": "api_key",
+  "api_key": "sk-your-api-key-here",
+  "api_key_header": "X-API-Key"
+}</div>
+                
+                <p class="mt-3"><strong>HTTP Request:</strong></p>
+                <div class="code-block http">POST /calculate HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+X-API-Key: sk-your-api-key-here
+
+{"price": 100, "quantity": 10}</div>
+
+                <div class="info-box mt-3">
+                    <strong><i class="bi bi-info-circle"></i> Common Header Names:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><code>X-API-Key</code> - Most common (default)</li>
+                        <li><code>Authorization: ApiKey xxx</code> - Some services</li>
+                        <li><code>X-Auth-Token</code> - Alternative</li>
+                        <li><code>api-key</code> - Azure services</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Basic Auth -->
+            <div class="tab-pane fade" id="auth-basic">
+                <h6>Basic Authentication</h6>
+                <p>Traditional username/password authentication. Credentials are Base64-encoded.</p>
+                
+                <div class="code-block json">{
+  "calculator": "rest",
+  "endpoint": "https://api.example.com/calculate",
+  "auth_type": "basic",
+  "username": "your_username",
+  "password": "your_password"
+}</div>
+                
+                <p class="mt-3"><strong>HTTP Request:</strong></p>
+                <div class="code-block http">POST /calculate HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Basic eW91cl91c2VybmFtZTp5b3VyX3Bhc3N3b3Jk
+
+{"price": 100, "quantity": 10}</div>
+
+                <div class="warning-box mt-3">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Security Note:</strong>
+                    Basic auth transmits credentials with every request. Always use HTTPS to encrypt the connection.
+                </div>
+            </div>
+            
+            <!-- Bearer Token -->
+            <div class="tab-pane fade" id="auth-bearer">
+                <h6>Bearer Token (OAuth2)</h6>
+                <p>OAuth2-style authentication using a bearer token. Common for modern APIs and JWT authentication.</p>
+                
+                <div class="code-block json">{
+  "calculator": "rest",
+  "endpoint": "https://api.example.com/calculate",
+  "auth_type": "bearer",
+  "bearer_token": "eyJhbGciOiJIUzI1NiIs..."
+}</div>
+                
+                <p class="mt-3"><strong>HTTP Request:</strong></p>
+                <div class="code-block http">POST /calculate HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+
+{"price": 100, "quantity": 10}</div>
+
+                <div class="tip-box mt-3">
+                    <strong><i class="bi bi-lightbulb"></i> Token Refresh:</strong>
+                    For OAuth2 with token refresh, consider using a token management service that updates the configuration or use custom headers with a dynamically refreshed token.
+                </div>
+            </div>
+            
+            <!-- No Auth -->
+            <div class="tab-pane fade" id="auth-none">
+                <h6>No Authentication</h6>
+                <p>For internal services or public APIs that don't require authentication.</p>
+                
+                <div class="code-block json">{
+  "calculator": "rest",
+  "endpoint": "http://internal-service:8080/calculate",
+  "auth_type": "none"
+}</div>
+                
+                <p class="mt-3"><strong>HTTP Request:</strong></p>
+                <div class="code-block http">POST /calculate HTTP/1.1
+Host: internal-service:8080
+Content-Type: application/json
+
+{"price": 100, "quantity": 10}</div>
+            </div>
+        </div>
+        
+        <h6 class="mt-4">Custom Headers</h6>
+        <p>Add any additional headers using <code>custom_headers</code>:</p>
+        <div class="code-block json">{
+  "calculator": "rest",
+  "endpoint": "https://api.example.com/calculate",
+  "auth_type": "api_key",
+  "api_key": "your-key",
+  "custom_headers": {
+    "X-Request-ID": "unique-id",
+    "X-Tenant-ID": "tenant-123",
+    "Accept-Language": "en-US"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Configuration Options -->
+<div class="card mb-4" id="configuration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration Options</h5>
+    </div>
+    <div class="card-body">
+        <h6>Complete Configuration Reference</h6>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Property</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>calculator</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td><strong>Required.</strong> Must be <code>"rest"</code></td>
+                </tr>
+                <tr>
+                    <td><code>endpoint</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td><strong>Required.</strong> Full URL of the REST endpoint</td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="4"><strong>Authentication</strong></td>
+                </tr>
+                <tr>
+                    <td><code>auth_type</code></td>
+                    <td>string</td>
+                    <td>none</td>
+                    <td>Authentication type: <code>none</code>, <code>api_key</code>, <code>basic</code>, <code>bearer</code></td>
+                </tr>
+                <tr>
+                    <td><code>api_key</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td>API key value (for api_key auth)</td>
+                </tr>
+                <tr>
+                    <td><code>api_key_header</code></td>
+                    <td>string</td>
+                    <td>X-API-Key</td>
+                    <td>Header name for API key</td>
+                </tr>
+                <tr>
+                    <td><code>username</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td>Username (for basic auth)</td>
+                </tr>
+                <tr>
+                    <td><code>password</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td>Password (for basic auth)</td>
+                </tr>
+                <tr>
+                    <td><code>bearer_token</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td>Bearer token (for bearer auth)</td>
+                </tr>
+                <tr>
+                    <td><code>custom_headers</code></td>
+                    <td>object</td>
+                    <td>{}</td>
+                    <td>Additional HTTP headers</td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="4"><strong>Request Settings</strong></td>
+                </tr>
+                <tr>
+                    <td><code>timeout</code></td>
+                    <td>number</td>
+                    <td>30</td>
+                    <td>Request timeout in seconds</td>
+                </tr>
+                <tr>
+                    <td><code>retries</code></td>
+                    <td>number</td>
+                    <td>3</td>
+                    <td>Number of retry attempts</td>
+                </tr>
+                <tr>
+                    <td><code>retry_backoff</code></td>
+                    <td>number</td>
+                    <td>0.5</td>
+                    <td>Exponential backoff factor</td>
+                </tr>
+                <tr>
+                    <td><code>verify_ssl</code></td>
+                    <td>boolean</td>
+                    <td>true</td>
+                    <td>Verify SSL certificates</td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="4"><strong>Request Transformation</strong></td>
+                </tr>
+                <tr>
+                    <td><code>request_wrapper</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td>Wrap request body: <code>"data"</code> → <code>{"data": {...}}</code></td>
+                </tr>
+                <tr>
+                    <td><code>include_metadata</code></td>
+                    <td>boolean</td>
+                    <td>false</td>
+                    <td>Add <code>_metadata</code> to request</td>
+                </tr>
+                <tr class="table-secondary">
+                    <td colspan="4"><strong>Response Handling</strong></td>
+                </tr>
+                <tr>
+                    <td><code>response_path</code></td>
+                    <td>string</td>
+                    <td>-</td>
+                    <td>JSONPath to extract result: <code>"data.result"</code></td>
+                </tr>
+                <tr>
+                    <td><code>error_on_http_error</code></td>
+                    <td>boolean</td>
+                    <td>true</td>
+                    <td>Raise exception on HTTP errors</td>
+                </tr>
+                <tr>
+                    <td><code>fallback_value</code></td>
+                    <td>any</td>
+                    <td>null</td>
+                    <td>Value to use on error (if error_on_http_error=false)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DAG Configuration -->
+<div class="card mb-4" id="dag-config">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-filetype-json"></i> DAG Configuration</h5>
+    </div>
+    <div class="card-body">
+        <h6>Basic Example</h6>
+        <div class="code-block json">{
+  "name": "rest_pricing_dag",
+  "start_time": "0900",
+  "duration": "8h",
+  "nodes": [
+    {
+      "id": "subscriber",
+      "type": "SubscriptionNode",
+      "subscribers": [
+        {"uri": "kafka://trades:raw_trades"}
+      ]
+    },
+    {
+      "id": "rest_pricing",
+      "type": "CalculationNode",
+      "calculator": "rest",
+      "endpoint": "https://pricing-api.example.com/v1/calculate",
+      "auth_type": "api_key",
+      "api_key": "${PRICING_API_KEY}",
+      "timeout": 10,
+      "retries": 2
+    },
+    {
+      "id": "publisher",
+      "type": "PublicationNode",
+      "publishers": [
+        {"uri": "kafka://trades:priced_trades"}
+      ]
+    }
+  ],
+  "edges": [
+    {"from": "subscriber", "to": "rest_pricing"},
+    {"from": "rest_pricing", "to": "publisher"}
+  ]
+}</div>
+
+        <h6 class="mt-4">With Response Transformation</h6>
+        <div class="code-block json">{
+  "id": "risk_api",
+  "type": "CalculationNode",
+  "calculator": "rest",
+  "endpoint": "https://risk-engine.example.com/api/var",
+  "auth_type": "bearer",
+  "bearer_token": "${RISK_API_TOKEN}",
+  "request_wrapper": "trade_data",
+  "response_path": "result.risk_metrics",
+  "timeout": 30,
+  "error_on_http_error": false,
+  "fallback_value": {
+    "var": 0,
+    "risk_level": "unknown"
+  }
+}</div>
+
+        <div class="security-box mt-4">
+            <strong><i class="bi bi-shield-lock"></i> Security Best Practice:</strong>
+            <p class="mb-0 mt-2">Use environment variables (<code>${VAR_NAME}</code>) for sensitive values like API keys and passwords. Never hardcode credentials in DAG configurations.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Examples -->
+<div class="card mb-4" id="examples">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-square"></i> Complete Examples</h5>
+    </div>
+    <div class="card-body">
+        <h6>Example 1: Third-Party Pricing API</h6>
+        <p>Calling an external pricing service with API key authentication:</p>
+        
+        <div class="code-block json">{
+  "id": "market_data_pricing",
+  "type": "CalculationNode",
+  "calculator": "rest",
+  "endpoint": "https://api.marketdata.com/v2/price",
+  "auth_type": "api_key",
+  "api_key": "${MARKETDATA_API_KEY}",
+  "api_key_header": "X-MDS-API-KEY",
+  "timeout": 5,
+  "retries": 3,
+  "retry_backoff": 1.0,
+  "custom_headers": {
+    "X-Request-Source": "dishtayantra"
+  }
+}</div>
+
+        <h6 class="mt-4">Example 2: Internal Microservice with Basic Auth</h6>
+        <p>Calling an internal risk calculation service:</p>
+        
+        <div class="code-block json">{
+  "id": "internal_risk_calc",
+  "type": "CalculationNode",
+  "calculator": "rest",
+  "endpoint": "http://risk-service.internal:8080/api/calculate",
+  "auth_type": "basic",
+  "username": "${RISK_SERVICE_USER}",
+  "password": "${RISK_SERVICE_PASS}",
+  "timeout": 15,
+  "verify_ssl": false,
+  "request_wrapper": "input",
+  "response_path": "output"
+}</div>
+
+        <h6 class="mt-4">Example 3: OAuth2 Protected API</h6>
+        <p>Calling an OAuth2-protected compliance service:</p>
+        
+        <div class="code-block json">{
+  "id": "compliance_check",
+  "type": "CalculationNode",
+  "calculator": "rest",
+  "endpoint": "https://compliance.corp.com/api/v1/validate",
+  "auth_type": "bearer",
+  "bearer_token": "${COMPLIANCE_JWT_TOKEN}",
+  "timeout": 20,
+  "include_metadata": true,
+  "error_on_http_error": true
+}</div>
+
+        <h6 class="mt-4">Example 4: Graceful Degradation</h6>
+        <p>API with fallback values when service is unavailable:</p>
+        
+        <div class="code-block json">{
+  "id": "optional_enrichment",
+  "type": "CalculationNode",
+  "calculator": "rest",
+  "endpoint": "https://enrichment-api.example.com/enrich",
+  "auth_type": "api_key",
+  "api_key": "${ENRICHMENT_KEY}",
+  "timeout": 3,
+  "retries": 1,
+  "error_on_http_error": false,
+  "fallback_value": {
+    "enriched": false,
+    "enrichment_source": "none"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Server-Side Examples -->
+<div class="card mb-4" id="server-examples">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-server"></i> Server-Side Examples</h5>
+    </div>
+    <div class="card-body">
+        <p>Example REST endpoints that work with DishtaYantra REST calculators:</p>
+        
+        <h6>Python (Flask)</h6>
+        <div class="code-block python">from flask import Flask, request, jsonify
+from functools import wraps
+
+app = Flask(__name__)
+
+# API Key validation decorator
+def require_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if api_key != 'your-secret-key':
+            return jsonify({'error': 'Invalid API key'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/api/calculate', methods=['POST'])
+@require_api_key
+def calculate():
+    data = request.json
+    
+    # Your calculation logic
+    price = data.get('price', 0)
+    quantity = data.get('quantity', 0)
+    
+    result = {
+        **data,  # Include original fields
+        'gross_value': price * quantity,
+        'commission': price * quantity * 0.001,
+        'net_value': price * quantity * 1.001
+    }
+    
+    return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(port=8080)</div>
+
+        <h6 class="mt-4">Node.js (Express)</h6>
+        <div class="code-block python">const express = require('express');
+const app = express();
+app.use(express.json());
+
+// Basic auth middleware
+const basicAuth = (req, res, next) => {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Basic ')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const credentials = Buffer.from(auth.slice(6), 'base64').toString();
+    const [username, password] = credentials.split(':');
+    
+    if (username === 'user' && password === 'pass') {
+        next();
+    } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+    }
+};
+
+app.post('/api/risk', basicAuth, (req, res) => {
+    const { position_value, volatility } = req.body;
+    
+    const var_95 = position_value * volatility * 1.645;
+    
+    res.json({
+        ...req.body,
+        var_95: var_95,
+        var_99: position_value * volatility * 2.326,
+        calculated_at: new Date().toISOString()
+    });
+});
+
+app.listen(8080);</div>
+
+        <h6 class="mt-4">Java (Spring Boot)</h6>
+        <div class="code-block python">@RestController
+@RequestMapping("/api")
+public class CalculatorController {
+
+    @PostMapping("/calculate")
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; calculate(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody Map&lt;String, Object&gt; data) {
+        
+        // Validate bearer token
+        if (!auth.startsWith("Bearer ") || 
+            !isValidToken(auth.substring(7))) {
+            return ResponseEntity.status(401).build();
+        }
+        
+        // Calculation logic
+        double price = ((Number) data.get("price")).doubleValue();
+        double quantity = ((Number) data.get("quantity")).doubleValue();
+        
+        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;(data);
+        result.put("gross_value", price * quantity);
+        result.put("tax", price * quantity * 0.02);
+        result.put("total", price * quantity * 1.02);
+        
+        return ResponseEntity.ok(result);
+    }
+}</div>
+    </div>
+</div>
+
+<!-- Best Practices -->
+<div class="card mb-4" id="best-practices">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Best Practices</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-lock text-primary"></i> Security</h6>
+                <ul>
+                    <li>Use environment variables for credentials</li>
+                    <li>Always use HTTPS for external APIs</li>
+                    <li>Rotate API keys regularly</li>
+                    <li>Use service accounts, not personal credentials</li>
+                    <li>Implement IP whitelisting where possible</li>
+                </ul>
+                
+                <h6 class="mt-4"><i class="bi bi-speedometer text-success"></i> Performance</h6>
+                <ul>
+                    <li>Set appropriate timeouts (don't use defaults blindly)</li>
+                    <li>Use connection pooling (automatic)</li>
+                    <li>Consider circuit breaker patterns</li>
+                    <li>Monitor API response times</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-shield-exclamation text-warning"></i> Reliability</h6>
+                <ul>
+                    <li>Configure retries with backoff</li>
+                    <li>Implement fallback values for non-critical APIs</li>
+                    <li>Handle partial failures gracefully</li>
+                    <li>Log all API errors for debugging</li>
+                </ul>
+                
+                <h6 class="mt-4"><i class="bi bi-gear text-info"></i> Design</h6>
+                <ul>
+                    <li>Keep API responses small and focused</li>
+                    <li>Use <code>response_path</code> to extract only needed data</li>
+                    <li>Version your APIs for stability</li>
+                    <li>Document expected request/response formats</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="danger-box mt-4">
+            <strong><i class="bi bi-exclamation-octagon"></i> Anti-Patterns to Avoid:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Hardcoding credentials in DAG configurations</li>
+                <li>Disabling SSL verification in production</li>
+                <li>Setting very long timeouts (blocks DAG processing)</li>
+                <li>Ignoring HTTP error responses</li>
+                <li>Not implementing rate limiting on your APIs</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="card mb-4" id="troubleshooting">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+    </div>
+    <div class="card-body">
+        <h6>Issue: Connection Refused</h6>
+        <div class="code-block bash"># Check if endpoint is reachable
+curl -v https://api.example.com/health
+
+# Check DNS resolution
+nslookup api.example.com
+
+# Check firewall rules
+telnet api.example.com 443</div>
+
+        <h6 class="mt-4">Issue: SSL Certificate Errors</h6>
+        <div class="code-block bash"># Test SSL certificate
+openssl s_client -connect api.example.com:443
+
+# For self-signed certs (development only!)
+# Set verify_ssl: false in config</div>
+
+        <h6 class="mt-4">Issue: Authentication Failures (401/403)</h6>
+        <ul>
+            <li>Verify API key/token is correct</li>
+            <li>Check header name matches API requirements</li>
+            <li>Ensure credentials haven't expired</li>
+            <li>Verify IP is whitelisted (if applicable)</li>
+        </ul>
+        <div class="code-block bash"># Test authentication manually
+curl -X POST https://api.example.com/calculate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-key" \
+  -d '{"test": true}'</div>
+
+        <h6 class="mt-4">Issue: Timeout Errors</h6>
+        <ul>
+            <li>Increase <code>timeout</code> value</li>
+            <li>Check API performance/health</li>
+            <li>Consider network latency</li>
+            <li>Reduce request payload size</li>
+        </ul>
+
+        <h6 class="mt-4">Issue: Rate Limiting (429)</h6>
+        <ul>
+            <li>Reduce request frequency</li>
+            <li>Implement request batching</li>
+            <li>Use caching for repeated requests</li>
+            <li>Contact API provider for higher limits</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;">
+        <h5 class="mb-0"><i class="bi bi-cloud-arrow-up"></i> Summary</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td width="30%"><strong>Calculator Type</strong></td>
+                    <td><code>calculator: "rest"</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Protocol</strong></td>
+                    <td>HTTP/HTTPS POST with JSON body</td>
+                </tr>
+                <tr>
+                    <td><strong>Authentication</strong></td>
+                    <td>API Key, Basic Auth, Bearer Token, Custom Headers</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Cases</strong></td>
+                    <td>Microservices, third-party APIs, legacy systems, cloud functions</td>
+                </tr>
+                <tr>
+                    <td><strong>Latency</strong></td>
+                    <td>Network dependent (10-1000ms typical)</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-rocket"></i> Pro Tip:</strong> For high-throughput, low-latency scenarios, consider combining REST calculators with caching. Use a CacheNode before the REST calculator to avoid repeated API calls for identical inputs.
+        </div>
+    </div>
+</div>
+{% endblock %}

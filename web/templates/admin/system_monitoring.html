@@ -1,0 +1,694 @@
+{% extends "base.html" %}
+
+{% block title %}System Monitoring - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .monitoring-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .monitoring-card .card-header {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+    }
+    
+    .monitoring-card .card-header i {
+        margin-right: 8px;
+    }
+    
+    .gauge-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem;
+    }
+    
+    .gauge {
+        position: relative;
+        width: 150px;
+        height: 150px;
+    }
+    
+    .gauge-circle {
+        fill: none;
+        stroke-width: 12;
+    }
+    
+    .gauge-bg {
+        stroke: #e2e8f0;
+    }
+    
+    .gauge-fill {
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dasharray 0.5s ease;
+    }
+    
+    .gauge-fill.good { stroke: #10b981; }
+    .gauge-fill.warning { stroke: #f59e0b; }
+    .gauge-fill.danger { stroke: #ef4444; }
+    
+    .gauge-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .gauge-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+    }
+    
+    .gauge-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .metric-row:last-child {
+        border-bottom: none;
+    }
+    
+    .metric-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+    
+    .metric-value {
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    
+    .metric-value.good { color: #10b981; }
+    .metric-value.warning { color: #f59e0b; }
+    .metric-value.danger { color: #ef4444; }
+    
+    .progress-thin {
+        height: 8px;
+        border-radius: 4px;
+    }
+    
+    .process-table {
+        font-size: 0.875rem;
+    }
+    
+    .process-table th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+    
+    .dag-status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .refresh-btn {
+        background: var(--accent-color);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .refresh-btn:hover {
+        background: #00c49a;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .last-updated {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-indicator.online { background: #10b981; }
+    .status-indicator.warning { background: #f59e0b; }
+    .status-indicator.offline { background: #ef4444; }
+    
+    .disk-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .disk-item:last-child {
+        border-bottom: none;
+    }
+    
+    .network-stat {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .network-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+    }
+    
+    .network-stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    
+    .log-viewer {
+        background: #1e293b;
+        color: #e2e8f0;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.75rem;
+        padding: 1rem;
+        border-radius: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .log-line {
+        margin: 0;
+        padding: 2px 0;
+    }
+    
+    .log-line.error { color: #ef4444; }
+    .log-line.warning { color: #f59e0b; }
+    .log-line.info { color: #3b82f6; }
+    
+    .health-check {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .health-check.healthy {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #065f46;
+    }
+    
+    .health-check.unhealthy {
+        background: linear-gradient(135deg, #fef2f2, #fecaca);
+        color: #991b1b;
+    }
+    
+    .health-check.unknown {
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        color: #475569;
+    }
+    
+    .auto-refresh-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h2><i class="bi bi-activity"></i> System Monitoring</h2>
+    <div class="d-flex align-items-center gap-3">
+        <div class="auto-refresh-toggle">
+            <label class="form-check-label" for="autoRefresh">Auto-refresh</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+            </div>
+        </div>
+        <button class="refresh-btn" onclick="refreshMetrics()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Now
+        </button>
+        <span class="last-updated">Last updated: <span id="lastUpdate">{{ current_time }}</span></span>
+    </div>
+</div>
+
+<!-- System Overview Row -->
+<div class="row mb-4">
+    <!-- CPU Usage -->
+    <div class="col-md-3">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-cpu"></i> CPU Usage
+            </div>
+            <div class="gauge-container">
+                <div class="gauge">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="gauge-circle gauge-bg" cx="50" cy="50" r="40"/>
+                        <circle class="gauge-circle gauge-fill {{ 'good' if cpu_percent < 60 else 'warning' if cpu_percent < 85 else 'danger' }}" 
+                                cx="50" cy="50" r="40"
+                                stroke-dasharray="{{ (cpu_percent / 100) * 251.2 }} 251.2"/>
+                    </svg>
+                    <div class="gauge-text">
+                        <div class="gauge-value" id="cpuValue">{{ cpu_percent }}%</div>
+                        <div class="gauge-label">Usage</div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Cores</span>
+                <span class="metric-value">{{ cpu_count }}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Load Avg (1m)</span>
+                <span class="metric-value">{{ load_avg_1 }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Memory Usage -->
+    <div class="col-md-3">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-memory"></i> Memory Usage
+            </div>
+            <div class="gauge-container">
+                <div class="gauge">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="gauge-circle gauge-bg" cx="50" cy="50" r="40"/>
+                        <circle class="gauge-circle gauge-fill {{ 'good' if memory_percent < 60 else 'warning' if memory_percent < 85 else 'danger' }}" 
+                                cx="50" cy="50" r="40"
+                                stroke-dasharray="{{ (memory_percent / 100) * 251.2 }} 251.2"/>
+                    </svg>
+                    <div class="gauge-text">
+                        <div class="gauge-value" id="memValue">{{ memory_percent }}%</div>
+                        <div class="gauge-label">Used</div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total</span>
+                <span class="metric-value">{{ memory_total }}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Available</span>
+                <span class="metric-value {{ 'good' if memory_available_gb > 2 else 'warning' if memory_available_gb > 0.5 else 'danger' }}">{{ memory_available }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Disk Usage -->
+    <div class="col-md-3">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-hdd"></i> Disk Usage
+            </div>
+            <div class="gauge-container">
+                <div class="gauge">
+                    <svg viewBox="0 0 100 100">
+                        <circle class="gauge-circle gauge-bg" cx="50" cy="50" r="40"/>
+                        <circle class="gauge-circle gauge-fill {{ 'good' if disk_percent < 70 else 'warning' if disk_percent < 90 else 'danger' }}" 
+                                cx="50" cy="50" r="40"
+                                stroke-dasharray="{{ (disk_percent / 100) * 251.2 }} 251.2"/>
+                    </svg>
+                    <div class="gauge-text">
+                        <div class="gauge-value" id="diskValue">{{ disk_percent }}%</div>
+                        <div class="gauge-label">Used</div>
+                    </div>
+                </div>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total</span>
+                <span class="metric-value">{{ disk_total }}</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Free</span>
+                <span class="metric-value {{ 'good' if disk_free_gb > 10 else 'warning' if disk_free_gb > 2 else 'danger' }}">{{ disk_free }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Info -->
+    <div class="col-md-3">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-pc-display"></i> System Info
+            </div>
+            <div class="card-body p-0">
+                <div class="metric-row">
+                    <span class="metric-label">Hostname</span>
+                    <span class="metric-value">{{ hostname }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Platform</span>
+                    <span class="metric-value">{{ platform }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Python</span>
+                    <span class="metric-value">{{ python_version }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Uptime</span>
+                    <span class="metric-value">{{ uptime }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DAG Server & Application Stats -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-diagram-3"></i> DAG Server Statistics
+            </div>
+            <div class="card-body p-0">
+                <div class="metric-row">
+                    <span class="metric-label">Total DAGs</span>
+                    <span class="metric-value">{{ dag_stats.total_dags }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Running DAGs</span>
+                    <span class="metric-value good">{{ dag_stats.running_dags }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Stopped DAGs</span>
+                    <span class="metric-value">{{ dag_stats.stopped_dags }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Error DAGs</span>
+                    <span class="metric-value {{ 'good' if dag_stats.error_dags == 0 else 'danger' }}">{{ dag_stats.error_dags }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Active Threads</span>
+                    <span class="metric-value">{{ dag_stats.active_threads }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-gear"></i> Application Statistics
+            </div>
+            <div class="card-body p-0">
+                <div class="metric-row">
+                    <span class="metric-label">App Version</span>
+                    <span class="metric-value">{{ app_version }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Process ID</span>
+                    <span class="metric-value">{{ process_id }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Process Memory</span>
+                    <span class="metric-value">{{ process_memory }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Thread Count</span>
+                    <span class="metric-value">{{ thread_count }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Open Files</span>
+                    <span class="metric-value">{{ open_files }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Health Checks & Network -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-heart-pulse"></i> Service Health Checks
+            </div>
+            <div class="card-body">
+                {% for service in health_checks %}
+                <div class="health-check {{ service.status }}">
+                    <span class="status-indicator {{ service.status }}"></span>
+                    <div class="flex-grow-1">
+                        <strong>{{ service.name }}</strong>
+                        <small class="d-block text-muted">{{ service.message }}</small>
+                    </div>
+                    <span>{{ service.response_time }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-ethernet"></i> Network Statistics
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="network-stat">
+                            <div class="network-stat-value">{{ network_bytes_sent }}</div>
+                            <div class="network-stat-label">
+                                <i class="bi bi-arrow-up"></i> Bytes Sent
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="network-stat">
+                            <div class="network-stat-value">{{ network_bytes_recv }}</div>
+                            <div class="network-stat-label">
+                                <i class="bi bi-arrow-down"></i> Bytes Received
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="network-stat">
+                            <div class="network-stat-value">{{ network_connections }}</div>
+                            <div class="network-stat-label">Active Connections</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="network-stat">
+                            <div class="network-stat-value">{{ network_errors }}</div>
+                            <div class="network-stat-label">Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Processes & Disk Partitions -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-task"></i> Top Processes (by Memory)</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover process-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Name</th>
+                            <th>CPU %</th>
+                            <th>Memory %</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for proc in top_processes %}
+                        <tr>
+                            <td>{{ proc.pid }}</td>
+                            <td>{{ proc.name[:25] }}{% if proc.name|length > 25 %}...{% endif %}</td>
+                            <td>{{ proc.cpu_percent }}%</td>
+                            <td>{{ proc.memory_percent }}%</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if proc.status == 'running' else 'secondary' }}">
+                                    {{ proc.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-device-hdd"></i> Disk Partitions
+            </div>
+            <div class="card-body p-0">
+                {% for disk in disk_partitions %}
+                <div class="disk-item">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>{{ disk.mountpoint }}</strong>
+                        <span class="text-muted">{{ disk.fstype }}</span>
+                    </div>
+                    <div class="progress progress-thin mb-2">
+                        <div class="progress-bar bg-{{ 'success' if disk.percent < 70 else 'warning' if disk.percent < 90 else 'danger' }}" 
+                             style="width: {{ disk.percent }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>{{ disk.used }} used</span>
+                        <span>{{ disk.free }} free</span>
+                        <span>{{ disk.total }} total</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Python Environment & Calculator Types -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-filetype-py"></i> Python Environment
+            </div>
+            <div class="card-body p-0">
+                <div class="metric-row">
+                    <span class="metric-label">Python Version</span>
+                    <span class="metric-value">{{ python_version }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Flask Version</span>
+                    <span class="metric-value">{{ flask_version }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Free-Threading</span>
+                    <span class="metric-value {{ 'good' if free_threading_enabled else '' }}">
+                        {{ 'Enabled' if free_threading_enabled else 'Disabled' }}
+                    </span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">GIL Status</span>
+                    <span class="metric-value">{{ gil_status }}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Executable</span>
+                    <span class="metric-value" style="font-size: 0.8rem; word-break: break-all;">{{ python_executable }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-calculator"></i> Calculator Integrations
+            </div>
+            <div class="card-body p-0">
+                <div class="metric-row">
+                    <span class="metric-label">
+                        <i class="bi bi-cup-hot" style="color: #f89820;"></i> Java (Py4J)
+                    </span>
+                    <span class="metric-value {{ 'good' if py4j_available else 'warning' }}">
+                        {{ 'Available' if py4j_available else 'Not Installed' }}
+                    </span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">
+                        <i class="bi bi-braces" style="color: #00599C;"></i> C++ (pybind11)
+                    </span>
+                    <span class="metric-value {{ 'good' if pybind11_available else 'warning' }}">
+                        {{ 'Available' if pybind11_available else 'Not Compiled' }}
+                    </span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">
+                        <i class="bi bi-gear-wide-connected" style="color: #CE422B;"></i> Rust (PyO3)
+                    </span>
+                    <span class="metric-value {{ 'good' if pyo3_available else 'warning' }}">
+                        {{ 'Available' if pyo3_available else 'Not Compiled' }}
+                    </span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">
+                        <i class="bi bi-cloud-arrow-up" style="color: #8b5cf6;"></i> REST (requests)
+                    </span>
+                    <span class="metric-value {{ 'good' if requests_available else 'warning' }}">
+                        {{ 'Available' if requests_available else 'Not Installed' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let autoRefreshInterval = null;
+const autoRefreshCheckbox = document.getElementById('autoRefresh');
+
+function refreshMetrics() {
+    fetch('{{ url_for("system_metrics_api") }}')
+        .then(response => response.json())
+        .then(data => {
+            // Update gauges
+            document.getElementById('cpuValue').textContent = data.cpu_percent + '%';
+            document.getElementById('memValue').textContent = data.memory_percent + '%';
+            document.getElementById('diskValue').textContent = data.disk_percent + '%';
+            
+            // Update timestamp
+            document.getElementById('lastUpdate').textContent = data.current_time;
+        })
+        .catch(error => console.error('Error refreshing metrics:', error));
+}
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(refreshMetrics, 5000);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+autoRefreshCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+});
+
+// Start auto-refresh on page load
+if (autoRefreshCheckbox.checked) {
+    startAutoRefresh();
+}
+</script>
+{% endblock %}

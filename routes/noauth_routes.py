@@ -25,6 +25,11 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/sample-dags', 'help_sample_dags', self.help_sample_dags)
         self.app.add_url_rule('/help/api-reference', 'help_api_reference', self.help_api_reference)
         self.app.add_url_rule('/help/glossary', 'help_glossary', self.help_glossary)
+        self.app.add_url_rule('/help/free-threading', 'help_free_threading', self.help_free_threading)
+        self.app.add_url_rule('/help/py4j-integration', 'help_py4j_integration', self.help_py4j_integration)
+        self.app.add_url_rule('/help/pybind11-integration', 'help_pybind11_integration', self.help_pybind11_integration)
+        self.app.add_url_rule('/help/rust-integration', 'help_rust_integration', self.help_rust_integration)
+        self.app.add_url_rule('/help/rest-integration', 'help_rest_integration', self.help_rest_integration)
     
     def about(self):
         """About page"""
@@ -81,3 +86,23 @@ class NoAuthRoutes:
     def help_glossary(self):
         """Glossary help page"""
         return render_template('help/glossary.html')
+    
+    def help_free_threading(self):
+        """Free-threading Python help page"""
+        return render_template('help/free_threading.html')
+    
+    def help_py4j_integration(self):
+        """Py4J Java integration help page"""
+        return render_template('help/py4j_integration.html')
+    
+    def help_pybind11_integration(self):
+        """pybind11 C++ integration help page"""
+        return render_template('help/pybind11_integration.html')
+    
+    def help_rust_integration(self):
+        """Rust PyO3 integration help page"""
+        return render_template('help/rust_integration.html')
+    
+    def help_rest_integration(self):
+        """REST API calculator integration help page"""
+        return render_template('help/rest_integration.html')

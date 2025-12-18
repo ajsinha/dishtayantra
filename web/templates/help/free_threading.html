@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Free-Threading Python - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .danger-box {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border-left: 4px solid #ef4444;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .performance-card {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .performance-card h5 {
+        color: #00d4aa;
+        margin-bottom: 1rem;
+    }
+    .performance-metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .performance-metric:last-child {
+        border-bottom: none;
+    }
+    .metric-label {
+        color: rgba(255,255,255,0.8);
+    }
+    .metric-value {
+        color: #00d4aa;
+        font-weight: 600;
+    }
+    .thread-diagram {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .thread-box {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .thread-blocked {
+        background: #fecaca;
+        color: #991b1b;
+    }
+    .thread-running {
+        background: #bbf7d0;
+        color: #166534;
+    }
+    .arrow-down {
+        text-align: center;
+        font-size: 1.5rem;
+        color: #64748b;
+        margin: 0.5rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-lightning-charge" style="color: #f59e0b;"></i> Free-Threading Python & Massive Parallelism</h2>
+<p class="lead">Unlock true multi-core performance in DishtaYantra with Python 3.13+ free-threading.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> What is Free-Threading?</h5>
+    </div>
+    <div class="card-body">
+        <p>Python has historically had a <strong>Global Interpreter Lock (GIL)</strong> - a mutex that protects access to Python objects, preventing multiple threads from executing Python bytecode simultaneously. This means that even on a 32-core machine, only <strong>one thread</strong> could execute Python code at a time.</p>
+        
+        <div class="thread-diagram">
+            <h6 class="text-center mb-3"><i class="bi bi-lock-fill text-danger"></i> Traditional Python (with GIL)</h6>
+            <div class="text-center">
+                <span class="thread-box thread-running">Thread 1 (Running)</span>
+                <span class="thread-box thread-blocked">Thread 2 (Blocked)</span>
+                <span class="thread-box thread-blocked">Thread 3 (Blocked)</span>
+                <span class="thread-box thread-blocked">Thread 4 (Blocked)</span>
+            </div>
+            <p class="text-center text-muted mt-2"><small>Only one thread executes Python code at a time</small></p>
+        </div>
+        
+        <p><strong>Free-Threading</strong> (also called "no-GIL" or "GIL-free") removes this limitation, allowing multiple threads to execute Python code <strong>truly in parallel</strong> across all CPU cores.</p>
+        
+        <div class="thread-diagram">
+            <h6 class="text-center mb-3"><i class="bi bi-unlock-fill text-success"></i> Free-Threading Python (no GIL)</h6>
+            <div class="text-center">
+                <span class="thread-box thread-running">Thread 1 (Running)</span>
+                <span class="thread-box thread-running">Thread 2 (Running)</span>
+                <span class="thread-box thread-running">Thread 3 (Running)</span>
+                <span class="thread-box thread-running">Thread 4 (Running)</span>
+            </div>
+            <p class="text-center text-muted mt-2"><small>All threads execute Python code simultaneously</small></p>
+        </div>
+        
+        <div class="info-box">
+            <strong><i class="bi bi-calendar-event"></i> Timeline:</strong>
+            <ul class="mb-0 mt-2">
+                <li><strong>Python 3.13</strong> (October 2024): Experimental free-threading support introduced</li>
+                <li><strong>Python 3.14</strong> (October 2025): Improved free-threading with better performance</li>
+                <li><strong>Future</strong>: Free-threading expected to become the default</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Why it matters for DishtaYantra -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Why Free-Threading Matters for DishtaYantra</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra is inherently a <strong>multi-threaded application</strong>. Each DAG creates multiple threads for:</p>
+        
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Component</th>
+                    <th>Threads Per Instance</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Subscribers</strong></td>
+                    <td>1 per subscriber</td>
+                    <td>Listen for incoming messages</td>
+                </tr>
+                <tr>
+                    <td><strong>Publishers</strong></td>
+                    <td>1 per publisher (if batched)</td>
+                    <td>Send outgoing messages</td>
+                </tr>
+                <tr>
+                    <td><strong>Compute Thread</strong></td>
+                    <td>1 per DAG</td>
+                    <td>Process data through nodes</td>
+                </tr>
+                <tr>
+                    <td><strong>Time Window Checker</strong></td>
+                    <td>1 per DAG (if configured)</td>
+                    <td>Monitor time windows</td>
+                </tr>
+                <tr>
+                    <td><strong>Metronome Nodes</strong></td>
+                    <td>1 per metronome</td>
+                    <td>Generate periodic events</td>
+                </tr>
+                <tr>
+                    <td><strong>AutoClone Manager</strong></td>
+                    <td>1 (global)</td>
+                    <td>Manage DAG cloning</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h6 class="mt-4">Example: 10 DAGs with 5 Subscribers Each</h6>
+        <div class="code-block">Traditional Python (GIL):
+  - 50 subscriber threads + 10 compute threads + 10 time checker threads = 70 threads
+  - But only 1 thread executes Python at a time
+  - Effective parallelism: 1 core
+
+Free-Threading Python:
+  - Same 70 threads
+  - ALL threads can execute Python simultaneously  
+  - Effective parallelism: Up to 70 cores (or however many you have)</div>
+        
+        <div class="performance-card">
+            <h5><i class="bi bi-speedometer2"></i> Potential Performance Gains</h5>
+            <div class="performance-metric">
+                <span class="metric-label">Single DAG (5 nodes)</span>
+                <span class="metric-value">2-3x faster</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">10 DAGs running concurrently</span>
+                <span class="metric-value">5-10x faster</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">50 DAGs with AutoClone</span>
+                <span class="metric-value">10-20x faster</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">CPU-intensive calculators</span>
+                <span class="metric-value">Near-linear scaling</span>
+            </div>
+            <p class="mt-3 mb-0" style="font-size: 0.85rem; opacity: 0.8;">
+                <i class="bi bi-info-circle"></i> Actual gains depend on workload, I/O patterns, and available cores
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Building Python with Free-Threading -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-hammer"></i> Building Python 3.13/3.14 with Free-Threading</h5>
+    </div>
+    <div class="card-body">
+        <p>Free-threading is an <strong>optional build-time flag</strong>. You need to compile Python from source with the <code>--disable-gil</code> flag.</p>
+        
+        <div class="warning-box">
+            <strong><i class="bi bi-exclamation-triangle"></i> Important:</strong> Free-threading is experimental. Some C extensions may not be compatible. Test thoroughly before production use.
+        </div>
+        
+        <h6 class="mt-4">Step 1: Install Build Dependencies</h6>
+        
+        <p><strong>Ubuntu/Debian:</strong></p>
+        <div class="code-block">sudo apt update
+sudo apt install -y build-essential gdb lcov pkg-config \
+    libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev \
+    liblzma-dev libncurses5-dev libreadline6-dev libsqlite3-dev \
+    libssl-dev lzma lzma-dev tk-dev uuid-dev zlib1g-dev</div>
+        
+        <p class="mt-3"><strong>RHEL/CentOS/Fedora:</strong></p>
+        <div class="code-block">sudo dnf groupinstall "Development Tools"
+sudo dnf install -y bzip2-devel libffi-devel gdbm-devel \
+    xz-devel ncurses-devel readline-devel sqlite-devel \
+    openssl-devel tk-devel libuuid-devel zlib-devel</div>
+        
+        <p class="mt-3"><strong>macOS (with Homebrew):</strong></p>
+        <div class="code-block">brew install openssl readline sqlite3 xz zlib tcl-tk</div>
+        
+        <h6 class="mt-4">Step 2: Download Python Source</h6>
+        <div class="code-block"># For Python 3.13 (current stable with free-threading)
+wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz
+tar xzf Python-3.13.0.tgz
+cd Python-3.13.0
+
+# OR for Python 3.14 (when available)
+# git clone https://github.com/python/cpython.git
+# cd cpython
+# git checkout v3.14.0</div>
+        
+        <h6 class="mt-4">Step 3: Configure with Free-Threading</h6>
+        <div class="code-block"># The key flag is --disable-gil
+./configure --prefix=/opt/python-3.13-freethreaded \
+            --disable-gil \
+            --enable-optimizations \
+            --with-lto \
+            --enable-shared \
+            LDFLAGS="-Wl,-rpath,/opt/python-3.13-freethreaded/lib"</div>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Configuration Options Explained:</strong>
+            <ul class="mb-0 mt-2">
+                <li><code>--disable-gil</code>: <strong>Required</strong> - Enables free-threading</li>
+                <li><code>--enable-optimizations</code>: Runs PGO (Profile Guided Optimization)</li>
+                <li><code>--with-lto</code>: Link Time Optimization for better performance</li>
+                <li><code>--enable-shared</code>: Build shared libraries</li>
+            </ul>
+        </div>
+        
+        <h6 class="mt-4">Step 4: Build and Install</h6>
+        <div class="code-block"># Build (this takes 10-30 minutes depending on your system)
+make -j$(nproc)
+
+# Run tests (optional but recommended)
+make test
+
+# Install
+sudo make install</div>
+        
+        <h6 class="mt-4">Step 5: Verify Free-Threading is Enabled</h6>
+        <div class="code-block"># Check Python version and build info
+/opt/python-3.13-freethreaded/bin/python3 -c "import sys; print(sys.version)"
+
+# Verify GIL is disabled
+/opt/python-3.13-freethreaded/bin/python3 -c "
+import sys
+# In free-threaded builds, this returns False or the function doesn't exist
+if hasattr(sys, '_is_gil_enabled'):
+    print(f'GIL enabled: {sys._is_gil_enabled()}')
+else:
+    print('Free-threading build (no GIL)')
+"</div>
+        
+        <p>Expected output for free-threaded build:</p>
+        <div class="code-block">Python 3.13.0 experimental free-threading build (main, ...) [GCC ...]
+GIL enabled: False</div>
+    </div>
+</div>
+
+<!-- Using with DishtaYantra -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Using Free-Threading Python with DishtaYantra</h5>
+    </div>
+    <div class="card-body">
+        <h6>Option 1: Create a Virtual Environment</h6>
+        <div class="code-block"># Create venv with free-threaded Python
+/opt/python-3.13-freethreaded/bin/python3 -m venv ~/dishtayantra-venv
+
+# Activate the virtual environment
+source ~/dishtayantra-venv/bin/activate
+
+# Verify
+python --version
+python -c "import sys; print(f'GIL: {sys._is_gil_enabled() if hasattr(sys, \"_is_gil_enabled\") else \"N/A\"}')"</div>
+        
+        <h6 class="mt-4">Option 2: Install Dependencies</h6>
+        <div class="code-block"># Install DishtaYantra requirements
+pip install --upgrade pip
+pip install -r requirements.txt</div>
+        
+        <div class="warning-box">
+            <strong><i class="bi bi-exclamation-triangle"></i> Compatibility Note:</strong>
+            Some packages may not yet support free-threading. If you encounter issues:
+            <ul class="mb-0 mt-2">
+                <li>Check for updated package versions</li>
+                <li>Some packages may need <code>pip install --no-binary :all:</code> to compile from source</li>
+                <li>Report issues to package maintainers</li>
+            </ul>
+        </div>
+        
+        <h6 class="mt-4">Option 3: Run DishtaYantra</h6>
+        <div class="code-block"># With virtual environment activated
+cd /path/to/dishtayantra
+python run_server.py
+
+# Or directly with the free-threaded Python
+/opt/python-3.13-freethreaded/bin/python3 run_server.py</div>
+        
+        <h6 class="mt-4">Option 4: Docker with Free-Threading Python</h6>
+        <div class="code-block"># Dockerfile for DishtaYantra with Free-Threading Python
+FROM ubuntu:24.04
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential wget \
+    libbz2-dev libffi-dev libgdbm-dev \
+    liblzma-dev libncurses5-dev libreadline-dev \
+    libsqlite3-dev libssl-dev zlib1g-dev
+
+# Download and build Python 3.13 with free-threading
+WORKDIR /tmp
+RUN wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz && \
+    tar xzf Python-3.13.0.tgz && \
+    cd Python-3.13.0 && \
+    ./configure --disable-gil --enable-optimizations --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /tmp/Python-3.13.0*
+
+# Install DishtaYantra
+WORKDIR /app
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8888
+CMD ["python3", "run_server.py"]</div>
+    </div>
+</div>
+
+<!-- Best Practices -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Best Practices for Free-Threading</h5>
+    </div>
+    <div class="card-body">
+        <h6>1. Thread Safety in Custom Calculators</h6>
+        <p>With free-threading, your custom calculators may run truly in parallel. Ensure thread safety:</p>
+        <div class="code-block">import threading
+
+class MyCalculator(DataCalculator):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._lock = threading.Lock()  # Use locks for shared state
+        self._counter = 0
+    
+    def calculate(self, data):
+        # Thread-safe counter increment
+        with self._lock:
+            self._counter += 1
+            local_count = self._counter
+        
+        # Process data (this part runs in parallel)
+        result = self._process(data)
+        return result</div>
+        
+        <h6 class="mt-4">2. Avoid Global Mutable State</h6>
+        <div class="code-block"># BAD - Global mutable state
+results = []  # This will have race conditions!
+
+class BadCalculator(DataCalculator):
+    def calculate(self, data):
+        results.append(data)  # Race condition!
+        return data
+
+# GOOD - Instance-level or thread-local state
+class GoodCalculator(DataCalculator):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._results = []
+        self._lock = threading.Lock()
+    
+    def calculate(self, data):
+        with self._lock:
+            self._results.append(data)
+        return data</div>
+        
+        <h6 class="mt-4">3. Use Thread-Safe Data Structures</h6>
+        <div class="code-block">from queue import Queue  # Thread-safe
+from collections import deque  # NOT thread-safe by default
+import threading
+
+# For high-performance scenarios, consider:
+# - queue.Queue (thread-safe FIFO)
+# - queue.PriorityQueue (thread-safe priority queue)
+# - threading.Lock for protecting shared data
+# - threading.RLock for reentrant locking</div>
+        
+        <h6 class="mt-4">4. Monitor Performance</h6>
+        <div class="code-block"># Check CPU utilization to verify parallelism
+# With GIL: One core at ~100%, others idle
+# Without GIL: Multiple cores at high utilization
+
+# Use htop, top, or Python's resource module
+import resource
+import os
+
+def get_cpu_times():
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    return {
+        'user_time': usage.ru_utime,
+        'system_time': usage.ru_stime,
+        'max_memory_mb': usage.ru_maxrss / 1024
+    }</div>
+    </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+    </div>
+    <div class="card-body">
+        <h6>Issue: Package Installation Fails</h6>
+        <div class="code-block"># Some C extensions may not support free-threading yet
+# Try installing without binary wheels
+pip install package-name --no-binary :all:
+
+# Or check for a compatible version
+pip install package-name==version</div>
+        
+        <h6 class="mt-4">Issue: Segmentation Faults</h6>
+        <p>If you experience crashes, it may be due to non-thread-safe C extensions:</p>
+        <div class="code-block"># Identify problematic packages
+python -c "import package_name"  # Test each package
+
+# Run with debugging
+PYTHONFAULTHANDLER=1 python run_server.py</div>
+        
+        <h6 class="mt-4">Issue: Performance Not Improving</h6>
+        <ul>
+            <li>Verify GIL is actually disabled: <code>sys._is_gil_enabled()</code></li>
+            <li>Check if workload is I/O bound (I/O bound tasks already benefit from threading)</li>
+            <li>Ensure you have enough CPU cores for parallel execution</li>
+            <li>Profile your code to find bottlenecks</li>
+        </ul>
+        
+        <h6 class="mt-4">Issue: Compatibility with Kafka/Redis Libraries</h6>
+        <div class="code-block"># confluent-kafka and redis-py should work, but verify:
+python -c "
+from confluent_kafka import Producer
+from redis import Redis
+print('Kafka and Redis libraries loaded successfully')
+"</div>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-check-circle"></i> Summary</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td width="30%"><strong>What</strong></td>
+                    <td>Free-threading removes Python's GIL, enabling true parallel execution</td>
+                </tr>
+                <tr>
+                    <td><strong>Why for DishtaYantra</strong></td>
+                    <td>DishtaYantra uses extensive threading; free-threading enables massive parallelism</td>
+                </tr>
+                <tr>
+                    <td><strong>How to Get It</strong></td>
+                    <td>Build Python 3.13+ from source with <code>--disable-gil</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Performance Gain</strong></td>
+                    <td>2-20x depending on workload and available cores</td>
+                </tr>
+                <tr>
+                    <td><strong>Status</strong></td>
+                    <td>Experimental in Python 3.13/3.14; maturing rapidly</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-rocket"></i> The Future is Parallel:</strong> Free-threading represents a major evolution for Python. DishtaYantra is architecturally ready to take full advantage of this capability, enabling enterprise-scale data processing on modern multi-core hardware.
+        </div>
+    </div>
+</div>
+{% endblock %}

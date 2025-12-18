@@ -1,0 +1,27 @@
+[package]
+name = "dishtayantra_rust"
+version = "1.1.0"
+edition = "2021"
+authors = ["DishtaYantra"]
+description = "High-performance Rust calculators for DishtaYantra"
+license = "Proprietary"
+
+[lib]
+name = "dishtayantra_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+chrono = "0.4"
+rayon = "1.8"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true

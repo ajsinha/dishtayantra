@@ -223,11 +223,21 @@
         <h6>Fan-out</h6>
         <p>A pattern where data from a single source is distributed to multiple destinations. Achieved by adding multiple publishers to a PublicationNode.</p>
     </div>
+    
+    <div class="glossary-term">
+        <h6>Free-Threading</h6>
+        <p>A Python build option (available in Python 3.13+) that removes the Global Interpreter Lock (GIL), enabling true parallel execution of Python threads across multiple CPU cores. Build Python with <code>--disable-gil</code> to enable. See <a href="{{ url_for('help_free_threading') }}">Free-Threading Guide</a>.</p>
+    </div>
 </div>
 
 <!-- G -->
 <div class="glossary-section" id="G">
     <div class="glossary-letter">G</div>
+    
+    <div class="glossary-term">
+        <h6>GIL (Global Interpreter Lock)</h6>
+        <p>A mutex in standard Python that prevents multiple threads from executing Python bytecode simultaneously. Limits parallelism to one thread at a time. Can be disabled in Python 3.13+ with free-threading builds.</p>
+    </div>
     
     <div class="glossary-term">
         <h6>gRPC</h6>
@@ -318,6 +328,21 @@
         <h6>PublicationNode</h6>
         <p>A DAG node type that outputs data to one or more publishers. Typically the final node(s) in a DAG where processed data is sent to external systems.</p>
     </div>
+    
+    <div class="glossary-term">
+        <h6>Py4J</h6>
+        <p>A bridge library enabling Python programs to call Java code. DishtaYantra uses Py4J to invoke high-performance Java calculators with gateway pooling for parallel execution. See <a href="{{ url_for('help_py4j_integration') }}">Py4J Integration Guide</a>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>pybind11</h6>
+        <p>A lightweight header-only C++ library that exposes C++ types to Python with minimal overhead (~100ns per call). DishtaYantra uses pybind11 for native C++ calculators with SIMD optimization and zero-copy memory sharing. See <a href="{{ url_for('help_pybind11_integration') }}">pybind11 Integration Guide</a>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>PyO3</h6>
+        <p>Rust bindings for Python, allowing Rust code to be called from Python as a native extension. DishtaYantra uses PyO3 for memory-safe, thread-safe high-performance calculators. See <a href="{{ url_for('help_rust_integration') }}">Rust Integration Guide</a>.</p>
+    </div>
 </div>
 
 <!-- Q -->
@@ -347,6 +372,16 @@
     <div class="glossary-term">
         <h6>Ramp Up Time</h6>
         <p>In AutoClone configuration, the time (HHMM format) when clone creation begins.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Rust</h6>
+        <p>A systems programming language known for memory safety without garbage collection. DishtaYantra supports Rust calculators via PyO3, providing compile-time memory safety and fearless concurrency. See <a href="{{ url_for('help_rust_integration') }}">Rust Integration Guide</a>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>REST Calculator</h6>
+        <p>A calculator type that invokes external HTTP/REST endpoints via POST requests. Supports API Key, Basic Auth, and Bearer token authentication. Useful for integrating microservices and third-party APIs. See <a href="{{ url_for('help_rest_integration') }}">REST Integration Guide</a>.</p>
     </div>
     
     <div class="glossary-term">
@@ -387,6 +422,11 @@
     <div class="glossary-term">
         <h6>SubscriptionNode</h6>
         <p>A DAG node type that ingests data from a subscriber. Typically the entry point(s) of a DAG where external data enters the pipeline.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>System Monitoring</h6>
+        <p>Admin-only dashboard showing real-time system metrics including CPU, memory, disk, network statistics, DAG server health, and calculator integration status. Accessible via Admin → System Monitoring. Added in version 1.1.1.</p>
     </div>
 </div>
 

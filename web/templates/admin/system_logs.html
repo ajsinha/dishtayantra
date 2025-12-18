@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}System Logs - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .log-container {
+        background: #1e293b;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+    
+    .log-header {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .log-header h5 {
+        margin: 0;
+        color: white;
+    }
+    
+    .log-viewer {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.8rem;
+        line-height: 1.6;
+        padding: 1rem;
+        max-height: 600px;
+        overflow-y: auto;
+        color: #e2e8f0;
+    }
+    
+    .log-line {
+        padding: 2px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .log-line:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    
+    .log-timestamp {
+        color: #64748b;
+        margin-right: 12px;
+    }
+    
+    .log-level {
+        display: inline-block;
+        min-width: 60px;
+        margin-right: 12px;
+        font-weight: 600;
+    }
+    
+    .log-level.DEBUG { color: #94a3b8; }
+    .log-level.INFO { color: #3b82f6; }
+    .log-level.WARNING { color: #f59e0b; }
+    .log-level.ERROR { color: #ef4444; }
+    .log-level.CRITICAL { color: #dc2626; background: rgba(220, 38, 38, 0.2); padding: 0 4px; border-radius: 2px; }
+    
+    .log-message {
+        color: #e2e8f0;
+    }
+    
+    .log-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .log-filter-btn {
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: transparent;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .log-filter-btn:hover, .log-filter-btn.active {
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .log-filter-btn.DEBUG { border-color: #94a3b8; }
+    .log-filter-btn.INFO { border-color: #3b82f6; }
+    .log-filter-btn.WARNING { border-color: #f59e0b; }
+    .log-filter-btn.ERROR { border-color: #ef4444; }
+    
+    .log-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .log-stat-item {
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: var(--card-shadow);
+        text-align: center;
+        min-width: 120px;
+    }
+    
+    .log-stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+    }
+    
+    .log-stat-value.error { color: #ef4444; }
+    .log-stat-value.warning { color: #f59e0b; }
+    .log-stat-value.info { color: #3b82f6; }
+    
+    .log-stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    
+    .search-box {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        color: white;
+        width: 250px;
+    }
+    
+    .search-box::placeholder {
+        color: rgba(255,255,255,0.5);
+    }
+    
+    .search-box:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        background: rgba(255,255,255,0.15);
+    }
+    
+    .log-file-selector {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        color: white;
+    }
+    
+    .log-file-selector option {
+        background: var(--primary-dark);
+        color: white;
+    }
+    
+    .refresh-btn {
+        background: var(--accent-color);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .refresh-btn:hover {
+        background: #00c49a;
+        color: white;
+    }
+    
+    .download-btn {
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .download-btn:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+    }
+    
+    .empty-logs {
+        text-align: center;
+        padding: 3rem;
+        color: #64748b;
+    }
+    
+    .empty-logs i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-file-text"></i> System Logs</h2>
+</div>
+
+<!-- Log Statistics -->
+<div class="log-stats">
+    <div class="log-stat-item">
+        <div class="log-stat-value">{{ log_stats.total }}</div>
+        <div class="log-stat-label">Total Lines</div>
+    </div>
+    <div class="log-stat-item">
+        <div class="log-stat-value error">{{ log_stats.errors }}</div>
+        <div class="log-stat-label">Errors</div>
+    </div>
+    <div class="log-stat-item">
+        <div class="log-stat-value warning">{{ log_stats.warnings }}</div>
+        <div class="log-stat-label">Warnings</div>
+    </div>
+    <div class="log-stat-item">
+        <div class="log-stat-value info">{{ log_stats.info }}</div>
+        <div class="log-stat-label">Info</div>
+    </div>
+    <div class="log-stat-item">
+        <div class="log-stat-value">{{ log_stats.file_size }}</div>
+        <div class="log-stat-label">File Size</div>
+    </div>
+</div>
+
+<!-- Log Viewer -->
+<div class="log-container">
+    <div class="log-header">
+        <h5><i class="bi bi-terminal"></i> Log Output</h5>
+        <div class="log-controls">
+            <select class="log-file-selector" id="logFileSelect">
+                <option value="dagserver">dagserver.log</option>
+                <option value="application">application.log</option>
+                <option value="error">error.log</option>
+            </select>
+            
+            <input type="text" class="search-box" placeholder="Search logs..." id="logSearch">
+            
+            <div class="btn-group">
+                <button class="log-filter-btn active" data-level="all">All</button>
+                <button class="log-filter-btn INFO" data-level="INFO">Info</button>
+                <button class="log-filter-btn WARNING" data-level="WARNING">Warn</button>
+                <button class="log-filter-btn ERROR" data-level="ERROR">Error</button>
+            </div>
+            
+            <button class="refresh-btn" onclick="refreshLogs()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button class="download-btn" onclick="downloadLogs()">
+                <i class="bi bi-download"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="log-viewer" id="logViewer">
+        {% if log_entries %}
+            {% for entry in log_entries %}
+            <div class="log-line" data-level="{{ entry.level }}">
+                <span class="log-timestamp">{{ entry.timestamp }}</span>
+                <span class="log-level {{ entry.level }}">{{ entry.level }}</span>
+                <span class="log-message">{{ entry.message }}</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-logs">
+                <i class="bi bi-file-earmark-text"></i>
+                <p>No log entries found</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filter buttons
+document.querySelectorAll('.log-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const level = this.dataset.level;
+        filterLogs(level);
+    });
+});
+
+function filterLogs(level) {
+    const searchTerm = document.getElementById('logSearch').value.toLowerCase();
+    document.querySelectorAll('.log-line').forEach(line => {
+        const lineLevel = line.dataset.level;
+        const lineText = line.textContent.toLowerCase();
+        
+        const levelMatch = level === 'all' || lineLevel === level;
+        const searchMatch = !searchTerm || lineText.includes(searchTerm);
+        
+        line.style.display = (levelMatch && searchMatch) ? '' : 'none';
+    });
+}
+
+// Search functionality
+document.getElementById('logSearch').addEventListener('input', function() {
+    const activeLevel = document.querySelector('.log-filter-btn.active').dataset.level;
+    filterLogs(activeLevel);
+});
+
+function refreshLogs() {
+    const logFile = document.getElementById('logFileSelect').value;
+    fetch(`{{ url_for('system_logs_api') }}?file=${logFile}`)
+        .then(response => response.json())
+        .then(data => {
+            const viewer = document.getElementById('logViewer');
+            if (data.entries && data.entries.length > 0) {
+                viewer.innerHTML = data.entries.map(entry => `
+                    <div class="log-line" data-level="${entry.level}">
+                        <span class="log-timestamp">${entry.timestamp}</span>
+                        <span class="log-level ${entry.level}">${entry.level}</span>
+                        <span class="log-message">${entry.message}</span>
+                    </div>
+                `).join('');
+            } else {
+                viewer.innerHTML = `
+                    <div class="empty-logs">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <p>No log entries found</p>
+                    </div>
+                `;
+            }
+            
+            // Re-apply filters
+            const activeLevel = document.querySelector('.log-filter-btn.active').dataset.level;
+            filterLogs(activeLevel);
+        })
+        .catch(error => console.error('Error refreshing logs:', error));
+}
+
+function downloadLogs() {
+    const logFile = document.getElementById('logFileSelect').value;
+    window.location.href = `{{ url_for('download_logs') }}?file=${logFile}`;
+}
+
+// Auto-scroll to bottom on load
+document.getElementById('logViewer').scrollTop = document.getElementById('logViewer').scrollHeight;
+</script>
+{% endblock %}

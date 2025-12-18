@@ -1,0 +1,1134 @@
+{% extends "base.html" %}
+
+{% block title %}pybind11 C++ Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .code-block.cpp {
+        border-left: 4px solid #00599C;
+    }
+    .code-block.python {
+        border-left: 4px solid #3776ab;
+    }
+    .code-block.cmake {
+        border-left: 4px solid #064F8C;
+    }
+    .code-block.bash {
+        border-left: 4px solid #64748b;
+    }
+    .code-block.json {
+        border-left: 4px solid #10b981;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .danger-box {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border-left: 4px solid #ef4444;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .performance-card {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .performance-card h5 {
+        color: #00d4aa;
+        margin-bottom: 1rem;
+    }
+    .performance-metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .performance-metric:last-child {
+        border-bottom: none;
+    }
+    .metric-label {
+        color: rgba(255,255,255,0.8);
+    }
+    .metric-value {
+        color: #00d4aa;
+        font-weight: 600;
+    }
+    .arch-diagram {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        text-align: center;
+    }
+    .arch-box {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        margin: 0.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+    .arch-python {
+        background: linear-gradient(135deg, #3776ab, #2d5a87);
+        color: white;
+    }
+    .arch-cpp {
+        background: linear-gradient(135deg, #00599C, #004482);
+        color: white;
+    }
+    .arch-arrow {
+        display: inline-block;
+        font-size: 1.5rem;
+        color: #64748b;
+        margin: 0 1rem;
+    }
+    .platform-tabs .nav-link {
+        color: #64748b;
+    }
+    .platform-tabs .nav-link.active {
+        color: #00599C;
+        font-weight: 600;
+        border-bottom: 3px solid #00599C;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-braces" style="color: #00599C;"></i> pybind11 C++ Integration</h2>
+<p class="lead">Achieve native performance with C++ calculators seamlessly integrated into DishtaYantra.</p>
+
+<!-- Table of Contents -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Contents</h5>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><a href="#overview">Overview & Architecture</a></li>
+            <li><a href="#why-cpp">Why C++ Calculators?</a></li>
+            <li><a href="#setup">Setup Guide</a></li>
+            <li><a href="#cpp-calculator">Writing C++ Calculators</a></li>
+            <li><a href="#compilation">Compilation on Different Platforms</a></li>
+            <li><a href="#python-integration">Python Integration</a></li>
+            <li><a href="#configuration">DAG Configuration</a></li>
+            <li><a href="#examples">Complete Examples</a></li>
+            <li><a href="#best-practices">Best Practices</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4" id="overview">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Overview & Architecture</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>pybind11</strong> is a lightweight header-only library that exposes C++ types to Python and vice versa. It allows you to write calculators in C++ and call them directly from Python with minimal overhead.</p>
+        
+        <div class="arch-diagram">
+            <h6 class="mb-3">Architecture</h6>
+            <div>
+                <span class="arch-box arch-python"><i class="bi bi-filetype-py"></i> DishtaYantra (Python)</span>
+                <span class="arch-arrow">⟷</span>
+                <span class="arch-box arch-cpp"><i class="bi bi-braces"></i> C++ Module (.so/.pyd)</span>
+            </div>
+            <div class="mt-3">
+                <small class="text-muted">Direct function calls • No serialization overhead • Native Python objects</small>
+            </div>
+        </div>
+        
+        <h6 class="mt-4">Key Advantages Over Py4J</h6>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Aspect</th>
+                    <th>pybind11 (C++)</th>
+                    <th>Py4J (Java)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Call Overhead</strong></td>
+                    <td><span class="badge bg-success">~100 nanoseconds</span></td>
+                    <td>~100-500 microseconds</td>
+                </tr>
+                <tr>
+                    <td><strong>Memory Sharing</strong></td>
+                    <td><span class="badge bg-success">Direct (zero-copy possible)</span></td>
+                    <td>Requires serialization</td>
+                </tr>
+                <tr>
+                    <td><strong>Deployment</strong></td>
+                    <td><span class="badge bg-success">Single .so/.pyd file</span></td>
+                    <td>Separate JVM process</td>
+                </tr>
+                <tr>
+                    <td><strong>Threading</strong></td>
+                    <td><span class="badge bg-success">Release GIL for parallelism</span></td>
+                    <td>Separate process</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Why C++ -->
+<div class="card mb-4" id="why-cpp">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Why C++ Calculators?</h5>
+    </div>
+    <div class="card-body">
+        <p>C++ provides the ultimate performance for computation-heavy workloads:</p>
+        
+        <div class="performance-card">
+            <h5><i class="bi bi-speedometer2"></i> Performance Comparison</h5>
+            <div class="performance-metric">
+                <span class="metric-label">Numerical Computation</span>
+                <span class="metric-value">C++ 50-100x faster than Python</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Memory Efficiency</span>
+                <span class="metric-value">C++ 5-10x less memory</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Call Overhead</span>
+                <span class="metric-value">~100ns per call</span>
+            </div>
+            <div class="performance-metric">
+                <span class="metric-label">Latency (P99)</span>
+                <span class="metric-value">&lt;1 microsecond</span>
+            </div>
+        </div>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> When to Use C++ Calculators:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Ultra-low latency requirements (&lt;1ms per calculation)</li>
+                <li>Heavy numerical computation (matrix operations, simulations)</li>
+                <li>Memory-critical applications</li>
+                <li>Leveraging existing C/C++ libraries (Eigen, BLAS, QuantLib)</li>
+                <li>SIMD optimization opportunities</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Setup Guide -->
+<div class="card mb-4" id="setup">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Setup Guide</h5>
+    </div>
+    <div class="card-body">
+        <h6>Step 1: Install pybind11</h6>
+        <div class="code-block bash"># Via pip (recommended)
+pip install pybind11
+
+# Via conda
+conda install -c conda-forge pybind11
+
+# Header location (for compilation)
+python -m pybind11 --includes</div>
+        
+        <h6 class="mt-4">Step 2: Install Build Tools</h6>
+        
+        <ul class="nav nav-tabs platform-tabs" id="setupTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#setup-linux">Linux</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#setup-macos">macOS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#setup-windows">Windows</a>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="setup-linux">
+                <div class="code-block bash"># Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y build-essential cmake python3-dev
+
+# RHEL/CentOS/Fedora
+sudo dnf groupinstall "Development Tools"
+sudo dnf install cmake python3-devel
+
+# Verify
+g++ --version
+cmake --version</div>
+            </div>
+            <div class="tab-pane fade" id="setup-macos">
+                <div class="code-block bash"># Install Xcode Command Line Tools
+xcode-select --install
+
+# Install CMake via Homebrew
+brew install cmake
+
+# Verify
+clang++ --version
+cmake --version</div>
+            </div>
+            <div class="tab-pane fade" id="setup-windows">
+                <div class="code-block bash"># Install Visual Studio Build Tools
+# Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+# Select "Desktop development with C++"
+
+# Or install via winget
+winget install Microsoft.VisualStudio.2022.BuildTools
+
+# Install CMake
+winget install Kitware.CMake
+
+# Verify (in Developer Command Prompt)
+cl.exe
+cmake --version</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Writing C++ Calculators -->
+<div class="card mb-4" id="cpp-calculator">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-slash"></i> Writing C++ Calculators</h5>
+    </div>
+    <div class="card-body">
+        <p>C++ calculators must implement the same interface as Python's <code>DataCalculator</code>:</p>
+        
+        <h6>Calculator Interface (Header)</h6>
+        <div class="code-block cpp">// calculator.hpp
+#pragma once
+
+#include &lt;pybind11/pybind11.h&gt;
+#include &lt;pybind11/stl.h&gt;
+#include &lt;string&gt;
+#include &lt;map&gt;
+#include &lt;any&gt;
+#include &lt;chrono&gt;
+
+namespace py = pybind11;
+
+// Type alias for calculator data (matches Python dict)
+using CalcData = std::map&lt;std::string, py::object&gt;;
+
+/**
+ * Abstract base class for C++ calculators.
+ * Implements the same interface as Python's DataCalculator.
+ */
+class Calculator {
+protected:
+    std::string name_;
+    py::dict config_;
+    size_t calculation_count_ = 0;
+    std::string last_calculation_;
+    
+public:
+    Calculator(const std::string& name, const py::dict& config)
+        : name_(name), config_(config) {}
+    
+    virtual ~Calculator() = default;
+    
+    // Main calculation method - must be implemented
+    virtual py::dict calculate(const py::dict& data) = 0;
+    
+    // Details method for monitoring
+    virtual py::dict details() {
+        py::dict d;
+        d["name"] = name_;
+        d["type"] = py::str(typeid(*this).name());
+        d["calculation_count"] = calculation_count_;
+        d["last_calculation"] = last_calculation_;
+        d["language"] = "C++";
+        return d;
+    }
+    
+protected:
+    void update_stats() {
+        calculation_count_++;
+        auto now = std::chrono::system_clock::now();
+        auto time_t = std::chrono::system_clock::to_time_t(now);
+        last_calculation_ = std::ctime(&time_t);
+    }
+    
+    // Helper to get config value with default
+    template&lt;typename T&gt;
+    T get_config(const std::string& key, const T& default_value) {
+        if (config_.contains(key)) {
+            return config_[key.c_str()].cast&lt;T&gt;();
+        }
+        return default_value;
+    }
+};</div>
+        
+        <h6 class="mt-4">Example: Passthrough Calculator</h6>
+        <div class="code-block cpp">// passthru_calculator.cpp
+#include "calculator.hpp"
+
+class PassthruCalculator : public Calculator {
+public:
+    using Calculator::Calculator;  // Inherit constructor
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        // Return a copy of the input
+        return py::dict(data);
+    }
+};</div>
+
+        <h6 class="mt-4">Example: High-Performance Math Calculator</h6>
+        <div class="code-block cpp">// math_calculator.cpp
+#include "calculator.hpp"
+#include &lt;cmath&gt;
+#include &lt;vector&gt;
+#include &lt;numeric&gt;
+
+class MathCalculator : public Calculator {
+private:
+    std::string operation_;
+    std::vector&lt;std::string&gt; arguments_;
+    std::string output_attr_;
+    
+public:
+    MathCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        operation_ = get_config&lt;std::string&gt;("operation", "add");
+        output_attr_ = get_config&lt;std::string&gt;("output_attribute", "result");
+        
+        if (config.contains("arguments")) {
+            auto args = config["arguments"].cast&lt;py::list&gt;();
+            for (auto& arg : args) {
+                arguments_.push_back(arg.cast&lt;std::string&gt;());
+            }
+        }
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        // Copy input to output
+        py::dict result(data);
+        
+        // Collect values
+        std::vector&lt;double&gt; values;
+        for (const auto& arg : arguments_) {
+            if (data.contains(arg.c_str())) {
+                values.push_back(data[arg.c_str()].cast&lt;double&gt;());
+            }
+        }
+        
+        if (values.empty()) {
+            result[output_attr_.c_str()] = 0.0;
+            return result;
+        }
+        
+        double output = values[0];
+        
+        // Perform operation
+        if (operation_ == "add" || operation_ == "sum") {
+            output = std::accumulate(values.begin(), values.end(), 0.0);
+        } else if (operation_ == "multiply" || operation_ == "mul") {
+            output = std::accumulate(values.begin(), values.end(), 1.0,
+                                     std::multiplies&lt;double&gt;());
+        } else if (operation_ == "max") {
+            output = *std::max_element(values.begin(), values.end());
+        } else if (operation_ == "min") {
+            output = *std::min_element(values.begin(), values.end());
+        } else if (operation_ == "mean" || operation_ == "avg") {
+            output = std::accumulate(values.begin(), values.end(), 0.0) / values.size();
+        } else if (operation_ == "std") {
+            double mean = std::accumulate(values.begin(), values.end(), 0.0) / values.size();
+            double sq_sum = 0;
+            for (double v : values) sq_sum += (v - mean) * (v - mean);
+            output = std::sqrt(sq_sum / values.size());
+        }
+        
+        result[output_attr_.c_str()] = output;
+        return result;
+    }
+    
+    py::dict details() override {
+        py::dict d = Calculator::details();
+        d["operation"] = operation_;
+        d["output_attribute"] = output_attr_;
+        d["num_arguments"] = arguments_.size();
+        return d;
+    }
+};</div>
+
+        <h6 class="mt-4">Example: Trade Pricing Calculator (Financial)</h6>
+        <div class="code-block cpp">// trade_pricing_calculator.cpp
+#include "calculator.hpp"
+#include &lt;cmath&gt;
+
+class TradePricingCalculator : public Calculator {
+private:
+    double commission_rate_;
+    double tax_rate_;
+    bool include_vat_;
+    
+public:
+    TradePricingCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        commission_rate_ = get_config&lt;double&gt;("commission_rate", 0.001);
+        tax_rate_ = get_config&lt;double&gt;("tax_rate", 0.0);
+        include_vat_ = get_config&lt;bool&gt;("include_vat", false);
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        
+        double price = data["price"].cast&lt;double&gt;();
+        double quantity = data["quantity"].cast&lt;double&gt;();
+        
+        // Calculate values
+        double gross_value = price * quantity;
+        double commission = gross_value * commission_rate_;
+        double tax = tax_rate_ > 0 ? gross_value * tax_rate_ : 0.0;
+        double vat = include_vat_ ? (gross_value + commission) * 0.20 : 0.0;
+        double net_value = gross_value + commission + tax + vat;
+        
+        // Set results
+        result["gross_value"] = gross_value;
+        result["commission"] = commission;
+        result["tax"] = tax;
+        result["vat"] = vat;
+        result["net_value"] = net_value;
+        result["calculated_at"] = std::time(nullptr);
+        
+        return result;
+    }
+    
+    py::dict details() override {
+        py::dict d = Calculator::details();
+        d["commission_rate"] = commission_rate_;
+        d["tax_rate"] = tax_rate_;
+        d["include_vat"] = include_vat_;
+        return d;
+    }
+};</div>
+
+        <h6 class="mt-4">pybind11 Module Definition</h6>
+        <div class="code-block cpp">// dishtayantra_cpp.cpp - Module definition
+#include "calculator.hpp"
+#include "passthru_calculator.cpp"
+#include "math_calculator.cpp"
+#include "trade_pricing_calculator.cpp"
+
+PYBIND11_MODULE(dishtayantra_cpp, m) {
+    m.doc() = "DishtaYantra C++ Calculators";
+    
+    // Base Calculator class (for type hints)
+    py::class_&lt;Calculator&gt;(m, "Calculator")
+        .def("calculate", &Calculator::calculate)
+        .def("details", &Calculator::details);
+    
+    // PassthruCalculator
+    py::class_&lt;PassthruCalculator, Calculator&gt;(m, "PassthruCalculator")
+        .def(py::init&lt;const std::string&, const py::dict&&gt;())
+        .def("calculate", &PassthruCalculator::calculate)
+        .def("details", &PassthruCalculator::details);
+    
+    // MathCalculator
+    py::class_&lt;MathCalculator, Calculator&gt;(m, "MathCalculator")
+        .def(py::init&lt;const std::string&, const py::dict&&gt;())
+        .def("calculate", &MathCalculator::calculate)
+        .def("details", &MathCalculator::details);
+    
+    // TradePricingCalculator
+    py::class_&lt;TradePricingCalculator, Calculator&gt;(m, "TradePricingCalculator")
+        .def(py::init&lt;const std::string&, const py::dict&&gt;())
+        .def("calculate", &TradePricingCalculator::calculate)
+        .def("details", &TradePricingCalculator::details);
+}</div>
+    </div>
+</div>
+
+<!-- Compilation -->
+<div class="card mb-4" id="compilation">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-hammer"></i> Compilation on Different Platforms</h5>
+    </div>
+    <div class="card-body">
+        <h6>CMakeLists.txt (Recommended)</h6>
+        <div class="code-block cmake">cmake_minimum_required(VERSION 3.14)
+project(dishtayantra_cpp)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Find Python and pybind11
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG REQUIRED)
+
+# Create the module
+pybind11_add_module(dishtayantra_cpp
+    src/dishtayantra_cpp.cpp
+)
+
+# Optimization flags
+target_compile_options(dishtayantra_cpp PRIVATE
+    $&lt;$&lt;CXX_COMPILER_ID:GNU&gt;:-O3 -march=native -ffast-math&gt;
+    $&lt;$&lt;CXX_COMPILER_ID:Clang&gt;:-O3 -march=native -ffast-math&gt;
+    $&lt;$&lt;CXX_COMPILER_ID:MSVC&gt;:/O2 /fp:fast&gt;
+)
+
+# Install to Python site-packages
+install(TARGETS dishtayantra_cpp DESTINATION .)</div>
+
+        <h6 class="mt-4">Build Commands</h6>
+        
+        <ul class="nav nav-tabs platform-tabs" id="buildTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#build-linux">Linux</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#build-macos">macOS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#build-windows">Windows</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#build-manual">Manual (No CMake)</a>
+            </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="build-linux">
+                <div class="code-block bash"># Using CMake
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# Output: dishtayantra_cpp.cpython-311-x86_64-linux-gnu.so
+
+# Copy to DishtaYantra
+cp dishtayantra_cpp*.so /path/to/dishtayantra/core/calculator/</div>
+            </div>
+            <div class="tab-pane fade" id="build-macos">
+                <div class="code-block bash"># Using CMake
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(sysctl -n hw.ncpu)
+
+# Output: dishtayantra_cpp.cpython-311-darwin.so
+
+# Copy to DishtaYantra
+cp dishtayantra_cpp*.so /path/to/dishtayantra/core/calculator/</div>
+            </div>
+            <div class="tab-pane fade" id="build-windows">
+                <div class="code-block bash"># Using CMake (in Developer Command Prompt)
+mkdir build
+cd build
+cmake .. -G "Visual Studio 17 2022" -A x64
+cmake --build . --config Release
+
+# Output: dishtayantra_cpp.cp311-win_amd64.pyd
+
+# Copy to DishtaYantra
+copy Release\dishtayantra_cpp*.pyd C:\path\to\dishtayantra\core\calculator\</div>
+            </div>
+            <div class="tab-pane fade" id="build-manual">
+                <div class="code-block bash"># Linux - Manual compilation
+g++ -O3 -Wall -shared -std=c++17 -fPIC \
+    $(python3 -m pybind11 --includes) \
+    src/dishtayantra_cpp.cpp \
+    -o dishtayantra_cpp$(python3-config --extension-suffix)
+
+# macOS - Manual compilation  
+clang++ -O3 -Wall -shared -std=c++17 \
+    $(python3 -m pybind11 --includes) \
+    src/dishtayantra_cpp.cpp \
+    -o dishtayantra_cpp$(python3-config --extension-suffix) \
+    -undefined dynamic_lookup</div>
+            </div>
+        </div>
+        
+        <div class="warning-box mt-4">
+            <strong><i class="bi bi-exclamation-triangle"></i> Important:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Compile with the same Python version you'll use at runtime</li>
+                <li>Use Release/optimized builds for production</li>
+                <li>The output filename includes Python version info (e.g., <code>.cpython-311</code>)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Python Integration -->
+<div class="card mb-4" id="python-integration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-filetype-py"></i> Python Integration</h5>
+    </div>
+    <div class="card-body">
+        <h6>CppCalculator Wrapper Class</h6>
+        <p>DishtaYantra provides a wrapper for C++ calculators:</p>
+        
+        <div class="code-block python"># core/calculator/cpp_calculator.py
+import importlib
+import logging
+from typing import Dict, Any
+
+logger = logging.getLogger(__name__)
+
+class CppCalculator:
+    """
+    Wrapper for C++ calculators compiled with pybind11.
+    
+    The C++ class must implement:
+    - Constructor: ClassName(std::string name, py::dict config)
+    - Method: py::dict calculate(py::dict data)
+    - Method: py::dict details()
+    """
+    
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """
+        Initialize C++ calculator wrapper.
+        
+        Args:
+            name: Calculator name
+            config: Configuration dict, must include:
+                    - cpp_module: Name of the compiled module (e.g., 'dishtayantra_cpp')
+                    - cpp_class: Name of the C++ class (e.g., 'MathCalculator')
+        """
+        self.name = name
+        self.config = config
+        
+        cpp_module = config.get('cpp_module', 'dishtayantra_cpp')
+        cpp_class = config.get('cpp_class')
+        
+        if not cpp_class:
+            raise ValueError("cpp_class must be specified for C++ calculators")
+        
+        try:
+            # Import the compiled module
+            module = importlib.import_module(cpp_module)
+            calculator_class = getattr(module, cpp_class)
+            
+            # Create C++ calculator instance
+            self._cpp_instance = calculator_class(name, config)
+            
+            logger.info(f"CppCalculator '{name}' initialized: {cpp_module}.{cpp_class}")
+            
+        except ImportError as e:
+            raise RuntimeError(f"Failed to import C++ module '{cpp_module}': {e}")
+        except AttributeError as e:
+            raise RuntimeError(f"Class '{cpp_class}' not found in module '{cpp_module}': {e}")
+    
+    def calculate(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute calculation on the C++ side."""
+        return dict(self._cpp_instance.calculate(data))
+    
+    def details(self) -> Dict[str, Any]:
+        """Get calculator details."""
+        details = dict(self._cpp_instance.details())
+        details['wrapper'] = 'CppCalculator'
+        details['language'] = 'C++'
+        return details</div>
+
+        <h6 class="mt-4">Using C++ Calculators in Python</h6>
+        <div class="code-block python"># Direct usage
+from core.calculator.cpp_calculator import CppCalculator
+
+# Create calculator
+config = {
+    'cpp_module': 'dishtayantra_cpp',
+    'cpp_class': 'MathCalculator',
+    'operation': 'sum',
+    'arguments': ['value1', 'value2', 'value3'],
+    'output_attribute': 'total'
+}
+calc = CppCalculator('my_math_calc', config)
+
+# Use calculator
+data = {'value1': 10.5, 'value2': 20.3, 'value3': 5.2}
+result = calc.calculate(data)
+print(result)  # {'value1': 10.5, 'value2': 20.3, 'value3': 5.2, 'total': 36.0}
+
+# Get details
+print(calc.details())</div>
+
+        <h6 class="mt-4">CalculatorFactory Integration</h6>
+        <div class="code-block python"># The CalculatorFactory automatically handles C++ calculators
+from core.calculator.core_calculator import CalculatorFactory
+
+config = {
+    'calculator': 'cpp',
+    'cpp_module': 'dishtayantra_cpp',
+    'cpp_class': 'TradePricingCalculator',
+    'commission_rate': 0.002
+}
+
+calc = CalculatorFactory.create('pricing_calc', config)</div>
+    </div>
+</div>
+
+<!-- DAG Configuration -->
+<div class="card mb-4" id="configuration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-filetype-json"></i> DAG Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p>Configure a C++ calculator in your DAG JSON:</p>
+        
+        <div class="code-block json">{
+  "name": "high_performance_dag",
+  "start_time": "0900",
+  "duration": "8h",
+  "nodes": [
+    {
+      "id": "subscriber",
+      "type": "SubscriptionNode",
+      "subscribers": [
+        {"uri": "kafka://trades:raw_trades"}
+      ]
+    },
+    {
+      "id": "cpp_pricing",
+      "type": "CalculationNode",
+      "calculator": "cpp",
+      "cpp_module": "dishtayantra_cpp",
+      "cpp_class": "TradePricingCalculator",
+      "commission_rate": 0.001,
+      "tax_rate": 0.002,
+      "include_vat": false
+    },
+    {
+      "id": "publisher",
+      "type": "PublicationNode",
+      "publishers": [
+        {"uri": "kafka://trades:priced_trades"}
+      ]
+    }
+  ],
+  "edges": [
+    {"from": "subscriber", "to": "cpp_pricing"},
+    {"from": "cpp_pricing", "to": "publisher"}
+  ]
+}</div>
+
+        <h6 class="mt-4">Configuration Options</h6>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Property</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>calculator</code></td>
+                    <td>Yes</td>
+                    <td>Set to <code>"cpp"</code> for C++ calculators</td>
+                </tr>
+                <tr>
+                    <td><code>cpp_module</code></td>
+                    <td>No</td>
+                    <td>Module name (default: <code>dishtayantra_cpp</code>)</td>
+                </tr>
+                <tr>
+                    <td><code>cpp_class</code></td>
+                    <td>Yes</td>
+                    <td>C++ class name to instantiate</td>
+                </tr>
+                <tr>
+                    <td><em>any other</em></td>
+                    <td>No</td>
+                    <td>Passed to C++ constructor as config dict</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Examples -->
+<div class="card mb-4" id="examples">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-square"></i> Complete Examples</h5>
+    </div>
+    <div class="card-body">
+        <h6>Example: SIMD-Optimized Vector Calculator</h6>
+        <div class="code-block cpp">// vector_calculator.cpp - Uses SIMD for vectorized operations
+#include "calculator.hpp"
+#include &lt;vector&gt;
+#include &lt;immintrin.h&gt;  // AVX/SSE intrinsics
+
+class VectorCalculator : public Calculator {
+public:
+    using Calculator::Calculator;
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        
+        // Get input vector
+        auto input = data["values"].cast&lt;std::vector&lt;double&gt;&gt;();
+        size_t n = input.size();
+        
+        // SIMD-optimized sum using AVX
+        __m256d sum_vec = _mm256_setzero_pd();
+        size_t i = 0;
+        
+        // Process 4 doubles at a time
+        for (; i + 4 <= n; i += 4) {
+            __m256d vals = _mm256_loadu_pd(&input[i]);
+            sum_vec = _mm256_add_pd(sum_vec, vals);
+        }
+        
+        // Horizontal sum
+        double sum_arr[4];
+        _mm256_storeu_pd(sum_arr, sum_vec);
+        double sum = sum_arr[0] + sum_arr[1] + sum_arr[2] + sum_arr[3];
+        
+        // Handle remaining elements
+        for (; i < n; i++) {
+            sum += input[i];
+        }
+        
+        result["sum"] = sum;
+        result["count"] = static_cast&lt;int&gt;(n);
+        result["mean"] = sum / n;
+        
+        return result;
+    }
+};</div>
+
+        <h6 class="mt-4">Example: Risk Calculator with Eigen</h6>
+        <div class="code-block cpp">// risk_calculator.cpp - Uses Eigen for matrix operations
+#include "calculator.hpp"
+#include &lt;Eigen/Dense&gt;
+
+class RiskCalculator : public Calculator {
+private:
+    double confidence_level_;
+    
+public:
+    RiskCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        confidence_level_ = get_config&lt;double&gt;("confidence_level", 0.95);
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        
+        // Get portfolio data
+        auto returns = data["returns"].cast&lt;std::vector&lt;double&gt;&gt;();
+        auto weights = data["weights"].cast&lt;std::vector&lt;double&gt;&gt;();
+        
+        // Convert to Eigen
+        Eigen::VectorXd ret = Eigen::Map&lt;Eigen::VectorXd&gt;(returns.data(), returns.size());
+        Eigen::VectorXd wgt = Eigen::Map&lt;Eigen::VectorXd&gt;(weights.data(), weights.size());
+        
+        // Calculate portfolio return
+        double portfolio_return = wgt.dot(ret);
+        
+        // Calculate variance (simplified - would use covariance matrix in production)
+        double variance = ret.array().square().mean() - std::pow(ret.mean(), 2);
+        double volatility = std::sqrt(variance);
+        
+        // Calculate VaR
+        double z_score = (confidence_level_ >= 0.99) ? 2.326 : 
+                         (confidence_level_ >= 0.95) ? 1.645 : 1.282;
+        double var = portfolio_return - z_score * volatility;
+        
+        result["portfolio_return"] = portfolio_return;
+        result["volatility"] = volatility;
+        result["var"] = var;
+        
+        return result;
+    }
+};</div>
+    </div>
+</div>
+
+<!-- Best Practices -->
+<div class="card mb-4" id="best-practices">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Best Practices</h5>
+    </div>
+    <div class="card-body">
+        <h6>1. Release the GIL for Long Operations</h6>
+        <div class="code-block cpp">py::dict calculate(const py::dict& data) override {
+    // Copy data while holding GIL
+    double price = data["price"].cast&lt;double&gt;();
+    double quantity = data["quantity"].cast&lt;double&gt;();
+    
+    double result;
+    {
+        // Release GIL during computation
+        py::gil_scoped_release release;
+        result = expensive_computation(price, quantity);
+    }
+    // GIL automatically reacquired
+    
+    py::dict output;
+    output["result"] = result;
+    return output;
+}</div>
+
+        <h6 class="mt-4">2. Use Move Semantics</h6>
+        <div class="code-block cpp">// Return by value - pybind11 handles efficiently
+py::dict calculate(const py::dict& data) override {
+    py::dict result;
+    // ... populate result
+    return result;  // Moved, not copied
+}</div>
+
+        <h6 class="mt-4">3. Handle Exceptions Properly</h6>
+        <div class="code-block cpp">py::dict calculate(const py::dict& data) override {
+    try {
+        if (!data.contains("price")) {
+            throw std::runtime_error("Missing required field: price");
+        }
+        // ... calculation
+    } catch (const std::exception& e) {
+        // Will be converted to Python exception
+        throw py::value_error(e.what());
+    }
+}</div>
+
+        <h6 class="mt-4">4. Thread Safety</h6>
+        <div class="code-block cpp">class ThreadSafeCalculator : public Calculator {
+private:
+    std::mutex mutex_;
+    double running_total_ = 0;
+    
+public:
+    py::dict calculate(const py::dict& data) override {
+        double value = data["value"].cast&lt;double&gt;();
+        
+        {
+            std::lock_guard&lt;std::mutex&gt; lock(mutex_);
+            running_total_ += value;
+        }
+        
+        py::dict result(data);
+        result["running_total"] = running_total_;
+        return result;
+    }
+};</div>
+    </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="card mb-4" id="troubleshooting">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+    </div>
+    <div class="card-body">
+        <h6>Issue: Module Not Found</h6>
+        <div class="code-block bash"># Ensure module is in Python path
+export PYTHONPATH="/path/to/dishtayantra/core/calculator:$PYTHONPATH"
+
+# Or copy to site-packages
+cp dishtayantra_cpp*.so $(python -c "import site; print(site.getsitepackages()[0])")/</div>
+
+        <h6 class="mt-4">Issue: Symbol Not Found / Undefined Symbol</h6>
+        <div class="code-block bash"># Check dependencies
+ldd dishtayantra_cpp*.so  # Linux
+otool -L dishtayantra_cpp*.so  # macOS
+
+# Ensure all libraries are linked
+g++ ... -lpthread -ldl</div>
+
+        <h6 class="mt-4">Issue: Python Version Mismatch</h6>
+        <div class="code-block bash"># Module was compiled for different Python version
+# Recompile with correct Python:
+cmake .. -DPython3_EXECUTABLE=/usr/bin/python3.11</div>
+
+        <h6 class="mt-4">Issue: Segmentation Fault</h6>
+        <ul>
+            <li>Check for null pointer access in C++ code</li>
+            <li>Ensure proper exception handling</li>
+            <li>Verify data type conversions</li>
+            <li>Use debug builds to get stack traces</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Summary -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #00599C, #004482); color: white;">
+        <h5 class="mb-0"><i class="bi bi-braces"></i> Summary</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td width="30%"><strong>Technology</strong></td>
+                    <td>pybind11 - seamless C++/Python interoperability</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td>50-100x faster than Python, ~100ns call overhead</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Cases</strong></td>
+                    <td>Ultra-low latency, numerical computation, SIMD optimization</td>
+                </tr>
+                <tr>
+                    <td><strong>Configuration</strong></td>
+                    <td>Set <code>calculator: "cpp"</code> and <code>cpp_class</code> in DAG config</td>
+                </tr>
+                <tr>
+                    <td><strong>Deployment</strong></td>
+                    <td>Single .so/.pyd file, no external processes</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-rocket"></i> Pro Tip:</strong> Combine C++ calculators with Python's free-threading for maximum parallelism. Release the GIL during computation to allow other Python threads to run concurrently!
+        </div>
+    </div>
+</div>
+{% endblock %}
