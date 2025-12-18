@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}API Reference - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .method-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-right: 8px;
+        min-width: 60px;
+        text-align: center;
+    }
+    .method-get { background: #10b981; color: white; }
+    .method-post { background: #2563eb; color: white; }
+    .method-put { background: #f59e0b; color: white; }
+    .method-delete { background: #dc2626; color: white; }
+    .endpoint-path {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .param-table th {
+        background: #f1f5f9;
+    }
+    .param-table code {
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-code-slash" style="color: #4a90c2;"></i> API Reference</h2>
+<p class="lead">REST API documentation for programmatic access to DishtaYantra.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra exposes REST APIs for managing DAGs, cache, and users. All endpoints require authentication via session cookies (login first via UI or API).</p>
+        <h6>Base URL</h6>
+        <div class="code-block">http://localhost:5000</div>
+        
+        <h6 class="mt-3">Authentication</h6>
+        <p>Login first to obtain a session cookie:</p>
+        <div class="code-block">POST /login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin</div>
+    </div>
+</div>
+
+<!-- DAG Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> DAG Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <!-- List DAGs -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dashboard</span></h6>
+        <p>Get the dashboard page with all DAGs (HTML response).</p>
+        
+        <hr>
+        
+        <!-- Get DAG Details -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag/&lt;dag_name&gt;</span></h6>
+        <p>Get detailed information about a specific DAG.</p>
+        <div class="code-block">GET /dag/my_dag_name
+
+Response: HTML page with DAG details, nodes, edges, statistics</div>
+        
+        <hr>
+        
+        <!-- Create DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/create_dag</span></h6>
+        <p>Create a new DAG from JSON configuration.</p>
+        <div class="code-block">POST /create_dag
+Content-Type: application/x-www-form-urlencoded
+
+dag_name=my_new_dag&dag_config={"name":"my_new_dag","subscribers":[...],"nodes":[...]}</div>
+        
+        <hr>
+        
+        <!-- Start DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/start_dag/&lt;dag_name&gt;</span></h6>
+        <p>Start a stopped DAG.</p>
+        <div class="code-block">POST /start_dag/my_dag_name
+
+Response: Redirect to dashboard with success/error message</div>
+        
+        <hr>
+        
+        <!-- Stop DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/stop_dag/&lt;dag_name&gt;</span></h6>
+        <p>Stop a running DAG.</p>
+        <div class="code-block">POST /stop_dag/my_dag_name
+
+Response: Redirect to dashboard with success/error message</div>
+        
+        <hr>
+        
+        <!-- Delete DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/delete_dag/&lt;dag_name&gt;</span></h6>
+        <p>Delete a DAG permanently. <strong>Admin only.</strong></p>
+        <div class="code-block">POST /delete_dag/my_dag_name
+
+Response: Redirect to dashboard with success/error message</div>
+        
+        <hr>
+        
+        <!-- Clone DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/clone_dag/&lt;dag_name&gt;</span></h6>
+        <p>Clone an existing DAG with a new name and optional modifications.</p>
+        <div class="code-block">POST /clone_dag/original_dag
+Content-Type: application/x-www-form-urlencoded
+
+new_name=cloned_dag&start_time=0900&duration=8h</div>
+    </div>
+</div>
+
+<!-- DAG Designer Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bezier2"></i> DAG Designer Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <!-- Get Designer -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag-designer</span></h6>
+        <p>Open the visual DAG designer interface.</p>
+        
+        <hr>
+        
+        <!-- List DAGs for Designer -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag-designer/list-dags</span></h6>
+        <p>Get list of all DAGs for the designer dropdown.</p>
+        <div class="code-block">GET /dag-designer/list-dags
+
+Response:
+{
+  "dags": ["dag1", "dag2", "dag3"]
+}</div>
+        
+        <hr>
+        
+        <!-- Load DAG -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag-designer/load/&lt;dag_name&gt;</span></h6>
+        <p>Load a DAG configuration for editing.</p>
+        <div class="code-block">GET /dag-designer/load/my_dag
+
+Response:
+{
+  "success": true,
+  "dag": { ... full DAG JSON ... }
+}</div>
+        
+        <hr>
+        
+        <!-- Save DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/dag-designer/save</span></h6>
+        <p>Save a DAG configuration from the designer.</p>
+        <div class="code-block">POST /dag-designer/save
+Content-Type: application/json
+
+{
+  "name": "my_dag",
+  "start_immediately": true,
+  "config": { ... DAG JSON ... }
+}
+
+Response:
+{
+  "success": true,
+  "message": "DAG saved successfully"
+}</div>
+        
+        <hr>
+        
+        <!-- Validate DAG -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/dag-designer/validate</span></h6>
+        <p>Validate a DAG configuration without saving.</p>
+        <div class="code-block">POST /dag-designer/validate
+Content-Type: application/json
+
+{
+  "config": { ... DAG JSON ... }
+}
+
+Response:
+{
+  "valid": true,
+  "errors": [],
+  "warnings": []
+}</div>
+    </div>
+</div>
+
+<!-- Cache Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-hdd-rack"></i> Cache Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <!-- Cache Management Page -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/cache</span></h6>
+        <p>Cache management page (HTML).</p>
+        
+        <hr>
+        
+        <!-- Query Cache -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/cache/query?pattern=*</span></h6>
+        <p>Query cache keys matching a pattern.</p>
+        <div class="code-block">GET /cache/query?pattern=user:*
+
+Response: HTML page with matching keys and values</div>
+        
+        <hr>
+        
+        <!-- Create Cache Entry -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/cache/create</span></h6>
+        <p>Create a new cache entry. <strong>Admin only.</strong></p>
+        <div class="code-block">POST /cache/create
+Content-Type: application/x-www-form-urlencoded
+
+key=my_key&value={"data":"value"}&value_type=object&ttl=3600</div>
+        <table class="table table-sm param-table mt-2">
+            <thead><tr><th>Parameter</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>key</code></td><td>Cache key name</td></tr>
+                <tr><td><code>value</code></td><td>Value to store</td></tr>
+                <tr><td><code>value_type</code></td><td>string, number, boolean, object, array</td></tr>
+                <tr><td><code>ttl</code></td><td>Time to live in seconds (optional)</td></tr>
+            </tbody>
+        </table>
+        
+        <hr>
+        
+        <!-- View Cache Entry -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/cache/view/&lt;key&gt;</span></h6>
+        <p>View a specific cache entry.</p>
+        
+        <hr>
+        
+        <!-- Edit Cache Entry -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/cache/edit/&lt;key&gt;</span></h6>
+        <p>Update an existing cache entry. <strong>Admin only.</strong></p>
+        
+        <hr>
+        
+        <!-- Delete Cache Entry -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/cache/delete/&lt;key&gt;</span></h6>
+        <p>Delete a cache entry. <strong>Admin only.</strong></p>
+        
+        <hr>
+        
+        <!-- Clear Cache -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/cache/clear</span></h6>
+        <p>Clear all cache entries. <strong>Admin only.</strong></p>
+        
+        <hr>
+        
+        <!-- Dump Cache -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/cache/dump</span></h6>
+        <p>Force cache persistence to disk. <strong>Admin only.</strong></p>
+        
+        <hr>
+        
+        <!-- Download Cache -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/cache/download</span></h6>
+        <p>Download entire cache as JSON file. <strong>Admin only.</strong></p>
+    </div>
+</div>
+
+<!-- User Management Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people"></i> User Management Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>All user management endpoints require Admin role.</strong></p>
+        
+        <!-- List Users -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/users</span></h6>
+        <p>User management page (HTML).</p>
+        
+        <hr>
+        
+        <!-- Create User -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/users/create</span></h6>
+        <p>Create a new user.</p>
+        <div class="code-block">POST /users/create
+Content-Type: application/x-www-form-urlencoded
+
+username=newuser&password=secret&full_name=New User&roles=user,operator</div>
+        
+        <hr>
+        
+        <!-- Edit User -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/users/edit/&lt;username&gt;</span></h6>
+        <p>Update an existing user.</p>
+        
+        <hr>
+        
+        <!-- Delete User -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/users/delete/&lt;username&gt;</span></h6>
+        <p>Delete a user.</p>
+        
+        <hr>
+        
+        <!-- Toggle User Active -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/users/toggle/&lt;username&gt;</span></h6>
+        <p>Enable or disable a user account.</p>
+    </div>
+</div>
+
+<!-- Messaging Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-envelope"></i> Messaging Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <!-- Publish Message Page -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/publish</span></h6>
+        <p>Message publishing page (HTML).</p>
+        
+        <hr>
+        
+        <!-- Publish Message -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/publish</span></h6>
+        <p>Publish a message to an in-memory queue or topic.</p>
+        <div class="code-block">POST /publish
+Content-Type: application/x-www-form-urlencoded
+
+destination=mem://queue/my_queue&message={"id":1,"data":"test"}</div>
+    </div>
+</div>
+
+<!-- Authentication Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Authentication Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <!-- Login -->
+        <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/login</span></h6>
+        <p>Authenticate and create session.</p>
+        <div class="code-block">POST /login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=admin
+
+Response: Redirect to /dashboard on success, back to /login on failure</div>
+        
+        <hr>
+        
+        <!-- Logout -->
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/logout</span></h6>
+        <p>End session and logout.</p>
+    </div>
+</div>
+
+<!-- Public Endpoints -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-globe"></i> Public Endpoints (No Auth Required)</h5>
+    </div>
+    <div class="card-body">
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/about</span></h6>
+        <p>About page with system information.</p>
+        
+        <hr>
+        
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/help</span></h6>
+        <p>Help documentation index.</p>
+        
+        <hr>
+        
+        <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/help/&lt;topic&gt;</span></h6>
+        <p>Specific help topics: getting-started, dag-configuration, pubsub, calculators, transformers, time-windows, autoclone, dag-designer, cache, sample-dags, api-reference</p>
+    </div>
+</div>
+
+<!-- Error Responses -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Error Responses</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>200</code></td><td>Success</td></tr>
+                <tr><td><code>302</code></td><td>Redirect (usually to login or dashboard)</td></tr>
+                <tr><td><code>400</code></td><td>Bad Request - Invalid parameters</td></tr>
+                <tr><td><code>401</code></td><td>Unauthorized - Login required</td></tr>
+                <tr><td><code>403</code></td><td>Forbidden - Insufficient permissions (admin required)</td></tr>
+                <tr><td><code>404</code></td><td>Not Found - Resource doesn't exist</td></tr>
+                <tr><td><code>500</code></td><td>Server Error - Check logs</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

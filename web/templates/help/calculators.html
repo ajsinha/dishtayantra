@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Calculators - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .calc-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: #7c3aed;
+        color: white;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-calculator" style="color: #4a90c2;"></i> Calculators</h2>
+<p class="lead">Data processing components that perform calculations, filtering, and transformations on data.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>Calculators are used in <code>CalculationNode</code> to process data. They receive a data dictionary and return a processed result.</p>
+        <div class="code-block">{
+  "name": "my_calculator",
+  "type": "ApplyDefaultsCalculator",
+  "config": {
+    "defaults": {"status": "active"}
+  }
+}</div>
+    </div>
+</div>
+
+<!-- NullCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">NullCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Returns a deep copy of the input data. Useful for creating isolated copies.</p>
+        <div class="code-block">{
+  "name": "copy_calc",
+  "type": "NullCalculator",
+  "config": {}
+}
+
+// Input:  {"id": 1, "name": "test"}
+// Output: {"id": 1, "name": "test"}  (deep copy)</div>
+    </div>
+</div>
+
+<!-- PassthruCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">PassthruCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Returns the input data as-is (same reference). Most efficient for pass-through scenarios.</p>
+        <div class="code-block">{
+  "name": "passthru_calc",
+  "type": "PassthruCalculator",
+  "config": {}
+}</div>
+    </div>
+</div>
+
+<!-- ApplyDefaultsCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">ApplyDefaultsCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Applies default values for missing or null attributes.</p>
+        <div class="code-block">{
+  "name": "defaults_calc",
+  "type": "ApplyDefaultsCalculator",
+  "config": {
+    "defaults": {
+      "status": "pending",
+      "priority": 1,
+      "processed": false
+    }
+  }
+}
+
+// Input:  {"id": 1, "status": null}
+// Output: {"id": 1, "status": "pending", "priority": 1, "processed": false}</div>
+    </div>
+</div>
+
+<!-- AttributeFilterCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">AttributeFilterCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Keeps only the specified attributes, removing all others.</p>
+        <div class="code-block">{
+  "name": "filter_calc",
+  "type": "AttributeFilterCalculator",
+  "config": {
+    "keep_attributes": ["id", "name", "timestamp"]
+  }
+}
+
+// Input:  {"id": 1, "name": "test", "secret": "xxx", "timestamp": 123}
+// Output: {"id": 1, "name": "test", "timestamp": 123}</div>
+    </div>
+</div>
+
+<!-- AttributeFilterAwayCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">AttributeFilterAwayCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Removes the specified attributes, keeping all others.</p>
+        <div class="code-block">{
+  "name": "remove_secrets_calc",
+  "type": "AttributeFilterAwayCalculator",
+  "config": {
+    "filter_attributes": ["password", "secret", "token"]
+  }
+}
+
+// Input:  {"id": 1, "name": "test", "password": "xxx", "data": "value"}
+// Output: {"id": 1, "name": "test", "data": "value"}</div>
+    </div>
+</div>
+
+<!-- AdditionCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">AdditionCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Adds the values of specified attributes and outputs the sum.</p>
+        <div class="code-block">{
+  "name": "sum_calc",
+  "type": "AdditionCalculator",
+  "config": {
+    "arguments": ["price", "tax", "shipping"],
+    "output_attribute": "total"
+  }
+}
+
+// Input:  {"price": 100, "tax": 10, "shipping": 5}
+// Output: {"total": 115}</div>
+    </div>
+</div>
+
+<!-- MultiplicationCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">MultiplicationCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Multiplies the values of specified attributes.</p>
+        <div class="code-block">{
+  "name": "multiply_calc",
+  "type": "MultiplicationCalculator",
+  "config": {
+    "arguments": ["quantity", "unit_price"],
+    "output_attribute": "line_total"
+  }
+}
+
+// Input:  {"quantity": 5, "unit_price": 20}
+// Output: {"line_total": 100}</div>
+    </div>
+</div>
+
+<!-- AttributeNameChangeCalculator -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="calc-badge">AttributeNameChangeCalculator</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Renames attributes based on a mapping.</p>
+        <div class="code-block">{
+  "name": "rename_calc",
+  "type": "AttributeNameChangeCalculator",
+  "config": {
+    "name_mapping": {
+      "old_id": "new_id",
+      "user_name": "username",
+      "dt": "timestamp"
+    }
+  }
+}
+
+// Input:  {"old_id": 1, "user_name": "john", "dt": 123}
+// Output: {"new_id": 1, "username": "john", "timestamp": 123}</div>
+    </div>
+</div>
+
+<!-- Custom Calculators -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-slash"></i> Custom Calculators</h5>
+    </div>
+    <div class="card-body">
+        <p>Create your own calculators by extending <code>DataCalculator</code>:</p>
+        <div class="code-block">from core.calculator.core_calculator import DataCalculator
+
+class MyCustomCalculator(DataCalculator):
+    def calculate(self, data):
+        self._calculation_count += 1
+        # Your custom logic here
+        result = data.copy()
+        result['processed_by'] = 'MyCustomCalculator'
+        return result</div>
+        <p class="mt-3">Reference custom calculators using the full module path:</p>
+        <div class="code-block">{
+  "name": "custom_calc",
+  "type": "mymodule.calculators.MyCustomCalculator",
+  "config": {}
+}</div>
+    </div>
+</div>
+{% endblock %}

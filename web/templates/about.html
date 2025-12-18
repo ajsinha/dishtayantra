@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}About - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .about-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        color: white;
+        padding: 4rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.3);
+    }
+    .about-hero h1 {
+        color: white;
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    .about-hero .tagline {
+        font-size: 1.3rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+    .about-hero .version-badge {
+        background: rgba(0, 212, 170, 0.2);
+        border: 2px solid #00d4aa;
+        color: #00d4aa;
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .feature-card {
+        height: 100%;
+        transition: transform 0.3s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    .feature-icon i {
+        font-size: 1.5rem;
+        color: #00d4aa;
+    }
+    .tech-badge {
+        background: #f1f5f9;
+        color: #1e3a5f;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin: 0.25rem;
+        display: inline-block;
+    }
+    .author-card {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+    }
+    .author-avatar {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+    }
+    .author-avatar i {
+        font-size: 3rem;
+        color: #00d4aa;
+    }
+    .nav-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="about-hero">
+    <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
+    <h1>DishtaYantra</h1>
+    <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
+    <span class="version-badge">Version 1.0.0</span>
+</div>
+
+<!-- Navigation Buttons -->
+<div class="nav-buttons mb-4">
+    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+        <i class="bi bi-box-arrow-in-right"></i> Login
+    </a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary btn-lg">
+        <i class="bi bi-book"></i> Documentation
+    </a>
+</div>
+
+<!-- What is DishtaYantra -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> What is DishtaYantra?</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">DishtaYantra (Sanskrit: दिष्टयन्त्र - "Directed Instrument") is a powerful, enterprise-grade Directed Acyclic Graph (DAG) execution engine designed for real-time data processing and workflow orchestration.</p>
+                <p>Built with Python and Flask, DishtaYantra provides a flexible framework for creating complex data pipelines that can:</p>
+                <ul>
+                    <li><strong>Ingest data</strong> from multiple sources including Kafka, RabbitMQ, ActiveMQ, TIBCO EMS, WebSphere MQ, REST APIs, Files, and more</li>
+                    <li><strong>Process and transform</strong> data using customizable calculators and transformers</li>
+                    <li><strong>Publish results</strong> to various destinations in real-time</li>
+                    <li><strong>Scale horizontally</strong> using the AutoClone feature for high-throughput scenarios</li>
+                    <li><strong>Schedule execution</strong> using time windows for controlled processing periods</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Features -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="mb-3"><i class="bi bi-stars" style="color: #4a90c2;"></i> Key Features</h3>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <h5>Visual DAG Designer</h5>
+                <p class="text-muted">Create and edit DAG configurations visually with our intuitive drag-and-drop designer. No coding required for basic workflows.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon">
+                    <i class="bi bi-arrow-left-right"></i>
+                </div>
+                <h5>Multi-Protocol Support</h5>
+                <p class="text-muted">Connect to Kafka, RabbitMQ, ActiveMQ, TIBCO EMS, IBM MQ, Redis, REST APIs, SQL databases, gRPC, and more.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <h5>Time Windows</h5>
+                <p class="text-muted">Schedule DAG execution within specific time windows. Perfect for batch processing during off-peak hours or market hours.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon">
+                    <i class="bi bi-layers"></i>
+                </div>
+                <h5>AutoClone Scaling</h5>
+                <p class="text-muted">Automatically scale DAG instances up or down based on time schedules. Handle peak loads without manual intervention.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon">
+                    <i class="bi bi-hdd-rack"></i>
+                </div>
+                <h5>In-Memory Cache</h5>
+                <p class="text-muted">Redis-compatible in-memory cache for fast data access. Share state between DAG nodes with persistent snapshots.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h5>Role-Based Access</h5>
+                <p class="text-muted">Multi-role user system with Admin, Operator, and User roles. Control who can view, operate, or manage DAGs.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technology Stack -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-code-square"></i> Technology Stack</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <h6>Backend</h6>
+                        <span class="tech-badge">Python 3.8+</span>
+                        <span class="tech-badge">Flask</span>
+                        <span class="tech-badge">Threading</span>
+                        <span class="tech-badge">Kazoo (ZooKeeper)</span>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6>Frontend</h6>
+                        <span class="tech-badge">Bootstrap 5</span>
+                        <span class="tech-badge">jQuery</span>
+                        <span class="tech-badge">Bootstrap Icons</span>
+                        <span class="tech-badge">Responsive Design</span>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6>Integrations</h6>
+                        <span class="tech-badge">Apache Kafka</span>
+                        <span class="tech-badge">RabbitMQ</span>
+                        <span class="tech-badge">Redis</span>
+                        <span class="tech-badge">ActiveMQ</span>
+                        <span class="tech-badge">TIBCO EMS</span>
+                        <span class="tech-badge">IBM MQ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Use Cases -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-briefcase"></i> Use Cases</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-graph-up text-success"></i> Financial Services</h6>
+                        <ul>
+                            <li>Real-time trade processing and enrichment</li>
+                            <li>Market data aggregation and distribution</li>
+                            <li>Risk calculation pipelines</li>
+                            <li>EOD batch processing with time windows</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-database text-primary"></i> Data Engineering</h6>
+                        <ul>
+                            <li>ETL/ELT pipeline orchestration</li>
+                            <li>Data transformation and enrichment</li>
+                            <li>Multi-source data integration</li>
+                            <li>Event-driven data processing</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-globe text-info"></i> IoT & Streaming</h6>
+                        <ul>
+                            <li>Sensor data aggregation</li>
+                            <li>Real-time analytics pipelines</li>
+                            <li>Event stream processing</li>
+                            <li>Device telemetry processing</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-building text-warning"></i> Enterprise Integration</h6>
+                        <ul>
+                            <li>Message routing and transformation</li>
+                            <li>Protocol bridging (Kafka ↔ MQ ↔ REST)</li>
+                            <li>Legacy system integration</li>
+                            <li>API gateway patterns</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Author -->
+<div class="row mb-4">
+    <div class="col-md-6 offset-md-3">
+        <div class="author-card">
+            <div class="author-avatar">
+                <i class="bi bi-person"></i>
+            </div>
+            <h4>Ashutosh Sinha</h4>
+            <p class="text-muted mb-3">Creator & Lead Developer</p>
+            <div>
+                <a href="mailto:ajsinha@gmail.com" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-envelope"></i> ajsinha@gmail.com
+                </a>
+                <a href="https://github.com/ajsinha/dishtayantra" target="_blank" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-github"></i> GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- License & Copyright -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> License & Copyright</h5>
+            </div>
+            <div class="card-body text-center">
+                <p class="mb-2"><strong>Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.</strong></p>
+                <p class="text-muted mb-0">DishtaYantra is proprietary software. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

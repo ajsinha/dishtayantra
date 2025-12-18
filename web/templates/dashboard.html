@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - {{ app_name }} Compute Server{% endblock %}
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -10,18 +10,23 @@
         height: 12px;
         border-radius: 50%;
         margin-left: 5px;
+        box-shadow: 0 0 6px currentColor;
     }
     .time-window-active {
-        background-color: #28a745;
+        background-color: #10b981;
+        color: #10b981;
     }
     .time-window-inactive {
-        background-color: #dc3545;
+        background-color: #ef4444;
+        color: #ef4444;
     }
     .table-controls {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
     }
     .pagination-controls {
         display: flex;
@@ -29,71 +34,231 @@
         gap: 10px;
         margin-top: 15px;
         justify-content: flex-end;
+        flex-wrap: wrap;
     }
     .pagination-info {
         font-size: 14px;
-        color: #6c757d;
+        color: #6b7280;
+        font-weight: 500;
     }
     .page-btn {
-        padding: 5px 10px;
-        border: 1px solid #dee2e6;
+        padding: 6px 12px;
+        border: 2px solid #e2e8f0;
         background: white;
         cursor: pointer;
-        border-radius: 4px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
     }
     .page-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
     }
     .page-btn:hover:not(:disabled) {
-        background: #e9ecef;
+        background: var(--primary-light, #4a90c2);
+        border-color: var(--primary-light, #4a90c2);
+        color: white;
     }
     .auto-refresh-toggle {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
+        gap: 12px;
+        padding: 12px 18px;
+        background: white;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     .form-check-input:checked {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
+        background-color: #10b981;
+        border-color: #10b981;
     }
     .countdown-badge {
         font-size: 12px;
-        padding: 4px 8px;
+        padding: 6px 12px;
+        font-weight: 600;
     }
     .sortable {
         cursor: pointer;
         user-select: none;
         position: relative;
-        padding-right: 20px !important;
+        padding-right: 24px !important;
+        transition: background 0.2s ease;
     }
     .sortable:hover {
-        background-color: #e9ecef;
+        background-color: #e2e8f0 !important;
     }
     .sortable::after {
         content: '⇅';
         position: absolute;
-        right: 8px;
+        right: 10px;
         opacity: 0.3;
         font-size: 12px;
     }
     .sortable.asc::after {
         content: '↑';
         opacity: 1;
+        color: var(--primary-dark, #1e3a5f);
     }
     .sortable.desc::after {
         content: '↓';
         opacity: 1;
+        color: var(--primary-dark, #1e3a5f);
     }
-    /* NEW: Duration badge styling */
     .duration-badge {
-        font-size: 0.85em;
-        padding: 0.25em 0.6em;
+        font-size: 0.8em;
+        padding: 0.3em 0.7em;
         font-weight: 600;
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .page-header h2 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .page-header h2 i {
+        color: var(--primary-light, #4a90c2);
+    }
+    .status-badge {
+        font-weight: 600;
+        padding: 0.4em 1em;
+    }
+    .server-status-badge {
+        font-size: 0.9rem;
+        padding: 0.5em 1em;
+    }
+    
+    /* Uniform Action Buttons */
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        min-width: 80px;
+        height: 32px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .action-btn i {
+        margin-right: 4px;
+        font-size: 0.85rem;
+    }
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    }
+    .action-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    /* Button Colors */
+    .action-btn.btn-details {
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        color: white;
+    }
+    .action-btn.btn-details:hover {
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white;
+    }
+    
+    .action-btn.btn-state {
+        background: linear-gradient(135deg, #64748b, #475569);
+        color: white;
+    }
+    .action-btn.btn-state:hover {
+        background: linear-gradient(135deg, #475569, #334155);
+        color: white;
+    }
+    
+    .action-btn.btn-clone {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+    .action-btn.btn-clone:hover {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: white;
+    }
+    
+    .action-btn.btn-start {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+    .action-btn.btn-start:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        color: white;
+    }
+    
+    .action-btn.btn-stop {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+    .action-btn.btn-stop:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+    }
+    
+    .action-btn.btn-suspend {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+    .action-btn.btn-suspend:hover {
+        background: linear-gradient(135deg, #d97706, #b45309);
+        color: white;
+    }
+    
+    .action-btn.btn-resume {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+    .action-btn.btn-resume:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+    }
+    
+    .action-btn.btn-delete {
+        background: linear-gradient(135deg, #f43f5e, #e11d48);
+        color: white;
+    }
+    .action-btn.btn-delete:hover {
+        background: linear-gradient(135deg, #e11d48, #be123c);
+        color: white;
+    }
+    
+    /* Auto-clone badge in actions */
+    .autoclone-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: #1e293b;
+        border-radius: 6px;
+        height: 32px;
+    }
+    .autoclone-badge i {
+        margin-right: 3px;
     }
 </style>
 {% endblock %}
@@ -132,10 +297,10 @@
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-diagram-3"></i> DAGs (Total: {{ dags|length }})</h5>
-                    <span id="headerClock" style="color: #d1d1d1; font-size: 14px; font-family: monospace;"></span>
+                    <span id="headerClock" style="color: rgba(255,255,255,0.7); font-size: 14px; font-family: monospace;"></span>
                 </div>
             </div>
             <div class="card-body">
@@ -249,17 +414,17 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <a href="{{ url_for('dag_details', dag_name=dag.name) }}" class="btn btn-info">
+                                    <div class="action-buttons">
+                                        <a href="{{ url_for('dag_details', dag_name=dag.name) }}" class="action-btn btn-details" title="View Details">
                                             <i class="bi bi-info-circle"></i> Details
                                         </a>
-                                        <a href="{{ url_for('dag_state', dag_name=dag.name) }}" class="btn btn-secondary">
+                                        <a href="{{ url_for('dag_state', dag_name=dag.name) }}" class="action-btn btn-state" title="View State">
                                             <i class="bi bi-eye"></i> State
                                         </a>
                                         {% if is_admin %}
                                         <!-- Clone button only for non-autocloned DAGs -->
                                         {% if not dag.is_autocloned %}
-                                        <a href="{{ url_for('clone_dag', dag_name=dag.name) }}" class="btn btn-primary">
+                                        <a href="{{ url_for('clone_dag', dag_name=dag.name) }}" class="action-btn btn-clone" title="Clone DAG">
                                             <i class="bi bi-files"></i> Clone
                                         </a>
                                         {% endif %}
@@ -267,36 +432,36 @@
                                         {% if dag.is_running %}
                                             {% if dag.is_suspended %}
                                             <form method="POST" action="{{ url_for('resume_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-success" title="Resume DAG">
+                                                <button type="submit" class="action-btn btn-resume" title="Resume DAG">
                                                     <i class="bi bi-play-fill"></i> Resume
                                                 </button>
                                             </form>
                                             {% else %}
                                             <form method="POST" action="{{ url_for('suspend_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-warning" title="Suspend DAG">
+                                                <button type="submit" class="action-btn btn-suspend" title="Suspend DAG">
                                                     <i class="bi bi-pause-fill"></i> Suspend
                                                 </button>
                                             </form>
                                             {% endif %}
                                             <form method="POST" action="{{ url_for('stop_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-danger" title="Stop DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
+                                                <button type="submit" class="action-btn btn-stop" title="Stop DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
                                                     <i class="bi bi-stop-fill"></i> Stop
                                                 </button>
                                             </form>
                                         {% else %}
                                             <form method="POST" action="{{ url_for('start_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="submit" class="btn btn-success" title="Start DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
+                                                <button type="submit" class="action-btn btn-start" title="Start DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
                                                     <i class="bi bi-play-fill"></i> Start
                                                 </button>
                                             </form>
                                             <form id="delete-form-{{ dag.name }}" method="POST" action="{{ url_for('delete_dag', dag_name=dag.name) }}" style="display:inline">
-                                                <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ dag.name }}'){% if dag.is_autocloned %}, true{% endif %}" title="Delete DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
+                                                <button type="button" class="action-btn btn-delete" onclick="confirmDelete('{{ dag.name }}'){% if dag.is_autocloned %}, true{% endif %}" title="Delete DAG{% if dag.is_autocloned %} (Auto-created){% endif %}">
                                                     <i class="bi bi-trash"></i> Delete
                                                 </button>
                                             </form>
                                         {% endif %}
                                         {% if dag.is_autocloned %}
-                                        <span class="badge bg-warning text-dark" title="This is an auto-created clone"><i class="bi bi-robot"></i> Auto-created</span>
+                                        <span class="autoclone-badge" title="This is an auto-created clone"><i class="bi bi-robot"></i> Auto</span>
                                         {% endif %}
                                         {% endif %}
                                     </div>

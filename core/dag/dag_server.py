@@ -46,6 +46,9 @@ class DAGComputeServer:
             logger.error(f"Error starting Zookeeper thread: {str(e)}")
 
         logger.info(f"DAGComputeServer initialized with {len(self.dags)} DAG(s)")
+        
+        # Auto-start eligible DAGs (perpetual or within time window)
+        self._auto_start_eligible_dags()
 
     def _load_dags(self):
         """Load all DAG configurations from folder"""
@@ -83,6 +86,74 @@ class DAGComputeServer:
                 import traceback
                 logger.error(traceback.format_exc())
                 raise
+
+    def _auto_start_eligible_dags(self):
+        """
+        Auto-start DAGs that should be running on system startup.
+        
+        A DAG should be auto-started if:
+        1. It has no time window (perpetual/always active), OR
+        2. Current time is within its configured time window
+        
+        DAGs are started one by one with a 5 second pause between each.
+        """
+        import time
+        
+        logger.info("=" * 70)
+        logger.info("AUTO-START: Checking which DAGs should be started on system startup")
+        logger.info("=" * 70)
+        
+        dags_to_start = []
+        
+        with self._lock:
+            for dag_name, dag in self.dags.items():
+                # Check if DAG is perpetual (no time window)
+                is_perpetual = (dag.start_time is None or dag.end_time is None)
+                
+                if is_perpetual:
+                    dags_to_start.append((dag_name, 'PERPETUAL (no time window)'))
+                    logger.info(f"AUTO-START: DAG '{dag_name}' is PERPETUAL - will be started")
+                elif dag.is_in_time_window():
+                    dags_to_start.append((dag_name, f'WITHIN TIME WINDOW ({dag.start_time}-{dag.end_time})'))
+                    logger.info(f"AUTO-START: DAG '{dag_name}' is WITHIN TIME WINDOW ({dag.start_time}-{dag.end_time}) - will be started")
+                else:
+                    logger.info(f"AUTO-START: DAG '{dag_name}' is OUTSIDE time window ({dag.start_time}-{dag.end_time}) - will NOT be started")
+        
+        if not dags_to_start:
+            logger.info("AUTO-START: No DAGs eligible for auto-start at this time")
+            logger.info("=" * 70)
+            return
+        
+        logger.info(f"AUTO-START: {len(dags_to_start)} DAG(s) will be started with 5 second intervals")
+        logger.info("-" * 70)
+        
+        for i, (dag_name, reason) in enumerate(dags_to_start):
+            try:
+                logger.info("")
+                logger.info("*" * 70)
+                logger.info(f"*  AUTO-START: STARTING DAG '{dag_name}'")
+                logger.info(f"*  Reason: {reason}")
+                logger.info(f"*  Progress: {i + 1} of {len(dags_to_start)}")
+                logger.info("*" * 70)
+                
+                self.start(dag_name)
+                
+                logger.info(f"AUTO-START: Successfully started DAG '{dag_name}'")
+                
+                # Pause between starts (except after the last one)
+                if i < len(dags_to_start) - 1:
+                    logger.info(f"AUTO-START: Pausing 5 seconds before starting next DAG...")
+                    time.sleep(5)
+                    
+            except Exception as e:
+                logger.error(f"AUTO-START: Failed to start DAG '{dag_name}': {str(e)}")
+                import traceback
+                logger.error(traceback.format_exc())
+        
+        logger.info("")
+        logger.info("=" * 70)
+        logger.info(f"AUTO-START: Completed - {len(dags_to_start)} DAG(s) processed")
+        logger.info("=" * 70)
 
     def _setup_leader_election_async(self, zookeeper_hosts):
         """Setup Zookeeper leader election asynchronously"""
@@ -197,7 +268,7 @@ class DAGComputeServer:
                     logger.error(f"Error stopping DAG {dag_name}: {str(e)}")
 
     def suspend(self, dag_name):
-        """Suspend a specific DAG"""
+        """Suspend a specific DAG (UI-driven)"""
         self._check_primary()
 
         with self._lock:
@@ -210,11 +281,11 @@ class DAGComputeServer:
                 logger.warning(f"DAG {dag_name} is not running")
                 return
 
-            dag.suspend()
+            dag.suspend(ui_driven=True)
             logger.info(f"Suspended DAG: {dag_name}")
 
     def resume(self, dag_name):
-        """Resume a specific DAG"""
+        """Resume a specific DAG (UI-driven)"""
         self._check_primary()
 
         with self._lock:
@@ -231,7 +302,7 @@ class DAGComputeServer:
                 logger.warning(f"DAG {dag_name} is not suspended")
                 return
 
-            dag.resume()
+            dag.resume(ui_driven=True)
             logger.info(f"Resumed DAG: {dag_name}")
 
     def delete(self, dag_name):
@@ -681,7 +752,7 @@ class DAGComputeServer:
 
     def shutdown(self):
         """Shutdown the server"""
-        logger.info("Shutting down DishtaYantra Compute Server")
+        logger.info("Shutting down DishtaYantra DAG Server")
 
         # Stop autoclone manager
         self._autoclone_stop_event.set()
@@ -695,4 +766,4 @@ class DAGComputeServer:
             self.zk_client.stop()
             self.zk_client.close()
 
-        logger.info("DishtaYantra Compute Server shutdown complete")
+        logger.info("DishtaYantra DAG Server shutdown complete")

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}DAG Designer - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .shortcut-table td:first-child {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-bezier2" style="color: #4a90c2;"></i> DAG Designer</h2>
+<p class="lead">Visual drag-and-drop interface for creating and editing DAG configurations.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>The DAG Designer provides a visual way to create DAG configurations without writing JSON. Features include:</p>
+        <ul>
+            <li>Drag-and-drop node creation</li>
+            <li>Visual edge connections</li>
+            <li>Component management (subscribers, publishers, calculators, transformers)</li>
+            <li>Real-time validation</li>
+            <li>Import/Export JSON</li>
+            <li>Minimap for large DAGs</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Interface Layout -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-layout-split"></i> Interface Layout</h5>
+    </div>
+    <div class="card-body">
+        <h6>Left Panel - Palette</h6>
+        <p>Contains draggable elements:</p>
+        <ul>
+            <li><strong>Nodes</strong> - SubscriptionNode, CalculationNode, PublicationNode, MetronomeNode, SinkNode</li>
+            <li><strong>Components</strong> - Pre-defined subscribers, publishers, calculators, transformers</li>
+        </ul>
+        
+        <h6 class="mt-3">Center - Canvas</h6>
+        <p>The main workspace where you build your DAG:</p>
+        <ul>
+            <li>Drop nodes from the palette</li>
+            <li>Connect nodes by dragging from output to input ports</li>
+            <li>Click nodes/edges to select and configure</li>
+            <li>Pan by dragging empty space</li>
+            <li>Zoom with mouse wheel or buttons</li>
+        </ul>
+        
+        <h6 class="mt-3">Right Panel - Properties</h6>
+        <p>Shows configuration for selected element:</p>
+        <ul>
+            <li>Node properties and component assignments</li>
+            <li>Edge transformer configuration</li>
+            <li>Component configuration (source, destination, etc.)</li>
+        </ul>
+        
+        <h6 class="mt-3">Second Left Panel - Components List</h6>
+        <p>Lists all defined components in the current DAG:</p>
+        <ul>
+            <li>Subscribers</li>
+            <li>Publishers</li>
+            <li>Calculators</li>
+            <li>Transformers</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Creating a DAG -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Creating a DAG</h5>
+    </div>
+    <div class="card-body">
+        <ol>
+            <li><strong>Add Components</strong> - Define your subscribers, publishers, calculators, and transformers first</li>
+            <li><strong>Add Nodes</strong> - Drag node types from the palette onto the canvas</li>
+            <li><strong>Configure Nodes</strong> - Click each node and assign components in the properties panel</li>
+            <li><strong>Connect Nodes</strong> - Click an output port (right side) and drag to an input port (left side)</li>
+            <li><strong>Set DAG Properties</strong> - Enter name, time window, and AutoClone settings</li>
+            <li><strong>Validate</strong> - Click Validate to check for errors</li>
+            <li><strong>Save</strong> - Click Save DAG to create the configuration</li>
+        </ol>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Tip:</strong> Use the Validate button frequently to catch configuration errors early.
+        </div>
+    </div>
+</div>
+
+<!-- Node Operations -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box"></i> Node Operations</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>How To</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Add Node</td>
+                    <td>Drag from palette onto canvas</td>
+                </tr>
+                <tr>
+                    <td>Select Node</td>
+                    <td>Click on the node</td>
+                </tr>
+                <tr>
+                    <td>Move Node</td>
+                    <td>Drag the node header</td>
+                </tr>
+                <tr>
+                    <td>Delete Node</td>
+                    <td>Select + Delete key, or right-click → Delete</td>
+                </tr>
+                <tr>
+                    <td>Configure Node</td>
+                    <td>Select node → Edit in properties panel</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edge Operations -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-arrow-right"></i> Edge Operations</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>How To</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Create Edge</td>
+                    <td>Click output port → Drag to input port</td>
+                </tr>
+                <tr>
+                    <td>Select Edge</td>
+                    <td>Click on the edge line</td>
+                </tr>
+                <tr>
+                    <td>Delete Edge</td>
+                    <td>Select + Delete key, or right-click → Delete</td>
+                </tr>
+                <tr>
+                    <td>Add Transformer</td>
+                    <td>Select edge → Choose transformer in properties</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Keyboard Shortcuts -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-keyboard"></i> Keyboard Shortcuts</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered shortcut-table">
+            <thead>
+                <tr>
+                    <th>Shortcut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Delete</td><td>Delete selected node/edge</td></tr>
+                <tr><td>Escape</td><td>Deselect all / Cancel operation</td></tr>
+                <tr><td>Ctrl + S</td><td>Save DAG</td></tr>
+                <tr><td>Ctrl + Z</td><td>Undo (limited)</td></tr>
+                <tr><td>+</td><td>Zoom in</td></tr>
+                <tr><td>-</td><td>Zoom out</td></tr>
+                <tr><td>0</td><td>Reset zoom</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-tools"></i> Toolbar Actions</h5>
+    </div>
+    <div class="card-body">
+        <ul>
+            <li><strong>New</strong> - Clear canvas for a new DAG</li>
+            <li><strong>Import</strong> - Load DAG from JSON file</li>
+            <li><strong>Export</strong> - Download current DAG as JSON</li>
+            <li><strong>Load Existing</strong> - Open a saved DAG for editing</li>
+            <li><strong>Validate</strong> - Check for configuration errors</li>
+            <li><strong>Save DAG</strong> - Save to server and optionally start</li>
+            <li><strong>Zoom Controls</strong> - Zoom in/out, reset, fit to canvas</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Common Issues -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-question-circle"></i> Common Issues</h5>
+    </div>
+    <div class="card-body">
+        <h6>Cannot connect nodes</h6>
+        <p>Ensure you're dragging from an output port (right side) to an input port (left side).</p>
+        
+        <h6>Validation errors</h6>
+        <ul>
+            <li><strong>Missing subscriber</strong> - SubscriptionNode needs a subscriber assigned</li>
+            <li><strong>Missing publisher</strong> - PublicationNode needs at least one publisher</li>
+            <li><strong>Disconnected node</strong> - All nodes should be connected (except entry/exit points)</li>
+            <li><strong>Cycle detected</strong> - DAGs cannot have circular dependencies</li>
+        </ul>
+        
+        <h6>Node not saving</h6>
+        <p>Make sure you've entered a DAG name in the top input field.</p>
+    </div>
+</div>
+{% endblock %}

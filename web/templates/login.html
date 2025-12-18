@@ -1,30 +1,112 @@
 {% extends "base.html" %}
 
-{% block title %}Login - {{ app_name }} Compute Server{% endblock %}
+{% block title %}Login - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        min-height: 100vh;
+    }
+    .login-container {
+        min-height: calc(100vh - 70px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .login-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        max-width: 420px;
+        width: 100%;
+    }
+    .login-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        padding: 2.5rem 2rem;
+        text-align: center;
+    }
+    .login-header h4 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.5rem;
+    }
+    .login-header i {
+        color: #00d4aa;
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+    .login-header p {
+        color: rgba(255, 255, 255, 0.7);
+        margin: 0.5rem 0 0 0;
+        font-size: 0.9rem;
+    }
+    .login-body {
+        padding: 2.5rem 2rem;
+    }
+    .login-body .form-control {
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+    }
+    .login-body .form-label {
+        font-weight: 600;
+        color: #374151;
+    }
+    .login-body .btn-primary {
+        padding: 0.875rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+    .footer {
+        background: transparent !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    .footer a {
+        color: #00d4aa !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white text-center">
-                <h4><i class="bi bi-diagram-3"></i> {{ app_name }} Compute Server</h4>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('login') }}">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-diagram-3"></i>
+            <h4>{{ app_name }}</h4>
+            <p>Sign in to continue</p>
+        </div>
+        <div class="login-body">
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="mb-4">
+                    <label for="username" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required autofocus>
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
                     </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
-                        </button>
-                    </div>
-                </form>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-in-right"></i> Sign In
+                    </button>
+                </div>
+            </form>
+            <div class="text-center mt-4 pt-3" style="border-top: 1px solid #e2e8f0;">
+                <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="bi bi-book"></i> Help
+                </a>
+                <a href="{{ url_for('about') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-info-circle"></i> About
+                </a>
             </div>
         </div>
     </div>

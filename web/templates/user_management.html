@@ -1,78 +1,113 @@
 {% extends "base.html" %}
 
-{% block title %}User Management - {{ app_name }} Compute Server{% endblock %}
+{% block title %}User Management - {{ app_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
     .user-stats {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
         color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(30, 58, 95, 0.3);
     }
     .stat-card {
         text-align: center;
         padding: 15px;
     }
     .stat-value {
-        font-size: 2em;
-        font-weight: bold;
+        font-size: 2.4em;
+        font-weight: 400;
+        color: #00d4aa;
+        line-height: 1.2;
     }
     .stat-label {
-        font-size: 0.9em;
-        opacity: 0.9;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 400;
+        color: #00d4aa;
+        margin-top: 8px;
     }
     .admin-controls {
-        background: #fff3cd;
-        border-left: 4px solid #ffc107;
-        border-radius: 4px;
-        padding: 15px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: 18px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+    }
+    .admin-controls h5 {
+        color: #92400e;
+        margin-bottom: 12px;
     }
     .role-badge {
-        font-size: 0.85em;
+        font-size: 0.8em;
         margin-right: 5px;
+        padding: 0.4em 0.8em;
+        font-weight: 600;
     }
     .table-controls {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
-        margin-bottom: 15px;
+        gap: 8px;
     }
     .sortable {
         cursor: pointer;
         user-select: none;
         position: relative;
-        padding-right: 20px !important;
+        padding-right: 24px !important;
+        transition: background 0.2s ease;
     }
     .sortable:hover {
-        background-color: #e9ecef;
+        background-color: #e2e8f0 !important;
     }
     .sortable::after {
         content: '⇅';
         position: absolute;
-        right: 8px;
+        right: 10px;
         opacity: 0.3;
         font-size: 12px;
     }
     .sortable.asc::after {
         content: '↑';
         opacity: 1;
+        color: var(--primary-dark, #1e3a5f);
     }
     .sortable.desc::after {
         content: '↓';
         opacity: 1;
+        color: var(--primary-dark, #1e3a5f);
     }
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #6c757d;
+        color: #6b7280;
     }
     .empty-state i {
         font-size: 4em;
         margin-bottom: 20px;
         opacity: 0.3;
+        color: var(--primary-light, #4a90c2);
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .page-header h2 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .page-header h2 i {
+        color: var(--primary-light, #4a90c2);
     }
 </style>
 {% endblock %}
@@ -174,7 +209,7 @@
                 <div id="tableContainer">
                     <div class="table-responsive">
                         <table class="table table-hover" id="usersTable">
-                            <thead class="table-dark">
+                            <thead>
                                 <tr>
                                     <th class="sortable" data-sort="username" style="width: 20%;">Username</th>
                                     <th class="sortable" data-sort="full_name" style="width: 25%;">Full Name</th>

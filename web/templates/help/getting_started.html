@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}Getting Started - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .step-number {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 10px;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.9rem;
+        overflow-x: auto;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+    <a href="{{ url_for('about') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-info-circle"></i> About
+    </a>
+</div>
+
+<h2><i class="bi bi-rocket-takeoff" style="color: #4a90c2;"></i> Getting Started</h2>
+<p class="lead">This guide will help you get DishtaYantra up and running in minutes.</p>
+
+<!-- Prerequisites -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">1</span> Prerequisites</h5>
+    </div>
+    <div class="card-body">
+        <p>Before installing DishtaYantra, ensure you have:</p>
+        <ul>
+            <li><strong>Python 3.8+</strong> - DishtaYantra requires Python 3.8 or higher</li>
+            <li><strong>pip</strong> - Python package manager</li>
+            <li><strong>Virtual Environment</strong> (recommended) - To isolate dependencies</li>
+        </ul>
+        <p>Check your Python version:</p>
+        <div class="code-block">
+python --version
+# Should output: Python 3.8.x or higher
+        </div>
+    </div>
+</div>
+
+<!-- Installation -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">2</span> Installation</h5>
+    </div>
+    <div class="card-body">
+        <h6>Step 2.1: Extract the Archive</h6>
+        <div class="code-block">
+unzip dishtayantra.zip -d dishtayantra
+cd dishtayantra
+        </div>
+        
+        <h6 class="mt-3">Step 2.2: Create Virtual Environment (Recommended)</h6>
+        <div class="code-block">
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+        </div>
+        
+        <h6 class="mt-3">Step 2.3: Install Dependencies</h6>
+        <div class="code-block">
+pip install -r requirements.txt
+        </div>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Tip:</strong> If you only need basic functionality, you can skip optional dependencies like kafka-python, pika (RabbitMQ), etc.
+        </div>
+    </div>
+</div>
+
+<!-- Starting the Server -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">3</span> Starting the Server</h5>
+    </div>
+    <div class="card-body">
+        <p>Start the DishtaYantra server with:</p>
+        <div class="code-block">
+python run_server.py
+        </div>
+        <p class="mt-3">You should see output like:</p>
+        <div class="code-block">
+INFO - Initializing DishtaYantra Web Application...
+INFO - Configuration loaded successfully
+INFO - Initializing core components...
+INFO - DAGComputeServer initialized with 1 DAG(s)
+======================================================================
+AUTO-START: Checking which DAGs should be started on system startup
+======================================================================
+INFO - Starting DishtaYantra Web Application on 0.0.0.0:5000
+        </div>
+        <p class="mt-3">The server is now running at <strong>http://localhost:5000</strong></p>
+    </div>
+</div>
+
+<!-- Logging In -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">4</span> Logging In</h5>
+    </div>
+    <div class="card-body">
+        <p>Open your browser and navigate to <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></p>
+        <p>Use the default credentials:</p>
+        <table class="table table-bordered" style="max-width: 300px;">
+            <tr>
+                <th>Username</th>
+                <td><code>admin</code></td>
+            </tr>
+            <tr>
+                <th>Password</th>
+                <td><code>admin</code></td>
+            </tr>
+        </table>
+        <div class="warning-box">
+            <strong><i class="bi bi-exclamation-triangle"></i> Important:</strong> Change the default password immediately after first login for security.
+        </div>
+    </div>
+</div>
+
+<!-- Creating Your First DAG -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">5</span> Creating Your First DAG</h5>
+    </div>
+    <div class="card-body">
+        <p>There are two ways to create a DAG:</p>
+        
+        <h6>Option A: Using DAG Designer (Visual)</h6>
+        <ol>
+            <li>Click <strong>DAG Designer</strong> in the navigation bar</li>
+            <li>Drag nodes from the palette onto the canvas</li>
+            <li>Connect nodes by clicking output ports and dragging to input ports</li>
+            <li>Configure components in the left panel</li>
+            <li>Click <strong>Save DAG</strong> and provide a name</li>
+        </ol>
+        
+        <h6 class="mt-3">Option B: Using JSON Configuration</h6>
+        <ol>
+            <li>Click <strong>Dashboard</strong> → <strong>Create DAG</strong></li>
+            <li>Enter the DAG name and paste your JSON configuration</li>
+            <li>Click <strong>Create</strong></li>
+        </ol>
+        
+        <p class="mt-3">Here's a simple example DAG configuration:</p>
+        <div class="code-block">
+{
+  "name": "my_first_dag",
+  "subscribers": [
+    {
+      "name": "input_sub",
+      "config": { "source": "mem://queue/input" }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "output_pub",
+      "config": { "destination": "mem://queue/output" }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "passthru",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  "nodes": [
+    {
+      "name": "input_node",
+      "type": "SubscriptionNode",
+      "subscriber": "input_sub"
+    },
+    {
+      "name": "process_node",
+      "type": "CalculationNode",
+      "calculator": "passthru"
+    },
+    {
+      "name": "output_node",
+      "type": "PublicationNode",
+      "publishers": ["output_pub"]
+    }
+  ],
+  "edges": [
+    { "from_node": "input_node", "to_node": "process_node" },
+    { "from_node": "process_node", "to_node": "output_node" }
+  ]
+}
+        </div>
+    </div>
+</div>
+
+<!-- Starting and Stopping DAGs -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">6</span> Managing DAGs</h5>
+    </div>
+    <div class="card-body">
+        <p>From the Dashboard, you can:</p>
+        <ul>
+            <li><strong>Start</strong> a DAG - Click the green play button</li>
+            <li><strong>Stop</strong> a DAG - Click the red stop button</li>
+            <li><strong>View Details</strong> - Click on the DAG name</li>
+            <li><strong>Clone</strong> a DAG - Create a copy with different settings</li>
+            <li><strong>Delete</strong> a DAG - Remove it permanently (admin only)</li>
+        </ul>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Tip:</strong> DAGs with time windows or marked as perpetual will auto-start when the server restarts.
+        </div>
+    </div>
+</div>
+
+<!-- Next Steps -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="step-number">7</span> Next Steps</h5>
+    </div>
+    <div class="card-body">
+        <p>Now that you have DishtaYantra running, explore these resources:</p>
+        <ul>
+            <li><a href="{{ url_for('help_dag_configuration') }}">DAG Configuration</a> - Learn about all configuration options</li>
+            <li><a href="{{ url_for('help_pubsub') }}">Publishers & Subscribers</a> - Connect to Kafka, RabbitMQ, and more</li>
+            <li><a href="{{ url_for('help_sample_dags') }}">Sample DAGs</a> - Ready-to-use examples</li>
+            <li><a href="{{ url_for('help_time_windows') }}">Time Windows</a> - Schedule DAG execution</li>
+            <li><a href="{{ url_for('help_autoclone') }}">AutoClone</a> - Scale DAGs automatically</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

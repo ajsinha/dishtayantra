@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+
+{% block title %}Sample DAGs - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.8rem;
+        overflow-x: auto;
+        white-space: pre;
+        max-height: 500px;
+    }
+    .sample-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 5px;
+    }
+    .tag-basic { background: #10b981; color: white; }
+    .tag-intermediate { background: #f59e0b; color: white; }
+    .tag-advanced { background: #dc2626; color: white; }
+    .tag-kafka { background: #2563eb; color: white; }
+    .tag-file { background: #475569; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-file-earmark-code" style="color: #4a90c2;"></i> Sample DAGs</h2>
+<p class="lead">Ready-to-use DAG configurations for common scenarios. Copy, modify, and deploy.</p>
+
+<!-- Simple Passthrough -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-basic">Basic</span>
+            Simple Passthrough DAG
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Minimal DAG that reads from one queue and writes to another. Perfect for testing.</p>
+        <div class="code-block">{
+  "name": "simple_passthrough",
+  
+  "subscribers": [
+    {
+      "name": "input_sub",
+      "config": {
+        "source": "mem://queue/input",
+        "max_depth": 100
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "output_pub",
+      "config": {
+        "destination": "mem://queue/output"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "passthru",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "input_node",
+      "type": "SubscriptionNode",
+      "subscriber": "input_sub"
+    },
+    {
+      "name": "process_node",
+      "type": "CalculationNode",
+      "calculator": "passthru"
+    },
+    {
+      "name": "output_node",
+      "type": "PublicationNode",
+      "publishers": ["output_pub"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "input_node", "to_node": "process_node"},
+    {"from_node": "process_node", "to_node": "output_node"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- Data Enrichment Pipeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-intermediate">Intermediate</span>
+            Data Enrichment Pipeline
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Applies defaults, performs calculations, and filters output attributes.</p>
+        <div class="code-block">{
+  "name": "data_enrichment_pipeline",
+  "start_time": "0800",
+  "duration": "10h",
+  
+  "subscribers": [
+    {
+      "name": "raw_data_sub",
+      "config": {
+        "source": "mem://queue/raw_events",
+        "max_depth": 1000
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "enriched_pub",
+      "config": {
+        "destination": "mem://queue/enriched_events"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "apply_defaults",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "version": "1.0",
+          "source": "dishtayantra",
+          "priority": 1
+        }
+      }
+    },
+    {
+      "name": "calculate_total",
+      "type": "AdditionCalculator",
+      "config": {
+        "arguments": ["quantity", "unit_price"],
+        "output_attribute": "total"
+      }
+    }
+  ],
+  
+  "transformers": [
+    {
+      "name": "output_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["id", "name", "total", "timestamp", "version"]
+      }
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "ingest",
+      "type": "SubscriptionNode",
+      "subscriber": "raw_data_sub"
+    },
+    {
+      "name": "enrich",
+      "type": "CalculationNode",
+      "calculator": "apply_defaults"
+    },
+    {
+      "name": "calculate",
+      "type": "CalculationNode",
+      "calculator": "calculate_total"
+    },
+    {
+      "name": "publish",
+      "type": "PublicationNode",
+      "publishers": ["enriched_pub"],
+      "input_transformers": ["output_filter"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "ingest", "to_node": "enrich"},
+    {"from_node": "enrich", "to_node": "calculate"},
+    {"from_node": "calculate", "to_node": "publish"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- Kafka Pipeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-intermediate">Intermediate</span>
+            <span class="sample-tag tag-kafka">Kafka</span>
+            Kafka Stream Processor
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Consumes from Kafka, processes data, and produces to another topic.</p>
+        <div class="code-block">{
+  "name": "kafka_stream_processor",
+  "start_time": "0600",
+  "duration": "18h",
+  
+  "subscribers": [
+    {
+      "name": "kafka_consumer",
+      "config": {
+        "source": "kafka://topic/raw_events",
+        "bootstrap_servers": "localhost:9092",
+        "group_id": "dishtayantra_processor",
+        "auto_offset_reset": "latest",
+        "max_depth": 10000
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "kafka_producer",
+      "config": {
+        "destination": "kafka://topic/processed_events",
+        "bootstrap_servers": "localhost:9092",
+        "acks": "all"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "processor",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "consume",
+      "type": "SubscriptionNode",
+      "subscriber": "kafka_consumer"
+    },
+    {
+      "name": "process",
+      "type": "CalculationNode",
+      "calculator": "processor"
+    },
+    {
+      "name": "produce",
+      "type": "PublicationNode",
+      "publishers": ["kafka_producer"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "consume", "to_node": "process"},
+    {"from_node": "process", "to_node": "produce"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- File Backup Pipeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-intermediate">Intermediate</span>
+            <span class="sample-tag tag-file">File</span>
+            Multi-Output with File Backup
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Publishes to both a queue and a file for backup purposes.</p>
+        <div class="code-block">{
+  "name": "multi_output_backup",
+  
+  "subscribers": [
+    {
+      "name": "input_sub",
+      "config": {
+        "source": "mem://queue/transactions",
+        "max_depth": 5000
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "queue_pub",
+      "config": {
+        "destination": "mem://queue/processed_transactions"
+      }
+    },
+    {
+      "name": "file_backup",
+      "config": {
+        "destination": "file:///data/backup/transactions.jsonl",
+        "format": "jsonl",
+        "append": true
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "processor",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "input",
+      "type": "SubscriptionNode",
+      "subscriber": "input_sub"
+    },
+    {
+      "name": "process",
+      "type": "CalculationNode",
+      "calculator": "processor"
+    },
+    {
+      "name": "output",
+      "type": "PublicationNode",
+      "publishers": ["queue_pub", "file_backup"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "input", "to_node": "process"},
+    {"from_node": "process", "to_node": "output"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- AutoClone Scalable DAG -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-advanced">Advanced</span>
+            AutoClone Scalable Pipeline
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Automatically scales from 1 to 5 instances during peak hours.</p>
+        <div class="code-block">{
+  "name": "scalable_pipeline",
+  "start_time": "0600",
+  "duration": "16h",
+  
+  "autoclone": {
+    "ramp_up_time": "0900",
+    "duration": "6h",
+    "ramp_count": 5
+  },
+  
+  "subscribers": [
+    {
+      "name": "kafka_sub",
+      "config": {
+        "source": "kafka://topic/high_volume_events",
+        "bootstrap_servers": "localhost:9092",
+        "group_id": "scalable_consumers",
+        "max_depth": 50000
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "output_pub",
+      "config": {
+        "destination": "kafka://topic/processed_events",
+        "bootstrap_servers": "localhost:9092"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "heavy_processor",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "ingest",
+      "type": "SubscriptionNode",
+      "subscriber": "kafka_sub"
+    },
+    {
+      "name": "process",
+      "type": "CalculationNode",
+      "calculator": "heavy_processor"
+    },
+    {
+      "name": "output",
+      "type": "PublicationNode",
+      "publishers": ["output_pub"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "ingest", "to_node": "process"},
+    {"from_node": "process", "to_node": "output"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- Heartbeat/Metronome -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-basic">Basic</span>
+            Heartbeat Monitor
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Generates periodic heartbeat events for monitoring.</p>
+        <div class="code-block">{
+  "name": "heartbeat_monitor",
+  
+  "subscribers": [
+    {
+      "name": "heartbeat_sub",
+      "config": {
+        "source": "metronome",
+        "interval_seconds": 60,
+        "payload": {
+          "type": "heartbeat",
+          "source": "dishtayantra",
+          "status": "alive"
+        }
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "status_pub",
+      "config": {
+        "destination": "mem://topic/system_status"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "add_timestamp",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "heartbeat_gen",
+      "type": "SubscriptionNode",
+      "subscriber": "heartbeat_sub"
+    },
+    {
+      "name": "process",
+      "type": "CalculationNode",
+      "calculator": "add_timestamp"
+    },
+    {
+      "name": "publish_status",
+      "type": "PublicationNode",
+      "publishers": ["status_pub"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "heartbeat_gen", "to_node": "process"},
+    {"from_node": "process", "to_node": "publish_status"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- Perpetual Always-On -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <span class="sample-tag tag-basic">Basic</span>
+            Perpetual (Always-On) DAG
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Runs 24/7 without any time window restrictions.</p>
+        <div class="code-block">{
+  "name": "always_on_processor",
+  
+  "subscribers": [
+    {
+      "name": "input_sub",
+      "config": {
+        "source": "mem://queue/24x7_events",
+        "max_depth": 10000
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "output_pub",
+      "config": {
+        "destination": "mem://queue/processed_24x7"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "processor",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "input",
+      "type": "SubscriptionNode",
+      "subscriber": "input_sub"
+    },
+    {
+      "name": "process",
+      "type": "CalculationNode",
+      "calculator": "processor"
+    },
+    {
+      "name": "output",
+      "type": "PublicationNode",
+      "publishers": ["output_pub"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "input", "to_node": "process"},
+    {"from_node": "process", "to_node": "output"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- Using Samples -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightbulb"></i> How to Use These Samples</h5>
+    </div>
+    <div class="card-body">
+        <ol>
+            <li><strong>Copy</strong> - Select the JSON and copy to clipboard</li>
+            <li><strong>Modify</strong> - Update names, sources, destinations for your environment</li>
+            <li><strong>Create</strong> - Go to Dashboard → Create DAG, paste and create</li>
+            <li><strong>Or Import</strong> - Save as .json file and use DAG Designer → Import</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Publishers & Subscribers - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .protocol-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .protocol-mem { background: #10b981; color: white; }
+    .protocol-kafka { background: #2563eb; color: white; }
+    .protocol-rabbit { background: #f59e0b; color: white; }
+    .protocol-activemq { background: #dc2626; color: white; }
+    .protocol-tibco { background: #7c3aed; color: white; }
+    .protocol-websphere { background: #0891b2; color: white; }
+    .protocol-redis { background: #dc2626; color: white; }
+    .protocol-file { background: #475569; color: white; }
+    .protocol-rest { background: #059669; color: white; }
+    .protocol-sql { background: #1e3a5f; color: white; }
+    .protocol-grpc { background: #6366f1; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-arrow-left-right" style="color: #4a90c2;"></i> Publishers & Subscribers</h2>
+<p class="lead">Complete reference for all supported data sources (subscribers) and destinations (publishers).</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra uses URI-style configuration for sources and destinations:</p>
+        <ul>
+            <li><strong>Subscribers</strong> define where data comes FROM using the <code>source</code> property</li>
+            <li><strong>Publishers</strong> define where data goes TO using the <code>destination</code> property</li>
+        </ul>
+        <p>The URI format is: <code>protocol://type/name</code></p>
+    </div>
+</div>
+
+<!-- In-Memory -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-mem">mem://</span> In-Memory Queues & Topics</h5>
+    </div>
+    <div class="card-body">
+        <p>Fast in-memory messaging for internal communication. No external dependencies.</p>
+        
+        <h6>Queue (Point-to-Point)</h6>
+        <div class="code-block">{
+  "name": "memory_subscriber",
+  "config": {
+    "source": "mem://queue/my_queue",
+    "max_depth": 1000
+  }
+}
+
+{
+  "name": "memory_publisher",
+  "config": {
+    "destination": "mem://queue/my_queue"
+  }
+}</div>
+
+        <h6 class="mt-3">Topic (Publish-Subscribe)</h6>
+        <div class="code-block">{
+  "name": "topic_subscriber",
+  "config": {
+    "source": "mem://topic/my_topic"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Apache Kafka -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-kafka">kafka://</span> Apache Kafka</h5>
+    </div>
+    <div class="card-body">
+        <p>High-throughput distributed streaming platform.</p>
+        <div class="code-block">{
+  "name": "kafka_subscriber",
+  "config": {
+    "source": "kafka://topic/events",
+    "bootstrap_servers": "localhost:9092",
+    "group_id": "my_consumer_group",
+    "auto_offset_reset": "latest",
+    "max_depth": 10000
+  }
+}
+
+{
+  "name": "kafka_publisher",
+  "config": {
+    "destination": "kafka://topic/processed_events",
+    "bootstrap_servers": "localhost:9092",
+    "acks": "all"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- RabbitMQ -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-rabbit">rabbitmq://</span> RabbitMQ</h5>
+    </div>
+    <div class="card-body">
+        <p>Popular open-source message broker supporting AMQP.</p>
+        <div class="code-block">{
+  "name": "rabbitmq_subscriber",
+  "config": {
+    "source": "rabbitmq://queue/orders",
+    "host": "localhost",
+    "port": 5672,
+    "username": "guest",
+    "password": "guest",
+    "virtual_host": "/"
+  }
+}
+
+{
+  "name": "rabbitmq_publisher",
+  "config": {
+    "destination": "rabbitmq://topic/notifications",
+    "host": "localhost",
+    "exchange": "notifications_exchange"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- ActiveMQ -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-activemq">activemq://</span> Apache ActiveMQ</h5>
+    </div>
+    <div class="card-body">
+        <p>Enterprise-grade message broker with JMS support.</p>
+        <div class="code-block">{
+  "name": "activemq_subscriber",
+  "config": {
+    "source": "activemq://queue/TRADE.QUEUE",
+    "host": "localhost",
+    "port": 61616,
+    "username": "admin",
+    "password": "admin"
+  }
+}
+
+{
+  "name": "activemq_publisher",
+  "config": {
+    "destination": "activemq://topic/MARKET.DATA",
+    "host": "localhost",
+    "port": 61616
+  }
+}</div>
+    </div>
+</div>
+
+<!-- TIBCO EMS -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-tibco">tibcoems://</span> TIBCO EMS</h5>
+    </div>
+    <div class="card-body">
+        <p>Enterprise messaging platform from TIBCO.</p>
+        <div class="code-block">{
+  "name": "tibco_subscriber",
+  "config": {
+    "source": "tibcoems://queue/APP.QUEUE",
+    "server_url": "tcp://localhost:7222",
+    "username": "admin",
+    "password": "admin"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- IBM MQ / WebSphere MQ -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-websphere">websphere://</span> IBM MQ (WebSphere MQ)</h5>
+    </div>
+    <div class="card-body">
+        <p>Enterprise messaging from IBM.</p>
+        <div class="code-block">{
+  "name": "ibm_mq_subscriber",
+  "config": {
+    "source": "websphere://queue/MYQUEUE",
+    "queue_manager": "QM1",
+    "channel": "SYSTEM.DEF.SVRCONN",
+    "host": "localhost",
+    "port": 1414
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Redis -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-redis">redis://</span> Redis</h5>
+    </div>
+    <div class="card-body">
+        <p>In-memory data structure store with pub/sub.</p>
+        <div class="code-block">{
+  "name": "redis_publisher",
+  "config": {
+    "destination": "redis://mykey",
+    "host": "localhost",
+    "port": 6379,
+    "db": 0
+  }
+}
+
+// For pub/sub channels
+{
+  "name": "redis_channel_subscriber",
+  "config": {
+    "source": "redischannel://events",
+    "host": "localhost"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- File -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-file">file://</span> File System</h5>
+    </div>
+    <div class="card-body">
+        <p>Read from or write to local files (JSON, JSONL, CSV).</p>
+        <div class="code-block">{
+  "name": "file_subscriber",
+  "config": {
+    "source": "file:///data/input/events.jsonl",
+    "format": "jsonl",
+    "poll_interval": 5
+  }
+}
+
+{
+  "name": "file_publisher",
+  "config": {
+    "destination": "file:///data/output/results.jsonl",
+    "format": "jsonl",
+    "append": true
+  }
+}</div>
+    </div>
+</div>
+
+<!-- REST API -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-rest">rest://</span> REST API</h5>
+    </div>
+    <div class="card-body">
+        <p>HTTP/HTTPS endpoints for API integration.</p>
+        <div class="code-block">{
+  "name": "rest_subscriber",
+  "config": {
+    "source": "rest://api.example.com/events",
+    "method": "GET",
+    "poll_interval": 10,
+    "headers": {
+      "Authorization": "Bearer token123"
+    }
+  }
+}
+
+{
+  "name": "rest_publisher",
+  "config": {
+    "destination": "rest://api.example.com/webhook",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}</div>
+    </div>
+</div>
+
+<!-- SQL -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-sql">sql://</span> SQL Database</h5>
+    </div>
+    <div class="card-body">
+        <p>Read from or write to SQL databases.</p>
+        <div class="code-block">{
+  "name": "sql_subscriber",
+  "config": {
+    "source": "sql://events_table",
+    "connection_string": "postgresql://user:pass@localhost/mydb",
+    "query": "SELECT * FROM events WHERE processed = false",
+    "poll_interval": 30
+  }
+}
+
+{
+  "name": "sql_publisher",
+  "config": {
+    "destination": "sql://results_table",
+    "connection_string": "postgresql://user:pass@localhost/mydb"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- gRPC -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="protocol-badge protocol-grpc">grpc://</span> gRPC</h5>
+    </div>
+    <div class="card-body">
+        <p>High-performance RPC framework.</p>
+        <div class="code-block">{
+  "name": "grpc_subscriber",
+  "config": {
+    "source": "grpc://localhost:50051/events",
+    "proto_file": "config/proto/pubsub.proto"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Metronome -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock"></i> Metronome (Timer)</h5>
+    </div>
+    <div class="card-body">
+        <p>Generates periodic events for scheduled tasks.</p>
+        <div class="code-block">{
+  "name": "heartbeat_sub",
+  "config": {
+    "source": "metronome",
+    "interval_seconds": 60,
+    "payload": {"type": "heartbeat", "source": "dag_1"}
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Composite / Fanin -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-2"></i> Composite / Fan-in</h5>
+    </div>
+    <div class="card-body">
+        <p>Combine multiple subscribers into one.</p>
+        <div class="code-block">{
+  "name": "combined_subscriber",
+  "config": {
+    "source": "composite://sub1, sub2, sub3"
+  }
+}</div>
+    </div>
+</div>
+{% endblock %}

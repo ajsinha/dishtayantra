@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}AutoClone Feature - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .phase-card {
+        border-left: 4px solid;
+        padding-left: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .phase-rampup { border-color: #10b981; }
+    .phase-active { border-color: #2563eb; }
+    .phase-rampdown { border-color: #f59e0b; }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-layers" style="color: #4a90c2;"></i> AutoClone Feature</h2>
+<p class="lead">Automatically scale DAG instances based on time schedules to handle peak loads.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>AutoClone creates multiple copies of a DAG during specified time periods. Use cases:</p>
+        <ul>
+            <li><strong>Peak Hours Scaling</strong> - More instances during high-traffic periods</li>
+            <li><strong>Batch Processing</strong> - Parallel processing for faster completion</li>
+            <li><strong>Load Balancing</strong> - Distribute work across multiple processors</li>
+        </ul>
+        <p>Each clone runs independently, processing data from the same sources.</p>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p>Add an <code>autoclone</code> section to your DAG configuration:</p>
+        <div class="code-block">{
+  "name": "scalable_dag",
+  "start_time": "0800",
+  "duration": "10h",
+  
+  "autoclone": {
+    "ramp_up_time": "0900",
+    "duration": "4h",
+    "ramp_count": 5
+  },
+  
+  "subscribers": [...],
+  "publishers": [...],
+  "nodes": [...],
+  "edges": [...]
+}</div>
+
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>ramp_up_time</code></td>
+                    <td>HHMM</td>
+                    <td>When to start creating clones</td>
+                </tr>
+                <tr>
+                    <td><code>duration</code></td>
+                    <td>NhNm</td>
+                    <td>How long clones should be active</td>
+                </tr>
+                <tr>
+                    <td><code>ramp_count</code></td>
+                    <td>integer</td>
+                    <td>Number of clones to create</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Lifecycle -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> AutoClone Lifecycle</h5>
+    </div>
+    <div class="card-body">
+        <div class="phase-card phase-rampup">
+            <h6><i class="bi bi-arrow-up-circle text-success"></i> Ramp Up Phase</h6>
+            <p>At <code>ramp_up_time</code>, clones are created one by one with a 1-minute interval until <code>ramp_count</code> is reached.</p>
+            <p><strong>Example:</strong> ramp_up_time=0900, ramp_count=5 → Creates clones at 09:00, 09:01, 09:02, 09:03, 09:04</p>
+        </div>
+        
+        <div class="phase-card phase-active">
+            <h6><i class="bi bi-play-circle text-primary"></i> Active Phase</h6>
+            <p>All clones run in parallel, processing data independently. Each clone has no time window (perpetual while active).</p>
+        </div>
+        
+        <div class="phase-card phase-rampdown">
+            <h6><i class="bi bi-arrow-down-circle text-warning"></i> Ramp Down Phase</h6>
+            <p>After <code>duration</code> expires, clones are stopped and deleted one by one with a 1-minute interval.</p>
+            <p><strong>Example:</strong> duration=4h, started at 09:04 → Ramp down starts at 13:04</p>
+        </div>
+    </div>
+</div>
+
+<!-- Example Timeline -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-calendar3"></i> Example Timeline</h5>
+    </div>
+    <div class="card-body">
+        <p>Configuration:</p>
+        <div class="code-block">{
+  "autoclone": {
+    "ramp_up_time": "0900",
+    "duration": "4h",
+    "ramp_count": 3
+  }
+}</div>
+        
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>Active Clones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>08:00</td><td>Parent DAG starts (normal operation)</td><td>0</td></tr>
+                <tr class="table-success"><td>09:00</td><td>Clone 1 created and started</td><td>1</td></tr>
+                <tr class="table-success"><td>09:01</td><td>Clone 2 created and started</td><td>2</td></tr>
+                <tr class="table-success"><td>09:02</td><td>Clone 3 created and started</td><td>3</td></tr>
+                <tr><td>09:02 - 13:02</td><td>All clones running in parallel</td><td>3</td></tr>
+                <tr class="table-warning"><td>13:02</td><td>Clone 1 stopped and deleted</td><td>2</td></tr>
+                <tr class="table-warning"><td>13:03</td><td>Clone 2 stopped and deleted</td><td>1</td></tr>
+                <tr class="table-warning"><td>13:04</td><td>Clone 3 stopped and deleted</td><td>0</td></tr>
+                <tr><td>18:00</td><td>Parent DAG time window ends</td><td>0</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Important Notes -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Important Notes</h5>
+    </div>
+    <div class="card-body">
+        <div class="warning-box">
+            <strong>Clones Cannot Clone:</strong> Cloned DAGs have their AutoClone configuration removed automatically. This prevents recursive cloning.
+        </div>
+        
+        <ul class="mt-3">
+            <li><strong>Naming:</strong> Clones are named <code>{parent_name}_{timestamp}</code></li>
+            <li><strong>Independence:</strong> Each clone runs independently with its own state</li>
+            <li><strong>Resources:</strong> Consider memory and CPU when setting <code>ramp_count</code></li>
+            <li><strong>Subscribers:</strong> Ensure your data source supports multiple consumers (e.g., Kafka consumer groups)</li>
+            <li><strong>Dashboard:</strong> Clones appear with a "Clone of: {parent}" indicator</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Dashboard View -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-display"></i> Dashboard View</h5>
+    </div>
+    <div class="card-body">
+        <p>In the Dashboard, you'll see:</p>
+        <ul>
+            <li><strong>AutoClone column</strong> - Shows clone count and status (e.g., "3 active", "ramping_up")</li>
+            <li><strong>Clone indicator</strong> - Cloned DAGs show their parent</li>
+            <li><strong>Blue highlighting</strong> - Clone rows are highlighted for easy identification</li>
+        </ul>
+        <p>AutoClone statuses:</p>
+        <ul>
+            <li><code>idle</code> - Waiting for ramp_up_time</li>
+            <li><code>ramping_up (2/5)</code> - Creating clones</li>
+            <li><code>active</code> - All clones running</li>
+            <li><code>ramping_down (3 remaining)</code> - Deleting clones</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}Time Windows - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .timeline {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    .timeline-bar {
+        flex-grow: 1;
+        height: 30px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        position: relative;
+    }
+    .timeline-active {
+        position: absolute;
+        height: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 4px;
+    }
+    .timeline-label {
+        position: absolute;
+        bottom: -25px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .operation-card {
+        border-left: 4px solid;
+        margin-bottom: 1rem;
+    }
+    .operation-card.start { border-color: #10b981; }
+    .operation-card.stop { border-color: #ef4444; }
+    .operation-card.suspend { border-color: #f59e0b; }
+    .operation-card.resume { border-color: #3b82f6; }
+    .scenario-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .scenario-box h6 {
+        color: #1e3a5f;
+        margin-bottom: 0.75rem;
+    }
+    .badge-action {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-clock" style="color: #4a90c2;"></i> Time Windows & DAG Operations</h2>
+<p class="lead">Schedule DAG execution and control DAG lifecycle with UI operations.</p>
+
+<!-- Table of Contents -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Contents</h5>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#configuration">Time Window Configuration</a></li>
+            <li><a href="#operations">DAG Operations (Start/Stop/Suspend/Resume)</a></li>
+            <li><a href="#ui-override">UI Override Behavior</a></li>
+            <li><a href="#scenarios">Common Scenarios & Examples</a></li>
+            <li><a href="#monitoring">Monitoring</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4" id="overview">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>Time windows allow you to control when a DAG is active. Use cases include:</p>
+        <ul>
+            <li>Running during market hours only (e.g., 09:30 - 16:00)</li>
+            <li>Batch processing during off-peak hours (e.g., 02:00 - 06:00)</li>
+            <li>Scheduled daily reports (e.g., 08:00 for 30 minutes)</li>
+        </ul>
+        
+        <div class="timeline">
+            <span style="margin-right: 10px; font-weight: 600;">00:00</span>
+            <div class="timeline-bar">
+                <div class="timeline-active" style="left: 37.5%; width: 33.3%;">
+                    <span class="timeline-label" style="left: 0;">09:00</span>
+                    <span class="timeline-label" style="right: 0;">17:00</span>
+                </div>
+            </div>
+            <span style="margin-left: 10px; font-weight: 600;">24:00</span>
+        </div>
+        <p class="text-center text-muted"><small>Example: DAG active from 09:00 to 17:00 (8 hours)</small></p>
+        
+        <div class="info-box">
+            <strong><i class="bi bi-shield-check"></i> Key Principle:</strong> UI-driven actions (Start, Stop, Suspend, Resume) always take precedence over automatic time window scheduling. This gives operators full control over DAG behavior.
+        </div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4" id="configuration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Time Window Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p>Time windows are configured using two properties:</p>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Format</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>start_time</code></td>
+                    <td>HHMM or HH:MM</td>
+                    <td>When the DAG should start (24-hour format)</td>
+                </tr>
+                <tr>
+                    <td><code>duration</code></td>
+                    <td>NhNm</td>
+                    <td>How long the DAG should run</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h6 class="mt-3">Duration Format</h6>
+        <ul>
+            <li><code>8h</code> - 8 hours</li>
+            <li><code>30m</code> - 30 minutes</li>
+            <li><code>1h30m</code> - 1 hour 30 minutes</li>
+            <li><code>2h15m</code> - 2 hours 15 minutes</li>
+        </ul>
+        
+        <h6 class="mt-3">Configuration Examples</h6>
+        <div class="code-block">{
+  "name": "market_data_dag",
+  "start_time": "0900",
+  "duration": "8h"
+}</div>
+        <p class="mt-2"><small class="text-muted">This DAG runs from 09:00 to 17:00 daily.</small></p>
+
+        <div class="code-block mt-3">{
+  "name": "always_on_dag"
+  // No start_time = runs perpetually (24/7)
+}</div>
+        <p class="mt-2"><small class="text-muted">Omit start_time for perpetual DAGs that run continuously.</small></p>
+    </div>
+</div>
+
+<!-- DAG Operations -->
+<div class="card mb-4" id="operations">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-toggles"></i> DAG Operations</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra provides four operations to control DAG lifecycle:</p>
+        
+        <!-- Start -->
+        <div class="card operation-card start">
+            <div class="card-body">
+                <h6><i class="bi bi-play-fill text-success"></i> Start</h6>
+                <p class="mb-2">Starts a stopped DAG and begins data processing.</p>
+                <table class="table table-sm table-bordered mb-0">
+                    <tr>
+                        <td width="30%"><strong>What happens:</strong></td>
+                        <td>All subscribers begin listening, compute thread starts, publishers become active</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Within time window:</strong></td>
+                        <td>DAG runs normally with automatic time window scheduling</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Outside time window:</strong></td>
+                        <td>DAG runs with <strong>UI Override</strong> enabled - won't auto-suspend until manually stopped</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Stop -->
+        <div class="card operation-card stop">
+            <div class="card-body">
+                <h6><i class="bi bi-stop-fill text-danger"></i> Stop</h6>
+                <p class="mb-2">Completely stops a DAG and terminates all processing.</p>
+                <table class="table table-sm table-bordered mb-0">
+                    <tr>
+                        <td width="30%"><strong>What happens:</strong></td>
+                        <td>All subscribers stop, compute thread terminates, all UI override flags are cleared</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Effect:</strong></td>
+                        <td>DAG must be manually started again; won't auto-start until next server restart (if in window)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Use when:</strong></td>
+                        <td>You want to completely halt a DAG regardless of time window</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Suspend -->
+        <div class="card operation-card suspend">
+            <div class="card-body">
+                <h6><i class="bi bi-pause-fill text-warning"></i> Suspend</h6>
+                <p class="mb-2">Pauses a running DAG temporarily without stopping it.</p>
+                <table class="table table-sm table-bordered mb-0">
+                    <tr>
+                        <td width="30%"><strong>What happens:</strong></td>
+                        <td>Subscribers pause receiving, compute thread waits, DAG remains loaded</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI Suspended flag:</strong></td>
+                        <td>Set to <code>true</code> - prevents automatic resume even within time window</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Use when:</strong></td>
+                        <td>Temporary pause needed (e.g., upstream system maintenance) but want to resume later</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Resume -->
+        <div class="card operation-card resume">
+            <div class="card-body">
+                <h6><i class="bi bi-play text-primary"></i> Resume</h6>
+                <p class="mb-2">Resumes a suspended DAG.</p>
+                <table class="table table-sm table-bordered mb-0">
+                    <tr>
+                        <td width="30%"><strong>What happens:</strong></td>
+                        <td>Subscribers resume receiving, compute thread continues processing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>UI Suspended flag:</strong></td>
+                        <td>Cleared - normal time window scheduling resumes</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Use when:</strong></td>
+                        <td>Ready to continue processing after a temporary pause</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UI Override Behavior -->
+<div class="card mb-4" id="ui-override">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-exclamation"></i> UI Override Behavior</h5>
+    </div>
+    <div class="card-body">
+        <p>When you perform actions via the UI, they <strong>override</strong> automatic time window scheduling. This ensures operators always have control.</p>
+        
+        <h6 class="mt-3"><i class="bi bi-flag-fill text-primary"></i> Two Override Flags</h6>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Flag</th>
+                    <th>Set When</th>
+                    <th>Effect</th>
+                    <th>Cleared When</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>ui_override</code></td>
+                    <td>DAG started outside time window via UI</td>
+                    <td>Prevents auto-suspend when outside time window</td>
+                    <td>DAG enters time window, or DAG is stopped</td>
+                </tr>
+                <tr>
+                    <td><code>ui_suspended</code></td>
+                    <td>DAG suspended via UI</td>
+                    <td>Prevents auto-resume even within time window</td>
+                    <td>DAG resumed via UI, or DAG is stopped</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h6 class="mt-4"><i class="bi bi-diagram-3"></i> Decision Flow</h6>
+        <div class="info-box">
+            <p class="mb-2"><strong>Time Window Checker (runs every 60 seconds):</strong></p>
+            <ol class="mb-0">
+                <li><strong>If within time window:</strong>
+                    <ul>
+                        <li>Clear <code>ui_override</code> flag (normal scheduling resumes)</li>
+                        <li>If <code>ui_suspended=true</code> → Do NOT auto-resume</li>
+                        <li>If <code>ui_suspended=false</code> and DAG is suspended → Auto-resume</li>
+                    </ul>
+                </li>
+                <li><strong>If outside time window:</strong>
+                    <ul>
+                        <li>If <code>ui_override=true</code> → Do NOT auto-suspend (keep running)</li>
+                        <li>If <code>ui_override=false</code> and DAG is running → Auto-suspend</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<!-- Scenarios -->
+<div class="card mb-4" id="scenarios">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-collection"></i> Common Scenarios & Examples</h5>
+    </div>
+    <div class="card-body">
+        <p>Here are real-world scenarios showing how UI operations interact with time windows:</p>
+        
+        <!-- Scenario 1 -->
+        <div class="scenario-box">
+            <h6><span class="badge bg-success badge-action">Scenario 1</span> Normal Operation Within Time Window</h6>
+            <p><strong>Setup:</strong> DAG configured with <code>start_time: "0900"</code>, <code>duration: "8h"</code> (09:00-17:00)</p>
+            <table class="table table-sm">
+                <tr>
+                    <td width="20%"><strong>08:30</strong></td>
+                    <td>DAG is suspended (outside window)</td>
+                </tr>
+                <tr>
+                    <td><strong>09:00</strong></td>
+                    <td>Time window checker auto-resumes the DAG ✓</td>
+                </tr>
+                <tr>
+                    <td><strong>09:00-17:00</strong></td>
+                    <td>DAG processes data normally</td>
+                </tr>
+                <tr>
+                    <td><strong>17:00</strong></td>
+                    <td>Time window checker auto-suspends the DAG ✓</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Scenario 2 -->
+        <div class="scenario-box">
+            <h6><span class="badge bg-primary badge-action">Scenario 2</span> Force Start Outside Time Window (Emergency Processing)</h6>
+            <p><strong>Setup:</strong> DAG configured 09:00-17:00, but you need to process data at 20:00</p>
+            <table class="table table-sm">
+                <tr>
+                    <td width="20%"><strong>20:00</strong></td>
+                    <td>You click <strong>Start</strong> in UI</td>
+                </tr>
+                <tr>
+                    <td><strong>Result</strong></td>
+                    <td><code>ui_override=true</code> is set, DAG starts and processes data</td>
+                </tr>
+                <tr>
+                    <td><strong>20:01, 20:02...</strong></td>
+                    <td>Time window checker sees <code>ui_override=true</code>, does NOT auto-suspend</td>
+                </tr>
+                <tr>
+                    <td><strong>21:00</strong></td>
+                    <td>You click <strong>Stop</strong> when done - flags cleared</td>
+                </tr>
+            </table>
+            <div class="tip-box mt-2">
+                <strong>Key:</strong> The DAG keeps running outside window until you manually stop it.
+            </div>
+        </div>
+        
+        <!-- Scenario 3 -->
+        <div class="scenario-box">
+            <h6><span class="badge bg-warning text-dark badge-action">Scenario 3</span> Suspend During Time Window (Maintenance)</h6>
+            <p><strong>Setup:</strong> DAG running within its window, but upstream system needs maintenance</p>
+            <table class="table table-sm">
+                <tr>
+                    <td width="20%"><strong>10:00</strong></td>
+                    <td>DAG is running (within 09:00-17:00 window)</td>
+                </tr>
+                <tr>
+                    <td><strong>10:15</strong></td>
+                    <td>You click <strong>Suspend</strong> for maintenance</td>
+                </tr>
+                <tr>
+                    <td><strong>Result</strong></td>
+                    <td><code>ui_suspended=true</code> is set, DAG pauses</td>
+                </tr>
+                <tr>
+                    <td><strong>10:16, 10:17...</strong></td>
+                    <td>Time window checker sees <code>ui_suspended=true</code>, does NOT auto-resume</td>
+                </tr>
+                <tr>
+                    <td><strong>11:00</strong></td>
+                    <td>Maintenance complete, you click <strong>Resume</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Result</strong></td>
+                    <td><code>ui_suspended=false</code>, DAG resumes, normal scheduling</td>
+                </tr>
+            </table>
+            <div class="warning-box mt-2">
+                <strong>Important:</strong> Without the UI-suspended flag, the time window checker would immediately resume the DAG after you suspend it (because it's still within the window).
+            </div>
+        </div>
+        
+        <!-- Scenario 4 -->
+        <div class="scenario-box">
+            <h6><span class="badge bg-info badge-action">Scenario 4</span> Force Start Then Enter Time Window</h6>
+            <p><strong>Setup:</strong> DAG configured 09:00-17:00, you start it early at 08:00</p>
+            <table class="table table-sm">
+                <tr>
+                    <td width="20%"><strong>08:00</strong></td>
+                    <td>You click <strong>Start</strong> (outside window)</td>
+                </tr>
+                <tr>
+                    <td><strong>Result</strong></td>
+                    <td><code>ui_override=true</code>, DAG runs</td>
+                </tr>
+                <tr>
+                    <td><strong>09:00</strong></td>
+                    <td>Time window starts, checker clears <code>ui_override</code></td>
+                </tr>
+                <tr>
+                    <td><strong>09:00-17:00</strong></td>
+                    <td>Normal operation within window</td>
+                </tr>
+                <tr>
+                    <td><strong>17:00</strong></td>
+                    <td>Window ends, DAG auto-suspends (normal behavior)</td>
+                </tr>
+            </table>
+            <div class="tip-box mt-2">
+                <strong>Key:</strong> Once you enter the time window, normal scheduling takes over.
+            </div>
+        </div>
+        
+        <!-- Scenario 5 -->
+        <div class="scenario-box">
+            <h6><span class="badge bg-danger badge-action">Scenario 5</span> Stop Overrides Everything</h6>
+            <p><strong>Setup:</strong> Any DAG in any state</p>
+            <table class="table table-sm">
+                <tr>
+                    <td width="20%"><strong>Any time</strong></td>
+                    <td>You click <strong>Stop</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Result</strong></td>
+                    <td>DAG stops completely, all flags cleared (<code>ui_override=false</code>, <code>ui_suspended=false</code>)</td>
+                </tr>
+                <tr>
+                    <td><strong>After stop</strong></td>
+                    <td>DAG stays stopped until manually started or server restarts</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Scenario 6 -->
+        <div class="scenario-box">
+            <h6><span class="badge bg-secondary badge-action">Scenario 6</span> Perpetual DAG (No Time Window)</h6>
+            <p><strong>Setup:</strong> DAG with no <code>start_time</code> configured</p>
+            <table class="table table-sm">
+                <tr>
+                    <td width="20%"><strong>Behavior</strong></td>
+                    <td>No time window checking occurs - DAG runs 24/7 when started</td>
+                </tr>
+                <tr>
+                    <td><strong>Start</strong></td>
+                    <td>Runs continuously until stopped</td>
+                </tr>
+                <tr>
+                    <td><strong>Suspend</strong></td>
+                    <td>Pauses until resumed</td>
+                </tr>
+                <tr>
+                    <td><strong>Stop</strong></td>
+                    <td>Stops until manually started</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Reference -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Reference Table</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Situation</th>
+                    <th>UI Action</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Outside time window</td>
+                    <td><span class="badge bg-success">Start</span></td>
+                    <td>DAG runs, won't auto-suspend</td>
+                </tr>
+                <tr>
+                    <td>Within time window</td>
+                    <td><span class="badge bg-success">Start</span></td>
+                    <td>DAG runs with normal scheduling</td>
+                </tr>
+                <tr>
+                    <td>Within time window, running</td>
+                    <td><span class="badge bg-warning text-dark">Suspend</span></td>
+                    <td>DAG pauses, won't auto-resume</td>
+                </tr>
+                <tr>
+                    <td>UI-suspended within window</td>
+                    <td><span class="badge bg-primary">Resume</span></td>
+                    <td>DAG resumes, normal scheduling</td>
+                </tr>
+                <tr>
+                    <td>Any state</td>
+                    <td><span class="badge bg-danger">Stop</span></td>
+                    <td>DAG stops, all flags cleared</td>
+                </tr>
+                <tr>
+                    <td>Perpetual DAG (no window)</td>
+                    <td>Any</td>
+                    <td>No auto-suspend/resume, manual control only</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Monitoring -->
+<div class="card mb-4" id="monitoring">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-eye"></i> Monitoring</h5>
+    </div>
+    <div class="card-body">
+        <p>In the Dashboard, you can see:</p>
+        <ul>
+            <li><strong>Time Window</strong> - Shows start time and duration</li>
+            <li><strong>Window Status</strong> - "In Window" (green) or "Outside" (red)</li>
+            <li><strong>∞ Always Active</strong> - For perpetual DAGs</li>
+            <li><strong>Running/Suspended/Stopped</strong> - Current DAG state</li>
+        </ul>
+        <p>The time window checker runs <strong>every 60 seconds</strong> to evaluate and potentially suspend/resume DAGs automatically (respecting UI override flags).</p>
+        
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Auto-Start on Server Boot:</strong> When the server starts, DAGs that are within their time window or have no time window (perpetual) will automatically start.
+        </div>
+    </div>
+</div>
+
+<!-- Legacy End Time -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Legacy: end_time (Deprecated)</h5>
+    </div>
+    <div class="card-body">
+        <p>The <code>end_time</code> property is deprecated. Use <code>duration</code> instead.</p>
+        <div class="code-block">// OLD (deprecated)
+{
+  "start_time": "0900",
+  "end_time": "1700"
+}
+
+// NEW (recommended)
+{
+  "start_time": "0900",
+  "duration": "8h"
+}</div>
+        <p class="mt-3">Benefits of duration:</p>
+        <ul>
+            <li>More intuitive (how long vs. when to stop)</li>
+            <li>Easier to modify</li>
+            <li>No timezone confusion</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

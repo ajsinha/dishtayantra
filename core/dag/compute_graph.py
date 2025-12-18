@@ -83,6 +83,15 @@ class ComputeGraph:
         self._suspend_event.set()  # Start in running state
 
         self._time_check_thread = None
+        
+        # UI override flag: when True, time window checker won't auto-suspend
+        # This is set when DAG is manually started via UI while outside time window
+        # It takes precedence over time window scheduling until manually stopped
+        self._ui_override = False
+        
+        # UI suspended flag: when True, time window checker won't auto-resume
+        # This is set when DAG is manually suspended via UI
+        self._ui_suspended = False
 
         self._build_components()
         self.build_dag()
@@ -322,11 +331,32 @@ class ComputeGraph:
 
         return sorted_nodes
 
-    def start(self):
-        """Start the compute graph"""
+    def start(self, force=False):
+        """Start the compute graph
+        
+        Args:
+            force: If True, start even if outside time window and don't auto-suspend
+                   (This is always True for UI-driven starts)
+        """
+        # Check if we're starting outside the time window
+        if self.start_time and self.end_time:
+            if not self.is_in_time_window():
+                # Starting outside time window - set UI override to prevent auto-suspend
+                self._ui_override = True
+                logger.info(f"DAG {self.name}: Started outside time window - UI override enabled, auto-suspend disabled")
+            else:
+                # Starting within time window - clear UI override (normal behavior)
+                self._ui_override = False
+                logger.info(f"DAG {self.name}: Started within time window - normal scheduling")
+        
+        # CRITICAL: Ensure DAG is in running state (not suspended)
+        self._suspend_event.set()
+        
         # Start all subscribers
         for subscriber in self.subscribers.values():
             subscriber.start()
+            # CRITICAL: Ensure subscriber is resumed (not suspended from previous run)
+            subscriber.resume()
 
         # Start metronome nodes
         for node in self.nodes.values():
@@ -367,18 +397,32 @@ class ComputeGraph:
             in_window = start_time_int <= current_time_int <= end_time_int
 
             logger.debug(
-                f"DAG {self.name} time check: current={current_time_int}, start={start_time_int}, end={end_time_int}, in_window={in_window}")
+                f"DAG {self.name} time check: current={current_time_int}, start={start_time_int}, end={end_time_int}, in_window={in_window}, ui_override={self._ui_override}, ui_suspended={self._ui_suspended}")
 
             if in_window:
                 # Within time window - should be running
-                if not self._suspend_event.is_set():
+                # Clear UI override flag when entering time window (normal behavior resumes)
+                if self._ui_override:
+                    self._ui_override = False
+                    logger.info(f"DAG {self.name}: Entered time window - UI override cleared, normal scheduling resumes")
+                
+                # Only auto-resume if NOT UI-suspended
+                if self._ui_suspended:
+                    logger.debug(f"DAG {self.name}: In time window but UI-suspended, not auto-resuming")
+                elif not self._suspend_event.is_set():
                     logger.info(f"DAG {self.name}: Entering time window, resuming")
                     self.resume()
             else:
-                # Outside time window - should be suspended
-                if self._suspend_event.is_set():
-                    logger.info(f"DAG {self.name}: Leaving time window, suspending")
-                    self.suspend()
+                # Outside time window
+                # Only auto-suspend if NOT UI-overridden
+                if self._ui_override:
+                    # UI override active: don't auto-suspend, just log at debug level
+                    logger.debug(f"DAG {self.name}: Outside time window but UI override active, not suspending")
+                else:
+                    # Normal mode: auto-suspend when outside window
+                    if self._suspend_event.is_set():
+                        logger.info(f"DAG {self.name}: Leaving time window, suspending")
+                        self.suspend()
 
             time.sleep(60)  # Check every minute
 
@@ -396,18 +440,34 @@ class ComputeGraph:
 
         return start_time_int <= current_time_int <= end_time_int
 
-    def suspend(self):
-        """Suspend the compute graph"""
+    def suspend(self, ui_driven=False):
+        """Suspend the compute graph
+        
+        Args:
+            ui_driven: If True, this is a UI-driven suspend that should prevent auto-resume
+        """
         self._suspend_event.clear()
-
+        
+        if ui_driven:
+            self._ui_suspended = True
+            logger.info(f"ComputeGraph {self.name} suspended by UI - auto-resume disabled")
+        
         for subscriber in self.subscribers.values():
             subscriber.suspend()
 
         logger.info(f"ComputeGraph {self.name} suspended")
 
-    def resume(self):
-        """Resume the compute graph"""
+    def resume(self, ui_driven=False):
+        """Resume the compute graph
+        
+        Args:
+            ui_driven: If True, this is a UI-driven resume that clears the UI suspended flag
+        """
         self._suspend_event.set()
+        
+        if ui_driven:
+            self._ui_suspended = False
+            logger.info(f"ComputeGraph {self.name} resumed by UI - normal scheduling")
 
         for subscriber in self.subscribers.values():
             subscriber.resume()
@@ -418,6 +478,8 @@ class ComputeGraph:
         """Stop the compute graph"""
         self._stop_event.set()
         self._suspend_event.set()  # Unblock if suspended
+        self._ui_override = False  # Clear UI override flag
+        self._ui_suspended = False  # Clear UI suspended flag
 
         # Stop subscribers
         for subscriber in self.subscribers.values():
@@ -537,6 +599,8 @@ class ComputeGraph:
             'duration': self.duration,
             'is_running': self._compute_thread and self._compute_thread.is_alive(),
             'is_suspended': not self._suspend_event.is_set(),
+            'ui_override': self._ui_override,
+            'ui_suspended': self._ui_suspended,
             'nodes': {name: node.details() for name, node in self.nodes.items()},
             'edges': [edge.details() for edge in self.edges],
             'subscribers': {name: sub.details() for name, sub in self.subscribers.items()},

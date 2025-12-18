@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block title %}DAG Configuration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .property-table th {
+        background: #f1f5f9;
+        width: 180px;
+    }
+    .property-table code {
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+    .node-type-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-right: 5px;
+    }
+    .node-subscription { background: #059669; color: white; }
+    .node-calculation { background: #2563eb; color: white; }
+    .node-publication { background: #dc2626; color: white; }
+    .node-metronome { background: #7c3aed; color: white; }
+    .node-sink { background: #475569; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-diagram-3" style="color: #4a90c2;"></i> DAG Configuration</h2>
+<p class="lead">A comprehensive guide to configuring DAGs in DishtaYantra using JSON.</p>
+
+<!-- DAG Structure Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-code"></i> DAG Structure Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>A DAG configuration is a JSON object with the following top-level properties:</p>
+        <div class="code-block">{
+  "name": "my_dag",
+  "start_time": "0900",
+  "duration": "8h",
+  "autoclone": { ... },
+  "subscribers": [ ... ],
+  "publishers": [ ... ],
+  "calculators": [ ... ],
+  "transformers": [ ... ],
+  "nodes": [ ... ],
+  "edges": [ ... ]
+}</div>
+    </div>
+</div>
+
+<!-- Top-Level Properties -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Top-Level Properties</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered property-table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Type</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>name</code></td>
+                    <td>string</td>
+                    <td>Yes</td>
+                    <td>Unique identifier for the DAG</td>
+                </tr>
+                <tr>
+                    <td><code>start_time</code></td>
+                    <td>string</td>
+                    <td>No</td>
+                    <td>Start time in HHMM format (e.g., "0900"). If omitted, DAG runs perpetually.</td>
+                </tr>
+                <tr>
+                    <td><code>duration</code></td>
+                    <td>string</td>
+                    <td>No</td>
+                    <td>Duration like "8h", "1h30m", "45m". Requires start_time.</td>
+                </tr>
+                <tr>
+                    <td><code>autoclone</code></td>
+                    <td>object</td>
+                    <td>No</td>
+                    <td>AutoClone configuration for scaling. See <a href="{{ url_for('help_autoclone') }}">AutoClone</a>.</td>
+                </tr>
+                <tr>
+                    <td><code>subscribers</code></td>
+                    <td>array</td>
+                    <td>No</td>
+                    <td>Data input sources</td>
+                </tr>
+                <tr>
+                    <td><code>publishers</code></td>
+                    <td>array</td>
+                    <td>No</td>
+                    <td>Data output destinations</td>
+                </tr>
+                <tr>
+                    <td><code>calculators</code></td>
+                    <td>array</td>
+                    <td>No</td>
+                    <td>Data processing components</td>
+                </tr>
+                <tr>
+                    <td><code>transformers</code></td>
+                    <td>array</td>
+                    <td>No</td>
+                    <td>Data transformation components</td>
+                </tr>
+                <tr>
+                    <td><code>nodes</code></td>
+                    <td>array</td>
+                    <td>Yes</td>
+                    <td>DAG nodes (vertices)</td>
+                </tr>
+                <tr>
+                    <td><code>edges</code></td>
+                    <td>array</td>
+                    <td>No</td>
+                    <td>Connections between nodes</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Node Types -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box"></i> Node Types</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra supports these node types:</p>
+        
+        <h6><span class="node-type-badge node-subscription">SubscriptionNode</span></h6>
+        <p>Entry point for data. Reads from a subscriber (data source).</p>
+        <div class="code-block">{
+  "name": "input_node",
+  "type": "SubscriptionNode",
+  "subscriber": "kafka_subscriber",
+  "config": {}
+}</div>
+        
+        <h6 class="mt-4"><span class="node-type-badge node-calculation">CalculationNode</span></h6>
+        <p>Processes data using a calculator. Most common node type.</p>
+        <div class="code-block">{
+  "name": "process_node",
+  "type": "CalculationNode",
+  "calculator": "my_calculator",
+  "config": {}
+}</div>
+        
+        <h6 class="mt-4"><span class="node-type-badge node-publication">PublicationNode</span></h6>
+        <p>Exit point for data. Writes to one or more publishers.</p>
+        <div class="code-block">{
+  "name": "output_node",
+  "type": "PublicationNode",
+  "publishers": ["kafka_publisher", "file_publisher"],
+  "input_transformers": ["filter_transformer"],
+  "config": {}
+}</div>
+        
+        <h6 class="mt-4"><span class="node-type-badge node-metronome">MetronomeNode</span></h6>
+        <p>Generates periodic events. Useful for scheduled tasks.</p>
+        <div class="code-block">{
+  "name": "heartbeat_node",
+  "type": "MetronomeNode",
+  "config": {
+    "interval_seconds": 60,
+    "payload": {"type": "heartbeat"}
+  }
+}</div>
+        
+        <h6 class="mt-4"><span class="node-type-badge node-sink">SinkNode</span></h6>
+        <p>Consumes data without output. Useful for logging or metrics.</p>
+        <div class="code-block">{
+  "name": "logging_sink",
+  "type": "SinkNode",
+  "config": {}
+}</div>
+    </div>
+</div>
+
+<!-- Edges -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-arrow-right"></i> Edges (Connections)</h5>
+    </div>
+    <div class="card-body">
+        <p>Edges define data flow between nodes:</p>
+        <div class="code-block">{
+  "from_node": "input_node",
+  "to_node": "process_node",
+  "pname": "data",
+  "data_transformer": "my_transformer"
+}</div>
+        <table class="table table-bordered property-table mt-3">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Required</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>from_node</code></td>
+                    <td>Yes</td>
+                    <td>Source node name</td>
+                </tr>
+                <tr>
+                    <td><code>to_node</code></td>
+                    <td>Yes</td>
+                    <td>Destination node name</td>
+                </tr>
+                <tr>
+                    <td><code>pname</code></td>
+                    <td>No</td>
+                    <td>Port name (for nodes with multiple outputs)</td>
+                </tr>
+                <tr>
+                    <td><code>data_transformer</code></td>
+                    <td>No</td>
+                    <td>Transformer to apply to data on this edge</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Complete Example -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-code"></i> Complete Example</h5>
+    </div>
+    <div class="card-body">
+        <p>A complete DAG configuration with all components:</p>
+        <div class="code-block">{
+  "name": "data_enrichment_pipeline",
+  "start_time": "0800",
+  "duration": "10h",
+  
+  "subscribers": [
+    {
+      "name": "kafka_input",
+      "config": {
+        "source": "kafka://topic/raw_events",
+        "bootstrap_servers": "localhost:9092",
+        "group_id": "enrichment_group"
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "kafka_output",
+      "config": {
+        "destination": "kafka://topic/enriched_events",
+        "bootstrap_servers": "localhost:9092"
+      }
+    },
+    {
+      "name": "file_backup",
+      "config": {
+        "destination": "file:///data/backup/events.jsonl"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "add_defaults",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "version": "1.0",
+          "processed": true
+        }
+      }
+    },
+    {
+      "name": "add_timestamp",
+      "type": "PassthruCalculator",
+      "config": {}
+    }
+  ],
+  
+  "transformers": [
+    {
+      "name": "output_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": ["id", "type", "data", "timestamp"]
+      }
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "ingest",
+      "type": "SubscriptionNode",
+      "subscriber": "kafka_input"
+    },
+    {
+      "name": "enrich",
+      "type": "CalculationNode",
+      "calculator": "add_defaults"
+    },
+    {
+      "name": "transform",
+      "type": "CalculationNode",
+      "calculator": "add_timestamp"
+    },
+    {
+      "name": "publish",
+      "type": "PublicationNode",
+      "publishers": ["kafka_output", "file_backup"],
+      "input_transformers": ["output_filter"]
+    }
+  ],
+  
+  "edges": [
+    {"from_node": "ingest", "to_node": "enrich"},
+    {"from_node": "enrich", "to_node": "transform"},
+    {"from_node": "transform", "to_node": "publish"}
+  ]
+}</div>
+    </div>
+</div>
+
+<!-- Related Topics -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Related Topics</h5>
+    </div>
+    <div class="card-body">
+        <ul>
+            <li><a href="{{ url_for('help_pubsub') }}">Publishers & Subscribers</a> - All supported data sources and destinations</li>
+            <li><a href="{{ url_for('help_calculators') }}">Calculators</a> - Data processing components</li>
+            <li><a href="{{ url_for('help_transformers') }}">Transformers</a> - Data transformation components</li>
+            <li><a href="{{ url_for('help_time_windows') }}">Time Windows</a> - Scheduling DAG execution</li>
+            <li><a href="{{ url_for('help_sample_dags') }}">Sample DAGs</a> - Ready-to-use examples</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

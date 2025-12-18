@@ -3,46 +3,445 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ app_name }} Compute Server{% endblock %}</title>
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            padding-top: 60px;
+        :root {
+            --primary-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+            --primary-dark: #1e3a5f;
+            --primary-medium: #2d5a87;
+            --primary-light: #4a90c2;
+            --accent-color: #00d4aa;
+            --bg-light: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            padding-top: 70px;
+            background: var(--bg-light);
+            min-height: 100vh;
+        }
+        
+        /* Navbar Styling */
+        .navbar {
+            background: var(--primary-gradient) !important;
+            box-shadow: 0 4px 20px rgba(30, 58, 95, 0.3);
+            padding: 0.75rem 1rem;
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.3rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .navbar-brand i {
+            color: var(--accent-color);
+            margin-right: 8px;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            margin: 0 2px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .nav-link i {
+            margin-right: 6px;
+        }
+        
+        .navbar-text {
+            font-weight: 500;
+        }
+        
+        .badge.bg-warning {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+            font-weight: 600;
+            padding: 4px 8px;
+        }
+        
+        /* Flash Messages */
         .flash-messages {
             position: fixed;
-            top: 70px;
+            top: 80px;
             right: 20px;
             z-index: 1050;
             max-width: 400px;
         }
-        .json-config {
-            font-family: monospace;
-            font-size: 12px;
-            max-height: 400px;
-            overflow-y: auto;
+        
+        .flash-messages .alert {
+            box-shadow: var(--card-shadow);
+            border: none;
+            border-radius: 8px;
         }
+        
+        /* Card Styling */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: var(--card-shadow-hover);
+        }
+        
+        .card-header {
+            background: var(--primary-gradient);
+            color: white;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: none;
+        }
+        
+        .card-header h5, .card-header h4, .card-header h3 {
+            margin: 0;
+            color: white;
+        }
+        
+        .card-header i {
+            color: var(--accent-color);
+            margin-right: 8px;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Table Styling */
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            color: var(--primary-dark);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-color: #f1f5f9;
+        }
+        
+        .table tbody tr {
+            transition: background 0.2s ease;
+        }
+        
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(30, 58, 95, 0.02);
+        }
+        
+        /* Button Styling */
+        .btn {
+            font-weight: 500;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+            box-shadow: 0 2px 4px rgba(30, 58, 95, 0.3);
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2d5a87 0%, #3d6a97 50%, #2d5a87 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(30, 58, 95, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #059669, #10b981);
+            box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #047857, #059669);
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #b91c1c, #dc2626);
+            transform: translateY(-1px);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            color: white;
+            box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
+        }
+        
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #b45309, #d97706);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #0891b2, #06b6d4);
+            color: white;
+            box-shadow: 0 2px 4px rgba(8, 145, 178, 0.3);
+        }
+        
+        .btn-info:hover {
+            background: linear-gradient(135deg, #0e7490, #0891b2);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4b5563, #6b7280);
+            box-shadow: 0 2px 4px rgba(75, 85, 99, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-dark);
+            border: 2px solid var(--primary-dark);
+            background: transparent;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        
+        /* Form Styling */
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.625rem 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(74, 144, 194, 0.15);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Badge Styling */
+        .badge {
+            font-weight: 500;
+            padding: 0.5em 0.85em;
+            border-radius: 6px;
+        }
+        
+        .badge.bg-success {
+            background: linear-gradient(135deg, #059669, #10b981) !important;
+        }
+        
+        .badge.bg-danger {
+            background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+        }
+        
+        .badge.bg-info {
+            background: linear-gradient(135deg, #0891b2, #06b6d4) !important;
+        }
+        
+        .badge.bg-secondary {
+            background: linear-gradient(135deg, #4b5563, #6b7280) !important;
+        }
+        
         .status-badge {
-            min-width: 80px;
+            min-width: 90px;
             display: inline-block;
-        }
-        .footer {
-            margin-top: 50px;
-            padding: 20px 0;
-            border-top: 1px solid #dee2e6;
             text-align: center;
-            color: #6c757d;
-            font-size: 14px;
+        }
+        
+        /* JSON Config Display */
+        .json-config {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin: 0;
+            border: none;
+        }
+        
+        /* For textarea json-config */
+        textarea.json-config {
+            resize: vertical;
+            min-height: 200px;
+        }
+        
+        /* For pre json-config */
+        pre.json-config {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        /* Page Headers */
+        h1, h2, h3, h4, h5 {
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .page-header h2 i {
+            color: var(--primary-light);
+            margin-right: 12px;
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            line-height: 1;
+        }
+        
+        .stat-card .stat-label {
+            color: #6b7280;
+            font-weight: 500;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Footer Styling */
+        .footer {
+            margin-top: 3rem;
+            padding: 2rem 0;
+            background: var(--primary-gradient);
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+        }
+        
+        .footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .footer a:hover {
+            color: white;
+        }
+        
+        .footer small {
+            opacity: 0.8;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 1rem;
+            }
+            
+            .table thead th, .table tbody td {
+                padding: 0.75rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="bi bi-diagram-3"></i> {{ app_name }} Compute Server
+                <i class="bi bi-diagram-3"></i> {{ app_name }}
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -73,6 +472,17 @@
                     </li>
                     {% endif %}
                     {% endif %}
+                    <!-- Always visible: About and Help -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('help') }}">
+                            <i class="bi bi-book"></i> Help
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('about') }}">
+                            <i class="bi bi-info-circle"></i> About
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if session.username %}
@@ -85,7 +495,7 @@
                                 {{ session.username }}
                             {% endif %}
                             {% if 'admin' in session.get('roles', []) %}
-                            <span class="badge bg-warning text-dark">Admin</span>
+                            <span class="badge bg-warning text-dark ms-2">Admin</span>
                             {% endif %}
                         </span>
                     </li>
@@ -113,17 +523,17 @@
         {% endwith %}
     </div>
 
-    <div class="container-fluid">
+    <div class="container-fluid py-4">
         {% block content %}{% endblock %}
     </div>
 
     <footer class="footer">
         <div class="container-fluid">
             <p class="mb-0">
-                Copyright &copy; 2025-2030 Ashutosh Sinha. All rights reserved.<br>
+                <strong>DishtaYantra</strong> &copy; 2025-2030 Ashutosh Sinha. All rights reserved.<br>
                 <small>
-                    Contact: <a href="mailto:ajsinha@gmail.com">ajsinha@gmail.com</a> |
-                    GitHub: <a href="https://github.com/ajsinha/dishtayantra" target="_blank">dishtayantra</a>
+                    <i class="bi bi-envelope"></i> <a href="mailto:ajsinha@gmail.com">ajsinha@gmail.com</a> &nbsp;|&nbsp;
+                    <i class="bi bi-github"></i> <a href="https://github.com/ajsinha/dishtayantra" target="_blank">dishtayantra</a>
                 </small>
             </p>
         </div>

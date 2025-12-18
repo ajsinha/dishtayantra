@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Transformers - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .trans-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        background: #0891b2;
+        color: white;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-arrow-repeat" style="color: #4a90c2;"></i> Transformers</h2>
+<p class="lead">Data transformation components used on edges and at node input/output points.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>Transformers modify data as it flows through the DAG. They can be applied:</p>
+        <ul>
+            <li><strong>On edges</strong> - Using <code>data_transformer</code> property</li>
+            <li><strong>At node input</strong> - Using <code>input_transformers</code> array</li>
+            <li><strong>At node output</strong> - Using <code>output_transformers</code> array</li>
+        </ul>
+        <div class="code-block">// Define transformer
+{
+  "name": "my_transformer",
+  "type": "AttributeFilterDataTransformer",
+  "config": {"keep_attributes": ["id", "name"]}
+}
+
+// Use on edge
+{
+  "from_node": "node_a",
+  "to_node": "node_b",
+  "data_transformer": "my_transformer"
+}
+
+// Use on node
+{
+  "name": "output_node",
+  "type": "PublicationNode",
+  "input_transformers": ["my_transformer"],
+  "publishers": ["publisher_1"]
+}</div>
+    </div>
+</div>
+
+<!-- NullDataTransformer -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="trans-badge">NullDataTransformer</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Returns a deep copy of the input data. Default transformer.</p>
+        <div class="code-block">{
+  "name": "copy_trans",
+  "type": "NullDataTransformer",
+  "config": {}
+}</div>
+    </div>
+</div>
+
+<!-- PassthruDataTransformer -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="trans-badge">PassthruDataTransformer</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Returns the input data as-is. Most efficient option.</p>
+        <div class="code-block">{
+  "name": "passthru_trans",
+  "type": "PassthruDataTransformer",
+  "config": {}
+}</div>
+    </div>
+</div>
+
+<!-- AttributeFilterDataTransformer -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="trans-badge">AttributeFilterDataTransformer</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Keeps only the specified attributes.</p>
+        <div class="code-block">{
+  "name": "keep_essentials",
+  "type": "AttributeFilterDataTransformer",
+  "config": {
+    "keep_attributes": ["id", "timestamp", "value"]
+  }
+}
+
+// Input:  {"id": 1, "timestamp": 123, "value": 100, "internal": "xxx"}
+// Output: {"id": 1, "timestamp": 123, "value": 100}</div>
+    </div>
+</div>
+
+<!-- AttributeFilterAwayDataTransformer -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="trans-badge">AttributeFilterAwayDataTransformer</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Removes the specified attributes.</p>
+        <div class="code-block">{
+  "name": "remove_sensitive",
+  "type": "AttributeFilterAwayDataTransformer",
+  "config": {
+    "filter_attributes": ["password", "ssn", "credit_card"]
+  }
+}
+
+// Input:  {"user": "john", "password": "xxx", "email": "john@ex.com"}
+// Output: {"user": "john", "email": "john@ex.com"}</div>
+    </div>
+</div>
+
+<!-- ApplyDefaultsDataTransformer -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="trans-badge">ApplyDefaultsDataTransformer</span></h5>
+    </div>
+    <div class="card-body">
+        <p>Applies default values for missing or null attributes.</p>
+        <div class="code-block">{
+  "name": "add_defaults",
+  "type": "ApplyDefaultsDataTransformer",
+  "config": {
+    "defaults": {
+      "version": "1.0",
+      "source": "dishtayantra",
+      "processed": true
+    }
+  }
+}
+
+// Input:  {"id": 1, "data": "value"}
+// Output: {"id": 1, "data": "value", "version": "1.0", "source": "dishtayantra", "processed": true}</div>
+    </div>
+</div>
+
+<!-- Transformers vs Calculators -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-question-circle"></i> Transformers vs Calculators</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Transformers</th>
+                    <th>Calculators</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Location</strong></td>
+                    <td>On edges, node input/output</td>
+                    <td>Inside CalculationNode</td>
+                </tr>
+                <tr>
+                    <td><strong>Purpose</strong></td>
+                    <td>Data shaping, filtering</td>
+                    <td>Business logic, calculations</td>
+                </tr>
+                <tr>
+                    <td><strong>Complexity</strong></td>
+                    <td>Simple transformations</td>
+                    <td>Complex operations</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Case</strong></td>
+                    <td>Remove sensitive fields before output</td>
+                    <td>Calculate totals, enrich data</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Custom Transformers -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-slash"></i> Custom Transformers</h5>
+    </div>
+    <div class="card-body">
+        <p>Create custom transformers by extending <code>DataTransformer</code>:</p>
+        <div class="code-block">from core.transformer.core_transformer import DataTransformer
+
+class UpperCaseTransformer(DataTransformer):
+    def transform(self, data):
+        self._transform_count += 1
+        result = data.copy()
+        for key in self.config.get('fields', []):
+            if key in result and isinstance(result[key], str):
+                result[key] = result[key].upper()
+        return result</div>
+    </div>
+</div>
+{% endblock %}

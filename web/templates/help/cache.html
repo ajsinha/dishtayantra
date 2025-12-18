@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Cache Management - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-hdd-rack" style="color: #4a90c2;"></i> Cache Management</h2>
+<p class="lead">In-memory Redis-compatible cache for fast data access and state sharing.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra includes an in-memory cache that provides:</p>
+        <ul>
+            <li><strong>Fast Key-Value Storage</strong> - O(1) read/write operations</li>
+            <li><strong>TTL Support</strong> - Automatic expiration of entries</li>
+            <li><strong>Persistence</strong> - Periodic snapshots to disk</li>
+            <li><strong>Pattern Matching</strong> - Query keys using wildcards</li>
+            <li><strong>Redis-Compatible API</strong> - Familiar operations</li>
+        </ul>
+        <p>Use cases:</p>
+        <ul>
+            <li>Sharing state between DAG nodes</li>
+            <li>Caching lookup data</li>
+            <li>Storing intermediate results</li>
+            <li>Session data</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Cache UI -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-display"></i> Cache Management UI</h5>
+    </div>
+    <div class="card-body">
+        <h6>Statistics Panel</h6>
+        <p>Shows cache health at a glance:</p>
+        <ul>
+            <li><strong>Total Keys</strong> - Number of entries in cache</li>
+            <li><strong>Keys with TTL</strong> - Entries that will expire</li>
+            <li><strong>Keys without TTL</strong> - Permanent entries</li>
+            <li><strong>Last Dump</strong> - When cache was last saved to disk</li>
+            <li><strong>Dump Interval</strong> - How often cache is saved</li>
+        </ul>
+        
+        <h6 class="mt-3">Query Cache</h6>
+        <p>Search for keys using patterns:</p>
+        <ul>
+            <li><code>*</code> - All keys</li>
+            <li><code>user:*</code> - All keys starting with "user:"</li>
+            <li><code>*:session</code> - All keys ending with ":session"</li>
+            <li><code>*config*</code> - All keys containing "config"</li>
+        </ul>
+        
+        <h6 class="mt-3">Admin Controls (Admin Only)</h6>
+        <ul>
+            <li><strong>Create Entry</strong> - Add new key-value pair</li>
+            <li><strong>Download Cache</strong> - Export entire cache as JSON</li>
+            <li><strong>Clear Cache</strong> - Delete all entries (use with caution!)</li>
+            <li><strong>Dump Now</strong> - Force immediate persistence to disk</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Data Types -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Supported Data Types</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>string</code></td>
+                    <td>Simple text values</td>
+                    <td><code>"hello world"</code></td>
+                </tr>
+                <tr>
+                    <td><code>number</code></td>
+                    <td>Integer or float</td>
+                    <td><code>42</code>, <code>3.14</code></td>
+                </tr>
+                <tr>
+                    <td><code>boolean</code></td>
+                    <td>True/false</td>
+                    <td><code>true</code></td>
+                </tr>
+                <tr>
+                    <td><code>object</code></td>
+                    <td>JSON object</td>
+                    <td><code>{"name": "John"}</code></td>
+                </tr>
+                <tr>
+                    <td><code>array</code></td>
+                    <td>JSON array</td>
+                    <td><code>[1, 2, 3]</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- TTL -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> TTL (Time To Live)</h5>
+    </div>
+    <div class="card-body">
+        <p>Set expiration time for cache entries:</p>
+        <ul>
+            <li><strong>No TTL</strong> - Entry never expires (until manually deleted or cache cleared)</li>
+            <li><strong>With TTL</strong> - Entry automatically deleted after specified seconds</li>
+        </ul>
+        <p>Common TTL values:</p>
+        <ul>
+            <li><code>60</code> - 1 minute</li>
+            <li><code>300</code> - 5 minutes</li>
+            <li><code>3600</code> - 1 hour</li>
+            <li><code>86400</code> - 1 day</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Persistence -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-save"></i> Persistence</h5>
+    </div>
+    <div class="card-body">
+        <p>Cache is periodically saved to disk:</p>
+        <ul>
+            <li><strong>Location:</strong> <code>data/inmemory_redisclone.json</code></li>
+            <li><strong>Interval:</strong> Configurable (default: 5 minutes)</li>
+            <li><strong>On Shutdown:</strong> Cache is saved before server stops</li>
+            <li><strong>On Startup:</strong> Cache is restored from disk</li>
+        </ul>
+        <p>Admins can trigger manual dump using the "Dump Now" button.</p>
+    </div>
+</div>
+
+<!-- Using Cache in DAGs -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Using Cache in DAGs</h5>
+    </div>
+    <div class="card-body">
+        <p>Access the cache from custom calculators or transformers:</p>
+        <div class="code-block">from core.pubsub.inmemory_redisclone import InMemoryRedisClone
+
+class CacheReadCalculator(DataCalculator):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self.cache = InMemoryRedisClone()
+    
+    def calculate(self, data):
+        # Read from cache
+        lookup_key = f"user:{data['user_id']}"
+        user_data = self.cache.get(lookup_key)
+        
+        if user_data:
+            data['user_name'] = user_data.get('name')
+        
+        return data
+
+class CacheWriteCalculator(DataCalculator):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self.cache = InMemoryRedisClone()
+    
+    def calculate(self, data):
+        # Write to cache with TTL
+        key = f"result:{data['id']}"
+        self.cache.set(key, data, ttl=3600)
+        return data</div>
+    </div>
+</div>
+
+<!-- API -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-code-slash"></i> Cache API</h5>
+    </div>
+    <div class="card-body">
+        <p>Available methods on <code>InMemoryRedisClone</code>:</p>
+        <div class="code-block">cache = InMemoryRedisClone()
+
+# Basic operations
+cache.set("key", "value")           # Set value
+cache.set("key", "value", ttl=60)   # Set with 60 second TTL
+cache.get("key")                    # Get value
+cache.delete("key")                 # Delete key
+cache.exists("key")                 # Check if key exists
+
+# Pattern operations
+cache.keys("user:*")                # Get keys matching pattern
+cache.keys("*")                     # Get all keys
+
+# TTL operations
+cache.ttl("key")                    # Get remaining TTL (-1 if no TTL)
+cache.expire("key", 3600)           # Set TTL on existing key
+
+# Utility
+cache.flushall()                    # Clear all keys
+cache.dbsize()                      # Get number of keys</div>
+    </div>
+</div>
+{% endblock %}

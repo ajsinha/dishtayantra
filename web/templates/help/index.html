@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Help & Documentation - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.3);
+    }
+    .help-hero h1 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .help-hero p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    .help-card {
+        height: 100%;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .help-card:hover {
+        transform: translateY(-5px);
+        border-color: #4a90c2;
+    }
+    .help-card .card-body {
+        display: flex;
+        flex-direction: column;
+    }
+    .help-card .card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .help-card .card-title i {
+        font-size: 1.5rem;
+        color: #4a90c2;
+    }
+    .help-card .card-text {
+        flex-grow: 1;
+    }
+    .help-card .btn {
+        align-self: flex-start;
+    }
+    .nav-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+    }
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .section-title i {
+        color: #4a90c2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="help-hero">
+    <i class="bi bi-book" style="font-size: 3rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
+    <h1>Help & Documentation</h1>
+    <p>Comprehensive guides to help you get the most out of DishtaYantra</p>
+</div>
+
+<!-- Navigation Buttons -->
+<div class="nav-buttons">
+    <a href="{{ url_for('about') }}" class="btn btn-outline-primary">
+        <i class="bi bi-info-circle"></i> About
+    </a>
+    <a href="{{ url_for('login') }}" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> Login
+    </a>
+</div>
+
+<!-- Getting Started Section -->
+<h3 class="section-title"><i class="bi bi-rocket-takeoff"></i> Getting Started</h3>
+<div class="row mb-5">
+    <div class="col-md-6 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-play-circle"></i> Quick Start Guide
+                </h5>
+                <p class="card-text">Learn the basics of DishtaYantra, from installation to running your first DAG. Perfect for new users.</p>
+                <a href="{{ url_for('help_getting_started') }}" class="btn btn-primary btn-sm">
+                    Read Guide <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-file-earmark-code"></i> Sample DAGs
+                </h5>
+                <p class="card-text">Explore ready-to-use DAG configurations for common scenarios. Copy, modify, and deploy.</p>
+                <a href="{{ url_for('help_sample_dags') }}" class="btn btn-primary btn-sm">
+                    View Samples <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Core Concepts Section -->
+<h3 class="section-title"><i class="bi bi-lightbulb"></i> Core Concepts</h3>
+<div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-diagram-3"></i> DAG Configuration
+                </h5>
+                <p class="card-text">Understand DAG structure, nodes, edges, and how to configure data pipelines using JSON.</p>
+                <a href="{{ url_for('help_dag_configuration') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-arrow-left-right"></i> Publishers & Subscribers
+                </h5>
+                <p class="card-text">Complete reference for all supported data sources and destinations including Kafka, MQ, REST, and more.</p>
+                <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-calculator"></i> Calculators
+                </h5>
+                <p class="card-text">Data processing components for calculations, filtering, transformations, and custom logic.</p>
+                <a href="{{ url_for('help_calculators') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-arrow-repeat"></i> Transformers
+                </h5>
+                <p class="card-text">Data transformation components for filtering, mapping, and reshaping data as it flows through edges.</p>
+                <a href="{{ url_for('help_transformers') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-clock"></i> Time Windows
+                </h5>
+                <p class="card-text">Schedule DAG execution within specific time windows using start_time and duration configuration.</p>
+                <a href="{{ url_for('help_time_windows') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-layers"></i> AutoClone Feature
+                </h5>
+                <p class="card-text">Automatically scale DAG instances based on time schedules for handling peak loads.</p>
+                <a href="{{ url_for('help_autoclone') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tools & Features Section -->
+<h3 class="section-title"><i class="bi bi-tools"></i> Tools & Features</h3>
+<div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-bezier2"></i> DAG Designer
+                </h5>
+                <p class="card-text">Visual drag-and-drop interface for creating and editing DAG configurations without writing JSON.</p>
+                <a href="{{ url_for('help_dag_designer') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-hdd-rack"></i> Cache Management
+                </h5>
+                <p class="card-text">In-memory Redis-compatible cache for fast data access, state sharing, and persistent snapshots.</p>
+                <a href="{{ url_for('help_cache') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-code-slash"></i> API Reference
+                </h5>
+                <p class="card-text">REST API documentation for programmatic access to DAG management, cache, and monitoring.</p>
+                <a href="{{ url_for('help_api_reference') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-book"></i> Glossary
+                </h5>
+                <p class="card-text">Definitions of key terms and concepts used throughout DishtaYantra, from DAG to TTL.</p>
+                <a href="{{ url_for('help_glossary') }}" class="btn btn-outline-primary btn-sm">
+                    View Glossary <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Reference -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Reference</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Default Credentials</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Username:</strong> admin</li>
+                            <li><strong>Password:</strong> admin</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Key Directories</h6>
+                        <ul class="list-unstyled">
+                            <li><code>config/dags/</code> - DAG configs</li>
+                            <li><code>config/users.json</code> - User data</li>
+                            <li><code>logs/</code> - Log files</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Useful Commands</h6>
+                        <ul class="list-unstyled">
+                            <li><code>python run_server.py</code></li>
+                            <li><code>pip install -r requirements.txt</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

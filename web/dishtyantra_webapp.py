@@ -13,7 +13,7 @@ from core.user_registry import UserRegistry
 from core.properties_configurator import PropertiesConfigurator
 
 # Import route handlers
-from routes import AuthRoutes, DashboardRoutes, DAGRoutes, CacheRoutes, UserRoutes, DAGDesignerRoutes
+from routes import AuthRoutes, NoAuthRoutes, DashboardRoutes, DAGRoutes, CacheRoutes, UserRoutes, DAGDesignerRoutes
 
 # Configure logging
 logging.basicConfig(
@@ -61,6 +61,7 @@ class DishtaYantraWebApp:
 
         # Initialize route handlers references
         self.auth_routes = None
+        self.noauth_routes = None
         self.dashboard_routes = None
         self.dag_routes = None
         self.cache_routes = None
@@ -143,6 +144,9 @@ class DishtaYantraWebApp:
         self.auth_routes = AuthRoutes(self.app, self.user_registry)
         login_required = self.auth_routes.login_required
         admin_required = self.auth_routes.admin_required
+
+        # NoAuth routes (accessible without login)
+        self.noauth_routes = NoAuthRoutes(self.app)
 
         # Initialize remaining route handlers
         self.dashboard_routes = DashboardRoutes(

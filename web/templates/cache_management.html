@@ -1,50 +1,76 @@
 {% extends "base.html" %}
 
-{% block title %}Cache Management - {{ app_name }} Compute Server{% endblock %}
+{% block title %}Cache Management - {{ app_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
     .cache-stats {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
         color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(30, 58, 95, 0.3);
     }
     .stat-card {
         text-align: center;
         padding: 15px;
     }
     .stat-value {
-        font-size: 2em;
-        font-weight: bold;
+        font-size: 2.4em;
+        font-weight: 400;
+        color: #00d4aa;
+        line-height: 1.2;
     }
     .stat-label {
-        font-size: 0.9em;
-        opacity: 0.9;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 400;
+        color: #00d4aa;
+        margin-top: 8px;
     }
     .query-section {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e2e8f0;
+    }
+    .query-section h5 {
+        color: var(--primary-dark, #1e3a5f);
+        margin-bottom: 8px;
+    }
+    .query-section h5 i {
+        color: var(--primary-light, #4a90c2);
     }
     .admin-controls {
-        background: #fff3cd;
-        border-left: 4px solid #ffc107;
-        border-radius: 4px;
-        padding: 15px;
-        margin-bottom: 20px;
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        padding: 18px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+    }
+    .admin-controls h5 {
+        color: #92400e;
+        margin-bottom: 12px;
     }
     .value-cell {
-        font-family: 'Courier New', monospace;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
         max-width: 300px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: 0.85em;
+        background: #f8fafc;
+        padding: 4px 8px;
+        border-radius: 4px;
     }
     .ttl-badge {
-        font-size: 0.85em;
+        font-size: 0.8em;
+        font-weight: 600;
     }
     .pagination-controls {
         display: flex;
@@ -58,9 +84,10 @@
         gap: 10px;
     }
     .modal-body pre {
-        background: #f5f5f5;
-        padding: 15px;
-        border-radius: 4px;
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 18px;
+        border-radius: 8px;
         max-height: 400px;
         overflow-y: auto;
     }
@@ -71,12 +98,30 @@
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: #6c757d;
+        color: #6b7280;
     }
     .empty-state i {
         font-size: 4em;
         margin-bottom: 20px;
         opacity: 0.3;
+        color: var(--primary-light, #4a90c2);
+    }
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .page-header h2 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .page-header h2 i {
+        color: var(--primary-light, #4a90c2);
     }
 </style>
 {% endblock %}
@@ -219,7 +264,7 @@
                 <div id="resultsContainer">
                     <div class="table-responsive">
                         <table class="table table-hover" id="resultsTable">
-                            <thead class="table-dark">
+                            <thead>
                                 <tr>
                                     <th style="width: 25%;">Key</th>
                                     <th style="width: 35%;">Value</th>

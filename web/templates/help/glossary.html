@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Glossary - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .glossary-letter {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: #00d4aa;
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .glossary-section {
+        margin-bottom: 2rem;
+    }
+    .glossary-term {
+        background: #f8fafc;
+        border-left: 4px solid #00d4aa;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+    .glossary-term h6 {
+        color: #1e3a5f;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .glossary-term p {
+        color: #475569;
+        margin-bottom: 0;
+        font-size: 0.95rem;
+    }
+    .glossary-term code {
+        background: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: #1e3a5f;
+    }
+    .letter-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 2rem;
+    }
+    .letter-nav a {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        color: #1e3a5f;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .letter-nav a:hover {
+        background: #1e3a5f;
+        color: #00d4aa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-book" style="color: #4a90c2;"></i> Glossary of Terms</h2>
+<p class="lead">Definitions of key terms and concepts used throughout DishtaYantra.</p>
+
+<!-- Letter Navigation -->
+<div class="letter-nav">
+    <a href="#A">A</a>
+    <a href="#B">B</a>
+    <a href="#C">C</a>
+    <a href="#D">D</a>
+    <a href="#E">E</a>
+    <a href="#F">F</a>
+    <a href="#G">G</a>
+    <a href="#I">I</a>
+    <a href="#J">J</a>
+    <a href="#K">K</a>
+    <a href="#M">M</a>
+    <a href="#N">N</a>
+    <a href="#P">P</a>
+    <a href="#Q">Q</a>
+    <a href="#R">R</a>
+    <a href="#S">S</a>
+    <a href="#T">T</a>
+    <a href="#U">U</a>
+    <a href="#W">W</a>
+</div>
+
+<!-- A -->
+<div class="glossary-section" id="A">
+    <div class="glossary-letter">A</div>
+    
+    <div class="glossary-term">
+        <h6>ActiveMQ</h6>
+        <p>Apache ActiveMQ is an open-source message broker that implements JMS (Java Message Service). DishtaYantra supports both queue and topic messaging with ActiveMQ using the <code>activemq://</code> protocol.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>AutoClone</h6>
+        <p>A feature that automatically creates multiple copies (clones) of a DAG during specified time periods to handle peak loads. Configured using <code>ramp_up_time</code>, <code>duration</code>, and <code>ramp_count</code> properties.</p>
+    </div>
+</div>
+
+<!-- B -->
+<div class="glossary-section" id="B">
+    <div class="glossary-letter">B</div>
+    
+    <div class="glossary-term">
+        <h6>Bootstrap Servers</h6>
+        <p>A list of Kafka broker addresses used by Kafka clients to establish initial connection to the Kafka cluster. Specified as <code>host:port</code> pairs.</p>
+    </div>
+</div>
+
+<!-- C -->
+<div class="glossary-section" id="C">
+    <div class="glossary-letter">C</div>
+    
+    <div class="glossary-term">
+        <h6>Cache</h6>
+        <p>An in-memory key-value store in DishtaYantra that provides fast data access. It's Redis-compatible and supports TTL (time-to-live), persistence, and pattern-based queries.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Calculator</h6>
+        <p>A processing component used in CalculationNodes to perform data transformations, calculations, filtering, or enrichment. Examples include <code>AdditionCalculator</code>, <code>ApplyDefaultsCalculator</code>, and <code>PassthruCalculator</code>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>CalculationNode</h6>
+        <p>A DAG node type that processes data using a Calculator. It receives data from upstream nodes, applies the calculator's logic, and passes results downstream.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Clone</h6>
+        <p>A copy of a DAG created either manually or automatically (via AutoClone). Clones run independently with their own state but share the same configuration structure.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Consumer Group</h6>
+        <p>In Kafka, a group of consumers that work together to consume messages from topics. Messages are distributed among group members, enabling parallel processing and load balancing.</p>
+    </div>
+</div>
+
+<!-- D -->
+<div class="glossary-section" id="D">
+    <div class="glossary-letter">D</div>
+    
+    <div class="glossary-term">
+        <h6>DAG (Directed Acyclic Graph)</h6>
+        <p>The core processing unit in DishtaYantra. A DAG consists of nodes connected by edges, where data flows in one direction without cycles. DAGs define data pipelines for processing, transformation, and routing.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>DAG Designer</h6>
+        <p>A visual drag-and-drop interface for creating and editing DAG configurations without writing JSON code manually.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>DAG Server</h6>
+        <p>The core engine that manages DAG lifecycle including loading, starting, stopping, and monitoring DAGs. It also handles time window checking and AutoClone operations.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Data Transformer</h6>
+        <p>See <strong>Transformer</strong>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Destination</h6>
+        <p>The target location where a Publisher sends data. Specified as a URI like <code>kafka://topic/events</code> or <code>mem://queue/output</code>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Duration</h6>
+        <p>The length of time a DAG should run within its time window. Specified in formats like <code>8h</code> (8 hours), <code>30m</code> (30 minutes), or <code>1h30m</code> (1 hour 30 minutes).</p>
+    </div>
+</div>
+
+<!-- E -->
+<div class="glossary-section" id="E">
+    <div class="glossary-letter">E</div>
+    
+    <div class="glossary-term">
+        <h6>Edge</h6>
+        <p>A connection between two nodes in a DAG that defines data flow direction. Edges can optionally include a transformer to modify data as it passes through.</p>
+    </div>
+</div>
+
+<!-- F -->
+<div class="glossary-section" id="F">
+    <div class="glossary-letter">F</div>
+    
+    <div class="glossary-term">
+        <h6>Fan-in</h6>
+        <p>A pattern where multiple data sources are combined into a single stream. In DishtaYantra, use <code>composite://</code> or <code>fanin://</code> source to merge multiple subscribers.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Fan-out</h6>
+        <p>A pattern where data from a single source is distributed to multiple destinations. Achieved by adding multiple publishers to a PublicationNode.</p>
+    </div>
+</div>
+
+<!-- G -->
+<div class="glossary-section" id="G">
+    <div class="glossary-letter">G</div>
+    
+    <div class="glossary-term">
+        <h6>gRPC</h6>
+        <p>A high-performance RPC (Remote Procedure Call) framework. DishtaYantra supports gRPC-based pub/sub using the <code>grpc://</code> protocol.</p>
+    </div>
+</div>
+
+<!-- I -->
+<div class="glossary-section" id="I">
+    <div class="glossary-letter">I</div>
+    
+    <div class="glossary-term">
+        <h6>In-Memory Queue</h6>
+        <p>A queue stored entirely in memory for fast message passing. Accessed using <code>mem://queue/name</code>. Data is lost on server restart unless persisted.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>In-Memory Topic</h6>
+        <p>A publish-subscribe topic stored in memory. Multiple subscribers can receive the same message. Accessed using <code>mem://topic/name</code>.</p>
+    </div>
+</div>
+
+<!-- J -->
+<div class="glossary-section" id="J">
+    <div class="glossary-letter">J</div>
+    
+    <div class="glossary-term">
+        <h6>JSON Configuration</h6>
+        <p>The format used to define DAG structure, including nodes, edges, subscribers, publishers, calculators, and transformers. Can be written manually or generated by the DAG Designer.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>JSONL</h6>
+        <p>JSON Lines format where each line is a separate JSON object. Commonly used for file-based data streams with the <code>file://</code> protocol.</p>
+    </div>
+</div>
+
+<!-- K -->
+<div class="glossary-section" id="K">
+    <div class="glossary-letter">K</div>
+    
+    <div class="glossary-term">
+        <h6>Kafka</h6>
+        <p>Apache Kafka is a distributed event streaming platform. DishtaYantra supports Kafka topics using the <code>kafka://topic/</code> protocol for high-throughput data processing.</p>
+    </div>
+</div>
+
+<!-- M -->
+<div class="glossary-section" id="M">
+    <div class="glossary-letter">M</div>
+    
+    <div class="glossary-term">
+        <h6>Max Depth</h6>
+        <p>The maximum number of messages a subscriber's internal buffer can hold. When reached, older messages may be dropped or the subscriber may block.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Metronome</h6>
+        <p>A special subscriber/publisher type that generates periodic events at specified intervals. Useful for heartbeats, scheduled tasks, and time-based triggers.</p>
+    </div>
+</div>
+
+<!-- N -->
+<div class="glossary-section" id="N">
+    <div class="glossary-letter">N</div>
+    
+    <div class="glossary-term">
+        <h6>Node</h6>
+        <p>A vertex in a DAG that performs a specific function. Types include SubscriptionNode (input), CalculationNode (processing), PublicationNode (output), MetronomeNode (timer), and SinkNode (discard).</p>
+    </div>
+</div>
+
+<!-- P -->
+<div class="glossary-section" id="P">
+    <div class="glossary-letter">P</div>
+    
+    <div class="glossary-term">
+        <h6>Perpetual DAG</h6>
+        <p>A DAG without a time window that runs continuously until manually stopped. Created by omitting <code>start_time</code> and <code>duration</code> from the configuration.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Publisher</h6>
+        <p>A component that sends data to an external destination (queue, topic, file, API, etc.). Publishers are attached to PublicationNodes.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>PublicationNode</h6>
+        <p>A DAG node type that outputs data to one or more publishers. Typically the final node(s) in a DAG where processed data is sent to external systems.</p>
+    </div>
+</div>
+
+<!-- Q -->
+<div class="glossary-section" id="Q">
+    <div class="glossary-letter">Q</div>
+    
+    <div class="glossary-term">
+        <h6>Queue</h6>
+        <p>A point-to-point messaging pattern where each message is consumed by exactly one consumer. Contrast with Topic (publish-subscribe).</p>
+    </div>
+</div>
+
+<!-- R -->
+<div class="glossary-section" id="R">
+    <div class="glossary-letter">R</div>
+    
+    <div class="glossary-term">
+        <h6>RabbitMQ</h6>
+        <p>An open-source message broker supporting AMQP protocol. DishtaYantra supports both queues and topics using <code>rabbitmq://queue/</code> and <code>rabbitmq://topic/</code>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Ramp Count</h6>
+        <p>In AutoClone configuration, the number of DAG clones to create during the ramp-up phase.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Ramp Up Time</h6>
+        <p>In AutoClone configuration, the time (HHMM format) when clone creation begins.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Redis</h6>
+        <p>An in-memory data structure store. DishtaYantra supports Redis keys (<code>redis://</code>) and pub/sub channels (<code>redischannel://</code>).</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Role</h6>
+        <p>A permission level assigned to users. DishtaYantra supports three roles: <code>admin</code> (full access), <code>operator</code> (start/stop DAGs), and <code>user</code> (view only).</p>
+    </div>
+</div>
+
+<!-- S -->
+<div class="glossary-section" id="S">
+    <div class="glossary-letter">S</div>
+    
+    <div class="glossary-term">
+        <h6>SinkNode</h6>
+        <p>A DAG node type that consumes data without producing output. Useful for logging, metrics collection, or discarding unwanted data branches.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Source</h6>
+        <p>The origin location from which a Subscriber reads data. Specified as a URI like <code>kafka://topic/events</code> or <code>mem://queue/input</code>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Start Time</h6>
+        <p>The time when a DAG's time window begins, specified in HHMM format (e.g., <code>0900</code> for 9:00 AM).</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Subscriber</h6>
+        <p>A component that reads data from an external source (queue, topic, file, API, etc.). Subscribers are attached to SubscriptionNodes.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>SubscriptionNode</h6>
+        <p>A DAG node type that ingests data from a subscriber. Typically the entry point(s) of a DAG where external data enters the pipeline.</p>
+    </div>
+</div>
+
+<!-- T -->
+<div class="glossary-section" id="T">
+    <div class="glossary-letter">T</div>
+    
+    <div class="glossary-term">
+        <h6>TIBCO EMS</h6>
+        <p>TIBCO Enterprise Message Service, an enterprise messaging platform. Supported via <code>tibcoems://queue/</code> and <code>tibcoems://topic/</code>.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Time Window</h6>
+        <p>A scheduled period during which a DAG is active. Defined by <code>start_time</code> and <code>duration</code>. Outside this window, the DAG is suspended.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Topic</h6>
+        <p>A publish-subscribe messaging pattern where messages are broadcast to all subscribers. Contrast with Queue (point-to-point).</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>Transformer</h6>
+        <p>A component that modifies data as it flows through edges or at node boundaries. Used for filtering attributes, applying defaults, or reshaping data structure.</p>
+    </div>
+    
+    <div class="glossary-term">
+        <h6>TTL (Time To Live)</h6>
+        <p>The duration in seconds that a cache entry remains valid before automatic expiration and deletion.</p>
+    </div>
+</div>
+
+<!-- U -->
+<div class="glossary-section" id="U">
+    <div class="glossary-letter">U</div>
+    
+    <div class="glossary-term">
+        <h6>URI (Uniform Resource Identifier)</h6>
+        <p>The format used to specify sources and destinations in DishtaYantra. Format: <code>protocol://type/name</code> (e.g., <code>kafka://topic/events</code>).</p>
+    </div>
+</div>
+
+<!-- W -->
+<div class="glossary-section" id="W">
+    <div class="glossary-letter">W</div>
+    
+    <div class="glossary-term">
+        <h6>WebSphere MQ (IBM MQ)</h6>
+        <p>IBM's enterprise messaging middleware. Supported via <code>websphere://queue/</code> and <code>websphere://topic/</code>.</p>
+    </div>
+</div>
+{% endblock %}
