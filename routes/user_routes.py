@@ -48,7 +48,7 @@ class UserRoutes:
     
     def user_management(self):
         """User management page"""
-        return render_template('user_management.html')
+        return render_template('user/management.html')
     
     def users_list(self):
         """List all users"""
@@ -93,7 +93,7 @@ class UserRoutes:
     def user_create_page(self):
         """User creation page"""
         if request.method == 'GET':
-            return render_template('user_create.html')
+            return render_template('user/create.html')
 
         # POST - Handle form submission
         try:
@@ -369,7 +369,7 @@ class UserRoutes:
             # Get user data
             user_data = self.user_registry.get_user(username, include_password=False)
 
-            return render_template('user_edit.html', user_data=user_data)
+            return render_template('user/edit.html', user_data=user_data)
         except Exception as e:
             logger.error(f"Error loading user edit page: {str(e)}")
             flash(f'Error: {str(e)}', 'error')

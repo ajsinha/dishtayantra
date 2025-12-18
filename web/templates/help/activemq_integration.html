@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}ActiveMQ Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.bash { border-left: 4px solid #64748b; }
+    .broker-color { color: #d33534; }
+    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card:hover { border-color: #d33534; box-shadow: 0 4px 15px rgba(211, 53, 52, 0.2); }
+    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>
+</div>
+
+<h2><i class="bi bi-hdd-rack-fill broker-color"></i> Apache ActiveMQ Integration</h2>
+<p class="lead">Popular open-source message broker supporting JMS, STOMP, AMQP, MQTT, and OpenWire protocols.</p>
+
+<div class="alert alert-danger mb-4" style="border-left: 4px solid #d33534;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-check-circle-fill"></i> Multi-Protocol Support</h5>
+            <p class="mb-0">JMS-compliant broker with STOMP connectivity for Python applications.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge text-white" style="background: #d33534;">Resilient Version Available</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #d33534, #b32a29); color: white;">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>Apache ActiveMQ is a popular open-source message broker written in Java. It implements the Java Message Service (JMS) API and supports multiple protocols including STOMP, which is used for Python connectivity.</p>
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-inbox-fill broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Queues</h6>
+                    <small class="text-muted">Point-to-point JMS queues</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-broadcast broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Topics</h6>
+                    <small class="text-muted">JMS publish-subscribe</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-hdd-network broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Network of Brokers</h6>
+                    <small class="text-muted">Distributed deployments</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-shield-check broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">JMS Compliance</h6>
+                    <small class="text-muted">Full JMS 1.1 & 2.0 support</small>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="mt-4">Supported Protocols</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge bg-primary">STOMP (Python)</span>
+            <span class="badge bg-secondary">OpenWire (Java)</span>
+            <span class="badge bg-success">AMQP</span>
+            <span class="badge bg-info">MQTT</span>
+            <span class="badge bg-warning text-dark">WebSocket</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
+    <div class="card-body">
+        <h6>1. Start ActiveMQ (Docker)</h6>
+        <div class="code-block bash">docker run -d --name activemq \
+  -p 61613:61613 \
+  -p 61616:61616 \
+  -p 8161:8161 \
+  apache/activemq-classic:latest
+
+# Web Console: http://localhost:8161 (admin/admin)
+# STOMP Port: 61613
+# OpenWire Port: 61616</div>
+
+        <h6 class="mt-4">2. Install Python Client</h6>
+        <div class="code-block bash">pip install stomp.py</div>
+
+        <h6 class="mt-4">3. Queue Publisher</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'activemq://queue/orders',
+    'host': 'localhost',
+    'port': 61613,
+    'username': 'admin',
+    'password': 'admin'
+}
+
+publisher = create_publisher('order_pub', config)
+publisher.publish({'order_id': 'ORD-001', 'product': 'Widget', 'quantity': 10})
+publisher.stop()</div>
+
+        <h6 class="mt-4">4. Queue Subscriber</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'activemq://queue/orders',
+    'host': 'localhost',
+    'port': 61613,
+    'username': 'admin',
+    'password': 'admin'
+}
+
+subscriber = create_subscriber('order_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+subscriber.stop()</div>
+
+        <h6 class="mt-4">5. Topic Publisher</h6>
+        <div class="code-block python">config = {
+    'destination': 'activemq://topic/events',
+    'host': 'localhost',
+    'port': 61613,
+    'username': 'admin',
+    'password': 'admin'
+}
+
+publisher = create_publisher('event_pub', config)
+publisher.publish({'event': 'order_created', 'timestamp': '2025-01-15T10:30:00'})
+publisher.stop()</div>
+    </div>
+</div>
+
+<!-- Destination Formats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Destination Formats</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Format</th><th>Example</th><th>STOMP Destination</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge bg-primary">Queue</span></td><td><code>activemq://queue/name</code></td><td><code>activemq://queue/orders</code></td><td><code>/queue/orders</code></td></tr>
+                <tr><td><span class="badge bg-success">Topic</span></td><td><code>activemq://topic/name</code></td><td><code>activemq://topic/events</code></td><td><code>/topic/events</code></td></tr>
+            </tbody>
+        </table>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Note:</strong> DishtaYantra connects via STOMP protocol on port 61613 (not OpenWire 61616).</div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Options</h5></div>
+    <div class="card-body">
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>host</code></td><td>string</td><td>'localhost'</td><td>ActiveMQ server hostname</td></tr>
+                <tr><td><code>port</code></td><td>int</td><td>61613</td><td>STOMP port</td></tr>
+                <tr><td><code>username</code></td><td>string</td><td>'admin'</td><td>Authentication username</td></tr>
+                <tr><td><code>password</code></td><td>string</td><td>'admin'</td><td>Authentication password</td></tr>
+                <tr><td><code>ssl</code></td><td>bool</td><td>False</td><td>Enable SSL/TLS connection</td></tr>
+                <tr><td><code>heartbeats</code></td><td>tuple</td><td>(10000, 10000)</td><td>Heartbeat intervals (send, receive) in ms</td></tr>
+                <tr><td><code>ack</code></td><td>string</td><td>'auto'</td><td>Acknowledgment mode: 'auto', 'client', 'client-individual'</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="mt-4">DAG Node Configuration</h6>
+        <div class="code-block json">{
+  "name": "activemq_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "activemq://queue/incoming_orders",
+    "host": "activemq.example.com",
+    "port": 61613,
+    "username": "app_user",
+    "password": "secret",
+    "ack": "client"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Resilient -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient ActiveMQ</h5></div>
+    <div class="card-body">
+        <p>Use the resilient version for automatic reconnection on failures:</p>
+        <div class="code-block python">from core.pubsub.resilient_activemq import ResilientActiveMQConsumer
+
+consumer = ResilientActiveMQConsumer(
+    host='localhost',
+    port=61613,
+    destination='/queue/orders',
+    username='admin',
+    password='admin',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+# Automatically reconnects on connection loss
+for message in consumer:
+    print(f"Received: {message.body}")
+    consumer.ack(message)
+
+consumer.disconnect()</div>
+
+        <h6 class="mt-4">Resilient Configuration</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>reconnect_tries</code></td><td>10</td><td>Maximum reconnection attempts</td></tr>
+                <tr><td><code>reconnect_interval_seconds</code></td><td>60</td><td>Seconds between reconnection attempts</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Comparison -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-bar-chart"></i> When to Use ActiveMQ</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success"><i class="bi bi-check-circle"></i> Good For</h6>
+                <ul>
+                    <li>JMS-based Java applications</li>
+                    <li>Multi-protocol environments</li>
+                    <li>Traditional enterprise messaging</li>
+                    <li>Network of brokers deployments</li>
+                    <li>Existing ActiveMQ infrastructure</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="bi bi-exclamation-circle"></i> Consider Alternatives When</h6>
+                <ul>
+                    <li>Need message replay (use Kafka)</li>
+                    <li>Very high throughput (use Kafka)</li>
+                    <li>Complex routing (use RabbitMQ)</li>
+                    <li>Cloud-native deployment (consider Artemis)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="warning-box"><strong><i class="bi bi-info-circle"></i> Note:</strong> Apache ActiveMQ Artemis is the next-generation broker. Consider it for new deployments.</div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_rabbitmq_integration') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> RabbitMQ</a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-house"></i> Help Center</a>
+    <a href="{{ url_for('help_redis_integration') }}" class="btn btn-outline-primary">Redis <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

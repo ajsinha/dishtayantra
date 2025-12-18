@@ -46,7 +46,7 @@ class DAGRoutes:
     def create_dag(self):
         """Create a new DAG"""
         if request.method == 'GET':
-            return render_template('create_dag.html')
+            return render_template('dag/create.html')
 
         try:
             if 'config_file' not in request.files:
@@ -82,7 +82,7 @@ class DAGRoutes:
                     flash(f'DAG {dag_name} not found', 'error')
                     return redirect(url_for('dashboard'))
 
-                return render_template('clone_dag.html',
+                return render_template('dag/clone.html',
                                        dag_name=dag_name,
                                        original_start=dag.start_time,
                                        original_end=dag.end_time,
@@ -219,7 +219,7 @@ class DAGRoutes:
                 subscriber_info = details['subscribers'][subscriber_name]
 
                 return render_template(
-                    'publish_message.html',
+                    'dag/publish_message.html',
                     dag_name=dag_name,
                     subscriber_name=subscriber_name,
                     subscriber_info=subscriber_info,

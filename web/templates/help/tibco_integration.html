@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}TIBCO EMS Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.bash { border-left: 4px solid #64748b; }
+    .broker-color { color: #7c3aed; }
+    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card:hover { border-color: #7c3aed; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2); }
+    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>
+</div>
+
+<h2><i class="bi bi-building broker-color"></i> TIBCO Enterprise Message Service Integration</h2>
+<p class="lead">Enterprise JMS message broker with high availability, fault tolerance, and enterprise-grade security.</p>
+
+<div class="alert mb-4" style="background: linear-gradient(135deg, #ede9fe, #ddd6fe); border-left: 4px solid #7c3aed;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-shield-fill-check"></i> Enterprise-Grade Messaging</h5>
+            <p class="mb-0">JMS-compliant broker with STOMP protocol support for Python applications.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge text-white" style="background: #7c3aed;">Resilient Version Available</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white;">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>TIBCO Enterprise Message Service (EMS) is a standards-based JMS implementation designed for enterprise environments. It provides high availability, fault tolerance, and seamless integration with TIBCO's enterprise integration platform.</p>
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-inbox-fill broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">JMS Queues</h6>
+                    <small class="text-muted">Point-to-point messaging</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-broadcast broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">JMS Topics</h6>
+                    <small class="text-muted">Publish-subscribe</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-hdd-network broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Fault Tolerant</h6>
+                    <small class="text-muted">Active-standby clustering</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-shield-lock broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Enterprise Security</h6>
+                    <small class="text-muted">SSL, LDAP, certificates</small>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="mt-4">Key Enterprise Features</h6>
+        <ul>
+            <li><strong>High Availability</strong> - Fault-tolerant server pairs with automatic failover</li>
+            <li><strong>Message Store</strong> - Persistent storage for guaranteed delivery</li>
+            <li><strong>Routing</strong> - Route messages between EMS servers</li>
+            <li><strong>Bridges</strong> - Connect to other JMS providers</li>
+            <li><strong>Security</strong> - SSL/TLS, LDAP, JAAS authentication</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
+    <div class="card-body">
+        <h6>1. TIBCO EMS Server</h6>
+        <p class="small text-muted">TIBCO EMS requires a valid license. Contact TIBCO for evaluation or production licenses.</p>
+        <div class="code-block bash"># Default ports:
+# STOMP: 7222 (same as main port with STOMP enabled)
+# Admin: 7222
+# SSL: 7243</div>
+
+        <h6 class="mt-4">2. Install Python Client</h6>
+        <div class="code-block bash">pip install stomp.py</div>
+
+        <h6 class="mt-4">3. Queue Publisher</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'tibco://queue/orders',
+    'host': 'tibco-ems.example.com',
+    'port': 7222,
+    'username': 'admin',
+    'password': 'secret'
+}
+
+publisher = create_publisher('order_pub', config)
+publisher.publish({'order_id': 'ORD-001', 'amount': 5000.00})
+publisher.stop()</div>
+
+        <h6 class="mt-4">4. Queue Subscriber</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'tibco://queue/orders',
+    'host': 'tibco-ems.example.com',
+    'port': 7222,
+    'username': 'admin',
+    'password': 'secret'
+}
+
+subscriber = create_subscriber('order_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+subscriber.stop()</div>
+
+        <h6 class="mt-4">5. Topic Publisher</h6>
+        <div class="code-block python">config = {
+    'destination': 'tibco://topic/market.data',
+    'host': 'tibco-ems.example.com',
+    'port': 7222,
+    'username': 'admin',
+    'password': 'secret'
+}
+
+publisher = create_publisher('market_pub', config)
+publisher.publish({'symbol': 'AAPL', 'price': 178.50, 'volume': 1000000})
+publisher.stop()</div>
+    </div>
+</div>
+
+<!-- Destination Formats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Destination Formats</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Format</th><th>Example</th><th>JMS Destination</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge bg-primary">Queue</span></td><td><code>tibco://queue/name</code></td><td><code>tibco://queue/orders</code></td><td><code>/queue/orders</code></td></tr>
+                <tr><td><span class="badge bg-success">Topic</span></td><td><code>tibco://topic/name</code></td><td><code>tibco://topic/events</code></td><td><code>/topic/events</code></td></tr>
+            </tbody>
+        </table>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Note:</strong> TIBCO EMS supports hierarchical topic names with '.' separator (e.g., <code>market.data.stocks</code>).</div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Options</h5></div>
+    <div class="card-body">
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>host</code></td><td>string</td><td>'localhost'</td><td>EMS server hostname</td></tr>
+                <tr><td><code>port</code></td><td>int</td><td>7222</td><td>STOMP port</td></tr>
+                <tr><td><code>username</code></td><td>string</td><td>None</td><td>Authentication username</td></tr>
+                <tr><td><code>password</code></td><td>string</td><td>None</td><td>Authentication password</td></tr>
+                <tr><td><code>ssl</code></td><td>bool</td><td>False</td><td>Enable SSL/TLS</td></tr>
+                <tr><td><code>ssl_cert_file</code></td><td>string</td><td>None</td><td>Client certificate file</td></tr>
+                <tr><td><code>ssl_key_file</code></td><td>string</td><td>None</td><td>Client private key file</td></tr>
+                <tr><td><code>ssl_ca_certs</code></td><td>string</td><td>None</td><td>CA certificates file</td></tr>
+                <tr><td><code>heartbeats</code></td><td>tuple</td><td>(10000, 10000)</td><td>Heartbeat intervals (send, receive) ms</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="mt-4">Fault-Tolerant Configuration</h6>
+        <div class="code-block json">{
+  "name": "tibco_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "tibco://queue/orders",
+    "hosts": [
+      {"host": "ems-primary.example.com", "port": 7222},
+      {"host": "ems-standby.example.com", "port": 7222}
+    ],
+    "username": "app_user",
+    "password": "secret",
+    "ssl": true,
+    "ssl_ca_certs": "/etc/ssl/tibco-ca.pem"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Resilient -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient TIBCO EMS</h5></div>
+    <div class="card-body">
+        <p>Use the resilient version for automatic reconnection and failover:</p>
+        <div class="code-block python">from core.pubsub.resilient_tibcoems import ResilientTibcoEMSConsumer
+
+consumer = ResilientTibcoEMSConsumer(
+    hosts=[
+        ('ems-primary.example.com', 7222),
+        ('ems-standby.example.com', 7222)
+    ],
+    destination='/queue/orders',
+    username='app_user',
+    password='secret',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+# Automatically fails over to standby and reconnects
+for message in consumer:
+    print(f"Received: {message.body}")
+    consumer.ack(message)
+
+consumer.disconnect()</div>
+
+        <h6 class="mt-4">Resilient Configuration</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>reconnect_tries</code></td><td>10</td><td>Maximum reconnection attempts per server</td></tr>
+                <tr><td><code>reconnect_interval_seconds</code></td><td>60</td><td>Seconds between reconnection attempts</td></tr>
+                <tr><td><code>failover_on_error</code></td><td>True</td><td>Try next server on connection failure</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Enterprise Features -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-building"></i> Enterprise Features</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-hdd-network text-primary"></i> Fault Tolerance</h6>
+                <p class="small">Active-standby server pairs with automatic client failover. Shared state store ensures message consistency.</p>
+                
+                <h6><i class="bi bi-diagram-3 text-success"></i> Message Routing</h6>
+                <p class="small">Route messages between EMS servers across data centers for geographic distribution.</p>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-shield-lock text-warning"></i> Enterprise Security</h6>
+                <p class="small">SSL/TLS encryption, LDAP authentication, JAAS, and fine-grained ACLs.</p>
+                
+                <h6><i class="bi bi-speedometer2 text-danger"></i> Performance</h6>
+                <p class="small">Optimized for high-throughput financial and enterprise workloads.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-bar-chart"></i> When to Use TIBCO EMS</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success"><i class="bi bi-check-circle"></i> Good For</h6>
+                <ul>
+                    <li>Enterprise environments with TIBCO stack</li>
+                    <li>Financial services requiring certified messaging</li>
+                    <li>High availability requirements</li>
+                    <li>Integration with TIBCO BusinessWorks</li>
+                    <li>Regulatory compliance needs</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="bi bi-exclamation-circle"></i> Consider Alternatives When</h6>
+                <ul>
+                    <li>Budget constraints (commercial license)</li>
+                    <li>Cloud-native deployments (use managed services)</li>
+                    <li>Need message replay (use Kafka)</li>
+                    <li>Simple use cases (use RabbitMQ or Redis)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_redis_integration') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Redis</a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-house"></i> Help Center</a>
+    <a href="{{ url_for('help_ibmmq_integration') }}" class="btn btn-outline-primary">IBM MQ <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

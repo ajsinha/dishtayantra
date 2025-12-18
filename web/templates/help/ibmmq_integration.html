@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}IBM MQ Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.bash { border-left: 4px solid #64748b; }
+    .broker-color { color: #054ada; }
+    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card:hover { border-color: #054ada; box-shadow: 0 4px 15px rgba(5, 74, 218, 0.2); }
+    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>
+</div>
+
+<h2><i class="bi bi-server broker-color"></i> IBM MQ Integration (WebSphere MQ)</h2>
+<p class="lead">Industry-leading enterprise message queue for mission-critical applications and mainframe integration.</p>
+
+<div class="alert mb-4" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-left: 4px solid #054ada;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-patch-check-fill"></i> Mission-Critical Messaging</h5>
+            <p class="mb-0">Enterprise-grade reliability with once-and-only-once delivery guarantee.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge text-white" style="background: #054ada;">Resilient Version Available</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #054ada, #0353c2); color: white;">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>IBM MQ (formerly WebSphere MQ and MQSeries) is an enterprise message-oriented middleware that has been an industry standard for decades. It provides reliable, secure messaging across diverse platforms including mainframes, distributed systems, and cloud.</p>
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-inbox-fill broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Queues</h6>
+                    <small class="text-muted">Guaranteed delivery</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-broadcast broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Topics</h6>
+                    <small class="text-muted">Publish-subscribe</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-cpu broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Mainframe</h6>
+                    <small class="text-muted">z/OS integration</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-shield-lock broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Security</h6>
+                    <small class="text-muted">TLS, AMS encryption</small>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="mt-4">Key Enterprise Features</h6>
+        <ul>
+            <li><strong>Transactional Messaging</strong> - XA distributed transactions</li>
+            <li><strong>Clustering</strong> - Workload balancing and high availability</li>
+            <li><strong>Multi-platform</strong> - z/OS, Linux, Windows, AIX, IBM i</li>
+            <li><strong>Advanced Message Security</strong> - End-to-end encryption</li>
+            <li><strong>Managed File Transfer</strong> - Secure file exchange</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
+    <div class="card-body">
+        <h6>1. Start IBM MQ (Docker - Developer Edition)</h6>
+        <div class="code-block bash">docker run -d --name ibmmq \
+  -e LICENSE=accept \
+  -e MQ_QMGR_NAME=QM1 \
+  -e MQ_APP_PASSWORD=passw0rd \
+  -p 1414:1414 \
+  -p 9443:9443 \
+  icr.io/ibm-messaging/mq:latest
+
+# Web Console: https://localhost:9443/ibmmq/console (admin/passw0rd)
+# MQ Port: 1414</div>
+
+        <h6 class="mt-4">2. Install Python Client</h6>
+        <div class="code-block bash"># IBM MQ Client Library (pymqi)
+pip install pymqi
+
+# Or use STOMP connector (requires MQ STOMP support)
+pip install stomp.py</div>
+
+        <h6 class="mt-4">3. Queue Publisher</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'websphere://queue/DEV.QUEUE.1',
+    'host': 'localhost',
+    'port': 1414,
+    'queue_manager': 'QM1',
+    'channel': 'DEV.APP.SVRCONN',
+    'username': 'app',
+    'password': 'passw0rd'
+}
+
+publisher = create_publisher('order_pub', config)
+publisher.publish({'order_id': 'ORD-001', 'amount': 10000.00})
+publisher.stop()</div>
+
+        <h6 class="mt-4">4. Queue Subscriber</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'websphere://queue/DEV.QUEUE.1',
+    'host': 'localhost',
+    'port': 1414,
+    'queue_manager': 'QM1',
+    'channel': 'DEV.APP.SVRCONN',
+    'username': 'app',
+    'password': 'passw0rd'
+}
+
+subscriber = create_subscriber('order_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+subscriber.stop()</div>
+
+        <h6 class="mt-4">5. Topic Publisher</h6>
+        <div class="code-block python">config = {
+    'destination': 'websphere://topic/DEV/TOPIC/1',
+    'host': 'localhost',
+    'port': 1414,
+    'queue_manager': 'QM1',
+    'channel': 'DEV.APP.SVRCONN',
+    'username': 'app',
+    'password': 'passw0rd'
+}
+
+publisher = create_publisher('event_pub', config)
+publisher.publish({'event': 'trade_executed', 'symbol': 'IBM'})
+publisher.stop()</div>
+    </div>
+</div>
+
+<!-- Destination Formats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Destination Formats</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Format</th><th>Example</th><th>MQ Object</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge bg-primary">Queue</span></td><td><code>websphere://queue/name</code></td><td><code>websphere://queue/DEV.QUEUE.1</code></td><td>Local/Remote Queue</td></tr>
+                <tr><td><span class="badge bg-success">Topic</span></td><td><code>websphere://topic/name</code></td><td><code>websphere://topic/DEV/TOPIC</code></td><td>Topic Object</td></tr>
+            </tbody>
+        </table>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Note:</strong> Queue and topic names in IBM MQ typically use uppercase and dots (e.g., <code>DEV.QUEUE.1</code>).</div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Options</h5></div>
+    <div class="card-body">
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>host</code></td><td>string</td><td>'localhost'</td><td>MQ server hostname</td></tr>
+                <tr><td><code>port</code></td><td>int</td><td>1414</td><td>MQ listener port</td></tr>
+                <tr><td><code>queue_manager</code></td><td>string</td><td>Required</td><td>Queue manager name</td></tr>
+                <tr><td><code>channel</code></td><td>string</td><td>Required</td><td>Server connection channel</td></tr>
+                <tr><td><code>username</code></td><td>string</td><td>None</td><td>Authentication username</td></tr>
+                <tr><td><code>password</code></td><td>string</td><td>None</td><td>Authentication password</td></tr>
+                <tr><td><code>ssl_cipher_spec</code></td><td>string</td><td>None</td><td>SSL cipher specification</td></tr>
+                <tr><td><code>key_repo_location</code></td><td>string</td><td>None</td><td>SSL key repository path</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="mt-4">DAG Node Configuration</h6>
+        <div class="code-block json">{
+  "name": "ibmmq_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "websphere://queue/PROD.ORDERS.IN",
+    "host": "mq.example.com",
+    "port": 1414,
+    "queue_manager": "QMPROD",
+    "channel": "APP.SVRCONN",
+    "username": "mqapp",
+    "password": "secret",
+    "ssl_cipher_spec": "TLS_RSA_WITH_AES_256_CBC_SHA256"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Resilient -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient IBM MQ</h5></div>
+    <div class="card-body">
+        <p>Use the resilient version for automatic reconnection:</p>
+        <div class="code-block python">from core.pubsub.resilient_websphere import ResilientWebSphereMQConsumer
+
+consumer = ResilientWebSphereMQConsumer(
+    host='mq.example.com',
+    port=1414,
+    queue_manager='QMPROD',
+    channel='APP.SVRCONN',
+    queue='PROD.ORDERS.IN',
+    username='mqapp',
+    password='secret',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+# Automatically reconnects on failures
+for message in consumer:
+    print(f"Received: {message}")
+    consumer.commit()
+
+consumer.disconnect()</div>
+    </div>
+</div>
+
+<!-- Multi-Instance Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-hdd-network"></i> Multi-Instance Queue Manager</h5></div>
+    <div class="card-body">
+        <p>IBM MQ supports multi-instance queue managers for high availability:</p>
+        <div class="code-block json">{
+  "source": "websphere://queue/PROD.ORDERS",
+  "connection_name_list": "mq-primary.example.com(1414),mq-standby.example.com(1414)",
+  "queue_manager": "QMHA",
+  "channel": "APP.SVRCONN",
+  "username": "mqapp",
+  "password": "secret"
+}</div>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Tip:</strong> Use <code>connection_name_list</code> with comma-separated host(port) pairs for automatic failover.</div>
+    </div>
+</div>
+
+<!-- Comparison -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-bar-chart"></i> When to Use IBM MQ</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success"><i class="bi bi-check-circle"></i> Good For</h6>
+                <ul>
+                    <li>Mainframe integration (z/OS, IBM i)</li>
+                    <li>Mission-critical financial systems</li>
+                    <li>Existing IBM infrastructure</li>
+                    <li>Regulatory compliance (banking, healthcare)</li>
+                    <li>Guaranteed once-and-only-once delivery</li>
+                    <li>XA distributed transactions</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="bi bi-exclamation-circle"></i> Consider Alternatives When</h6>
+                <ul>
+                    <li>Budget constraints (commercial license)</li>
+                    <li>Cloud-native microservices (use Kafka)</li>
+                    <li>Simple use cases (use RabbitMQ)</li>
+                    <li>Need message replay (use Kafka)</li>
+                    <li>Open-source requirement</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_tibco_integration') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> TIBCO EMS</a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-house"></i> Help Center</a>
+    <a href="{{ url_for('help_inmemory_integration') }}" class="btn btn-outline-primary">In-Memory <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

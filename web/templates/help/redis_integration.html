@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Redis Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.bash { border-left: 4px solid #64748b; }
+    .broker-color { color: #dc382d; }
+    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card:hover { border-color: #dc382d; box-shadow: 0 4px 15px rgba(220, 56, 45, 0.2); }
+    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>
+</div>
+
+<h2><i class="bi bi-database-fill broker-color"></i> Redis Integration</h2>
+<p class="lead">High-performance in-memory data store with pub/sub messaging, lists, and streams support.</p>
+
+<div class="alert alert-danger mb-4" style="border-left: 4px solid #dc382d;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-lightning-charge-fill"></i> Blazing Fast Performance</h5>
+            <p class="mb-0">Sub-millisecond latency with pub/sub channels and list-based queues.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge text-white" style="background: #dc382d;">Resilient Version Available</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #dc382d, #b32d24); color: white;">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>Redis is an in-memory data structure store that can be used as a high-speed message broker. DishtaYantra supports Redis pub/sub channels and list-based queues for different messaging patterns.</p>
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-broadcast broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Pub/Sub</h6>
+                    <small class="text-muted">Real-time channel messaging</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-list-ul broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Lists (Queues)</h6>
+                    <small class="text-muted">LPUSH/BRPOP patterns</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-lightning-charge broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Sub-ms Latency</h6>
+                    <small class="text-muted">In-memory performance</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-hdd-stack broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Streams</h6>
+                    <small class="text-muted">Append-only logs (5.0+)</small>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="mt-4">Messaging Patterns</h6>
+        <table class="table table-sm">
+            <tr><td><strong>Pub/Sub (Topic)</strong></td><td>Fire-and-forget broadcasting. Messages lost if no subscribers.</td></tr>
+            <tr><td><strong>Lists (Queue)</strong></td><td>Reliable queues with persistence. Messages stored until consumed.</td></tr>
+            <tr><td><strong>Streams</strong></td><td>Kafka-like append-only log with consumer groups.</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
+    <div class="card-body">
+        <h6>1. Start Redis (Docker)</h6>
+        <div class="code-block bash">docker run -d --name redis -p 6379:6379 redis:latest
+
+# With persistence
+docker run -d --name redis -p 6379:6379 redis:latest --appendonly yes</div>
+
+        <h6 class="mt-4">2. Install Python Client</h6>
+        <div class="code-block bash">pip install redis</div>
+
+        <h6 class="mt-4">3. Pub/Sub Publisher (Topic)</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'redis://topic/events',
+    'host': 'localhost',
+    'port': 6379
+}
+
+publisher = create_publisher('event_pub', config)
+publisher.publish({'event': 'user_login', 'user_id': 123})
+publisher.stop()</div>
+
+        <h6 class="mt-4">4. Pub/Sub Subscriber (Topic)</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'redis://topic/events',
+    'host': 'localhost',
+    'port': 6379
+}
+
+subscriber = create_subscriber('event_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+subscriber.stop()</div>
+
+        <h6 class="mt-4">5. List-Based Queue Publisher</h6>
+        <div class="code-block python">config = {
+    'destination': 'redis://queue/tasks',
+    'host': 'localhost',
+    'port': 6379
+}
+
+publisher = create_publisher('task_pub', config)
+publisher.publish({'task': 'process_order', 'order_id': 'ORD-001'})
+publisher.stop()</div>
+
+        <h6 class="mt-4">6. List-Based Queue Subscriber</h6>
+        <div class="code-block python">config = {
+    'source': 'redis://queue/tasks',
+    'host': 'localhost',
+    'port': 6379
+}
+
+subscriber = create_subscriber('task_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)  # BRPOP with timeout
+print(f"Received: {data}")
+subscriber.stop()</div>
+    </div>
+</div>
+
+<!-- Destination Formats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Destination Formats</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Format</th><th>Example</th><th>Redis Command</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge bg-success">Topic (Pub/Sub)</span></td><td><code>redis://topic/name</code></td><td><code>redis://topic/events</code></td><td><code>PUBLISH/SUBSCRIBE</code></td></tr>
+                <tr><td><span class="badge bg-primary">Queue (List)</span></td><td><code>redis://queue/name</code></td><td><code>redis://queue/tasks</code></td><td><code>LPUSH/BRPOP</code></td></tr>
+            </tbody>
+        </table>
+        
+        <div class="warning-box"><strong><i class="bi bi-exclamation-triangle"></i> Important:</strong> Pub/Sub messages are <strong>fire-and-forget</strong>. If no subscribers are listening, messages are lost. Use queues (lists) for guaranteed delivery.</div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Options</h5></div>
+    <div class="card-body">
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>host</code></td><td>string</td><td>'localhost'</td><td>Redis server hostname</td></tr>
+                <tr><td><code>port</code></td><td>int</td><td>6379</td><td>Redis port</td></tr>
+                <tr><td><code>password</code></td><td>string</td><td>None</td><td>Redis AUTH password</td></tr>
+                <tr><td><code>db</code></td><td>int</td><td>0</td><td>Redis database number (0-15)</td></tr>
+                <tr><td><code>ssl</code></td><td>bool</td><td>False</td><td>Enable SSL/TLS</td></tr>
+                <tr><td><code>socket_timeout</code></td><td>float</td><td>None</td><td>Socket timeout in seconds</td></tr>
+                <tr><td><code>decode_responses</code></td><td>bool</td><td>True</td><td>Decode bytes to strings</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="mt-4">DAG Node Configuration</h6>
+        <div class="code-block json">{
+  "name": "redis_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "redis://queue/incoming_tasks",
+    "host": "redis.example.com",
+    "port": 6379,
+    "password": "secret",
+    "db": 0
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Resilient -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient Redis</h5></div>
+    <div class="card-body">
+        <p>Use the resilient version for automatic reconnection:</p>
+        <div class="code-block python">from core.pubsub.resilient_redis import ResilientRedisSubscriber
+
+subscriber = ResilientRedisSubscriber(
+    host='localhost',
+    port=6379,
+    channel='events',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+# Automatically reconnects on connection loss
+for message in subscriber:
+    print(f"Received: {message}")
+
+subscriber.close()</div>
+    </div>
+</div>
+
+<!-- InMemory Redis Clone -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-memory"></i> In-Memory Redis Clone</h5></div>
+    <div class="card-body">
+        <p>DishtaYantra includes an in-memory Redis-compatible implementation for development and testing:</p>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher, create_subscriber
+
+# Use 'inmemoryredis://' protocol - no actual Redis needed!
+config = {
+    'destination': 'inmemoryredis://queue/test_queue'
+}
+
+publisher = create_publisher('test_pub', config)
+publisher.publish({'test': 'data'})
+
+subscriber = create_subscriber('test_sub', {'source': 'inmemoryredis://queue/test_queue'})
+subscriber.start()
+data = subscriber.get_data(block_time=1)
+print(f"Received: {data}")</div>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Use Case:</strong> Perfect for unit testing and development without running an actual Redis server.</div>
+    </div>
+</div>
+
+<!-- Comparison -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-bar-chart"></i> When to Use Redis</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success"><i class="bi bi-check-circle"></i> Good For</h6>
+                <ul>
+                    <li>Ultra-low latency requirements</li>
+                    <li>Real-time pub/sub broadcasting</li>
+                    <li>Simple task queues</li>
+                    <li>Session/cache sharing alongside messaging</li>
+                    <li>Development and prototyping</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="bi bi-exclamation-circle"></i> Consider Alternatives When</h6>
+                <ul>
+                    <li>Need message persistence (pub/sub is ephemeral)</li>
+                    <li>Complex routing requirements (use RabbitMQ)</li>
+                    <li>Message replay needed (use Kafka)</li>
+                    <li>Enterprise support required (use commercial MQ)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_activemq_integration') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> ActiveMQ</a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-house"></i> Help Center</a>
+    <a href="{{ url_for('help_tibco_integration') }}" class="btn btn-outline-primary">TIBCO EMS <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

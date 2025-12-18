@@ -394,6 +394,139 @@
             </div>
         </div>
     </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #231f20;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-broadcast" style="color: #231f20;"></i> Kafka Dual-Library Integration
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #10b981, #059669);">1.1.2</span>
+                </h5>
+                <p class="card-text">High-performance Kafka integration with support for both kafka-python and confluent-kafka. Switch libraries via config with no code changes.</p>
+                <ul class="small text-muted mb-3">
+                    <li>kafka-python: ~50K msg/sec (development)</li>
+                    <li>confluent-kafka: ~500K msg/sec (production)</li>
+                    <li>Automatic library fallback</li>
+                    <li>Resilient versions with auto-reconnect</li>
+                </ul>
+                <a href="{{ url_for('help_kafka_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #231f20, #374151);">
+                    <i class="bi bi-broadcast"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Brokers Section -->
+<h3 class="section-title"><i class="bi bi-hdd-network"></i> Message Broker Integrations</h3>
+<div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #ff6600;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-envelope-fill" style="color: #ff6600;"></i> RabbitMQ
+                </h5>
+                <p class="card-text">AMQP message broker with advanced routing, exchanges, and dead letter queues.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Queues and Topics</li>
+                    <li>Flexible routing patterns</li>
+                    <li>Resilient auto-reconnect</li>
+                </ul>
+                <a href="{{ url_for('help_rabbitmq_integration') }}" class="btn btn-sm text-white" style="background: #ff6600;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #d33534;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-hdd-rack-fill" style="color: #d33534;"></i> ActiveMQ
+                </h5>
+                <p class="card-text">JMS-compliant broker with STOMP connectivity for Python applications.</p>
+                <ul class="small text-muted mb-3">
+                    <li>JMS queues and topics</li>
+                    <li>Multi-protocol support</li>
+                    <li>Network of brokers</li>
+                </ul>
+                <a href="{{ url_for('help_activemq_integration') }}" class="btn btn-sm text-white" style="background: #d33534;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #dc382d;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-database-fill" style="color: #dc382d;"></i> Redis
+                </h5>
+                <p class="card-text">High-performance in-memory pub/sub with list-based queues.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Sub-millisecond latency</li>
+                    <li>Pub/Sub channels</li>
+                    <li>InMemoryRedis clone included</li>
+                </ul>
+                <a href="{{ url_for('help_redis_integration') }}" class="btn btn-sm text-white" style="background: #dc382d;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #7c3aed;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-building" style="color: #7c3aed;"></i> TIBCO EMS
+                </h5>
+                <p class="card-text">Enterprise JMS broker with fault tolerance and high availability.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Enterprise security</li>
+                    <li>Active-standby failover</li>
+                    <li>TIBCO integration</li>
+                </ul>
+                <a href="{{ url_for('help_tibco_integration') }}" class="btn btn-sm text-white" style="background: #7c3aed;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #054ada;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-server" style="color: #054ada;"></i> IBM MQ
+                </h5>
+                <p class="card-text">Mission-critical enterprise messaging with mainframe integration.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Guaranteed delivery</li>
+                    <li>z/OS integration</li>
+                    <li>XA transactions</li>
+                </ul>
+                <a href="{{ url_for('help_ibmmq_integration') }}" class="btn btn-sm text-white" style="background: #054ada;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #10b981;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-memory" style="color: #10b981;"></i> In-Memory
+                </h5>
+                <p class="card-text">Zero-dependency in-memory messaging for development and testing.</p>
+                <ul class="small text-muted mb-3">
+                    <li>No external broker</li>
+                    <li>Ultra-fast performance</li>
+                    <li>Redis-compatible clone</li>
+                </ul>
+                <a href="{{ url_for('help_inmemory_integration') }}" class="btn btn-sm text-white" style="background: #10b981;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Quick Reference -->

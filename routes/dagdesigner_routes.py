@@ -34,13 +34,13 @@ class DAGDesignerRoutes:
             dags = self.dag_server.list_dags()
             dag_names = [dag['name'] for dag in dags]
 
-            return render_template('dag_designer.html',
+            return render_template('dag/designer.html',
                                    existing_dags=dag_names,
                                    is_admin=self.user_registry.has_role(session.get('username'), 'admin'))
         except Exception as e:
             logger.error(f"Error loading DAG Designer: {str(e)}")
             flash(f'Error loading DAG Designer: {str(e)}', 'error')
-            return render_template('dag_designer.html', existing_dags=[], is_admin=False)
+            return render_template('dag/designer.html', existing_dags=[], is_admin=False)
 
     def dag_designer_load(self, dag_name):
         """Load an existing DAG into the designer"""
@@ -56,7 +56,7 @@ class DAGDesignerRoutes:
             dags = self.dag_server.list_dags()
             dag_names = [d['name'] for d in dags]
 
-            return render_template('dag_designer.html',
+            return render_template('dag/designer.html',
                                    existing_dags=dag_names,
                                    loaded_dag=json.dumps(dag_config, indent=2),
                                    loaded_dag_name=dag_name,

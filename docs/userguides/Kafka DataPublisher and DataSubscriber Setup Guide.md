@@ -2,22 +2,51 @@
 
 ## © 2025-2030 Ashutosh Sinha
 
+**Version 1.1.2** | **Patent Pending**
+
+---
+
 ## Overview
 
-The Kafka implementation provides publisher and subscriber classes for Apache Kafka, a distributed streaming platform. Unlike traditional message brokers, Kafka is designed for high-throughput, fault-tolerant, and scalable event streaming. Kafka uses a **topic-based** publish-subscribe model with support for consumer groups and partitioning.
+The Kafka implementation provides publisher and subscriber classes for Apache Kafka with support for **two Python client libraries**:
 
-## Files
+| Library | Performance | Use Case |
+|---------|-------------|----------|
+| **kafka-python** | ~50K msg/sec | Development, simpler setup |
+| **confluent-kafka** | ~500K msg/sec | Production, high performance |
 
-1. **kafka_datapubsub.py** - Contains `KafkaDataPublisher` and `KafkaDataSubscriber` classes
-2. **pubsubfactory.py** - Factory methods support `kafka://topic/` destinations/sources
+The implementation uses a **factory pattern** allowing you to switch between libraries via configuration without changing any application code.
+
+---
+
+## What's New in v1.1.2
+
+### Dual Library Support (Patent Pending)
+
+- **Seamless switching** between kafka-python and confluent-kafka
+- **Zero code changes** required when switching libraries
+- **Automatic fallback** if preferred library unavailable
+- **Unified API** across both libraries
+- **Resilient versions** for both libraries
+
+### Performance Improvements
+
+| Metric | kafka-python | confluent-kafka | Improvement |
+|--------|--------------|-----------------|-------------|
+| Throughput | ~50K msg/sec | ~500K msg/sec | **10x** |
+| Latency (p99) | ~5ms | ~0.5ms | **10x** |
+| CPU Usage | Higher | Lower | **50% less** |
+| Memory | Higher | Lower | **30% less** |
+
+---
 
 ## Prerequisites
 
 ### Install Apache Kafka
 
-Using Docker (recommended for development):
-```bash
-# Start Kafka with Zookeeper using Docker Compose
+Using Docker (recommended):
+```yaml
+# docker-compose.yml
 version: '3'
 services:
   zookeeper:
@@ -43,56 +72,24 @@ services:
 # Start with: docker-compose up -d
 ```
 
-Or install manually:
-```bash
-# Download Kafka
-wget https://downloads.apache.org/kafka/3.6.0/kafka_2.13-3.6.0.tgz
-tar -xzf kafka_2.13-3.6.0.tgz
-cd kafka_2.13-3.6.0
-
-# Start Zookeeper
-bin/zookeeper-server-start.sh config/zookeeper.properties
-
-# Start Kafka (in another terminal)
-bin/kafka-server-start.sh config/server.properties
-```
-
-### Install Python Client
+### Install Python Client Libraries
 
 ```bash
+# Option 1: kafka-python only (simpler setup)
 pip install kafka-python
+
+# Option 2: confluent-kafka only (higher performance)
+pip install confluent-kafka
+
+# Option 3: Both libraries (recommended for flexibility)
+pip install kafka-python confluent-kafka
 ```
 
-## Kafka Concepts
+---
 
-### Topics
-- **Topic**: A category or feed name to which records are published
-- Messages are organized into topics (like channels)
-- Topics are partitioned for scalability
-- URL format: `kafka://topic/topic_name`
+## Quick Start
 
-### Partitions
-- Topics are divided into partitions for parallel processing
-- Each partition is an ordered, immutable sequence of records
-- Messages within a partition are ordered
-- Different partitions can be processed by different consumers
-
-### Consumer Groups
-- Consumers can be organized into consumer groups
-- Each partition is consumed by exactly one consumer in a group
-- Enables parallel processing and load balancing
-- Default group_id: `{subscriber_name}_group`
-
-### Offsets
-- Each message has an offset (position) in its partition
-- Consumers track their offset to resume from where they left off
-- Kafka stores committed offsets for consumer groups
-
-## Usage
-
-### Publishing to a Topic
-
-Basic topic publishing:
+### Basic Publisher (Default: kafka-python)
 
 ```python
 from core.pubsub.pubsubfactory import create_publisher
@@ -103,40 +100,27 @@ config = {
 }
 
 publisher = create_publisher('event_publisher', config)
-
-# Publish data
-publisher.publish({'event': 'user_login', 'user_id': 123, 'timestamp': '2025-01-15T10:30:00'})
-
-# Stop when done
+publisher.publish({'event': 'user_login', 'user_id': 123})
 publisher.stop()
 ```
 
-### Publishing with Custom Configuration
-
-Advanced producer settings:
+### High-Performance Publisher (confluent-kafka)
 
 ```python
+from core.pubsub.pubsubfactory import create_publisher
+
 config = {
     'destination': 'kafka://topic/user_events',
-    'bootstrap_servers': ['localhost:9092', 'localhost:9093', 'localhost:9094'],
-    'producer_config': {
-        'acks': 'all',              # Wait for all replicas
-        'retries': 3,               # Retry on failure
-        'batch_size': 16384,        # Batch size in bytes
-        'linger_ms': 10,            # Wait time for batching
-        'compression_type': 'gzip', # Compress messages
-        'max_in_flight_requests_per_connection': 5
-    }
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'confluent-kafka'  # Switch to high-performance library
 }
 
-publisher = create_publisher('reliable_publisher', config)
-publisher.publish({'event': 'critical_transaction', 'amount': 10000})
+publisher = create_publisher('event_publisher', config)
+publisher.publish({'event': 'user_login', 'user_id': 123})
 publisher.stop()
 ```
 
-### Subscribing from a Topic
-
-Basic topic subscription:
+### Basic Subscriber
 
 ```python
 from core.pubsub.pubsubfactory import create_subscriber
@@ -144,13 +128,13 @@ from core.pubsub.pubsubfactory import create_subscriber
 config = {
     'source': 'kafka://topic/user_events',
     'bootstrap_servers': ['localhost:9092'],
-    'group_id': 'user_event_processors'
+    'group_id': 'my_consumer_group',
+    'kafka_library': 'confluent-kafka'  # Optional: use high-performance library
 }
 
 subscriber = create_subscriber('event_subscriber', config)
 subscriber.start()
 
-# Get data (blocking with timeout)
 data = subscriber.get_data(block_time=5)
 if data:
     print(f"Received: {data}")
@@ -158,859 +142,566 @@ if data:
 subscriber.stop()
 ```
 
-### Subscribing with Custom Configuration
+---
 
-Advanced consumer settings:
+## Library Selection
+
+### Configuration Option
+
+Add `kafka_library` to your configuration to select the library:
 
 ```python
 config = {
-    'source': 'kafka://topic/user_events',
+    'destination': 'kafka://topic/my_topic',
     'bootstrap_servers': ['localhost:9092'],
-    'group_id': 'analytics_processors',
+    'kafka_library': 'confluent-kafka'  # or 'kafka-python'
+}
+```
+
+### application.properties
+
+```properties
+# Kafka library selection
+kafka.library=confluent-kafka
+
+# Kafka broker configuration
+kafka.bootstrap.servers=localhost:9092,localhost:9093
+
+# Producer settings
+kafka.producer.acks=all
+kafka.producer.retries=3
+
+# Consumer settings
+kafka.consumer.group.id=my_app_group
+kafka.consumer.auto.offset.reset=earliest
+```
+
+### DAG Node Configuration
+
+```json
+{
+  "name": "kafka_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "kafka://topic/input_events",
+    "bootstrap_servers": ["localhost:9092"],
+    "kafka_library": "confluent-kafka",
+    "group_id": "dag_processor"
+  }
+}
+```
+
+### Automatic Fallback
+
+If the specified library is not available, the system automatically falls back:
+
+```
+confluent-kafka requested → not installed → falls back to kafka-python
+kafka-python requested → not installed → raises ImportError
+```
+
+---
+
+## Library-Specific Configuration
+
+### kafka-python Configuration
+
+```python
+config = {
+    'destination': 'kafka://topic/events',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'kafka-python',
+    
+    # kafka-python specific producer config
+    'producer_config': {
+        'acks': 'all',
+        'retries': 3,
+        'batch_size': 16384,
+        'linger_ms': 10,
+        'compression_type': 'gzip',
+        'max_in_flight_requests_per_connection': 5,
+        'buffer_memory': 33554432
+    }
+}
+```
+
+### confluent-kafka Configuration
+
+```python
+config = {
+    'destination': 'kafka://topic/events',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'confluent-kafka',
+    
+    # confluent-kafka specific config (uses librdkafka naming)
+    'confluent_config': {
+        'acks': 'all',
+        'retries': 3,
+        'queue.buffering.max.messages': 100000,
+        'queue.buffering.max.ms': 5,
+        'batch.num.messages': 10000,
+        'compression.type': 'gzip',
+        'linger.ms': 5
+    }
+}
+```
+
+### Consumer Configuration
+
+#### kafka-python Consumer
+
+```python
+config = {
+    'source': 'kafka://topic/events',
+    'bootstrap_servers': ['localhost:9092'],
+    'group_id': 'my_group',
+    'kafka_library': 'kafka-python',
+    
     'consumer_config': {
-        'auto_offset_reset': 'earliest',    # Start from beginning
-        'enable_auto_commit': True,          # Auto-commit offsets
-        'auto_commit_interval_ms': 5000,     # Commit every 5 seconds
-        'max_poll_records': 100,             # Max records per poll
-        'session_timeout_ms': 30000,         # Session timeout
-        'heartbeat_interval_ms': 10000       # Heartbeat interval
+        'auto_offset_reset': 'earliest',
+        'enable_auto_commit': True,
+        'auto_commit_interval_ms': 5000,
+        'max_poll_records': 500,
+        'session_timeout_ms': 30000,
+        'heartbeat_interval_ms': 10000
+    }
+}
+```
+
+#### confluent-kafka Consumer
+
+```python
+config = {
+    'source': 'kafka://topic/events',
+    'bootstrap_servers': ['localhost:9092'],
+    'group_id': 'my_group',
+    'kafka_library': 'confluent-kafka',
+    
+    'confluent_config': {
+        'auto.offset.reset': 'earliest',
+        'enable.auto.commit': True,
+        'auto.commit.interval.ms': 5000,
+        'max.poll.records': 500,
+        'session.timeout.ms': 30000,
+        'heartbeat.interval.ms': 10000,
+        'fetch.min.bytes': 1,
+        'fetch.wait.max.ms': 100
+    }
+}
+```
+
+---
+
+## Resilient Kafka
+
+Both libraries support resilient versions with automatic reconnection.
+
+### Using Resilient Producer
+
+```python
+from core.pubsub.resilient_kafka import create_resilient_producer
+
+# Create resilient producer with confluent-kafka
+producer = create_resilient_producer(
+    kafka_library='confluent-kafka',
+    bootstrap_servers=['localhost:9092'],
+    reconnect_tries=10,
+    reconnect_interval_seconds=30,
+    buffer_max_messages=10000
+)
+
+# Send messages (automatically buffered during disconnection)
+producer.send('my-topic', value={'data': 'test'})
+producer.flush()
+producer.close()
+```
+
+### Using Resilient Consumer
+
+```python
+from core.pubsub.resilient_kafka import create_resilient_consumer
+
+# Create resilient consumer with confluent-kafka
+consumer = create_resilient_consumer(
+    'my-topic',
+    kafka_library='confluent-kafka',
+    bootstrap_servers=['localhost:9092'],
+    group_id='my-group',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+# Poll for messages (automatically reconnects on failure)
+for message in consumer:
+    print(f"Received: {message.value}")
+
+consumer.close()
+```
+
+### Resilient Features
+
+| Feature | Description |
+|---------|-------------|
+| **Auto-reconnect** | Automatically reconnects on broker failures |
+| **Message buffering** | Buffers messages during disconnection |
+| **Configurable retries** | Customize retry count and interval |
+| **Graceful degradation** | Continues operating during partial failures |
+| **Failed message tracking** | Track messages that couldn't be delivered |
+
+---
+
+## Performance Tuning
+
+### High-Throughput Producer (confluent-kafka)
+
+```python
+config = {
+    'destination': 'kafka://topic/high_volume',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'confluent-kafka',
+    
+    'confluent_config': {
+        # Batching for throughput
+        'queue.buffering.max.messages': 500000,
+        'queue.buffering.max.ms': 10,
+        'batch.num.messages': 50000,
+        
+        # Compression
+        'compression.type': 'lz4',
+        
+        # Performance
+        'linger.ms': 5,
+        'acks': 1  # Trade durability for speed
+    }
+}
+```
+
+### Low-Latency Producer (confluent-kafka)
+
+```python
+config = {
+    'destination': 'kafka://topic/low_latency',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'confluent-kafka',
+    
+    'confluent_config': {
+        # Minimal batching for low latency
+        'queue.buffering.max.ms': 0,
+        'batch.num.messages': 1,
+        'linger.ms': 0,
+        
+        # Immediate delivery
+        'acks': 1
+    }
+}
+```
+
+### High-Throughput Consumer (confluent-kafka)
+
+```python
+config = {
+    'source': 'kafka://topic/high_volume',
+    'bootstrap_servers': ['localhost:9092'],
+    'group_id': 'fast_consumer',
+    'kafka_library': 'confluent-kafka',
+    
+    'confluent_config': {
+        # Fetch more data per request
+        'fetch.min.bytes': 100000,
+        'fetch.max.bytes': 52428800,
+        'max.partition.fetch.bytes': 1048576,
+        
+        # Reduce wait time
+        'fetch.wait.max.ms': 100
+    }
+}
+```
+
+---
+
+## Checking Library Availability
+
+```python
+from core.pubsub.kafka_datapubsub import get_library_info, get_available_libraries
+
+# Check available libraries
+libraries = get_available_libraries()
+print(f"Available: {libraries}")
+# Output: ['kafka-python', 'confluent-kafka']
+
+# Get detailed info
+info = get_library_info()
+print(f"kafka-python: {info['kafka_python']}")
+print(f"confluent-kafka: {info['confluent_kafka']}")
+print(f"Recommended: {info['recommended']}")
+```
+
+---
+
+## Migration Guide
+
+### From kafka-python to confluent-kafka
+
+**Step 1: Install confluent-kafka**
+```bash
+pip install confluent-kafka
+```
+
+**Step 2: Update configuration**
+```python
+# Before (kafka-python)
+config = {
+    'destination': 'kafka://topic/events',
+    'bootstrap_servers': ['localhost:9092'],
+    'producer_config': {
+        'acks': 'all',
+        'batch_size': 16384
     }
 }
 
-subscriber = create_subscriber('analytics_sub', config)
-subscriber.start()
-
-# Process messages
-while True:
-    data = subscriber.get_data(block_time=1)
-    if data:
-        process_event(data)
+# After (confluent-kafka)
+config = {
+    'destination': 'kafka://topic/events',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'confluent-kafka',  # Add this line
+    'confluent_config': {                 # Rename and adjust config
+        'acks': 'all',
+        'batch.num.messages': 10000
+    }
+}
 ```
 
-## Destination/Source Format
-
-### Topic Format (Only)
+**Step 3: No code changes needed!**
+```python
+# Same code works with both libraries
+publisher = create_publisher('event_pub', config)
+publisher.publish({'data': 'test'})
+publisher.stop()
 ```
-kafka://topic/topic_name
-```
 
-**Note**: Kafka only supports topics, not queues. However, you can achieve queue-like behavior using consumer groups.
+---
 
-Examples:
-- `kafka://topic/user_events`
-- `kafka://topic/order_processing`
-- `kafka://topic/system_logs`
-- `kafka://topic/sensor_data`
+## Configuration Reference
 
-## Configuration Options
-
-### Publisher Options
+### Publisher Configuration Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `destination` | string | Required | Kafka topic URL |
+| `destination` | string | Required | Kafka topic URL (`kafka://topic/name`) |
 | `bootstrap_servers` | list | `['localhost:9092']` | Kafka broker addresses |
-| `producer_config` | dict | `{}` | Additional KafkaProducer options |
-| `publish_interval` | int | `0` | Batch publishing interval (inherited) |
-| `batch_size` | int | `None` | Batch size threshold (inherited) |
+| `kafka_library` | string | `'kafka-python'` | Library to use |
+| `producer_config` | dict | `{}` | kafka-python specific options |
+| `confluent_config` | dict | `{}` | confluent-kafka specific options |
 
-### Common Producer Config Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `acks` | string/int | `1` | Acknowledgment level (0, 1, 'all') |
-| `retries` | int | `0` | Number of retries on failure |
-| `batch_size` | int | `16384` | Batch size in bytes |
-| `linger_ms` | int | `0` | Wait time for batching (ms) |
-| `compression_type` | string | `None` | Compression (gzip, snappy, lz4, zstd) |
-| `max_in_flight_requests_per_connection` | int | `5` | Max unacknowledged requests |
-| `buffer_memory` | int | `33554432` | Total memory for buffering |
-
-### Subscriber Options
+### Subscriber Configuration Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `source` | string | Required | Kafka topic URL |
 | `bootstrap_servers` | list | `['localhost:9092']` | Kafka broker addresses |
-| `group_id` | string | `{name}_group` | Consumer group ID |
-| `consumer_config` | dict | `{}` | Additional KafkaConsumer options |
-| `max_depth` | int | `100000` | Internal queue maximum size (inherited) |
+| `group_id` | string | `'{name}_group'` | Consumer group ID |
+| `kafka_library` | string | `'kafka-python'` | Library to use |
+| `consumer_config` | dict | `{}` | kafka-python specific options |
+| `confluent_config` | dict | `{}` | confluent-kafka specific options |
 
-### Common Consumer Config Options
+### Resilient Configuration Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `auto_offset_reset` | string | `latest` | Where to start (earliest, latest) |
-| `enable_auto_commit` | bool | `True` | Auto-commit offsets |
-| `auto_commit_interval_ms` | int | `5000` | Auto-commit interval |
-| `max_poll_records` | int | `500` | Max records per poll |
-| `session_timeout_ms` | int | `10000` | Consumer session timeout |
-| `heartbeat_interval_ms` | int | `3000` | Heartbeat interval |
-| `fetch_min_bytes` | int | `1` | Min bytes per fetch request |
-| `fetch_max_wait_ms` | int | `500` | Max wait for fetch request |
-| `max_partition_fetch_bytes` | int | `1048576` | Max bytes per partition |
-
-## Common Patterns
-
-### Pattern 1: Pub-Sub (Broadcasting)
-
-All consumers in different groups receive all messages:
-
-```python
-# Publisher
-publisher = create_publisher('event_pub', {
-    'destination': 'kafka://topic/system_events',
-    'bootstrap_servers': ['localhost:9092']
-})
-
-# Consumer Group 1 - Logger
-logger_sub = create_subscriber('logger', {
-    'source': 'kafka://topic/system_events',
-    'group_id': 'logging_service'
-})
-
-# Consumer Group 2 - Analytics
-analytics_sub = create_subscriber('analytics', {
-    'source': 'kafka://topic/system_events',
-    'group_id': 'analytics_service'
-})
-
-# Consumer Group 3 - Alerting
-alert_sub = create_subscriber('alerting', {
-    'source': 'kafka://topic/system_events',
-    'group_id': 'alert_service'
-})
-
-logger_sub.start()
-analytics_sub.start()
-alert_sub.start()
-
-# Publish event - all three groups receive it
-publisher.publish({'event': 'user_login', 'user_id': 123})
-```
-
-### Pattern 2: Load Balancing (Consumer Group)
-
-Multiple consumers in same group share the load:
-
-```python
-# Publisher
-publisher = create_publisher('task_pub', {
-    'destination': 'kafka://topic/tasks',
-    'bootstrap_servers': ['localhost:9092']
-})
-
-# Multiple workers in same consumer group
-# Each worker processes different partitions
-workers = []
-for i in range(3):
-    worker = create_subscriber(f'worker_{i}', {
-        'source': 'kafka://topic/tasks',
-        'group_id': 'task_processors'  # Same group
-    })
-    worker.start()
-    workers.append(worker)
-
-# Tasks are distributed among workers
-for i in range(100):
-    publisher.publish({'task_id': i, 'action': 'process'})
-```
-
-### Pattern 3: Stream Processing Pipeline
-
-Chain multiple topics for processing stages:
-
-```python
-# Stage 1: Raw data ingestion
-raw_pub = create_publisher('raw_ingest', {
-    'destination': 'kafka://topic/raw_events'
-})
-
-# Stage 1 Consumer / Stage 2 Producer
-enriched_pub = create_publisher('enriched_pub', {
-    'destination': 'kafka://topic/enriched_events'
-})
-
-raw_sub = create_subscriber('enricher', {
-    'source': 'kafka://topic/raw_events',
-    'group_id': 'enrichment_service'
-})
-raw_sub.start()
-
-# Enrich and forward
-while True:
-    raw_data = raw_sub.get_data(block_time=1)
-    if raw_data:
-        enriched_data = enrich(raw_data)
-        enriched_pub.publish(enriched_data)
-
-# Stage 3: Final processing
-final_sub = create_subscriber('processor', {
-    'source': 'kafka://topic/enriched_events',
-    'group_id': 'processing_service'
-})
-final_sub.start()
-```
-
-### Pattern 4: Event Sourcing
-
-Store all events as immutable log:
-
-```python
-# Event store
-event_pub = create_publisher('event_store', {
-    'destination': 'kafka://topic/event_store',
-    'producer_config': {
-        'acks': 'all',              # Ensure durability
-        'compression_type': 'gzip'
-    }
-})
-
-# Store all domain events
-event_pub.publish({
-    'event_type': 'OrderCreated',
-    'order_id': 'ORD-123',
-    'timestamp': '2025-01-15T10:30:00',
-    'data': {'customer_id': 456, 'total': 99.99}
-})
-
-# Replay events from beginning
-replay_sub = create_subscriber('replayer', {
-    'source': 'kafka://topic/event_store',
-    'group_id': 'replay_service',
-    'consumer_config': {
-        'auto_offset_reset': 'earliest'  # Start from beginning
-    }
-})
-replay_sub.start()
-```
-
-### Pattern 5: Change Data Capture (CDC)
-
-Capture database changes:
-
-```python
-# CDC Publisher
-cdc_pub = create_publisher('cdc', {
-    'destination': 'kafka://topic/db_changes',
-    'producer_config': {
-        'acks': 'all',
-        'compression_type': 'snappy'
-    }
-})
-
-# Publish database changes
-cdc_pub.publish({
-    'operation': 'INSERT',
-    'table': 'users',
-    'record': {'id': 123, 'name': 'John', 'email': 'john@example.com'},
-    'timestamp': '2025-01-15T10:30:00'
-})
-
-# Consumers can sync to other systems
-sync_sub = create_subscriber('sync', {
-    'source': 'kafka://topic/db_changes',
-    'group_id': 'sync_service'
-})
-sync_sub.start()
-```
-
-## Consumer Groups Explained
-
-### Single Consumer Group (Load Balancing)
-```
-Topic: user_events (3 partitions)
-Consumer Group: processors
-
-Partition 0 → Consumer A
-Partition 1 → Consumer B
-Partition 2 → Consumer C
-
-Each message processed by ONE consumer
-```
-
-### Multiple Consumer Groups (Broadcasting)
-```
-Topic: user_events (3 partitions)
-
-Group 1: logging
-  Partition 0 → Logger A
-  Partition 1 → Logger A
-  Partition 2 → Logger A
-
-Group 2: analytics
-  Partition 0 → Analytics A
-  Partition 1 → Analytics B
-  Partition 2 → Analytics B
-
-Each message processed by EACH group
-```
-
-## Offset Management
-
-### Auto Offset Reset
-
-```python
-# Start from earliest message (beginning of topic)
-config = {
-    'source': 'kafka://topic/events',
-    'consumer_config': {
-        'auto_offset_reset': 'earliest'
-    }
-}
-
-# Start from latest message (skip existing messages)
-config = {
-    'source': 'kafka://topic/events',
-    'consumer_config': {
-        'auto_offset_reset': 'latest'
-    }
-}
-```
-
-### Manual Offset Commit
-
-```python
-config = {
-    'source': 'kafka://topic/events',
-    'consumer_config': {
-        'enable_auto_commit': False  # Manual commit
-    }
-}
-
-# Note: Current implementation uses auto-commit
-# For manual commit, you would need to extend the subscriber
-```
-
-## Monitoring
-
-### Get Publisher Statistics
-
-```python
-stats = publisher.details()
-print(f"Name: {stats['name']}")
-print(f"Topic: {stats['destination']}")
-print(f"Published: {stats['publish_count']} messages")
-print(f"Last publish: {stats['last_publish']}")
-print(f"Queue depth: {stats['queue_depth']}")
-```
-
-### Get Subscriber Statistics
-
-```python
-stats = subscriber.details()
-print(f"Name: {stats['name']}")
-print(f"Topic: {stats['source']}")
-print(f"Consumer Group: {config['group_id']}")
-print(f"Received: {stats['receive_count']} messages")
-print(f"Last receive: {stats['last_receive']}")
-print(f"Internal queue size: {stats['current_depth']}")
-```
-
-## Kafka Administration
-
-### Command Line Tools
-
-```bash
-# List topics
-kafka-topics.sh --list --bootstrap-server localhost:9092
-
-# Create topic
-kafka-topics.sh --create \
-  --topic user_events \
-  --partitions 3 \
-  --replication-factor 1 \
-  --bootstrap-server localhost:9092
-
-# Describe topic
-kafka-topics.sh --describe \
-  --topic user_events \
-  --bootstrap-server localhost:9092
-
-# Delete topic
-kafka-topics.sh --delete \
-  --topic user_events \
-  --bootstrap-server localhost:9092
-
-# List consumer groups
-kafka-consumer-groups.sh --list \
-  --bootstrap-server localhost:9092
-
-# Describe consumer group
-kafka-consumer-groups.sh --describe \
-  --group task_processors \
-  --bootstrap-server localhost:9092
-
-# Reset consumer group offset
-kafka-consumer-groups.sh --reset-offsets \
-  --group task_processors \
-  --topic user_events \
-  --to-earliest \
-  --execute \
-  --bootstrap-server localhost:9092
-
-# Produce messages (testing)
-kafka-console-producer.sh \
-  --topic user_events \
-  --bootstrap-server localhost:9092
-
-# Consume messages (testing)
-kafka-console-consumer.sh \
-  --topic user_events \
-  --from-beginning \
-  --bootstrap-server localhost:9092
-```
-
-### Python Admin API
-
-```python
-from kafka.admin import KafkaAdminClient, NewTopic
-
-# Create admin client
-admin = KafkaAdminClient(bootstrap_servers=['localhost:9092'])
-
-# Create topic
-topic = NewTopic(name='new_events', num_partitions=3, replication_factor=1)
-admin.create_topics([topic])
-
-# List topics
-topics = admin.list_topics()
-print(topics)
-
-# Delete topic
-admin.delete_topics(['old_events'])
-
-admin.close()
-```
+| `kafka_library` | string | `'kafka-python'` | Library to use |
+| `reconnect_tries` | int | `10` | Max reconnection attempts |
+| `reconnect_interval_seconds` | int | `60` | Seconds between retries |
+| `buffer_max_messages` | int | `10000` | Max buffered messages (producer) |
+
+---
 
 ## Troubleshooting
 
-### Connection Refused
+### Library Not Found
 
-**Error**: `NoBrokersAvailable` or connection timeout
+```
+ImportError: No Kafka library available. Install kafka-python or confluent-kafka
+```
 
-**Solution**: Check if Kafka is running
+**Solution:**
 ```bash
-# Check Kafka process
-ps aux | grep kafka
-
-# Start Kafka
-bin/kafka-server-start.sh config/server.properties
-
-# Check Docker containers
-docker ps
+pip install kafka-python  # or
+pip install confluent-kafka
 ```
 
-### Topic Not Found
+### confluent-kafka Build Issues (Windows)
 
-**Error**: `UnknownTopicOrPartitionError`
+```
+error: Microsoft Visual C++ 14.0 is required
+```
 
-**Solution**: Create the topic or enable auto-creation
+**Solution:** Install pre-built wheel:
 ```bash
-# Create topic manually
-kafka-topics.sh --create \
-  --topic my_topic \
-  --partitions 3 \
-  --replication-factor 1 \
-  --bootstrap-server localhost:9092
-
-# Or enable auto-creation in server.properties
-auto.create.topics.enable=true
+pip install confluent-kafka --prefer-binary
 ```
 
-### Consumer Not Receiving Messages
+### Connection Timeout
 
-**Possible causes**:
-- Consumer started after messages were published
-- Consumer group already consumed the messages
-- Wrong topic name
-- Messages expired due to retention policy
-
-**Solution**:
-```python
-# Reset to beginning
-config = {
-    'source': 'kafka://topic/events',
-    'consumer_config': {
-        'auto_offset_reset': 'earliest'
-    }
-}
-
-# Or reset consumer group offset
-kafka-consumer-groups.sh --reset-offsets \
-  --group my_group \
-  --topic my_topic \
-  --to-earliest \
-  --execute \
-  --bootstrap-server localhost:9092
+```
+KafkaTimeoutError: Failed to update metadata
 ```
 
-### Consumer Lag
+**Solution:**
+1. Verify Kafka broker is running
+2. Check `bootstrap_servers` configuration
+3. Check network connectivity
+4. Increase timeout in config
 
-**Error**: Consumer falling behind producers
+### Consumer Group Issues
 
-**Solution**: Scale consumers or optimize processing
-```python
-# Add more consumers to the same group
-for i in range(5):  # Increase from 3 to 5
-    worker = create_subscriber(f'worker_{i}', {
-        'source': 'kafka://topic/tasks',
-        'group_id': 'workers'
-    })
-    worker.start()
-
-# Or optimize polling
-config = {
-    'source': 'kafka://topic/tasks',
-    'consumer_config': {
-        'max_poll_records': 1000,  # Process more per poll
-        'fetch_min_bytes': 10000   # Fetch more data
-    }
-}
+```
+CommitFailedError: Coordinator not available
 ```
 
-### Serialization Errors
+**Solution:**
+1. Ensure `group_id` is set
+2. Check `session_timeout_ms` isn't too short
+3. Verify Kafka version compatibility
 
-**Error**: JSON decode error
-
-**Solution**: Ensure data is valid JSON
-```python
-# Publisher - ensure JSON serializable
-data = {
-    'timestamp': datetime.now().isoformat(),  # Convert datetime
-    'user_id': 123,
-    'metadata': json.dumps(complex_object)     # Pre-serialize complex objects
-}
-publisher.publish(data)
-```
+---
 
 ## Best Practices
 
-1. **Use meaningful topic names** - Clear, hierarchical naming (e.g., `orders.created`, `users.updated`)
-2. **Plan partition count** - Based on throughput and parallelism needs
-3. **Set appropriate retention** - Balance storage and replay requirements
-4. **Use compression** - Save bandwidth and storage (gzip, snappy)
-5. **Handle failures gracefully** - Implement retry logic and error handling
-6. **Monitor consumer lag** - Detect processing bottlenecks early
-7. **Use consumer groups wisely** - Different groups for different purposes
-8. **Commit offsets regularly** - Prevent duplicate processing
-9. **Design for idempotency** - Messages may be redelivered
-10. **Close connections properly** - Always call `stop()`
-
-## Performance Tips
-
-1. **Batch publishing**: Use `publish_interval` and `batch_size` from base class
-2. **Producer batching**: Set `linger_ms` and `batch_size` in producer_config
-3. **Compression**: Use `snappy` for balance of speed and compression
-4. **Partition strategy**: More partitions = more parallelism
-5. **Consumer fetch size**: Tune `fetch_min_bytes` and `max_poll_records`
-6. **Replication factor**: Balance durability and performance
-7. **Acks setting**: Use `acks=1` for best performance, `acks='all'` for durability
-8. **Connection pooling**: Reuse producers when possible
-9. **Page cache**: Kafka uses OS page cache effectively
-10. **Network tuning**: Ensure network bandwidth is adequate
-
-## Complete Examples
-
-### Example 1: Simple Event Processing
+### 1. Use confluent-kafka in Production
 
 ```python
-from core.pubsub.pubsubfactory import create_publisher, create_subscriber
-import time
-import json
-
-# Create publisher
-publisher = create_publisher('event_publisher', {
-    'destination': 'kafka://topic/user_events',
-    'bootstrap_servers': ['localhost:9092']
-})
-
-# Create subscriber
-subscriber = create_subscriber('event_processor', {
-    'source': 'kafka://topic/user_events',
-    'bootstrap_servers': ['localhost:9092'],
-    'group_id': 'processors'
-})
-subscriber.start()
-
-# Publish events
-events = [
-    {'event': 'user_login', 'user_id': 1, 'timestamp': '2025-01-15T10:00:00'},
-    {'event': 'page_view', 'user_id': 1, 'page': '/home'},
-    {'event': 'user_logout', 'user_id': 1, 'timestamp': '2025-01-15T10:30:00'}
-]
-
-for event in events:
-    publisher.publish(event)
-    print(f"Published: {event}")
-    time.sleep(0.5)
-
-# Process events
-for i in range(len(events)):
-    data = subscriber.get_data(block_time=5)
-    if data:
-        print(f"Processed: {data}")
-
-# Cleanup
-publisher.stop()
-subscriber.stop()
+# Production configuration
+config = {
+    'kafka_library': 'confluent-kafka',
+    'bootstrap_servers': ['kafka1:9092', 'kafka2:9092', 'kafka3:9092'],
+    'confluent_config': {
+        'acks': 'all',
+        'retries': 5,
+        'compression.type': 'lz4'
+    }
+}
 ```
 
-### Example 2: Multi-Stage Processing Pipeline
+### 2. Use Resilient Classes for Critical Applications
+
+```python
+from core.pubsub.resilient_kafka import create_resilient_producer
+
+producer = create_resilient_producer(
+    kafka_library='confluent-kafka',
+    reconnect_tries=20,
+    buffer_max_messages=50000
+)
+```
+
+### 3. Monitor Library Performance
+
+```python
+info = get_library_info()
+if info['confluent_kafka']['available']:
+    print("Using high-performance confluent-kafka")
+else:
+    print("Falling back to kafka-python")
+```
+
+### 4. Set Appropriate Timeouts
+
+```python
+config = {
+    'confluent_config': {
+        'socket.timeout.ms': 60000,
+        'session.timeout.ms': 30000,
+        'request.timeout.ms': 30000
+    }
+}
+```
+
+---
+
+## Complete Example: High-Performance Pipeline
 
 ```python
 from core.pubsub.pubsubfactory import create_publisher, create_subscriber
-import time
+from core.pubsub.kafka_datapubsub import get_library_info
 import threading
-
-# Stage 1: Raw data ingestion
-raw_publisher = create_publisher('raw_ingest', {
-    'destination': 'kafka://topic/raw_orders',
-    'bootstrap_servers': ['localhost:9092']
-})
-
-# Stage 2: Enrichment service
-enriched_publisher = create_publisher('enriched_pub', {
-    'destination': 'kafka://topic/enriched_orders',
-    'bootstrap_servers': ['localhost:9092']
-})
-
-raw_subscriber = create_subscriber('enricher', {
-    'source': 'kafka://topic/raw_orders',
-    'bootstrap_servers': ['localhost:9092'],
-    'group_id': 'enrichment_service'
-})
-
-# Stage 3: Processing service
-enriched_subscriber = create_subscriber('processor', {
-    'source': 'kafka://topic/enriched_orders',
-    'bootstrap_servers': ['localhost:9092'],
-    'group_id': 'processing_service'
-})
-
-# Enrichment worker
-def enrichment_worker():
-    raw_subscriber.start()
-    while True:
-        raw_data = raw_subscriber.get_data(block_time=1)
-        if raw_data:
-            # Enrich data
-            enriched = {
-                **raw_data,
-                'customer_name': f"Customer {raw_data['customer_id']}",
-                'enriched_at': time.time()
-            }
-            enriched_publisher.publish(enriched)
-            print(f"Enriched: {enriched}")
-
-# Processing worker
-def processing_worker():
-    enriched_subscriber.start()
-    while True:
-        enriched_data = enriched_subscriber.get_data(block_time=1)
-        if enriched_data:
-            # Process data
-            print(f"Processed order: {enriched_data}")
-
-# Start workers
-enrichment_thread = threading.Thread(target=enrichment_worker, daemon=True)
-processing_thread = threading.Thread(target=processing_worker, daemon=True)
-
-enrichment_thread.start()
-processing_thread.start()
-
-# Publish raw orders
-orders = [
-    {'order_id': 'ORD-001', 'customer_id': 123, 'amount': 99.99},
-    {'order_id': 'ORD-002', 'customer_id': 456, 'amount': 149.99},
-    {'order_id': 'ORD-003', 'customer_id': 789, 'amount': 79.99}
-]
-
-for order in orders:
-    raw_publisher.publish(order)
-    print(f"Published raw order: {order}")
-    time.sleep(1)
-
-# Wait for processing
-time.sleep(5)
-
-# Cleanup
-raw_publisher.stop()
-enriched_publisher.stop()
-raw_subscriber.stop()
-enriched_subscriber.stop()
-```
-
-### Example 3: Load Balanced Processing
-
-```python
-from core.pubsub.pubsubfactory import create_publisher, create_subscriber
 import time
-import threading
 
-# Create publisher
-publisher = create_publisher('task_pub', {
-    'destination': 'kafka://topic/tasks',
-    'bootstrap_servers': ['localhost:9092']
-})
+# Check library availability
+info = get_library_info()
+library = 'confluent-kafka' if info['confluent_kafka']['available'] else 'kafka-python'
+print(f"Using library: {library} ({info[library.replace('-', '_')]['performance']})")
 
-# Create multiple workers in same consumer group
-def worker_func(worker_id):
-    subscriber = create_subscriber(f'worker_{worker_id}', {
-        'source': 'kafka://topic/tasks',
-        'bootstrap_servers': ['localhost:9092'],
-        'group_id': 'task_workers'  # Same group = load balancing
-    })
+# High-performance producer
+producer_config = {
+    'destination': 'kafka://topic/high_perf',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': library,
+    'confluent_config': {
+        'queue.buffering.max.messages': 100000,
+        'batch.num.messages': 10000,
+        'compression.type': 'lz4'
+    }
+}
+
+# High-performance consumer
+consumer_config = {
+    'source': 'kafka://topic/high_perf',
+    'bootstrap_servers': ['localhost:9092'],
+    'group_id': 'high_perf_consumer',
+    'kafka_library': library,
+    'confluent_config': {
+        'fetch.min.bytes': 10000,
+        'fetch.wait.max.ms': 100
+    }
+}
+
+publisher = create_publisher('perf_pub', producer_config)
+subscriber = create_subscriber('perf_sub', consumer_config)
+
+# Consumer thread
+def consumer_thread():
     subscriber.start()
-    
-    while True:
+    count = 0
+    while count < 10000:
         data = subscriber.get_data(block_time=1)
         if data:
-            print(f"Worker {worker_id} processing: {data}")
-            time.sleep(0.5)  # Simulate processing
+            count += 1
+            if count % 1000 == 0:
+                print(f"Consumed {count} messages")
+    subscriber.stop()
 
-# Start 3 workers
-threads = []
-for i in range(3):
-    thread = threading.Thread(target=worker_func, args=(i,), daemon=True)
-    thread.start()
-    threads.append(thread)
+# Start consumer
+thread = threading.Thread(target=consumer_thread, daemon=True)
+thread.start()
 
-# Publish tasks
-for i in range(20):
-    task = {'task_id': i, 'action': 'process', 'data': f'task_{i}'}
-    publisher.publish(task)
-    print(f"Published task {i}")
-    time.sleep(0.1)
-
-# Wait for processing
-time.sleep(10)
-
-# Cleanup
+# Produce messages
+start = time.time()
+for i in range(10000):
+    publisher.publish({'id': i, 'data': f'message_{i}'})
+    
 publisher.stop()
+elapsed = time.time() - start
+print(f"Produced 10000 messages in {elapsed:.2f}s ({10000/elapsed:.0f} msg/sec)")
+
+thread.join(timeout=30)
 ```
 
-### Example 4: Multi-Group Broadcasting
+---
 
-```python
-from core.pubsub.pubsubfactory import create_publisher, create_subscriber
-import time
-import threading
+## Legal Information
 
-# Create publisher
-publisher = create_publisher('event_pub', {
-    'destination': 'kafka://topic/system_events',
-    'bootstrap_servers': ['localhost:9092']
-})
+### Patent Notice
 
-# Logger service (Group 1)
-def logger_service():
-    subscriber = create_subscriber('logger', {
-        'source': 'kafka://topic/system_events',
-        'bootstrap_servers': ['localhost:9092'],
-        'group_id': 'logging_service'
-    })
-    subscriber.start()
-    
-    while True:
-        data = subscriber.get_data(block_time=1)
-        if data:
-            print(f"[LOGGER] {data}")
+**PATENT PENDING**: The Multi-Broker Message Routing Architecture and dual-library abstraction layer implemented in DishtaYantra are subject to pending patent applications.
 
-# Analytics service (Group 2)
-def analytics_service():
-    subscriber = create_subscriber('analytics', {
-        'source': 'kafka://topic/system_events',
-        'bootstrap_servers': ['localhost:9092'],
-        'group_id': 'analytics_service'
-    })
-    subscriber.start()
-    
-    while True:
-        data = subscriber.get_data(block_time=1)
-        if data:
-            print(f"[ANALYTICS] Processing: {data['event']}")
+### Copyright Notice
 
-# Alerting service (Group 3)
-def alerting_service():
-    subscriber = create_subscriber('alerting', {
-        'source': 'kafka://topic/system_events',
-        'bootstrap_servers': ['localhost:9092'],
-        'group_id': 'alert_service'
-    })
-    subscriber.start()
-    
-    while True:
-        data = subscriber.get_data(block_time=1)
-        if data:
-            if data.get('severity') == 'critical':
-                print(f"[ALERT] Critical event: {data}")
+Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.
 
-# Start all services
-threading.Thread(target=logger_service, daemon=True).start()
-threading.Thread(target=analytics_service, daemon=True).start()
-threading.Thread(target=alerting_service, daemon=True).start()
+### Trademark Notice
 
-time.sleep(1)  # Wait for services to start
+DishtaYantra™ is a trademark of Ashutosh Sinha.
 
-# Publish events
-events = [
-    {'event': 'user_login', 'user_id': 123, 'severity': 'info'},
-    {'event': 'payment_failed', 'user_id': 456, 'severity': 'warning'},
-    {'event': 'system_down', 'severity': 'critical'},
-    {'event': 'user_logout', 'user_id': 123, 'severity': 'info'}
-]
+---
 
-for event in events:
-    publisher.publish(event)
-    print(f"Published: {event}")
-    time.sleep(1)
-
-# Wait for processing
-time.sleep(5)
-
-# Cleanup
-publisher.stop()
-```
-
-## Comparison with Other Brokers
-
-| Feature | Kafka | ActiveMQ | RabbitMQ | TIBCO EMS | IBM MQ |
-|---------|-------|----------|----------|-----------|--------|
-| Model | Topic-based | Queue/Topic | Queue/Topic | Queue/Topic | Queue/Topic |
-| Messaging | Pub-Sub | Pub-Sub, P2P | Pub-Sub, P2P | Pub-Sub, P2P | Pub-Sub, P2P |
-| Persistence | Always | Optional | Optional | Optional | Optional |
-| Ordering | Per partition | Per queue | Per queue | Per queue | Per queue |
-| Scalability | Excellent | Good | Good | Good | Good |
-| Throughput | Very High | Medium | Medium-High | Medium-High | Medium-High |
-| Consumer groups | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No |
-| Replay messages | ✅ Yes | ❌ No | ❌ No | Limited | Limited |
-| Default port | 9092 | 61613 | 5672 | 7222 | 1414 |
-| Python library | kafka-python | stomp.py | pika | tibcoems | pymqi |
-| Best for | Event streaming | Traditional MQ | Traditional MQ | Enterprise MQ | Enterprise MQ |
-
-## When to Use Kafka
-
-**Use Kafka when you need:**
-- High-throughput event streaming
-- Message replay capability
-- Event sourcing / CQRS patterns
-- Real-time data pipelines
-- Log aggregation
-- Stream processing
-- Microservices communication with events
-
-**Consider other brokers when:**
-- You need traditional queue semantics
-- Simple request-reply patterns
-- Low message volume
-- Simpler operations and maintenance
-
-The Kafka implementation provides a powerful foundation for event-driven architectures and real-time data streaming!
-
-
-## Copyright Notice
-
-© 2025 - 2030 Ashutosh Sinha.
-
-All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the publisher, except in the case of brief quotations embodied in critical reviews and certain other noncommercial uses permitted by copyright law.
+**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha

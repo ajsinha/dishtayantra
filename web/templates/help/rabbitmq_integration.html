@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}RabbitMQ Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.bash { border-left: 4px solid #64748b; }
+    .broker-color { color: #ff6600; }
+    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card:hover { border-color: #ff6600; box-shadow: 0 4px 15px rgba(255, 102, 0, 0.2); }
+    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>
+</div>
+
+<h2><i class="bi bi-envelope-fill broker-color"></i> RabbitMQ Integration</h2>
+<p class="lead">Enterprise-grade AMQP message broker with advanced routing, reliability, and clustering support.</p>
+
+<div class="alert alert-warning mb-4" style="border-left: 4px solid #ff6600;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-check-circle-fill"></i> Full AMQP 0-9-1 Support</h5>
+            <p class="mb-0">Queues, topics, exchanges, routing keys, dead letter queues, and acknowledgments.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge text-white" style="background: #ff6600;">Resilient Version Available</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #ff6600, #e05500); color: white;">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>RabbitMQ is a robust, open-source message broker implementing AMQP. It supports multiple messaging patterns and provides enterprise features like clustering and high availability.</p>
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-inbox-fill broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Queues</h6>
+                    <small class="text-muted">Point-to-point messaging</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-broadcast broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Topics</h6>
+                    <small class="text-muted">Publish-subscribe</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-diagram-3 broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Exchanges</h6>
+                    <small class="text-muted">Advanced routing</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-shield-check broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Reliability</h6>
+                    <small class="text-muted">Persistence, ACK, DLQ</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
+    <div class="card-body">
+        <h6>1. Start RabbitMQ (Docker)</h6>
+        <div class="code-block bash">docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+# Management UI: http://localhost:15672 (guest/guest)</div>
+
+        <h6 class="mt-4">2. Install Python Client</h6>
+        <div class="code-block bash">pip install pika</div>
+
+        <h6 class="mt-4">3. Queue Publisher</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'rabbitmq://queue/orders',
+    'host': 'localhost',
+    'port': 5672,
+    'username': 'guest',
+    'password': 'guest'
+}
+
+publisher = create_publisher('order_pub', config)
+publisher.publish({'order_id': 'ORD-001', 'amount': 99.99})
+publisher.stop()</div>
+
+        <h6 class="mt-4">4. Queue Subscriber</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'rabbitmq://queue/orders',
+    'host': 'localhost',
+    'port': 5672,
+    'username': 'guest',
+    'password': 'guest'
+}
+
+subscriber = create_subscriber('order_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+subscriber.stop()</div>
+    </div>
+</div>
+
+<!-- Destination Formats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Destination Formats</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Format</th><th>Example</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="badge bg-primary">Queue</span></td><td><code>rabbitmq://queue/name</code></td><td><code>rabbitmq://queue/orders</code></td><td>Point-to-point with load balancing</td></tr>
+                <tr><td><span class="badge bg-success">Topic</span></td><td><code>rabbitmq://topic/name</code></td><td><code>rabbitmq://topic/events</code></td><td>Publish-subscribe (fanout exchange)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Options</h5></div>
+    <div class="card-body">
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>host</code></td><td>string</td><td>'localhost'</td><td>RabbitMQ server hostname</td></tr>
+                <tr><td><code>port</code></td><td>int</td><td>5672</td><td>AMQP port</td></tr>
+                <tr><td><code>username</code></td><td>string</td><td>'guest'</td><td>Authentication username</td></tr>
+                <tr><td><code>password</code></td><td>string</td><td>'guest'</td><td>Authentication password</td></tr>
+                <tr><td><code>virtual_host</code></td><td>string</td><td>'/'</td><td>RabbitMQ virtual host</td></tr>
+                <tr><td><code>durable</code></td><td>bool</td><td>True</td><td>Queue survives broker restart</td></tr>
+                <tr><td><code>delivery_mode</code></td><td>int</td><td>2</td><td>1=transient, 2=persistent</td></tr>
+                <tr><td><code>prefetch_count</code></td><td>int</td><td>1</td><td>Max unacknowledged messages</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Resilient -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient RabbitMQ</h5></div>
+    <div class="card-body">
+        <p>Use the resilient version for automatic reconnection:</p>
+        <div class="code-block python">from core.pubsub.resilient_rabbitmq import ResilientRabbitMQConsumer
+
+consumer = ResilientRabbitMQConsumer(
+    host='localhost',
+    queue='orders',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+for message in consumer:
+    print(f"Received: {message}")
+    consumer.ack(message)</div>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Tip:</strong> Always use resilient versions in production for automatic failover.</div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_kafka_integration') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Kafka</a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-house"></i> Help Center</a>
+    <a href="{{ url_for('help_activemq_integration') }}" class="btn btn-outline-primary">ActiveMQ <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

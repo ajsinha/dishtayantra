@@ -68,7 +68,7 @@ class CacheRoutes:
     
     def cache_management(self):
         """Cache management page"""
-        return render_template('cache_management.html',
+        return render_template('cache/management.html',
                                is_admin=self.user_registry.has_role(session.get('username'), 'admin'))
     
     def cache_query(self):
@@ -144,7 +144,7 @@ class CacheRoutes:
     
     def cache_create_page(self):
         """Cache entry create page"""
-        return render_template('cache_create.html')
+        return render_template('cache/create.html')
     
     def cache_edit_page(self, key):
         """Cache entry edit page"""
@@ -175,7 +175,7 @@ class CacheRoutes:
             else:
                 ttl_display = 'No expiration'
 
-            return render_template('cache_edit.html',
+            return render_template('cache/edit.html',
                                    key=key,
                                    current_value=current_value,
                                    current_ttl=current_ttl,
@@ -228,7 +228,7 @@ class CacheRoutes:
             # Calculate value size
             value_size = len(value.encode('utf-8')) if value else 0
 
-            return render_template('cache_view.html',
+            return render_template('cache/view.html',
                                    key=key,
                                    value=value,
                                    value_formatted=value_formatted,

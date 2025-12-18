@@ -71,7 +71,7 @@ class DashboardRoutes:
                     'errors': errors
                 })
 
-            return render_template('dag_details.html',
+            return render_template('dag/details.html',
                                    dag_name=dag_name,
                                    details=details,
                                    node_details=node_details,
@@ -117,7 +117,7 @@ class DashboardRoutes:
                     'last_calculation': last_calculation
                 })
 
-            return render_template('dag_state.html',
+            return render_template('dag/state.html',
                                    dag_name=dag_name,
                                    node_states=node_states)
         except Exception as e:

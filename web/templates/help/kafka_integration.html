@@ -1,0 +1,797 @@
+{% extends "base.html" %}
+
+{% block title %}Kafka Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .code-block.python {
+        border-left: 4px solid #3776ab;
+    }
+    .code-block.json {
+        border-left: 4px solid #10b981;
+    }
+    .code-block.properties {
+        border-left: 4px solid #f59e0b;
+    }
+    .code-block.bash {
+        border-left: 4px solid #64748b;
+    }
+    .library-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+    .library-card:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+    }
+    .library-card.recommended {
+        border-color: #10b981;
+        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    }
+    .library-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .badge-kafka-python {
+        background: #3776ab;
+        color: white;
+    }
+    .badge-confluent {
+        background: #10b981;
+        color: white;
+    }
+    .perf-bar {
+        height: 24px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #3b82f6, #10b981);
+        transition: width 0.5s ease;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .patent-badge {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: #1e293b;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .comparison-table th {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+    }
+    .comparison-table .winner {
+        background: #dcfce7;
+        font-weight: 600;
+    }
+    .kafka-logo {
+        color: #231f20;
+    }
+    .arch-box {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        margin: 0.5rem;
+    }
+    .arch-arrow {
+        font-size: 1.5rem;
+        color: #64748b;
+    }
+    .config-section {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2">
+        <i class="bi bi-arrow-left-right"></i> All Pub/Sub
+    </a>
+</div>
+
+<h2><i class="bi bi-broadcast" style="color: #231f20;"></i> Apache Kafka Integration <span class="badge bg-warning text-dark ms-2" style="font-size: 0.5em; vertical-align: middle;"><i class="bi bi-award"></i> Patent Pending</span></h2>
+<p class="lead">High-performance Kafka integration with dual library support for maximum flexibility and throughput.</p>
+
+<!-- Key Feature Banner -->
+<div class="alert alert-success mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-lightning-charge-fill"></i> Dual Library Support (v1.1.2)</h5>
+            <p class="mb-0">Switch between <strong>kafka-python</strong> and <strong>confluent-kafka</strong> via configuration. No code changes required!</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="patent-badge"><i class="bi bi-shield-check"></i> Patent Pending</span>
+        </div>
+    </div>
+</div>
+
+<!-- Table of Contents -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Contents</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <ul class="mb-0">
+                    <li><a href="#overview">Overview & Architecture</a></li>
+                    <li><a href="#libraries">Library Comparison</a></li>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#configuration">Configuration Guide</a></li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="mb-0">
+                    <li><a href="#resilient">Resilient Kafka</a></li>
+                    <li><a href="#performance">Performance Tuning</a></li>
+                    <li><a href="#migration">Migration Guide</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4" id="overview">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Overview & Architecture</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra's Kafka integration uses a <strong>factory pattern</strong> with abstraction layers to support multiple Python Kafka libraries seamlessly.</p>
+        
+        <div class="row text-center my-4">
+            <div class="col">
+                <div class="arch-box">
+                    <h6><i class="bi bi-code-square"></i></h6>
+                    <strong>Your Code</strong>
+                    <br><small>create_publisher()</small>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center">
+                <span class="arch-arrow">→</span>
+            </div>
+            <div class="col">
+                <div class="arch-box" style="border-color: #f59e0b;">
+                    <h6><i class="bi bi-gear"></i></h6>
+                    <strong>Factory</strong>
+                    <br><small>kafka_library config</small>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center">
+                <span class="arch-arrow">→</span>
+            </div>
+            <div class="col">
+                <div class="arch-box" style="border-color: #3b82f6;">
+                    <h6><i class="bi bi-box"></i></h6>
+                    <strong>Wrapper</strong>
+                    <br><small>Unified API</small>
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-center">
+                <span class="arch-arrow">→</span>
+            </div>
+            <div class="col">
+                <div class="arch-box" style="border-color: #10b981;">
+                    <h6><i class="bi bi-broadcast"></i></h6>
+                    <strong>Kafka</strong>
+                    <br><small>Broker</small>
+                </div>
+            </div>
+        </div>
+        
+        <h6>Key Benefits</h6>
+        <ul>
+            <li><strong>Zero code changes</strong> - Switch libraries via configuration only</li>
+            <li><strong>Automatic fallback</strong> - Falls back to available library</li>
+            <li><strong>Unified API</strong> - Same interface for both libraries</li>
+            <li><strong>Resilient options</strong> - Auto-reconnect versions available</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Library Comparison -->
+<div class="card mb-4" id="libraries">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Library Comparison</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="library-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="mb-0"><span class="library-badge badge-kafka-python">kafka-python</span></h5>
+                    </div>
+                    <p><strong>Pure Python implementation</strong></p>
+                    <ul class="small">
+                        <li>Easy installation: <code>pip install kafka-python</code></li>
+                        <li>No C dependencies</li>
+                        <li>Good for development</li>
+                        <li>~50K messages/second</li>
+                    </ul>
+                    <div class="mt-3">
+                        <small class="text-muted">Throughput</small>
+                        <div class="progress" style="height: 24px;">
+                            <div class="progress-bar bg-primary" style="width: 10%;">50K/s</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="library-card recommended">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="mb-0"><span class="library-badge badge-confluent">confluent-kafka</span></h5>
+                        <span class="badge bg-success">Recommended</span>
+                    </div>
+                    <p><strong>C-based (librdkafka)</strong></p>
+                    <ul class="small">
+                        <li>Install: <code>pip install confluent-kafka</code></li>
+                        <li>10x faster throughput</li>
+                        <li>Lower latency</li>
+                        <li>~500K messages/second</li>
+                    </ul>
+                    <div class="mt-3">
+                        <small class="text-muted">Throughput</small>
+                        <div class="progress" style="height: 24px;">
+                            <div class="progress-bar bg-success" style="width: 100%;">500K/s</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h6 class="mt-4">Detailed Comparison</h6>
+        <table class="table table-bordered comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>kafka-python</th>
+                    <th>confluent-kafka</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Throughput</td>
+                    <td>~50K msg/sec</td>
+                    <td class="winner">~500K msg/sec ✓</td>
+                </tr>
+                <tr>
+                    <td>Latency (p99)</td>
+                    <td>~5ms</td>
+                    <td class="winner">~0.5ms ✓</td>
+                </tr>
+                <tr>
+                    <td>CPU Usage</td>
+                    <td>Higher</td>
+                    <td class="winner">50% less ✓</td>
+                </tr>
+                <tr>
+                    <td>Installation</td>
+                    <td class="winner">Simple (pure Python) ✓</td>
+                    <td>Requires C compiler (some platforms)</td>
+                </tr>
+                <tr>
+                    <td>Best For</td>
+                    <td>Development, Low volume</td>
+                    <td class="winner">Production, High volume ✓</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4" id="quick-start">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5>
+    </div>
+    <div class="card-body">
+        <h6>1. Install Libraries</h6>
+        <div class="code-block bash"># Install both libraries (recommended)
+pip install kafka-python confluent-kafka
+
+# Or just one
+pip install kafka-python      # Simpler setup
+pip install confluent-kafka   # Higher performance</div>
+
+        <h6 class="mt-4">2. Basic Publisher</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'kafka://topic/user_events',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'confluent-kafka'  # Optional: defaults to kafka-python
+}
+
+publisher = create_publisher('event_publisher', config)
+publisher.publish({'event': 'user_login', 'user_id': 123})
+publisher.stop()</div>
+
+        <h6 class="mt-4">3. Basic Subscriber</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'kafka://topic/user_events',
+    'bootstrap_servers': ['localhost:9092'],
+    'group_id': 'my_consumer_group',
+    'kafka_library': 'confluent-kafka'
+}
+
+subscriber = create_subscriber('event_subscriber', config)
+subscriber.start()
+
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+
+subscriber.stop()</div>
+
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Pro Tip:</strong> Use <code>kafka_library: 'confluent-kafka'</code> for production workloads to achieve 10x better performance!
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Guide -->
+<div class="card mb-4" id="configuration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Guide</h5>
+    </div>
+    <div class="card-body">
+        <h6>Library Selection</h6>
+        <p>Add <code>kafka_library</code> to your configuration:</p>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="config-section">
+                    <h6><span class="library-badge badge-kafka-python">kafka-python</span></h6>
+                    <div class="code-block json">{
+  "destination": "kafka://topic/events",
+  "bootstrap_servers": ["localhost:9092"],
+  "kafka_library": "kafka-python",
+  "producer_config": {
+    "acks": "all",
+    "retries": 3,
+    "batch_size": 16384,
+    "linger_ms": 10
+  }
+}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="config-section">
+                    <h6><span class="library-badge badge-confluent">confluent-kafka</span></h6>
+                    <div class="code-block json">{
+  "destination": "kafka://topic/events",
+  "bootstrap_servers": ["localhost:9092"],
+  "kafka_library": "confluent-kafka",
+  "confluent_config": {
+    "acks": "all",
+    "retries": 3,
+    "batch.num.messages": 10000,
+    "linger.ms": 5
+  }
+}</div>
+                </div>
+            </div>
+        </div>
+        
+        <h6 class="mt-4">application.properties</h6>
+        <div class="code-block properties"># Kafka library selection
+kafka.library=confluent-kafka
+
+# Broker configuration
+kafka.bootstrap.servers=localhost:9092,localhost:9093
+
+# Producer settings
+kafka.producer.acks=all
+kafka.producer.retries=3
+
+# Consumer settings
+kafka.consumer.group.id=my_app_group
+kafka.consumer.auto.offset.reset=earliest</div>
+
+        <h6 class="mt-4">DAG Node Configuration</h6>
+        <div class="code-block json">{
+  "name": "kafka_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "kafka://topic/input_events",
+    "bootstrap_servers": ["localhost:9092"],
+    "kafka_library": "confluent-kafka",
+    "group_id": "dag_processor",
+    "confluent_config": {
+      "auto.offset.reset": "earliest",
+      "enable.auto.commit": true
+    }
+  }
+}</div>
+
+        <h6 class="mt-4">Configuration Options Reference</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Option</th>
+                    <th>Type</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>kafka_library</code></td>
+                    <td>string</td>
+                    <td>'kafka-python'</td>
+                    <td>Library to use: 'kafka-python' or 'confluent-kafka'</td>
+                </tr>
+                <tr>
+                    <td><code>bootstrap_servers</code></td>
+                    <td>list</td>
+                    <td>['localhost:9092']</td>
+                    <td>Kafka broker addresses</td>
+                </tr>
+                <tr>
+                    <td><code>group_id</code></td>
+                    <td>string</td>
+                    <td>'{name}_group'</td>
+                    <td>Consumer group ID</td>
+                </tr>
+                <tr>
+                    <td><code>producer_config</code></td>
+                    <td>dict</td>
+                    <td>{}</td>
+                    <td>kafka-python specific producer options</td>
+                </tr>
+                <tr>
+                    <td><code>consumer_config</code></td>
+                    <td>dict</td>
+                    <td>{}</td>
+                    <td>kafka-python specific consumer options</td>
+                </tr>
+                <tr>
+                    <td><code>confluent_config</code></td>
+                    <td>dict</td>
+                    <td>{}</td>
+                    <td>confluent-kafka specific options (uses librdkafka naming)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Resilient Kafka -->
+<div class="card mb-4" id="resilient">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient Kafka</h5>
+    </div>
+    <div class="card-body">
+        <p>Both libraries support <strong>resilient versions</strong> with automatic reconnection and message buffering.</p>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6><i class="bi bi-arrow-repeat text-success"></i> Auto-Reconnect</h6>
+                        <p class="small mb-0">Automatically reconnects to Kafka brokers on connection failures with configurable retry settings.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6><i class="bi bi-inbox text-primary"></i> Message Buffering</h6>
+                        <p class="small mb-0">Buffers messages during disconnection and sends them when connection is restored.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h6>Resilient Producer</h6>
+        <div class="code-block python">from core.pubsub.resilient_kafka import create_resilient_producer
+
+producer = create_resilient_producer(
+    kafka_library='confluent-kafka',
+    bootstrap_servers=['localhost:9092'],
+    reconnect_tries=10,
+    reconnect_interval_seconds=30,
+    buffer_max_messages=10000
+)
+
+# Messages are buffered during disconnection
+producer.send('my-topic', value={'data': 'test'})
+producer.flush()
+
+# Check buffer status
+print(f"Buffered messages: {producer.get_buffer_size()}")
+print(f"Failed messages: {len(producer.get_failed_messages())}")
+
+producer.close()</div>
+
+        <h6 class="mt-4">Resilient Consumer</h6>
+        <div class="code-block python">from core.pubsub.resilient_kafka import create_resilient_consumer
+
+consumer = create_resilient_consumer(
+    'my-topic',
+    kafka_library='confluent-kafka',
+    bootstrap_servers=['localhost:9092'],
+    group_id='my-group',
+    reconnect_tries=10,
+    reconnect_interval_seconds=30
+)
+
+# Automatically reconnects on failure
+for message in consumer:
+    print(f"Received: {message.value}")
+
+consumer.close()</div>
+
+        <h6 class="mt-4">Resilient Configuration Options</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Option</th>
+                    <th>Default</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>reconnect_tries</code></td>
+                    <td>10</td>
+                    <td>Maximum reconnection attempts</td>
+                </tr>
+                <tr>
+                    <td><code>reconnect_interval_seconds</code></td>
+                    <td>60</td>
+                    <td>Seconds between reconnection attempts</td>
+                </tr>
+                <tr>
+                    <td><code>buffer_max_messages</code></td>
+                    <td>10000</td>
+                    <td>Maximum messages to buffer (producer only)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Performance Tuning -->
+<div class="card mb-4" id="performance">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-speedometer2"></i> Performance Tuning</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-arrow-up-circle text-success"></i> High Throughput</h6>
+                <div class="code-block json">{
+  "kafka_library": "confluent-kafka",
+  "confluent_config": {
+    "queue.buffering.max.messages": 500000,
+    "queue.buffering.max.ms": 10,
+    "batch.num.messages": 50000,
+    "compression.type": "lz4",
+    "linger.ms": 5,
+    "acks": 1
+  }
+}</div>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-lightning text-warning"></i> Low Latency</h6>
+                <div class="code-block json">{
+  "kafka_library": "confluent-kafka",
+  "confluent_config": {
+    "queue.buffering.max.ms": 0,
+    "batch.num.messages": 1,
+    "linger.ms": 0,
+    "acks": 1
+  }
+}</div>
+            </div>
+        </div>
+        
+        <div class="tip-box mt-4">
+            <strong><i class="bi bi-lightbulb"></i> Performance Tips:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Use <code>confluent-kafka</code> for 10x better performance</li>
+                <li>Enable compression (<code>lz4</code> or <code>snappy</code>) for high throughput</li>
+                <li>Increase <code>batch.num.messages</code> for throughput, decrease for latency</li>
+                <li>Use <code>acks=1</code> for speed, <code>acks=all</code> for durability</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Migration Guide -->
+<div class="card mb-4" id="migration">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-arrow-right-circle"></i> Migration Guide</h5>
+    </div>
+    <div class="card-body">
+        <h6>Migrating from kafka-python to confluent-kafka</h6>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted">Before (kafka-python)</h6>
+                <div class="code-block json">{
+  "destination": "kafka://topic/events",
+  "bootstrap_servers": ["localhost:9092"],
+  "producer_config": {
+    "acks": "all",
+    "batch_size": 16384
+  }
+}</div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-success">After (confluent-kafka)</h6>
+                <div class="code-block json">{
+  "destination": "kafka://topic/events",
+  "bootstrap_servers": ["localhost:9092"],
+  "kafka_library": "confluent-kafka",
+  "confluent_config": {
+    "acks": "all",
+    "batch.num.messages": 10000
+  }
+}</div>
+            </div>
+        </div>
+        
+        <div class="warning-box mt-3">
+            <strong><i class="bi bi-exclamation-triangle"></i> Note:</strong> Configuration key names differ between libraries. Use <code>producer_config</code>/<code>consumer_config</code> for kafka-python and <code>confluent_config</code> for confluent-kafka.
+        </div>
+        
+        <h6 class="mt-4">No Code Changes Needed!</h6>
+        <div class="code-block python"># Same code works with both libraries
+publisher = create_publisher('event_pub', config)
+publisher.publish({'data': 'test'})
+publisher.stop()</div>
+    </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="card mb-4" id="troubleshooting">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="troubleshootingAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trouble1">
+                        ImportError: No Kafka library available
+                    </button>
+                </h2>
+                <div id="trouble1" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                    <div class="accordion-body">
+                        <strong>Solution:</strong> Install a Kafka library:
+                        <div class="code-block bash">pip install kafka-python
+# or
+pip install confluent-kafka</div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trouble2">
+                        confluent-kafka build fails on Windows
+                    </button>
+                </h2>
+                <div id="trouble2" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                    <div class="accordion-body">
+                        <strong>Solution:</strong> Install pre-built binary:
+                        <div class="code-block bash">pip install confluent-kafka --prefer-binary</div>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trouble3">
+                        Connection timeout to Kafka broker
+                    </button>
+                </h2>
+                <div id="trouble3" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                    <div class="accordion-body">
+                        <strong>Solutions:</strong>
+                        <ol>
+                            <li>Verify Kafka broker is running</li>
+                            <li>Check <code>bootstrap_servers</code> configuration</li>
+                            <li>Check network connectivity</li>
+                            <li>Increase timeout in configuration</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trouble4">
+                        Check library availability programmatically
+                    </button>
+                </h2>
+                <div id="trouble4" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                    <div class="accordion-body">
+                        <div class="code-block python">from core.pubsub.kafka_datapubsub import get_library_info
+
+info = get_library_info()
+print(f"kafka-python: {info['kafka_python']['available']}")
+print(f"confluent-kafka: {info['confluent_kafka']['available']}")
+print(f"Recommended: {info['recommended']}")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legal Notice -->
+<div class="card mb-4 border-warning">
+    <div class="card-body">
+        <h6 class="text-warning"><i class="bi bi-shield-exclamation"></i> Patent Notice</h6>
+        <p class="small mb-0">
+            <strong>PATENT PENDING:</strong> The dual-library abstraction layer and unified API for Kafka integration is part of the Multi-Broker Message Routing Architecture, which is subject to pending patent applications.
+            <br><br>
+            <strong>© 2025-2030 Ashutosh Sinha.</strong> All rights reserved. DishtaYantra™ is a trademark of Ashutosh Sinha.
+        </p>
+    </div>
+</div>
+
+<!-- Navigation -->
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> All Pub/Sub
+            </a>
+            <a href="{{ url_for('help') }}" class="btn btn-outline-primary">
+                <i class="bi bi-house"></i> Help Center
+            </a>
+            <a href="{{ url_for('help_architecture') }}" class="btn btn-outline-primary">
+                Architecture <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

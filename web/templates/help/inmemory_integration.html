@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block title %}In-Memory Pub/Sub Integration - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.bash { border-left: 4px solid #64748b; }
+    .broker-color { color: #10b981; }
+    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card:hover { border-color: #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>
+</div>
+
+<h2><i class="bi bi-memory broker-color"></i> In-Memory Pub/Sub Integration</h2>
+<p class="lead">Ultra-fast in-memory messaging for internal communication with zero external dependencies.</p>
+
+<div class="alert alert-success mb-4" style="border-left: 4px solid #10b981;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h5 class="mb-1"><i class="bi bi-lightning-charge-fill"></i> Zero Dependencies</h5>
+            <p class="mb-0">No external broker needed. Perfect for development, testing, and single-process applications.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge text-white" style="background: #10b981;">Built-in</span>
+        </div>
+    </div>
+</div>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra provides built-in in-memory messaging that requires no external message broker. This is ideal for development, testing, and scenarios where all components run in the same process.</p>
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-inbox-fill broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Queues</h6>
+                    <small class="text-muted">Thread-safe FIFO queues</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-broadcast broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Topics</h6>
+                    <small class="text-muted">Multi-subscriber pub/sub</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-lightning-charge broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">Ultra-Fast</h6>
+                    <small class="text-muted">Nanosecond latency</small>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="feature-card text-center">
+                    <i class="bi bi-box broker-color" style="font-size: 2rem;"></i>
+                    <h6 class="mt-2">No Dependencies</h6>
+                    <small class="text-muted">Zero setup required</small>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="mt-4">Available Protocols</h6>
+        <table class="table table-sm">
+            <tr><td><code>mem://</code></td><td>Basic in-memory queues and topics</td></tr>
+            <tr><td><code>inmemoryredis://</code></td><td>Redis-compatible in-memory implementation</td></tr>
+        </table>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
+    <div class="card-body">
+        <h6>No Installation Required!</h6>
+        <p class="text-muted">In-memory messaging is built into DishtaYantra. No external dependencies needed.</p>
+
+        <h6 class="mt-4">1. Queue Publisher</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+
+config = {
+    'destination': 'mem://queue/orders'
+}
+
+publisher = create_publisher('order_pub', config)
+publisher.publish({'order_id': 'ORD-001', 'amount': 99.99})
+# Note: Don't call stop() if you want the queue to persist</div>
+
+        <h6 class="mt-4">2. Queue Subscriber</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+
+config = {
+    'source': 'mem://queue/orders'
+}
+
+subscriber = create_subscriber('order_sub', config)
+subscriber.start()
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")
+subscriber.stop()</div>
+
+        <h6 class="mt-4">3. Topic Publisher (Broadcast)</h6>
+        <div class="code-block python">config = {
+    'destination': 'mem://topic/events'
+}
+
+publisher = create_publisher('event_pub', config)
+publisher.publish({'event': 'user_login', 'user_id': 123})</div>
+
+        <h6 class="mt-4">4. Topic Subscriber</h6>
+        <div class="code-block python">config = {
+    'source': 'mem://topic/events'
+}
+
+subscriber = create_subscriber('event_sub', config)
+subscriber.start()
+# All subscribers on this topic receive all messages
+data = subscriber.get_data(block_time=5)
+print(f"Received: {data}")</div>
+    </div>
+</div>
+
+<!-- Destination Formats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Destination Formats</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Protocol</th><th>Type</th><th>Format</th><th>Example</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="2"><code>mem://</code></td><td><span class="badge bg-primary">Queue</span></td><td><code>mem://queue/name</code></td><td><code>mem://queue/orders</code></td></tr>
+                <tr><td><span class="badge bg-success">Topic</span></td><td><code>mem://topic/name</code></td><td><code>mem://topic/events</code></td></tr>
+                <tr><td rowspan="2"><code>inmemoryredis://</code></td><td><span class="badge bg-primary">Queue</span></td><td><code>inmemoryredis://queue/name</code></td><td><code>inmemoryredis://queue/tasks</code></td></tr>
+                <tr><td><span class="badge bg-success">Topic</span></td><td><code>inmemoryredis://topic/name</code></td><td><code>inmemoryredis://topic/events</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- In-Memory Redis Clone -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-database"></i> In-Memory Redis Clone</h5></div>
+    <div class="card-body">
+        <p>DishtaYantra includes a Redis-compatible in-memory implementation. This provides Redis-like functionality without needing an actual Redis server.</p>
+        
+        <h6>Features</h6>
+        <ul>
+            <li>Redis-compatible pub/sub channels</li>
+            <li>List-based queues (LPUSH/BRPOP)</li>
+            <li>Hash maps and sets</li>
+            <li>Key expiration (TTL)</li>
+            <li>Persistence to JSON file</li>
+        </ul>
+
+        <h6 class="mt-4">Using InMemoryRedis</h6>
+        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher, create_subscriber
+
+# Publisher
+pub_config = {'destination': 'inmemoryredis://queue/tasks'}
+publisher = create_publisher('task_pub', pub_config)
+publisher.publish({'task': 'process_data', 'id': 1})
+
+# Subscriber
+sub_config = {'source': 'inmemoryredis://queue/tasks'}
+subscriber = create_subscriber('task_sub', sub_config)
+subscriber.start()
+data = subscriber.get_data(block_time=1)
+print(f"Received: {data}")</div>
+
+        <h6 class="mt-4">Direct RedisClone Access</h6>
+        <div class="code-block python">from core.pubsub.inmemory_redisclone import InMemoryRedisClone
+
+# Get singleton instance
+redis = InMemoryRedisClone.get_instance()
+
+# Use Redis-like commands
+redis.set('key1', 'value1')
+redis.set('key2', 'value2', ex=60)  # Expires in 60 seconds
+value = redis.get('key1')
+
+# Lists
+redis.lpush('mylist', 'item1', 'item2')
+item = redis.rpop('mylist')
+
+# Pub/Sub
+def handler(message):
+    print(f"Received: {message}")
+
+redis.subscribe('channel1', handler)
+redis.publish('channel1', 'Hello!')
+
+# Persistence
+redis.save('/path/to/data.json')</div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration Options</h5></div>
+    <div class="card-body">
+        <h6>Basic Memory Options</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>max_depth</code></td><td>int</td><td>100000</td><td>Maximum queue depth (inherited)</td></tr>
+            </tbody>
+        </table>
+
+        <h6 class="mt-4">DAG Node Configuration</h6>
+        <div class="code-block json">{
+  "name": "mem_input",
+  "type": "DataSubscriberNode",
+  "config": {
+    "source": "mem://queue/internal_queue"
+  }
+}
+
+{
+  "name": "mem_output",
+  "type": "DataPublisherNode",
+  "config": {
+    "destination": "mem://topic/processed_events"
+  }
+}</div>
+    </div>
+</div>
+
+<!-- Use Cases -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-lightbulb"></i> Use Cases</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6><i class="bi bi-code-slash text-primary"></i> Development & Testing</h6>
+                        <p class="small mb-0">Develop and test DAGs without setting up external brokers. Switch to production brokers by changing configuration.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6><i class="bi bi-diagram-3 text-success"></i> Internal DAG Communication</h6>
+                        <p class="small mb-0">Connect DAG nodes within the same process without network overhead.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6><i class="bi bi-arrow-left-right text-warning"></i> Decoupling Components</h6>
+                        <p class="small mb-0">Loosely couple components within an application using message-based communication.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6><i class="bi bi-speedometer2 text-danger"></i> High-Performance Pipelines</h6>
+                        <p class="small mb-0">When external broker latency is too high, use in-memory for ultra-low latency.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-bar-chart"></i> When to Use In-Memory</h5></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success"><i class="bi bi-check-circle"></i> Good For</h6>
+                <ul>
+                    <li>Development and unit testing</li>
+                    <li>Single-process applications</li>
+                    <li>Internal DAG node communication</li>
+                    <li>Ultra-low latency requirements</li>
+                    <li>Prototyping before adding external brokers</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-warning"><i class="bi bi-exclamation-circle"></i> Not Suitable When</h6>
+                <ul>
+                    <li>Multi-process or distributed systems</li>
+                    <li>Persistence required (data lost on restart)</li>
+                    <li>Need external system integration</li>
+                    <li>Production high-availability needs</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning-box"><strong><i class="bi bi-exclamation-triangle"></i> Important:</strong> In-memory messages are <strong>not persisted</strong>. Data is lost when the process stops. Use external brokers for production workloads requiring persistence.</div>
+    </div>
+</div>
+
+<!-- Migration Path -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-arrow-right-circle"></i> Migration to Production</h5></div>
+    <div class="card-body">
+        <p>Easily migrate from in-memory to production brokers by changing configuration:</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-muted">Development (In-Memory)</h6>
+                <div class="code-block json">{
+  "source": "mem://queue/orders"
+}</div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-success">Production (Kafka)</h6>
+                <div class="code-block json">{
+  "source": "kafka://topic/orders",
+  "bootstrap_servers": ["kafka:9092"],
+  "kafka_library": "confluent-kafka"
+}</div>
+            </div>
+        </div>
+        <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Tip:</strong> Use environment-based configuration to switch between development (in-memory) and production (external broker) without code changes.</div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_ibmmq_integration') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> IBM MQ</a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-house"></i> Help Center</a>
+    <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-primary">All Pub/Sub <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

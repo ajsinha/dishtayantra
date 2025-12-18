@@ -32,6 +32,13 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/rest-integration', 'help_rest_integration', self.help_rest_integration)
         self.app.add_url_rule('/help/architecture', 'help_architecture', self.help_architecture)
         self.app.add_url_rule('/help/lmdb-integration', 'help_lmdb_integration', self.help_lmdb_integration)
+        self.app.add_url_rule('/help/kafka-integration', 'help_kafka_integration', self.help_kafka_integration)
+        self.app.add_url_rule('/help/rabbitmq-integration', 'help_rabbitmq_integration', self.help_rabbitmq_integration)
+        self.app.add_url_rule('/help/activemq-integration', 'help_activemq_integration', self.help_activemq_integration)
+        self.app.add_url_rule('/help/redis-integration', 'help_redis_integration', self.help_redis_integration)
+        self.app.add_url_rule('/help/tibco-integration', 'help_tibco_integration', self.help_tibco_integration)
+        self.app.add_url_rule('/help/ibmmq-integration', 'help_ibmmq_integration', self.help_ibmmq_integration)
+        self.app.add_url_rule('/help/inmemory-integration', 'help_inmemory_integration', self.help_inmemory_integration)
     
     def about(self):
         """About page"""
@@ -116,3 +123,31 @@ class NoAuthRoutes:
     def help_lmdb_integration(self):
         """LMDB zero-copy data exchange help page"""
         return render_template('help/lmdb_integration.html')
+    
+    def help_kafka_integration(self):
+        """Kafka integration with dual library support help page"""
+        return render_template('help/kafka_integration.html')
+    
+    def help_rabbitmq_integration(self):
+        """RabbitMQ integration help page"""
+        return render_template('help/rabbitmq_integration.html')
+    
+    def help_activemq_integration(self):
+        """ActiveMQ integration help page"""
+        return render_template('help/activemq_integration.html')
+    
+    def help_redis_integration(self):
+        """Redis integration help page"""
+        return render_template('help/redis_integration.html')
+    
+    def help_tibco_integration(self):
+        """TIBCO EMS integration help page"""
+        return render_template('help/tibco_integration.html')
+    
+    def help_ibmmq_integration(self):
+        """IBM MQ integration help page"""
+        return render_template('help/ibmmq_integration.html')
+    
+    def help_inmemory_integration(self):
+        """In-Memory Pub/Sub integration help page"""
+        return render_template('help/inmemory_integration.html')
