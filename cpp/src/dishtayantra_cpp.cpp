@@ -4,13 +4,37 @@
  * 
  * Example calculators demonstrating pybind11 integration.
  * 
+ * v1.1.1: Added LMDB zero-copy data exchange support for large payloads
+ * 
+ * LMDB Zero-Copy Exchange:
+ * When lmdb_enabled=true in DAG config, large payloads are exchanged via
+ * memory-mapped LMDB files instead of Python dict serialization. The calculator
+ * receives a reference dict with:
+ *   - _lmdb_ref: true
+ *   - _lmdb_input_key: Key to read input from LMDB
+ *   - _lmdb_output_key: Key to write output to LMDB
+ *   - _lmdb_db_path: Path to LMDB database
+ *   - _lmdb_db_name: Named database to use
+ *   - _lmdb_format: Data format (msgpack, json, numpy, arrow)
+ * 
+ * To enable LMDB in C++ calculators:
+ *   1. Install liblmdb: apt-get install liblmdb-dev
+ *   2. Compile with -DUSE_LMDB -llmdb
+ *   3. Use LMDBHelper class for read/write operations
+ * 
  * Build instructions:
  * 
- * Linux/macOS:
+ * Linux/macOS (without LMDB):
  *   g++ -O3 -Wall -shared -std=c++17 -fPIC \
  *       $(python3 -m pybind11 --includes) \
  *       dishtayantra_cpp.cpp \
  *       -o dishtayantra_cpp$(python3-config --extension-suffix)
+ * 
+ * Linux/macOS (with LMDB):
+ *   g++ -O3 -Wall -shared -std=c++17 -fPIC -DUSE_LMDB \
+ *       $(python3 -m pybind11 --includes) \
+ *       dishtayantra_cpp.cpp \
+ *       -o dishtayantra_cpp$(python3-config --extension-suffix) -llmdb
  * 
  * Windows (MSVC):
  *   cl /O2 /LD /EHsc /std:c++17 \
@@ -20,7 +44,7 @@
  *       /OUT:dishtayantra_cpp.pyd
  * 
  * @author DishtaYantra
- * @version 1.1.0
+ * @version 1.1.1
  */
 
 #include "calculator.hpp"
@@ -28,6 +52,149 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
+
+// Optional LMDB support for zero-copy data exchange
+#ifdef USE_LMDB
+#include <lmdb.h>
+
+namespace dishtayantra {
+
+/**
+ * LMDB Helper for zero-copy data exchange with Python DAG engine.
+ * 
+ * Usage:
+ *   LMDBHelper lmdb;
+ *   if (lmdb.open(db_path, db_name)) {
+ *       auto data = lmdb.get(input_key);
+ *       // Process data...
+ *       lmdb.put(output_key, result_data);
+ *   }
+ */
+class LMDBHelper {
+public:
+    LMDBHelper() : env_(nullptr), dbi_(0), opened_(false) {}
+    
+    ~LMDBHelper() { close(); }
+    
+    bool open(const std::string& db_path, const std::string& db_name = "default") {
+        if (opened_) close();
+        
+        int rc = mdb_env_create(&env_);
+        if (rc != 0) return false;
+        
+        mdb_env_set_mapsize(env_, 1UL * 1024UL * 1024UL * 1024UL);  // 1GB
+        mdb_env_set_maxdbs(env_, 100);
+        
+        // Open in read-write mode
+        rc = mdb_env_open(env_, db_path.c_str(), 0, 0664);
+        if (rc != 0) { mdb_env_close(env_); return false; }
+        
+        MDB_txn* txn;
+        rc = mdb_txn_begin(env_, nullptr, 0, &txn);
+        if (rc != 0) { mdb_env_close(env_); return false; }
+        
+        rc = mdb_dbi_open(txn, db_name.c_str(), MDB_CREATE, &dbi_);
+        if (rc != 0) { mdb_txn_abort(txn); mdb_env_close(env_); return false; }
+        
+        mdb_txn_commit(txn);
+        opened_ = true;
+        return true;
+    }
+    
+    void close() {
+        if (opened_) {
+            mdb_dbi_close(env_, dbi_);
+            mdb_env_close(env_);
+            opened_ = false;
+        }
+    }
+    
+    bool is_open() const { return opened_; }
+    
+    /**
+     * Read data from LMDB by key.
+     * Returns empty vector if key not found.
+     */
+    std::vector<uint8_t> get(const std::string& key) {
+        if (!opened_) return {};
+        
+        MDB_txn* txn;
+        if (mdb_txn_begin(env_, nullptr, MDB_RDONLY, &txn) != 0) return {};
+        
+        MDB_val mdb_key, mdb_data;
+        mdb_key.mv_size = key.size();
+        mdb_key.mv_data = const_cast<char*>(key.data());
+        
+        int rc = mdb_get(txn, dbi_, &mdb_key, &mdb_data);
+        if (rc != 0) {
+            mdb_txn_abort(txn);
+            return {};
+        }
+        
+        std::vector<uint8_t> result(
+            static_cast<uint8_t*>(mdb_data.mv_data),
+            static_cast<uint8_t*>(mdb_data.mv_data) + mdb_data.mv_size
+        );
+        mdb_txn_abort(txn);
+        return result;
+    }
+    
+    /**
+     * Write data to LMDB.
+     * Returns true on success.
+     */
+    bool put(const std::string& key, const std::vector<uint8_t>& data) {
+        if (!opened_) return false;
+        
+        MDB_txn* txn;
+        if (mdb_txn_begin(env_, nullptr, 0, &txn) != 0) return false;
+        
+        MDB_val mdb_key, mdb_data;
+        mdb_key.mv_size = key.size();
+        mdb_key.mv_data = const_cast<char*>(key.data());
+        mdb_data.mv_size = data.size();
+        mdb_data.mv_data = const_cast<uint8_t*>(data.data());
+        
+        if (mdb_put(txn, dbi_, &mdb_key, &mdb_data, 0) != 0) {
+            mdb_txn_abort(txn);
+            return false;
+        }
+        
+        return mdb_txn_commit(txn) == 0;
+    }
+    
+    /**
+     * Get raw pointer to memory-mapped data (zero-copy read).
+     * WARNING: Pointer is only valid while LMDB environment is open.
+     */
+    std::pair<const uint8_t*, size_t> get_raw(const std::string& key) {
+        if (!opened_) return {nullptr, 0};
+        
+        MDB_txn* txn;
+        if (mdb_txn_begin(env_, nullptr, MDB_RDONLY, &txn) != 0) return {nullptr, 0};
+        
+        MDB_val mdb_key, mdb_data;
+        mdb_key.mv_size = key.size();
+        mdb_key.mv_data = const_cast<char*>(key.data());
+        
+        if (mdb_get(txn, dbi_, &mdb_key, &mdb_data) != 0) {
+            mdb_txn_abort(txn);
+            return {nullptr, 0};
+        }
+        
+        // Note: We don't abort the transaction, so data remains valid
+        // Caller must ensure to not use pointer after LMDB closes
+        return {static_cast<const uint8_t*>(mdb_data.mv_data), mdb_data.mv_size};
+    }
+    
+private:
+    MDB_env* env_;
+    MDB_dbi dbi_;
+    bool opened_;
+};
+
+} // namespace dishtayantra
+#endif // USE_LMDB
 
 namespace dishtayantra {
 

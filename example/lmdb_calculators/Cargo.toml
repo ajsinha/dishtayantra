@@ -1,0 +1,25 @@
+[package]
+name = "lmdb_calculator"
+version = "1.1.2"
+edition = "2021"
+description = "LMDB-enabled Rust calculators for DishtaYantra"
+authors = ["Ashutosh Sinha"]
+license = "Proprietary"
+
+[lib]
+name = "lmdb_calculator"
+crate-type = ["cdylib"]
+path = "rust_lmdb_calculator.rs"
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+lmdb-rs = "0.8"
+rmp-serde = "1.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rayon = "1.8"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3

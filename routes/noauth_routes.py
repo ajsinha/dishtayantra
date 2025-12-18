@@ -31,6 +31,7 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/rust-integration', 'help_rust_integration', self.help_rust_integration)
         self.app.add_url_rule('/help/rest-integration', 'help_rest_integration', self.help_rest_integration)
         self.app.add_url_rule('/help/architecture', 'help_architecture', self.help_architecture)
+        self.app.add_url_rule('/help/lmdb-integration', 'help_lmdb_integration', self.help_lmdb_integration)
     
     def about(self):
         """About page"""
@@ -111,3 +112,7 @@ class NoAuthRoutes:
     def help_architecture(self):
         """System architecture help page"""
         return render_template('help/architecture.html')
+    
+    def help_lmdb_integration(self):
+        """LMDB zero-copy data exchange help page"""
+        return render_template('help/lmdb_integration.html')

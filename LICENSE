@@ -1,0 +1,132 @@
+================================================================================
+                            DISHTAYANTRA LICENSE
+================================================================================
+
+                    PROPRIETARY SOFTWARE LICENSE AGREEMENT
+
+================================================================================
+                              COPYRIGHT NOTICE
+================================================================================
+
+Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.
+
+DishtaYantra, including all source code, documentation, algorithms, designs,
+user interfaces, and associated intellectual property, is the exclusive
+property of Ashutosh Sinha.
+
+================================================================================
+                              PATENT NOTICE
+================================================================================
+
+PATENT PENDING
+
+The following technologies implemented in DishtaYantra are the subject of one
+or more pending patent applications:
+
+1. LMDB ZERO-COPY DATA EXCHANGE SYSTEM
+   - Automatic payload size detection for LMDB routing decisions
+   - Unified reference protocol for heterogeneous language calculator integration
+   - Transaction-based zero-copy data exchange between Python and native code
+     (Java, C++, Rust)
+   - Memory-mapped file transport with automatic TTL-based cleanup
+   - Format-agnostic serialization layer for cross-language data exchange
+   - Configurable threshold system for optimal performance tuning
+
+2. MULTI-LANGUAGE CALCULATOR FRAMEWORK
+   - Hot-swappable calculator integration architecture
+   - Unified calculator interface across Python, Java, C++, and Rust
+   - Gateway pooling system for Java/JVM integration (Py4J)
+   - Native binding abstraction layer for C++ (pybind11) and Rust (PyO3)
+   - Automatic language detection and routing
+   - Zero-copy data passing between language boundaries
+
+3. DAG EXECUTION ENGINE
+   - Real-time topological sort with dynamic node insertion
+   - Time-windowed execution scheduling
+   - AutoClone feature for automatic DAG replication
+   - Multi-broker message routing architecture
+   - Resilient pub/sub with automatic failover
+
+4. FREE-THREADING SUPPORT SYSTEM
+   - Automatic GIL-free execution detection for Python 3.13+
+   - Thread-safe calculator invocation framework
+   - Parallel DAG node execution without GIL constraints
+
+Unauthorized use, reproduction, or implementation of these technologies may
+constitute patent infringement and will be prosecuted to the fullest extent
+of applicable law.
+
+================================================================================
+                            LICENSE RESTRICTIONS
+================================================================================
+
+This software is proprietary and confidential. The following actions are
+STRICTLY PROHIBITED without the express written permission of Ashutosh Sinha:
+
+1. COPYING - Reproducing the software in any form
+2. MODIFICATION - Altering, adapting, or creating derivative works
+3. DISTRIBUTION - Sharing, publishing, or transferring the software
+4. REVERSE ENGINEERING - Decompiling, disassembling, or analyzing the code
+5. COMMERCIAL USE - Using the software for commercial purposes
+6. SUBLICENSING - Granting rights to third parties
+
+================================================================================
+                              TRADEMARK NOTICE
+================================================================================
+
+DishtaYantra™ is a trademark of Ashutosh Sinha.
+
+All other product names, logos, and brands mentioned herein are property of
+their respective owners.
+
+================================================================================
+                                DISCLAIMER
+================================================================================
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS, OR PATENT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+================================================================================
+                           LIMITATION OF LIABILITY
+================================================================================
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+ASHUTOSH SINHA BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR
+CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR
+LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION,
+OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE
+THE SOFTWARE, EVEN IF ASHUTOSH SINHA HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+================================================================================
+                              GOVERNING LAW
+================================================================================
+
+This License shall be governed by and construed in accordance with the laws
+of the United States of America and the State of New Jersey, without regard
+to its conflict of law provisions.
+
+================================================================================
+                              CONTACT
+================================================================================
+
+For licensing inquiries, please contact:
+
+Ashutosh Sinha
+Email: ajsinha@gmail.com
+GitHub: https://github.com/ajsinha/dishtayantra
+
+================================================================================
+
+                         DishtaYantra v1.1.2
+                          Patent Pending
+                  © 2025-2030 Ashutosh Sinha
+                      All Rights Reserved
+
+================================================================================

@@ -99,7 +99,7 @@
     <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
     <h1>DishtaYantra</h1>
     <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
-    <span class="version-badge">Version 1.1.1</span>
+    <span class="version-badge">Version 1.1.2</span>
 </div>
 
 <!-- Navigation Buttons -->
@@ -399,6 +399,23 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- LMDB Zero-Copy -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 rounded" style="background: rgba(6, 182, 212, 0.15); border: 2px solid #06b6d4;">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle p-2 me-2" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                                    <i class="bi bi-lightning-charge-fill text-white"></i>
+                                </div>
+                                <h6 class="mb-0 text-white">LMDB Zero-Copy <span class="badge" style="background: #06b6d4;">NEW</span></h6>
+                            </div>
+                            <p class="small text-light opacity-75 mb-2">Memory-mapped data exchange with native calculators. <strong style="color: #06b6d4;">100-1000x faster</strong> than serialization for large payloads. Patent-pending.</p>
+                            <div class="small">
+                                <span class="badge" style="background: #06b6d4;">Zero-copy I/O</span>
+                                <span class="badge bg-dark">Java/C++/Rust</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Comparison Table -->
@@ -425,6 +442,13 @@
                                 </tr>
                                 <tr>
                                     <td>Native C++/Rust</td>
+                                    <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
+                                    <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                                    <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                                    <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td>LMDB Zero-Copy Exchange</td>
                                     <td class="text-center"><i class="bi bi-check-circle-fill text-success"></i></td>
                                     <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
                                     <td class="text-center"><i class="bi bi-x-circle text-danger"></i></td>
@@ -495,10 +519,39 @@
     <div class="col-12">
         <div class="card" style="border: 2px solid #00d4aa;">
             <div class="card-header" style="background: linear-gradient(135deg, #1e3a5f, #2d5a87); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.1.1</h5>
+                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.1.2</h5>
             </div>
             <div class="card-body">
-                <!-- New in 1.1.1 -->
+                <!-- New in 1.1.2 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange (1.1.2) <span class="badge" style="background: #06b6d4;">Patent Pending</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightning-charge-fill" style="color: #06b6d4;"></i> Memory-Mapped Transport</h6>
+                        <ul>
+                            <li><strong>100-1000x faster</strong> than serialization for large payloads</li>
+                            <li>Zero-copy via LMDB memory-mapped files</li>
+                            <li>Automatic for payloads above configurable threshold</li>
+                            <li>ACID transaction guarantees</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-code-slash" style="color: #06b6d4;"></i> Native Calculator Support</h6>
+                        <ul>
+                            <li>Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)</li>
+                            <li>Unified reference protocol across all languages</li>
+                            <li>Automatic cleanup with TTL expiration</li>
+                            <li>Configurable via application.properties</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- From 1.1.1 -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <h6 class="text-primary"><i class="bi bi-activity"></i> Admin & Monitoring (1.1.1)</h6>
@@ -727,6 +780,84 @@
     </div>
 </div>
 
+<!-- Patent & Legal Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-shield-exclamation"></i> Patent & Legal Information</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-warning mb-3"><i class="bi bi-award"></i> Patent Pending Technologies</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-2"><i class="bi bi-lightning-charge text-primary"></i> LMDB Zero-Copy Data Exchange</h6>
+                                <ul class="small mb-0">
+                                    <li>Automatic payload size detection</li>
+                                    <li>Unified reference protocol (Java/C++/Rust)</li>
+                                    <li>Transaction-based zero-copy exchange</li>
+                                    <li>Memory-mapped transport with TTL cleanup</li>
+                                    <li>Format-agnostic serialization</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-2"><i class="bi bi-diagram-3 text-success"></i> DAG Execution Engine</h6>
+                                <ul class="small mb-0">
+                                    <li>Real-time topological sort</li>
+                                    <li>Time-windowed execution scheduling</li>
+                                    <li>AutoClone for DAG replication</li>
+                                    <li>Multi-broker message routing</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-2"><i class="bi bi-translate text-info"></i> Multi-Language Calculator Framework</h6>
+                                <ul class="small mb-0">
+                                    <li>Hot-swappable calculator architecture</li>
+                                    <li>Unified interface (Python/Java/C++/Rust)</li>
+                                    <li>Gateway pooling for JVM (Py4J)</li>
+                                    <li>Native binding abstraction (pybind11/PyO3)</li>
+                                    <li>Zero-copy cross-language data passing</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-body py-2">
+                                <h6 class="card-title mb-2"><i class="bi bi-cpu text-danger"></i> Free-Threading Support</h6>
+                                <ul class="small mb-0">
+                                    <li>GIL-free execution (Python 3.13+)</li>
+                                    <li>Thread-safe calculator invocation</li>
+                                    <li>Parallel DAG node execution</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> Legal Notice</h6>
+                        <p class="small mb-0">Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-info"><i class="bi bi-c-circle"></i> Trademarks</h6>
+                        <p class="small mb-0">DishtaYantra™ is a trademark of Ashutosh Sinha. All other trademarks are property of their respective owners.</p>
+                    </div>
+                </div>
+                <hr>
+                <p class="small text-muted mb-0"><strong>Disclaimer:</strong> This software is provided "as is" without warranty of any kind. In no event shall the author be liable for any claim, damages, or other liability arising from the use of this software.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- License & Copyright -->
 <div class="row mb-4">
     <div class="col-12">
@@ -736,6 +867,7 @@
             </div>
             <div class="card-body text-center">
                 <p class="mb-2"><strong>Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.</strong></p>
+                <p class="mb-2"><span class="badge bg-warning text-dark"><i class="bi bi-award"></i> Patent Pending</span></p>
                 <p class="text-muted mb-0">DishtaYantra is proprietary software. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.</p>
             </div>
         </div>

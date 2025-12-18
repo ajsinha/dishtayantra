@@ -4,6 +4,8 @@
 
 © 2025-2030 Ashutosh Sinha
 
+**PATENT PENDING**: The Multi-Language Calculator Framework is the subject of pending patent applications.
+
 ---
 
 ## Overview
@@ -550,4 +552,33 @@ Latency (per call):
 
 ---
 
+## Legal Information
+
+### Patent Notice
+
+**PATENT PENDING**: The Multi-Language Calculator Framework implemented in DishtaYantra is the subject of one or more pending patent applications.
+
+Protected innovations include:
+
+1. **Hot-swappable calculator integration architecture**
+2. **Unified calculator interface** across Python, Java, C++, and Rust
+3. **Gateway pooling system** for Java/JVM integration (Py4J)
+4. **Native binding abstraction layer** for C++ (pybind11) and Rust (PyO3)
+5. **Automatic language detection and routing**
+6. **Zero-copy data passing** between language boundaries
+
+### Legal Notice
+
+Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement.
+
+### Copyright Notice
+
 © 2025-2030 Ashutosh Sinha. All rights reserved.
+
+### Trademark Notice
+
+DishtaYantra™ is a trademark of Ashutosh Sinha.
+
+---
+
+**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha

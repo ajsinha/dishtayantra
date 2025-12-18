@@ -2,17 +2,26 @@
 
 ## © 2025-2030 Ashutosh Sinha
 
-A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, and **multi-language calculator integrations**.
+> *"The performance of C++, the safety of Rust, the ecosystem of Python, and the simplicity of execution."*
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
+A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, and **LMDB zero-copy data exchange**.
+
+[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.1.1
+## What's New in Version 1.1.2
 
-### Admin & System Monitoring
+### LMDB Zero-Copy Data Exchange (Patent Pending)
+- **Memory-Mapped Transport**: 100-1000x faster than serialization for large payloads
+- **Zero-Copy I/O**: Native calculators access data directly via memory-mapped files
+- **Multi-Language Support**: Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)
+- **Automatic Threshold Detection**: Seamlessly switches based on payload size
+- **Configurable**: Path and settings via application.properties
+
+### Admin & System Monitoring (v1.1.1)
 - **System Monitoring Dashboard**: Real-time CPU, memory, disk, and network monitoring
 - **Admin Dropdown Menu**: Consolidated admin features in navigation bar
 - **System Logs Viewer**: View, filter, search, and download application logs
@@ -594,8 +603,58 @@ status = server.get_server_status()
 
 ---
 
-## License
+## Legal Information
+
+### Patent Notice
+
+**PATENT PENDING**: The following technologies implemented in DishtaYantra are the subject of one or more pending patent applications:
+
+#### 1. LMDB Zero-Copy Data Exchange System
+- Automatic payload size detection for LMDB routing decisions
+- Unified reference protocol for heterogeneous language calculator integration
+- Transaction-based zero-copy data exchange between Python and native code (Java, C++, Rust)
+- Memory-mapped file transport with automatic TTL-based cleanup
+- Format-agnostic serialization layer for cross-language data exchange
+
+#### 2. Multi-Language Calculator Framework
+- Hot-swappable calculator integration architecture
+- Unified calculator interface across Python, Java, C++, and Rust
+- Gateway pooling system for Java/JVM integration (Py4J)
+- Native binding abstraction layer for C++ (pybind11) and Rust (PyO3)
+- Automatic language detection and routing
+- Zero-copy data passing between language boundaries
+
+#### 3. DAG Execution Engine
+- Real-time topological sort with dynamic node insertion
+- Time-windowed execution scheduling
+- AutoClone feature for automatic DAG replication
+- Multi-broker message routing architecture
+
+#### 4. Free-Threading Support System
+- Automatic GIL-free execution detection for Python 3.13+
+- Thread-safe calculator invocation framework
+- Parallel DAG node execution without GIL constraints
+
+Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement.
+
+### Copyright Notice
 
 © 2025-2030 Ashutosh Sinha. All rights reserved.
 
-This software is proprietary and confidential. Unauthorized copying, distribution, or use is strictly prohibited.
+DishtaYantra, including all source code, documentation, algorithms, designs, and associated intellectual property, is the exclusive property of Ashutosh Sinha.
+
+### License
+
+This software is proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software, in whole or in part, is strictly prohibited without the express written permission of the copyright holder.
+
+### Trademarks
+
+DishtaYantra™ is a trademark of Ashutosh Sinha. All other trademarks mentioned herein are the property of their respective owners.
+
+### Disclaimer
+
+THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THIS SOFTWARE.
+
+---
+
+**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha

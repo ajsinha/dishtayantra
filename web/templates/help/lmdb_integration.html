@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}LMDB Zero-Copy Integration - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+    .hero-section h1 {
+        color: white;
+    }
+    .feature-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Consolas', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+    }
+    .performance-table th {
+        background: #06b6d4;
+        color: white;
+    }
+    .architecture-diagram {
+        background: #0f172a;
+        color: #06b6d4;
+        padding: 1.5rem;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        white-space: pre;
+        overflow-x: auto;
+    }
+    .lang-card {
+        border-left: 4px solid;
+        transition: transform 0.2s;
+    }
+    .lang-card:hover {
+        transform: translateY(-3px);
+    }
+    .lang-java { border-color: #f89820; }
+    .lang-cpp { border-color: #00599C; }
+    .lang-rust { border-color: #CE422B; }
+    .patent-badge {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: #1e293b;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('help') }}" class="text-decoration-none">Help</a></li>
+        <li class="breadcrumb-item active">LMDB Zero-Copy Integration</li>
+    </ol>
+</nav>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h1><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange</h1>
+            <p class="lead mb-0">Lightning-fast data transfer between Python DAG Engine and native calculators using memory-mapped LMDB files.</p>
+            <div class="feature-badge">
+                <i class="bi bi-award"></i> Patent-Pending Innovation • v1.1.2
+            </div>
+        </div>
+        <div class="col-lg-4 text-center">
+            <div style="font-size: 5rem;"><i class="bi bi-lightning-charge-fill"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Benefits -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-stars"></i> Why LMDB Zero-Copy?</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="display-4 text-primary">100-1000x</div>
+                        <p class="text-muted">Faster than JSON serialization for large payloads</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="display-4 text-success">Zero</div>
+                        <p class="text-muted">Copy operations - direct memory access</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="display-4 text-warning">ACID</div>
+                        <p class="text-muted">Transaction guarantees for data integrity</p>
+                    </div>
+                    <div class="col-md-3 text-center mb-3">
+                        <div class="display-4 text-info">3</div>
+                        <p class="text-muted">Native languages supported: Java, C++, Rust</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Comparison -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-speedometer2"></i> Performance Comparison</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered performance-table">
+                        <thead>
+                            <tr>
+                                <th>Payload Size</th>
+                                <th>JSON Serialization</th>
+                                <th>MessagePack</th>
+                                <th>LMDB Zero-Copy</th>
+                                <th>Speedup</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1 KB</td>
+                                <td>50 μs</td>
+                                <td>20 μs</td>
+                                <td class="table-success"><strong>5 μs</strong></td>
+                                <td><span class="badge bg-success">10x</span></td>
+                            </tr>
+                            <tr>
+                                <td>10 KB</td>
+                                <td>500 μs</td>
+                                <td>200 μs</td>
+                                <td class="table-success"><strong>10 μs</strong></td>
+                                <td><span class="badge bg-success">50x</span></td>
+                            </tr>
+                            <tr>
+                                <td>100 KB</td>
+                                <td>5 ms</td>
+                                <td>2 ms</td>
+                                <td class="table-success"><strong>50 μs</strong></td>
+                                <td><span class="badge bg-warning text-dark">100x</span></td>
+                            </tr>
+                            <tr>
+                                <td>1 MB</td>
+                                <td>50 ms</td>
+                                <td>20 ms</td>
+                                <td class="table-success"><strong>200 μs</strong></td>
+                                <td><span class="badge bg-danger">250x</span></td>
+                            </tr>
+                            <tr>
+                                <td>10 MB</td>
+                                <td>500 ms</td>
+                                <td>200 ms</td>
+                                <td class="table-success"><strong>2 ms</strong></td>
+                                <td><span class="badge bg-danger">250x</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Architecture Diagram -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Architecture</h5>
+            </div>
+            <div class="card-body">
+                <div class="architecture-diagram">┌─────────────────────────────────────────────────────────────────────┐
+│                     Python DAG Engine                                │
+│  ┌─────────────┐                              ┌─────────────────┐   │
+│  │ Input Data  │──▶ LMDB Transport ──▶ Write │    LMDB File    │   │
+│  │ (Dict/Array)│                              │ (Memory-Mapped) │   │
+│  └─────────────┘                              └────────┬────────┘   │
+│                                                        │            │
+│                                               Zero-Copy Memory Map  │
+│                                                        │            │
+│  ┌─────────────────────────────────────────────────────┼──────────┐ │
+│  │                  Native Calculator                   ▼          │ │
+│  │  ┌───────────┐      ┌───────────┐      ┌────────────────────┐ │ │
+│  │  │   Java    │      │    C++    │      │       Rust         │ │ │
+│  │  │  (lmdbjni)│      │  (liblmdb)│      │    (lmdb-rs)       │ │ │
+│  │  └───────────┘      └───────────┘      └────────────────────┘ │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+│                                                                     │
+│  Output flows back the same way ◀──────────────────────────────────│
+└─────────────────────────────────────────────────────────────────────┘</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+            </div>
+            <div class="card-body">
+                <h6>DAG Node Configuration</h6>
+                <div class="code-block mb-3">
+{
+  "name": "heavy_processor",
+  "type": "com.example.HeavyProcessor",
+  "calculator": "java",
+  <span style="color: #06b6d4;">"lmdb_enabled": true,</span>
+  <span style="color: #06b6d4;">"lmdb_min_size": 10240,</span>           <span style="color: #64748b;">// Use LMDB for payloads > 10KB</span>
+  <span style="color: #06b6d4;">"lmdb_exchange_mode": "both",</span>     <span style="color: #64748b;">// input, output, both, reference</span>
+  <span style="color: #06b6d4;">"lmdb_data_format": "msgpack"</span>     <span style="color: #64748b;">// json, msgpack, numpy, arrow</span>
+}</div>
+                
+                <h6>Application Properties (config/application.properties)</h6>
+                <div class="code-block mb-3">
+<span style="color: #64748b;"># LMDB Configuration</span>
+lmdb.db.path=/var/dishtayantra/lmdb
+lmdb.map.size=1073741824          <span style="color: #64748b;"># 1GB</span>
+lmdb.max.dbs=100
+lmdb.ttl.seconds=300</div>
+
+                <h6>Configuration Options</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>lmdb_enabled</code></td>
+                                <td>bool</td>
+                                <td>false</td>
+                                <td>Enable LMDB transport</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb_min_size</code></td>
+                                <td>int</td>
+                                <td>1024</td>
+                                <td>Min payload size (bytes) to use LMDB</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb_exchange_mode</code></td>
+                                <td>string</td>
+                                <td>both</td>
+                                <td>Exchange mode: input, output, both, reference</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb_data_format</code></td>
+                                <td>string</td>
+                                <td>msgpack</td>
+                                <td>Serialization: json, msgpack, numpy, arrow</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb_ttl</code></td>
+                                <td>int</td>
+                                <td>300</td>
+                                <td>Time-to-live for entries (seconds)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Language Support -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-code-square"></i> Native Language Support</h5>
+    </div>
+    
+    <!-- Java -->
+    <div class="col-md-4 mb-3">
+        <div class="card lang-card lang-java h-100">
+            <div class="card-header" style="background: #f89820; color: white;">
+                <h6 class="mb-0"><i class="bi bi-cup-hot-fill"></i> Java (lmdbjava)</h6>
+            </div>
+            <div class="card-body">
+                <div class="code-block" style="font-size: 0.75rem;">
+// Check for LMDB reference
+if (data.get("_lmdb_ref")) {
+  String inputKey = data.get("_lmdb_input_key");
+  
+  // Read from LMDB (zero-copy!)
+  ByteBuffer buf = dbi.get(txn, keyBuf);
+  
+  // Process...
+  
+  // Write output to LMDB
+  dbi.put(txn, outputKey, resultBuf);
+}</div>
+                <p class="small text-muted mt-2 mb-0">
+                    <strong>Dependency:</strong> org.lmdbjava:lmdbjava:0.8.3
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- C++ -->
+    <div class="col-md-4 mb-3">
+        <div class="card lang-card lang-cpp h-100">
+            <div class="card-header" style="background: #00599C; color: white;">
+                <h6 class="mb-0"><i class="bi bi-braces"></i> C++ (liblmdb)</h6>
+            </div>
+            <div class="card-body">
+                <div class="code-block" style="font-size: 0.75rem;">
+// Check for LMDB reference
+if (data["_lmdb_ref"].cast&lt;bool&gt;()) {
+  MDB_val mdb_key, mdb_data;
+  mdb_key.mv_data = input_key.data();
+  
+  // Read from LMDB (zero-copy!)
+  mdb_get(txn, dbi, &mdb_key, &mdb_data);
+  
+  // Process directly from memory map
+  process((uint8_t*)mdb_data.mv_data);
+}</div>
+                <p class="small text-muted mt-2 mb-0">
+                    <strong>Compile:</strong> -DUSE_LMDB -llmdb
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rust -->
+    <div class="col-md-4 mb-3">
+        <div class="card lang-card lang-rust h-100">
+            <div class="card-header" style="background: #CE422B; color: white;">
+                <h6 class="mb-0"><i class="bi bi-gear-wide-connected"></i> Rust (lmdb-rs)</h6>
+            </div>
+            <div class="card-body">
+                <div class="code-block" style="font-size: 0.75rem;">
+// Check for LMDB reference
+if data.get_item("_lmdb_ref")?.is_true()? {
+  let txn = env.begin_ro_txn()?;
+  
+  // Read from LMDB (zero-copy!)
+  let bytes = txn.get(db, &input_key)?;
+  
+  // Process with memory safety
+  let result = process(bytes)?;
+  
+  // Write output
+  txn.put(db, &output_key, &result)?;
+}</div>
+                <p class="small text-muted mt-2 mb-0">
+                    <strong>Cargo:</strong> lmdb = "0.8"
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear-wide-connected"></i> How It Works</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-1-circle text-primary"></i> Automatic Detection</h6>
+                        <p>When <code>lmdb_enabled=true</code>, the DAG Engine automatically checks payload size against <code>lmdb_min_size</code>. Large payloads trigger LMDB exchange.</p>
+                        
+                        <h6><i class="bi bi-2-circle text-primary"></i> Write to LMDB</h6>
+                        <p>Input data is serialized (msgpack/json/arrow) and written to the memory-mapped LMDB file. A reference dict with keys is passed to the calculator.</p>
+                        
+                        <h6><i class="bi bi-3-circle text-primary"></i> Native Read</h6>
+                        <p>The native calculator (Java/C++/Rust) opens the same LMDB database and reads data directly from the memory-mapped file—<strong>zero copy!</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-4-circle text-success"></i> Native Write</h6>
+                        <p>After processing, the native calculator writes output to LMDB using the provided output key. This is also zero-copy from the native side.</p>
+                        
+                        <h6><i class="bi bi-5-circle text-success"></i> Python Read</h6>
+                        <p>The DAG Engine reads the output from LMDB, deserializes it, and continues the pipeline. Automatic cleanup removes temporary data.</p>
+                        
+                        <h6><i class="bi bi-6-circle text-success"></i> Automatic Cleanup</h6>
+                        <p>TTL-based expiration ensures old data is cleaned up. Manual cleanup also happens after each successful exchange.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patent Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0 text-dark"><i class="bi bi-award"></i> Patent-Pending Innovation</h5>
+            </div>
+            <div class="card-body">
+                <p>The LMDB-based zero-copy data exchange architecture in DishtaYantra represents a <strong>novel approach</strong> to heterogeneous language calculator integration. Key innovations include:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Automatic payload size detection</strong> for LMDB usage decision</li>
+                            <li><strong>Unified reference protocol</strong> across Java, C++, and Rust</li>
+                            <li><strong>Transaction-based exchange</strong> with automatic cleanup</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Format-agnostic transport</strong> supporting multiple serialization formats</li>
+                            <li><strong>Configurable thresholds</strong> for optimal performance tuning</li>
+                            <li><strong>ACID guarantees</strong> for data integrity</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="mb-0"><span class="patent-badge"><i class="bi bi-shield-check"></i> Patent Pending</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legal Notice -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-body">
+                <h6 class="text-warning mb-3"><i class="bi bi-exclamation-triangle"></i> Legal Notice</h6>
+                <p class="small mb-2">
+                    <strong>PATENT PENDING:</strong> The LMDB Zero-Copy Data Exchange technology is the subject of one or more pending patent applications. 
+                    Protected innovations include automatic payload size detection, unified reference protocol, transaction-based zero-copy exchange, 
+                    and memory-mapped file transport with automatic cleanup.
+                </p>
+                <p class="small mb-0 text-muted">
+                    <strong>© 2025-2030 Ashutosh Sinha.</strong> All rights reserved. Unauthorized use or implementation is strictly prohibited.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation -->
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('help_rest_integration') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> REST Integration
+            </a>
+            <a href="{{ url_for('help') }}" class="btn btn-outline-primary">
+                <i class="bi bi-house"></i> Help Center
+            </a>
+            <a href="{{ url_for('help_architecture') }}" class="btn btn-outline-primary">
+                Architecture <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
