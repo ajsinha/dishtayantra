@@ -4,11 +4,16 @@ import threading
 import time
 from datetime import datetime
 from collections import deque, defaultdict
+from pathlib import Path
 from core.pubsub.pubsubfactory import create_publisher, create_subscriber
 from core.calculator.core_calculator import *
 from core.transformer.core_transformer import *
 from core.dag.graph_elements import Node, Edge
 from core.dag.node_implementations import *
+from core.dag.subgraph import (
+    Subgraph, SubgraphNode, SubgraphSupervisor, SubgraphState,
+    ExecutionMode, load_subgraph_from_config, SubgraphConfigError
+)
 from core.core_utils import instantiate_module
 from core.dag.time_window_utils import calculate_end_time, get_time_window_info
 from core.properties_configurator import PropertiesConfigurator
@@ -27,6 +32,7 @@ class ComputeGraph:
                 config = json.load(f)
             '''
             file_path = config
+            self._config_base_path = str(Path(file_path).parent)
             config = self.prop_conf.load_and_resolve_json_file_content(file_path)
 
         self.config = config
@@ -76,6 +82,11 @@ class ComputeGraph:
         self.transformers = {}
         self.nodes = {}
         self.edges = []
+        
+        # Subgraph support
+        self.subgraph_nodes = {}  # name -> SubgraphNode
+        self.subgraph_supervisor = None
+        self._config_base_path = None  # For resolving subgraph file paths
 
         self._compute_thread = None
         self._stop_event = threading.Event()
@@ -179,8 +190,10 @@ class ComputeGraph:
             node_type = node_config.get('type', 'CalculationNode')
             config = node_config.get('config', {})
 
-            # Create node
-            if node_type in globals():
+            # Handle SubgraphNode specially
+            if node_type == 'SubgraphNode':
+                node = self._build_subgraph_node(node_config)
+            elif node_type in globals():
                 node = globals()[node_type](name, config)
             else:
                 # Custom node
@@ -245,7 +258,57 @@ class ComputeGraph:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
+        # Initialize subgraph supervisor if we have subgraphs
+        if self.subgraph_nodes:
+            supervisor_config = self.config.get('subgraph_supervisor', {})
+            self.subgraph_supervisor = SubgraphSupervisor(self, supervisor_config)
+            for sg_node in self.subgraph_nodes.values():
+                self.subgraph_supervisor.register_subgraph(sg_node)
+            logger.info(f"Subgraph supervisor initialized with {len(self.subgraph_nodes)} subgraphs")
+
         logger.info(f"DAG built successfully with {len(self.nodes)} nodes and {len(self.edges)} edges")
+
+    def _build_subgraph_node(self, node_config: dict) -> SubgraphNode:
+        """
+        Build a SubgraphNode from configuration.
+        
+        Supports hybrid loading (inline or external file).
+        """
+        name = node_config['name']
+        config = node_config.get('config', {})
+        
+        # Create SubgraphNode
+        subgraph_node = SubgraphNode(name=name, config=config, parent_graph=self)
+        
+        # Determine subgraph source (hybrid approach)
+        subgraph_file = config.get('subgraph_file')
+        inline_subgraph = node_config.get('subgraph')
+        
+        # Load subgraph
+        subgraph_node.load_subgraph(
+            subgraph_config=inline_subgraph,
+            subgraph_file=subgraph_file,
+            base_path=self._config_base_path,
+            depth=1  # Parent graph is depth 0
+        )
+        
+        # Bind to parent graph
+        subgraph_node.bind_to_parent(self)
+        
+        # Track in subgraph_nodes dict
+        self.subgraph_nodes[name] = subgraph_node
+        
+        # Create a wrapper node for graph compatibility
+        wrapper = SubgraphWrapperNode(name, config, subgraph_node)
+        wrapper.set_graph(self)
+        
+        logger.info(f"Created SubgraphNode: {name} with {subgraph_node.subgraph.node_count} internal nodes")
+        
+        return wrapper
+
+    def get_node(self, name: str):
+        """Get a node by name."""
+        return self.nodes.get(name)
 
     def _has_cycle(self):
         """Check if graph has a cycle using DFS"""
@@ -410,7 +473,15 @@ class ComputeGraph:
                 if self._ui_suspended:
                     logger.debug(f"DAG {self.name}: In time window but UI-suspended, not auto-resuming")
                 elif not self._suspend_event.is_set():
-                    logger.info(f"DAG {self.name}: Entering time window, resuming")
+                    logger.info("")
+                    logger.info("█" * 70)
+                    logger.info(f"█  DAG TIME WINDOW: AUTO-RESUME")
+                    logger.info(f"█  DAG: {self.name}")
+                    logger.info(f"█  Window: {self.start_time} - {self.end_time}")
+                    logger.info(f"█  Current Time: {current_time}")
+                    logger.info(f"█  Action: Resuming DAG (entered time window)")
+                    logger.info("█" * 70)
+                    logger.info("")
                     self.resume()
             else:
                 # Outside time window
@@ -421,7 +492,15 @@ class ComputeGraph:
                 else:
                     # Normal mode: auto-suspend when outside window
                     if self._suspend_event.is_set():
-                        logger.info(f"DAG {self.name}: Leaving time window, suspending")
+                        logger.info("")
+                        logger.info("█" * 70)
+                        logger.info(f"█  DAG TIME WINDOW: AUTO-SUSPEND")
+                        logger.info(f"█  DAG: {self.name}")
+                        logger.info(f"█  Window: {self.start_time} - {self.end_time}")
+                        logger.info(f"█  Current Time: {current_time}")
+                        logger.info(f"█  Action: Suspending DAG (left time window)")
+                        logger.info("█" * 70)
+                        logger.info("")
                         self.suspend()
 
             time.sleep(60)  # Check every minute
@@ -592,7 +671,7 @@ class ComputeGraph:
 
     def details(self):
         """Return details of the compute graph"""
-        return {
+        result = {
             'name': self.name,
             'start_time': self.start_time,
             'end_time': self.end_time,
@@ -608,3 +687,48 @@ class ComputeGraph:
             'calculators': {name: calc.details() for name, calc in self.calculators.items()},
             'transformers': {name: trans.details() for name, trans in self.transformers.items()}
         }
+        
+        # Add subgraph information
+        if self.subgraph_nodes:
+            result['subgraphs'] = {
+                name: sg_node.to_dict() for name, sg_node in self.subgraph_nodes.items()
+            }
+            result['subgraph_count'] = len(self.subgraph_nodes)
+        
+        # Add supervisor status
+        if self.subgraph_supervisor:
+            result['subgraph_supervisor'] = self.subgraph_supervisor.to_dict()
+        
+        return result
+    
+    # Subgraph control methods
+    
+    def light_up_subgraph(self, subgraph_name: str, reason: str = None):
+        """Activate a subgraph."""
+        if self.subgraph_supervisor:
+            self.subgraph_supervisor.light_up(subgraph_name, reason)
+        elif subgraph_name in self.subgraph_nodes:
+            self.subgraph_nodes[subgraph_name].light_up(reason)
+    
+    def light_down_subgraph(self, subgraph_name: str, reason: str = None):
+        """Suspend a subgraph."""
+        if self.subgraph_supervisor:
+            self.subgraph_supervisor.light_down(subgraph_name, reason)
+        elif subgraph_name in self.subgraph_nodes:
+            self.subgraph_nodes[subgraph_name].light_down(reason)
+    
+    def light_up_all_subgraphs(self, reason: str = None):
+        """Activate all subgraphs."""
+        if self.subgraph_supervisor:
+            self.subgraph_supervisor.light_up_all(reason)
+    
+    def light_down_all_subgraphs(self, reason: str = None):
+        """Suspend all subgraphs."""
+        if self.subgraph_supervisor:
+            self.subgraph_supervisor.light_down_all(reason)
+    
+    def get_subgraph_status(self) -> dict:
+        """Get status of all subgraphs."""
+        if self.subgraph_supervisor:
+            return self.subgraph_supervisor.get_status()
+        return {}

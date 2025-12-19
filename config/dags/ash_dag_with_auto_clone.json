@@ -1,7 +1,7 @@
 {
   "name": "ash_dag_with_auto_clone",
-  "start_time": "0800",
-  "duration": "10h15m",
+  "start_time": "0827",
+  "duration": "15m",
 
   "autoclone": {
     "ramp_up_time": "1358",

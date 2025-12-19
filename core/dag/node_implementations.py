@@ -283,3 +283,171 @@ class CalculationNode(Node):
         super().__init__(name, config)
 
     # Uses default Node.compute() implementation
+
+
+class SubgraphWrapperNode(Node):
+    """
+    Node that wraps a SubgraphNode for integration with the parent graph.
+    
+    This node acts as a bridge between the parent graph's node system and 
+    the subgraph's internal execution. It handles:
+    - Dirty propagation across subgraph boundaries
+    - Input/output data marshaling
+    - Subgraph state management (active/suspended)
+    
+    Patent Pending - DishtaYantra Framework
+    """
+    
+    def __init__(self, name, config, subgraph_node):
+        """
+        Initialize the wrapper node.
+        
+        Args:
+            name: Node name in parent graph
+            config: Node configuration
+            subgraph_node: The SubgraphNode to wrap
+        """
+        super().__init__(name, config)
+        self.subgraph_node = subgraph_node
+        self._node_type = 'SubgraphNode'
+        
+    @property
+    def is_subgraph(self) -> bool:
+        """Indicate this is a subgraph node."""
+        return True
+    
+    @property
+    def subgraph(self):
+        """Get the underlying subgraph."""
+        return self.subgraph_node.subgraph if self.subgraph_node else None
+    
+    @property
+    def is_active(self) -> bool:
+        """Check if subgraph is active."""
+        return self.subgraph_node.is_active if self.subgraph_node else False
+    
+    @property
+    def is_suspended(self) -> bool:
+        """Check if subgraph is suspended."""
+        return self.subgraph_node.is_suspended if self.subgraph_node else True
+    
+    def set_dirty(self):
+        """Set this node as dirty and propagate to subgraph if active."""
+        super().set_dirty()
+        if self.subgraph_node and self.is_active:
+            self.subgraph_node.mark_dirty()
+    
+    def pre_compute(self):
+        """Pre-compute phase - check if any incoming edges have new data."""
+        # Check incoming edges for data
+        for edge in self._incoming_edges:
+            if edge.from_node.isdirty() or self._input != edge.get_data():
+                self.set_dirty()
+                break
+    
+    def compute(self) -> bool:
+        """
+        Execute the subgraph and propagate output.
+        
+        If subgraph is suspended, cached output is used and downstream
+        nodes are NOT marked dirty (preventing unnecessary recalculation).
+        """
+        if not self.isdirty():
+            return False
+        
+        try:
+            # Gather inputs from incoming edges
+            inputs = {}
+            for edge in self._incoming_edges:
+                edge_data = edge.get_data()
+                if edge_data is not None:
+                    if edge.pname:
+                        inputs[edge.pname] = edge_data
+                    else:
+                        inputs[edge.from_node.name] = edge_data
+            
+            # Merge into single input if only one source
+            if len(inputs) == 1:
+                input_data = list(inputs.values())[0]
+            else:
+                input_data = inputs
+            
+            self._input = input_data
+            
+            # Execute subgraph
+            if self.subgraph_node:
+                self._output = self.subgraph_node.execute(input_data)
+            else:
+                self._output = input_data
+            
+            # Propagate to outgoing edges
+            for edge in self._outgoing_edges:
+                edge.set_data(self._output)
+                # Only mark downstream dirty if subgraph is active
+                # When suspended, we use cached output but don't propagate dirty
+                if self.is_active:
+                    edge.to_node.set_dirty()
+            
+            self.set_clean()
+            return True
+            
+        except Exception as e:
+            error_info = {
+                'time': datetime.now().isoformat(),
+                'error': str(e),
+                'subgraph': self.name
+            }
+            self._errors.append(error_info)
+            logger.error(f"Error in subgraph node {self.name}: {str(e)}")
+            return False
+    
+    def light_up(self, reason: str = None):
+        """Activate the subgraph."""
+        if self.subgraph_node:
+            self.subgraph_node.light_up(reason)
+            self.set_dirty()  # Trigger recalculation
+    
+    def light_down(self, reason: str = None):
+        """Suspend the subgraph."""
+        if self.subgraph_node:
+            self.subgraph_node.light_down(reason)
+    
+    def details(self) -> dict:
+        """Return detailed information about this node."""
+        base_details = super().details()
+        
+        # Add subgraph-specific details
+        base_details['node_type'] = 'SubgraphNode'
+        base_details['is_subgraph'] = True
+        
+        if self.subgraph_node and self.subgraph:
+            sg = self.subgraph
+            base_details['subgraph'] = {
+                'name': sg.name,
+                'state': sg.state.value,
+                'is_active': sg.is_active,
+                'execution_mode': sg.execution_mode.value,
+                'node_count': sg.node_count,
+                'entry_node': sg.entry_node_name,
+                'exit_node': sg.exit_node_name,
+                'suspend_reason': sg.suspend_reason,
+                'metrics': {
+                    'execution_count': sg.metrics.execution_count,
+                    'avg_latency_ms': sg.metrics.avg_execution_time_ms,
+                    'last_latency_ms': sg.metrics.last_execution_time_ms,
+                    'cache_hits': sg.metrics.cache_hit_count,
+                    'errors': sg.metrics.error_count
+                },
+                'internal_nodes': [
+                    {
+                        'name': node.name,
+                        'borrows_from': node.borrows_from,
+                        'role': node.role,
+                        'is_dirty': node.is_dirty,
+                        'last_execution_ms': node.last_execution_time_ms
+                    }
+                    for node in sg.nodes.values()
+                ]
+            }
+        
+        return base_details

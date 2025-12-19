@@ -99,7 +99,7 @@
     <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
     <h1>DishtaYantra</h1>
     <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
-    <span class="version-badge">Version 1.1.2</span>
+    <span class="version-badge">Version 1.2.0</span>
 </div>
 
 <!-- Navigation Buttons -->
@@ -416,6 +416,23 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Subgraph Control -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 rounded" style="background: rgba(102, 126, 234, 0.15); border: 2px solid #667eea;">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="rounded-circle p-2 me-2" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                                    <i class="bi bi-diagram-2 text-white"></i>
+                                </div>
+                                <h6 class="mb-0 text-white">Subgraph Control <span class="badge" style="background: #667eea;">NEW</span></h6>
+                            </div>
+                            <p class="small text-light opacity-75 mb-2"><strong style="color: #a78bfa;">Light up/down</strong> modular computation units at runtime. No restart required. Unique to DishtaYantra.</p>
+                            <div class="small">
+                                <span class="badge" style="background: #667eea;">Graph-as-Node</span>
+                                <span class="badge bg-dark">Dynamic control</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Comparison Table -->
@@ -514,15 +531,44 @@
     </div>
 </div>
 
-<!-- What's New in 1.1.1 -->
+<!-- What's New in 1.2.0 -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card" style="border: 2px solid #00d4aa;">
             <div class="card-header" style="background: linear-gradient(135deg, #1e3a5f, #2d5a87); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.1.2</h5>
+                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.2.0</h5>
             </div>
             <div class="card-body">
-                <!-- New in 1.1.2 -->
+                <!-- New in 1.2.0 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> Subgraph Feature (1.2.0) <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-layers" style="color: #667eea;"></i> Graph-as-a-Node Pattern</h6>
+                        <ul>
+                            <li><strong>Modular composition</strong> - encapsulate pipelines as single nodes</li>
+                            <li>Hierarchical nesting up to 3 levels deep</li>
+                            <li>Node borrowing - no calculator duplication</li>
+                            <li>Inline or external file configuration</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightbulb" style="color: #764ba2;"></i> Dynamic Light Up/Down Control</h6>
+                        <ul>
+                            <li>Activate or suspend subgraphs at runtime</li>
+                            <li>Supervisor bulk control (all subgraphs at once)</li>
+                            <li>Dirty propagation blocking when suspended</li>
+                            <li>Configurable dark output modes (cached/passthrough/block)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- From 1.1.2 -->
                 <div class="row mb-3">
                     <div class="col-12">
                         <h6 class="text-primary"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange (1.1.2) <span class="badge" style="background: #06b6d4;">Patent Pending</span></h6>

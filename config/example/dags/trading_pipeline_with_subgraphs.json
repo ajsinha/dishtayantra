@@ -1,0 +1,189 @@
+{
+  "name": "trading_pipeline_with_subgraphs",
+  "description": "Trading pipeline demonstrating subgraph feature with two subgraphs",
+  "start_time": null,
+  "duration": null,
+  
+  "subscribers": [
+    {
+      "name": "trade_subscriber",
+      "config": {
+        "source": "mem://queue/trades"
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "risk_publisher",
+      "config": {
+        "destination": "mem://queue/risk_results"
+      }
+    },
+    {
+      "name": "alert_publisher",
+      "config": {
+        "destination": "mem://queue/alerts"
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "trade_validator",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Validates incoming trade data"
+      }
+    },
+    {
+      "name": "trade_enricher",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Enriches trade with market data"
+      }
+    },
+    {
+      "name": "trade_filter",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Filters invalid trades"
+      }
+    },
+    {
+      "name": "scenario_generator",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Generates Monte Carlo scenarios"
+      }
+    },
+    {
+      "name": "trade_pricer",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Prices trades across scenarios"
+      }
+    },
+    {
+      "name": "netting_calculator",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Applies netting rules"
+      }
+    },
+    {
+      "name": "pfe_calculator",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Calculates PFE metrics"
+      }
+    },
+    {
+      "name": "limit_checker",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Checks credit limits"
+      }
+    },
+    {
+      "name": "alert_generator",
+      "type": "NullCalculator",
+      "config": {
+        "description": "Generates alerts for breaches"
+      }
+    }
+  ],
+  
+  "transformers": [],
+  
+  "nodes": [
+    {
+      "name": "trade_input",
+      "type": "SubscriptionNode",
+      "subscriber": "trade_subscriber",
+      "config": {}
+    },
+    {
+      "name": "validation_subgraph",
+      "type": "SubgraphNode",
+      "config": {
+        "entry_connection": "trade_input",
+        "exit_connections": ["risk_subgraph"],
+        "execution_mode": "synchronous"
+      },
+      "subgraph": {
+        "name": "validation_pipeline",
+        "description": "Inline subgraph for trade validation",
+        "entry_node": "sg_validate",
+        "exit_node": "sg_filter",
+        "execution_mode": "synchronous",
+        "dark_output_mode": "passthrough",
+        
+        "nodes": [
+          {
+            "name": "sg_validate",
+            "borrows": "trade_validator",
+            "role": "entry"
+          },
+          {
+            "name": "sg_enrich",
+            "borrows": "trade_enricher"
+          },
+          {
+            "name": "sg_filter",
+            "borrows": "trade_filter",
+            "role": "exit"
+          }
+        ],
+        
+        "edges": [
+          { "from": "sg_validate", "to": "sg_enrich" },
+          { "from": "sg_enrich", "to": "sg_filter" }
+        ]
+      }
+    },
+    {
+      "name": "risk_subgraph",
+      "type": "SubgraphNode",
+      "config": {
+        "subgraph_file": "subgraphs/risk_calculation.json",
+        "entry_connection": "validation_subgraph",
+        "exit_connections": ["limit_check", "risk_output"],
+        "execution_mode": "synchronous"
+      }
+    },
+    {
+      "name": "limit_check",
+      "type": "CalculationNode",
+      "calculator": "limit_checker",
+      "config": {}
+    },
+    {
+      "name": "alert_node",
+      "type": "CalculationNode",
+      "calculator": "alert_generator",
+      "publishers": ["alert_publisher"],
+      "config": {}
+    },
+    {
+      "name": "risk_output",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": ["risk_publisher"]
+      }
+    }
+  ],
+  
+  "edges": [
+    { "from_node": "trade_input", "to_node": "validation_subgraph" },
+    { "from_node": "validation_subgraph", "to_node": "risk_subgraph" },
+    { "from_node": "risk_subgraph", "to_node": "limit_check" },
+    { "from_node": "risk_subgraph", "to_node": "risk_output" },
+    { "from_node": "limit_check", "to_node": "alert_node" }
+  ],
+  
+  "subgraph_supervisor": {
+    "enabled": true,
+    "control_source": "mem://queue/subgraph_control"
+  }
+}

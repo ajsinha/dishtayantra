@@ -576,6 +576,375 @@
     </div>
 </div>
 
+<!-- DAG with Subgraphs -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <h5 class="mb-0">
+            <span class="sample-tag" style="background: #a855f7;">Advanced</span>
+            <span class="sample-tag" style="background: #667eea;">Subgraph</span>
+            Trading Pipeline with Subgraphs
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Demonstrates modular pipeline using <strong>subgraphs</strong> for validation and risk calculation. 
+        Shows both inline and external file subgraph definitions with light up/down control.</p>
+        <div class="alert alert-info">
+            <i class="bi bi-lightbulb-fill"></i> 
+            <strong>Key Concept:</strong> Subgraphs borrow calculators from the parent graph using the <code>borrows</code> property.
+        </div>
+        <div class="code-block">{
+  "name": "trading_pipeline_with_subgraphs",
+  
+  "subscribers": [
+    {
+      "name": "trade_subscriber",
+      "config": { "source": "mem://queue/trades" }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "risk_publisher",
+      "config": { "destination": "mem://queue/risk_results" }
+    }
+  ],
+  
+  "calculators": [
+    { "name": "trade_validator", "type": "TradeValidatorCalculator" },
+    { "name": "trade_enricher", "type": "TradeEnricherCalculator" },
+    { "name": "trade_filter", "type": "TradeFilterCalculator" },
+    { "name": "scenario_generator", "type": "ScenarioGeneratorCalculator" },
+    { "name": "trade_pricer", "type": "TradePricerCalculator" },
+    { "name": "netting_calculator", "type": "NettingCalculator" },
+    { "name": "pfe_calculator", "type": "PFECalculator" },
+    { "name": "limit_checker", "type": "LimitCheckerCalculator" }
+  ],
+  
+  "nodes": [
+    {
+      "name": "trade_input",
+      "type": "SubscriptionNode",
+      "subscriber": "trade_subscriber"
+    },
+    {
+      "name": "validation_subgraph",
+      "type": "SubgraphNode",
+      "config": {
+        "execution_mode": "synchronous",
+        "dark_output_mode": "passthrough"
+      },
+      <span style="color: #98c379;">"subgraph"</span>: {
+        "name": "validation_pipeline",
+        "entry_node": "sg_validate",
+        "exit_node": "sg_filter",
+        "nodes": [
+          { "name": "sg_validate", <span style="color: #56b6c2;">"borrows": "trade_validator"</span>, "role": "entry" },
+          { "name": "sg_enrich", "borrows": "trade_enricher" },
+          { "name": "sg_filter", "borrows": "trade_filter", "role": "exit" }
+        ],
+        "edges": [
+          { "from": "sg_validate", "to": "sg_enrich" },
+          { "from": "sg_enrich", "to": "sg_filter" }
+        ]
+      }
+    },
+    {
+      "name": "risk_subgraph",
+      "type": "SubgraphNode",
+      "config": {
+        <span style="color: #e5c07b;">"subgraph_file": "subgraphs/risk_calculation.json"</span>,
+        "execution_mode": "synchronous",
+        "dark_output_mode": "cached"
+      }
+    },
+    {
+      "name": "limit_check",
+      "type": "CalculationNode",
+      "calculator": "limit_checker"
+    },
+    {
+      "name": "risk_output",
+      "type": "PublicationNode",
+      "publishers": ["risk_publisher"]
+    }
+  ],
+  
+  "edges": [
+    { "from_node": "trade_input", "to_node": "validation_subgraph" },
+    { "from_node": "validation_subgraph", "to_node": "risk_subgraph" },
+    { "from_node": "risk_subgraph", "to_node": "limit_check" },
+    { "from_node": "limit_check", "to_node": "risk_output" }
+  ]
+}
+
+<span style="color: #5c6370;">// External file: config/subgraphs/risk_calculation.json</span>
+{
+  "name": "risk_calculation",
+  "entry_node": "sg_scenario_gen",
+  "exit_node": "sg_pfe_output",
+  "execution_mode": "synchronous",
+  "dark_output_mode": "cached",
+  "nodes": [
+    { "name": "sg_scenario_gen", "borrows": "scenario_generator", "role": "entry" },
+    { "name": "sg_pricer", "borrows": "trade_pricer" },
+    { "name": "sg_netting", "borrows": "netting_calculator" },
+    { "name": "sg_pfe_output", "borrows": "pfe_calculator", "role": "exit" }
+  ],
+  "edges": [
+    { "from": "sg_scenario_gen", "to": "sg_pricer" },
+    { "from": "sg_pricer", "to": "sg_netting" },
+    { "from": "sg_netting", "to": "sg_pfe_output" }
+  ]
+}</div>
+        <div class="mt-3">
+            <h6><i class="bi bi-toggle-on"></i> Runtime Control (REST API)</h6>
+            <div class="code-block" style="max-height: 150px;"><span style="color: #5c6370;"># Light down risk_subgraph (suspend calculations, use cached output)</span>
+POST /dag/trading_pipeline_with_subgraphs/subgraph/control
+{"command": "light_down", "subgraph": "risk_subgraph", "reason": "Market closed"}
+
+<span style="color: #5c6370;"># Light up risk_subgraph (resume calculations)</span>
+POST /dag/trading_pipeline_with_subgraphs/subgraph/control
+{"command": "light_up", "subgraph": "risk_subgraph", "reason": "Market opened"}</div>
+        </div>
+    </div>
+</div>
+
+<!-- C++ Calculator DAG -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #00599C 0%, #004482 100%); color: white;">
+        <h5 class="mb-0">
+            <span class="sample-tag" style="background: #ef4444;">Advanced</span>
+            <span class="sample-tag" style="background: #00599C;">C++</span>
+            High-Performance C++ Calculator DAG
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>Ultra-low latency DAG using <strong>pybind11 C++ calculators</strong> for Monte Carlo pricing. 
+        Achieves 50-100x speedup over pure Python with ~100ns call overhead.</p>
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Requirement:</strong> C++ calculator module must be compiled and installed. See 
+            <a href="{{ url_for('help_pybind11_integration') }}">C++ Integration Guide</a>.
+        </div>
+        <div class="code-block">{
+  "name": "cpp_monte_carlo_pricer",
+  
+  "subscribers": [
+    {
+      "name": "trade_sub",
+      "config": { "source": "kafka://trades-topic" }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "price_pub",
+      "config": { "destination": "kafka://prices-topic" }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "cpp_pricer",
+      <span style="color: #e5c07b;">"calculator": "cpp"</span>,
+      "config": {
+        <span style="color: #56b6c2;">"module": "dishtayantra_cpp"</span>,
+        <span style="color: #56b6c2;">"class": "MonteCarloCalculator"</span>,
+        "num_simulations": 100000,
+        "time_steps": 252,
+        "use_antithetic": true
+      }
+    },
+    {
+      "name": "cpp_risk",
+      "calculator": "cpp",
+      "config": {
+        "module": "dishtayantra_cpp",
+        "class": "GreeksCalculator",
+        "bump_size": 0.01,
+        "parallel": true
+      }
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "trade_input",
+      "type": "SubscriptionNode",
+      "subscriber": "trade_sub"
+    },
+    {
+      "name": "pricing",
+      "type": "CalculationNode",
+      "calculator": "cpp_pricer"
+    },
+    {
+      "name": "risk_calc",
+      "type": "CalculationNode",
+      "calculator": "cpp_risk"
+    },
+    {
+      "name": "price_output",
+      "type": "PublicationNode",
+      "publishers": ["price_pub"]
+    }
+  ],
+  
+  "edges": [
+    { "from_node": "trade_input", "to_node": "pricing" },
+    { "from_node": "pricing", "to_node": "risk_calc" },
+    { "from_node": "risk_calc", "to_node": "price_output" }
+  ]
+}
+
+<span style="color: #5c6370;">// C++ Calculator Class (dishtayantra_cpp.cpp)</span>
+<span style="color: #c678dd;">#include</span> &lt;pybind11/pybind11.h&gt;
+<span style="color: #c678dd;">#include</span> &lt;random&gt;
+<span style="color: #c678dd;">#include</span> &lt;cmath&gt;
+
+<span style="color: #c678dd;">class</span> MonteCarloCalculator {
+<span style="color: #c678dd;">public</span>:
+    py::dict calculate(py::dict input) {
+        <span style="color: #c678dd;">double</span> S = input["spot"].cast&lt;<span style="color: #c678dd;">double</span>&gt;();
+        <span style="color: #c678dd;">double</span> K = input["strike"].cast&lt;<span style="color: #c678dd;">double</span>&gt;();
+        <span style="color: #c678dd;">double</span> T = input["maturity"].cast&lt;<span style="color: #c678dd;">double</span>&gt;();
+        <span style="color: #c678dd;">double</span> r = input["rate"].cast&lt;<span style="color: #c678dd;">double</span>&gt;();
+        <span style="color: #c678dd;">double</span> sigma = input["volatility"].cast&lt;<span style="color: #c678dd;">double</span>&gt;();
+        
+        <span style="color: #5c6370;">// Monte Carlo simulation with SIMD optimization</span>
+        <span style="color: #c678dd;">double</span> price = run_simulation(S, K, T, r, sigma, 100000);
+        
+        py::dict result;
+        result["price"] = price;
+        result["trade_id"] = input["trade_id"];
+        <span style="color: #c678dd;">return</span> result;
+    }
+};</div>
+    </div>
+</div>
+
+<!-- Rust Calculator DAG -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #CE422B 0%, #a33620 100%); color: white;">
+        <h5 class="mb-0">
+            <span class="sample-tag" style="background: #ef4444;">Advanced</span>
+            <span class="sample-tag" style="background: #CE422B;">Rust</span>
+            Memory-Safe Rust Calculator DAG
+        </h5>
+    </div>
+    <div class="card-body">
+        <p>High-performance DAG using <strong>PyO3 Rust calculators</strong> for parallel VaR computation. 
+        Combines C++ equivalent performance with memory safety and thread safety via <code>rayon</code>.</p>
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Requirement:</strong> Rust calculator must be compiled with <code>maturin build --release</code>. See 
+            <a href="{{ url_for('help_rust_integration') }}">Rust Integration Guide</a>.
+        </div>
+        <div class="code-block">{
+  "name": "rust_var_calculator",
+  
+  "subscribers": [
+    {
+      "name": "portfolio_sub",
+      "config": { "source": "redis://portfolio-stream" }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "var_pub",
+      "config": { "destination": "redis://var-results" }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "name": "rust_var",
+      <span style="color: #e5c07b;">"calculator": "rust"</span>,
+      "config": {
+        <span style="color: #56b6c2;">"module": "dishtayantra_rust"</span>,
+        <span style="color: #56b6c2;">"class": "VaRCalculator"</span>,
+        "confidence_level": 0.99,
+        "time_horizon": 10,
+        "num_scenarios": 10000,
+        "parallel_threads": 8
+      }
+    },
+    {
+      "name": "rust_stress",
+      "calculator": "rust",
+      "config": {
+        "module": "dishtayantra_rust",
+        "class": "StressTestCalculator",
+        "scenarios": ["2008_crisis", "covid_crash", "rate_shock"]
+      }
+    }
+  ],
+  
+  "nodes": [
+    {
+      "name": "portfolio_input",
+      "type": "SubscriptionNode",
+      "subscriber": "portfolio_sub"
+    },
+    {
+      "name": "var_calc",
+      "type": "CalculationNode",
+      "calculator": "rust_var"
+    },
+    {
+      "name": "stress_test",
+      "type": "CalculationNode",
+      "calculator": "rust_stress"
+    },
+    {
+      "name": "var_output",
+      "type": "PublicationNode",
+      "publishers": ["var_pub"]
+    }
+  ],
+  
+  "edges": [
+    { "from_node": "portfolio_input", "to_node": "var_calc" },
+    { "from_node": "var_calc", "to_node": "stress_test" },
+    { "from_node": "stress_test", "to_node": "var_output" }
+  ]
+}
+
+<span style="color: #5c6370;">// Rust Calculator (src/lib.rs)</span>
+<span style="color: #c678dd;">use</span> pyo3::prelude::*;
+<span style="color: #c678dd;">use</span> rayon::prelude::*;
+<span style="color: #c678dd;">use</span> std::collections::HashMap;
+
+<span style="color: #e5c07b;">#[pyclass]</span>
+<span style="color: #c678dd;">struct</span> VaRCalculator {
+    confidence_level: <span style="color: #c678dd;">f64</span>,
+    num_scenarios: <span style="color: #c678dd;">usize</span>,
+}
+
+<span style="color: #e5c07b;">#[pymethods]</span>
+<span style="color: #c678dd;">impl</span> VaRCalculator {
+    <span style="color: #e5c07b;">#[new]</span>
+    <span style="color: #c678dd;">fn</span> new(config: HashMap&lt;String, PyObject&gt;) -> Self { ... }
+    
+    <span style="color: #c678dd;">fn</span> calculate(&amp;<span style="color: #c678dd;">self</span>, input: HashMap&lt;String, PyObject&gt;) 
+        -> PyResult&lt;HashMap&lt;String, PyObject&gt;&gt; {
+        <span style="color: #5c6370;">// Parallel Monte Carlo with rayon</span>
+        <span style="color: #c678dd;">let</span> results: Vec&lt;<span style="color: #c678dd;">f64</span>&gt; = (0..<span style="color: #c678dd;">self</span>.num_scenarios)
+            .into_par_iter()  <span style="color: #5c6370;">// Parallel iteration</span>
+            .map(|_| simulate_portfolio(&amp;positions))
+            .collect();
+        
+        <span style="color: #c678dd;">let</span> var = calculate_percentile(&amp;results, <span style="color: #c678dd;">self</span>.confidence_level);
+        
+        <span style="color: #c678dd;">let</span> <span style="color: #c678dd;">mut</span> output = HashMap::new();
+        output.insert("var_99".to_string(), var.into_py(py));
+        Ok(output)
+    }
+}</div>
+    </div>
+</div>
+
 <!-- Using Samples -->
 <div class="card mb-4">
     <div class="card-header">

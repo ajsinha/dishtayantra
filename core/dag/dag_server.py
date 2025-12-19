@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import threading
+from datetime import datetime
 from kazoo.client import KazooClient
 from kazoo.recipe.election import Election
 from core.dag.compute_graph import ComputeGraph
@@ -23,6 +24,10 @@ class DAGComputeServer:
         self._autoclone_thread = None
         self._autoclone_stop_event = threading.Event()
 
+        # Time window monitor - checks DAGs outside window and starts them when they enter
+        self._time_window_monitor_thread = None
+        self._time_window_stop_event = threading.Event()
+
         # Zookeeper setup
         self.zk_client = None
         self.is_primary = True  # Default to primary
@@ -33,6 +38,9 @@ class DAGComputeServer:
 
         # Start autoclone management thread
         self._start_autoclone_manager()
+
+        # Start time window monitor thread
+        self._start_time_window_monitor()
 
         # Setup Zookeeper in background
         try:
@@ -155,6 +163,83 @@ class DAGComputeServer:
         logger.info(f"AUTO-START: Completed - {len(dags_to_start)} DAG(s) processed")
         logger.info("=" * 70)
 
+    def _start_time_window_monitor(self):
+        """Start the time window monitor thread to check DAGs outside their window"""
+        if self._time_window_monitor_thread and self._time_window_monitor_thread.is_alive():
+            return
+
+        self._time_window_stop_event.clear()
+        self._time_window_monitor_thread = threading.Thread(
+            target=self._time_window_monitor_loop,
+            daemon=True
+        )
+        self._time_window_monitor_thread.start()
+        logger.info("Time window monitor thread started (checks every 60 seconds)")
+
+    def _time_window_monitor_loop(self):
+        """
+        Monitor DAGs that are outside their time window and start them when they enter.
+        
+        This runs every 60 seconds and checks:
+        1. DAGs that have a time window configured
+        2. Are not currently running
+        3. Have now entered their time window
+        """
+        import time as time_module
+        
+        logger.info("Time window monitor: Starting monitoring loop")
+        
+        while not self._time_window_stop_event.is_set():
+            try:
+                with self._lock:
+                    for dag_name, dag in self.dags.items():
+                        # Skip if no time window configured (perpetual DAGs)
+                        if dag.start_time is None or dag.end_time is None:
+                            continue
+                        
+                        # Skip if already running
+                        if dag._compute_thread and dag._compute_thread.is_alive():
+                            continue
+                        
+                        # Check if now within time window
+                        if dag.is_in_time_window():
+                            logger.info("")
+                            logger.info("!" * 70)
+                            logger.info("!  TIME WINDOW MONITOR: DAG ENTERING TIME WINDOW")
+                            logger.info(f"!  DAG: {dag_name}")
+                            logger.info(f"!  Window: {dag.start_time} - {dag.end_time}")
+                            logger.info("!  ACTION: Starting DAG automatically")
+                            logger.info("!" * 70)
+                            
+                            try:
+                                dag.start()
+                                self._log_dag_state_change(dag_name, "STARTED", 
+                                    f"Entered time window ({dag.start_time}-{dag.end_time})")
+                            except Exception as e:
+                                logger.error(f"Time window monitor: Failed to start DAG '{dag_name}': {e}")
+                        else:
+                            logger.debug(f"Time window monitor: DAG '{dag_name}' still outside window ({dag.start_time}-{dag.end_time})")
+                            
+            except Exception as e:
+                logger.error(f"Time window monitor error: {e}")
+            
+            # Sleep for 60 seconds before next check
+            self._time_window_stop_event.wait(60)
+        
+        logger.info("Time window monitor: Stopped")
+
+    def _log_dag_state_change(self, dag_name, state, reason=None):
+        """Log DAG state changes with prominent formatting"""
+        logger.info("")
+        logger.info("█" * 70)
+        logger.info(f"█  DAG STATE CHANGE: {state}")
+        logger.info(f"█  DAG Name: {dag_name}")
+        if reason:
+            logger.info(f"█  Reason: {reason}")
+        logger.info(f"█  Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info("█" * 70)
+        logger.info("")
+
     def _setup_leader_election_async(self, zookeeper_hosts):
         """Setup Zookeeper leader election asynchronously"""
         try:
@@ -232,7 +317,7 @@ class DAGComputeServer:
                 return
 
             dag.start()
-            logger.info(f"Started DAG: {dag_name}")
+            self._log_dag_state_change(dag_name, "STARTED", "User/system initiated start")
 
     def start_all(self):
         """Start all DAGs"""
@@ -255,7 +340,7 @@ class DAGComputeServer:
 
             dag = self.dags[dag_name]
             dag.stop()
-            logger.info(f"Stopped DAG: {dag_name}")
+            self._log_dag_state_change(dag_name, "STOPPED", "User/system initiated stop")
 
     def stop_all(self):
         """Stop all DAGs"""
@@ -263,7 +348,7 @@ class DAGComputeServer:
             for dag_name, dag in self.dags.items():
                 try:
                     dag.stop()
-                    logger.info(f"Stopped DAG: {dag_name}")
+                    self._log_dag_state_change(dag_name, "STOPPED", "Stop all DAGs command")
                 except Exception as e:
                     logger.error(f"Error stopping DAG {dag_name}: {str(e)}")
 
@@ -282,7 +367,7 @@ class DAGComputeServer:
                 return
 
             dag.suspend(ui_driven=True)
-            logger.info(f"Suspended DAG: {dag_name}")
+            self._log_dag_state_change(dag_name, "SUSPENDED", "User initiated suspend (UI-driven)")
 
     def resume(self, dag_name):
         """Resume a specific DAG (UI-driven)"""
@@ -303,7 +388,7 @@ class DAGComputeServer:
                 return
 
             dag.resume(ui_driven=True)
-            logger.info(f"Resumed DAG: {dag_name}")
+            self._log_dag_state_change(dag_name, "RESUMED", "User initiated resume (UI-driven)")
 
     def delete(self, dag_name):
         """Delete a specific DAG"""

@@ -42,6 +42,16 @@ class DAGRoutes:
                              'publish_message', 
                              self.admin_required(self.publish_message), 
                              methods=['GET', 'POST'])
+        
+        # Subgraph control routes
+        self.app.add_url_rule('/dag/<dag_name>/subgraph/control',
+                             'dag_subgraph_control',
+                             self.admin_required(self.subgraph_control),
+                             methods=['POST'])
+        self.app.add_url_rule('/dag/<dag_name>/subgraph/status',
+                             'dag_subgraph_status',
+                             self.subgraph_status,
+                             methods=['GET'])
     
     def create_dag(self):
         """Create a new DAG"""
@@ -267,4 +277,77 @@ class DAGRoutes:
             return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
         except Exception as e:
             logger.error(f"Error publishing message: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+    
+    def subgraph_control(self, dag_name):
+        """
+        Control subgraph state (light up / light down).
+        
+        Expected JSON body:
+        {
+            "command": "light_up" | "light_down" | "light_up_all" | "light_down_all",
+            "subgraph": "subgraph_name",  // For single commands
+            "reason": "optional reason"
+        }
+        """
+        try:
+            dag = self.dag_server.dags.get(dag_name)
+            if not dag:
+                return jsonify({'success': False, 'error': 'DAG not found'}), 404
+            
+            data = request.get_json()
+            if not data:
+                return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+            
+            command = data.get('command')
+            subgraph_name = data.get('subgraph')
+            reason = data.get('reason', 'Manual control via UI')
+            
+            if command == 'light_up':
+                if not subgraph_name:
+                    return jsonify({'success': False, 'error': 'Subgraph name required'}), 400
+                dag.light_up_subgraph(subgraph_name, reason)
+                logger.info(f"Subgraph '{subgraph_name}' in DAG '{dag_name}' activated. Reason: {reason}")
+                return jsonify({'success': True, 'message': f'Subgraph {subgraph_name} activated'})
+            
+            elif command == 'light_down':
+                if not subgraph_name:
+                    return jsonify({'success': False, 'error': 'Subgraph name required'}), 400
+                dag.light_down_subgraph(subgraph_name, reason)
+                logger.info(f"Subgraph '{subgraph_name}' in DAG '{dag_name}' suspended. Reason: {reason}")
+                return jsonify({'success': True, 'message': f'Subgraph {subgraph_name} suspended'})
+            
+            elif command == 'light_up_all':
+                dag.light_up_all_subgraphs(reason)
+                logger.info(f"All subgraphs in DAG '{dag_name}' activated. Reason: {reason}")
+                return jsonify({'success': True, 'message': 'All subgraphs activated'})
+            
+            elif command == 'light_down_all':
+                dag.light_down_all_subgraphs(reason)
+                logger.info(f"All subgraphs in DAG '{dag_name}' suspended. Reason: {reason}")
+                return jsonify({'success': True, 'message': 'All subgraphs suspended'})
+            
+            else:
+                return jsonify({'success': False, 'error': f'Unknown command: {command}'}), 400
+                
+        except Exception as e:
+            logger.error(f"Error controlling subgraph: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    def subgraph_status(self, dag_name):
+        """Get status of all subgraphs in a DAG."""
+        try:
+            dag = self.dag_server.dags.get(dag_name)
+            if not dag:
+                return jsonify({'error': 'DAG not found'}), 404
+            
+            status = dag.get_subgraph_status()
+            return jsonify({
+                'dag_name': dag_name,
+                'subgraph_count': len(status),
+                'subgraphs': status
+            })
+            
+        except Exception as e:
+            logger.error(f"Error getting subgraph status: {str(e)}")
             return jsonify({'error': str(e)}), 500

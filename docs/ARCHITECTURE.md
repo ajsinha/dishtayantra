@@ -1,6 +1,6 @@
 # DishtaYantra Architecture Document
 
-## Version 1.1.2
+## Version 1.2.0
 
 © 2025-2030 Ashutosh Sinha
 
@@ -32,7 +32,7 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DishtaYantra v1.1.2                            │
+│                           DishtaYantra v1.2.0                            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │
 │  │   Web UI     │  │  REST API    │  │   Admin      │  │    Help     │ │
@@ -985,4 +985,4 @@ This document contains proprietary and confidential information. Unauthorized co
 
 ---
 
-**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.2.0** | Patent Pending | © 2025-2030 Ashutosh Sinha

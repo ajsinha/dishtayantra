@@ -445,6 +445,151 @@
     </div>
 </div>
 
+<!-- Subgraphs Section -->
+{% if details.subgraphs %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-diagram-2"></i> Subgraphs (Total: {{ details.subgraph_count }})</h5>
+                {% if is_admin %}
+                <div>
+                    <button class="btn btn-sm btn-light" onclick="lightUpAllSubgraphs()">
+                        <i class="bi bi-sun"></i> Light Up All
+                    </button>
+                    <button class="btn btn-sm btn-outline-light" onclick="lightDownAllSubgraphs()">
+                        <i class="bi bi-moon"></i> Light Down All
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for sg_name, sg_data in details.subgraphs.items() %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 {% if sg_data.subgraph.state == 'active' %}border-success{% elif sg_data.subgraph.state == 'suspended' %}border-danger{% else %}border-warning{% endif %}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ sg_name }}</strong>
+                                    {% if sg_data.subgraph.state == 'active' %}
+                                    <span class="badge bg-success ms-2">🟢 Active</span>
+                                    {% elif sg_data.subgraph.state == 'suspended' %}
+                                    <span class="badge bg-danger ms-2">🔴 Suspended</span>
+                                    {% else %}
+                                    <span class="badge bg-warning ms-2">🟡 {{ sg_data.subgraph.state }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if is_admin %}
+                                <div class="btn-group btn-group-sm">
+                                    {% if sg_data.subgraph.state == 'active' %}
+                                    <button class="btn btn-outline-danger" onclick="lightDownSubgraph('{{ sg_name }}')">
+                                        <i class="bi bi-moon"></i> Light Down
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-outline-success" onclick="lightUpSubgraph('{{ sg_name }}')">
+                                        <i class="bi bi-sun"></i> Light Up
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Nodes:</small>
+                                        <strong>{{ sg_data.subgraph.node_count }}</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Mode:</small>
+                                        <span class="badge bg-secondary">{{ sg_data.subgraph.execution_mode }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Entry:</small>
+                                        <code>{{ sg_data.subgraph.entry_node }}</code>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Exit:</small>
+                                        <code>{{ sg_data.subgraph.exit_node }}</code>
+                                    </div>
+                                </div>
+                                
+                                {% if sg_data.subgraph.suspend_reason %}
+                                <div class="alert alert-warning py-1 px-2 mb-2">
+                                    <small><i class="bi bi-info-circle"></i> {{ sg_data.subgraph.suspend_reason }}</small>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Metrics -->
+                                <hr class="my-2">
+                                <div class="row">
+                                    <div class="col-4 text-center">
+                                        <small class="text-muted d-block">Executions</small>
+                                        <strong>{{ sg_data.subgraph.metrics.execution_count }}</strong>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <small class="text-muted d-block">Avg Latency</small>
+                                        <strong>{{ "%.2f"|format(sg_data.subgraph.metrics.avg_latency_ms) }}ms</strong>
+                                    </div>
+                                    <div class="col-4 text-center">
+                                        <small class="text-muted d-block">Cache Hits</small>
+                                        <strong>{{ sg_data.subgraph.metrics.cache_hits }}</strong>
+                                    </div>
+                                </div>
+                                
+                                <!-- Internal Nodes (collapsible) -->
+                                <hr class="my-2">
+                                <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_{{ sg_name|replace(' ', '_') }}">
+                                    <i class="bi bi-chevron-down"></i> Internal Nodes ({{ sg_data.subgraph.nodes|length }})
+                                </button>
+                                <div class="collapse mt-2" id="collapse_{{ sg_name|replace(' ', '_') }}">
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Node</th>
+                                                <th>Borrows</th>
+                                                <th>Role</th>
+                                                <th>Dirty</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for node in sg_data.subgraph.nodes %}
+                                            <tr>
+                                                <td>{{ node.name }}</td>
+                                                <td><code>{{ node.borrows_from }}</code></td>
+                                                <td>
+                                                    {% if node.role == 'entry' %}
+                                                    <span class="badge bg-success">Entry</span>
+                                                    {% elif node.role == 'exit' %}
+                                                    <span class="badge bg-info">Exit</span>
+                                                    {% else %}
+                                                    <span class="badge bg-secondary">Internal</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if node.is_dirty %}
+                                                    <span class="text-warning">●</span>
+                                                    {% else %}
+                                                    <span class="text-success">●</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- JSON Configuration Section -->
 <div class="row mb-4">
     <div class="col-md-12">
@@ -693,5 +838,145 @@ $(document).ready(function() {
         scheduleRefresh();
     }
 });
+
+// Subgraph Control Functions
+function lightUpSubgraph(subgraphName) {
+    var reason = prompt('Reason for activating subgraph (optional):', '');
+    
+    fetch('{{ url_for("dag_subgraph_control", dag_name=dag_name) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            command: 'light_up',
+            subgraph: subgraphName,
+            reason: reason || 'Manual activation via UI'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Subgraph "' + subgraphName + '" activated successfully');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', 'Failed to activate subgraph: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function lightDownSubgraph(subgraphName) {
+    var reason = prompt('Reason for suspending subgraph (optional):', '');
+    
+    fetch('{{ url_for("dag_subgraph_control", dag_name=dag_name) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            command: 'light_down',
+            subgraph: subgraphName,
+            reason: reason || 'Manual suspension via UI'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('warning', 'Subgraph "' + subgraphName + '" suspended');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', 'Failed to suspend subgraph: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function lightUpAllSubgraphs() {
+    if (!confirm('Are you sure you want to activate ALL subgraphs?')) {
+        return;
+    }
+    
+    fetch('{{ url_for("dag_subgraph_control", dag_name=dag_name) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            command: 'light_up_all',
+            reason: 'Bulk activation via UI'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'All subgraphs activated successfully');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', 'Failed to activate subgraphs: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function lightDownAllSubgraphs() {
+    if (!confirm('Are you sure you want to suspend ALL subgraphs?')) {
+        return;
+    }
+    
+    fetch('{{ url_for("dag_subgraph_control", dag_name=dag_name) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            command: 'light_down_all',
+            reason: 'Bulk suspension via UI'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('warning', 'All subgraphs suspended');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', 'Failed to suspend subgraphs: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function showAlert(type, message) {
+    var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+        '</div>';
+    
+    var alertContainer = document.getElementById('alertContainer');
+    if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.id = 'alertContainer';
+        alertContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        document.body.appendChild(alertContainer);
+    }
+    
+    alertContainer.innerHTML = alertHtml;
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        var alert = alertContainer.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
 </script>
 {% endblock %}

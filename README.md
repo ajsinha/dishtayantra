@@ -6,15 +6,24 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, and **LMDB zero-copy data exchange**.
 
-[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.1.2
+## What's New in Version 1.2.0
 
-### LMDB Zero-Copy Data Exchange (Patent Pending)
+### Subgraph Feature (Graph-as-a-Node)
+- **Modular Composition**: Encapsulate complex pipelines as single nodes in parent graph
+- **Light Up / Light Down**: Dynamically activate or suspend subgraphs at runtime
+- **Node Borrowing**: Subgraph nodes borrow calculators from parent - no duplication
+- **Hierarchical Nesting**: Support for up to 3 levels of nested subgraphs
+- **Hybrid Loading**: Define inline or load from external JSON files
+- **Supervisor Control**: Bulk operations to manage all subgraphs at once
+- **Dirty Propagation Control**: Block dirty signals when subgraph is suspended
+
+### LMDB Zero-Copy Data Exchange (v1.1.2 - Patent Pending)
 - **Memory-Mapped Transport**: 100-1000x faster than serialization for large payloads
 - **Zero-Copy I/O**: Native calculators access data directly via memory-mapped files
 - **Multi-Language Support**: Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)
@@ -43,6 +52,7 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 
 ### Core Capabilities
 - **Multi-threaded DAG Execution**: Efficient parallel processing with topologically sorted node execution
+- **Subgraph Support**: Modular graph-as-a-node pattern with dynamic light up/down control
 - **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory
 - **Various Data Sources**: File, SQL databases, Aerospike, Redis, REST, gRPC, custom implementations
 - **Web UI**: Professional Flask-based dashboard with role-based access control
@@ -568,7 +578,22 @@ status = server.get_server_status()
 
 ## Changelog
 
-### Version 1.1.1 (Current)
+### Version 1.2.0 (Current)
+- Subgraph feature (graph-as-a-node pattern)
+- Light up / light down dynamic control
+- Supervisor bulk operations
+- Node borrowing from parent graph
+- Hybrid loading (inline + external file)
+- Dirty propagation control when suspended
+- REST API for subgraph control
+
+### Version 1.1.2
+- LMDB zero-copy data exchange (Patent Pending)
+- Memory-mapped transport for native calculators
+- 100-1000x faster for large payloads
+- Multi-language LMDB support (Java, C++, Rust)
+
+### Version 1.1.1
 - System Monitoring dashboard with real-time metrics
 - Admin dropdown menu in navigation
 - System logs viewer with filtering
@@ -657,4 +682,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.2.0** | Patent Pending | © 2025-2030 Ashutosh Sinha

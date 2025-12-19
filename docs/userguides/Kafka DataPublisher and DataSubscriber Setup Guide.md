@@ -704,4 +704,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.2.0** | Patent Pending | © 2025-2030 Ashutosh Sinha

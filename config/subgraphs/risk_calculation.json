@@ -1,0 +1,40 @@
+{
+  "name": "risk_calculation_subgraph",
+  "type": "subgraph",
+  "version": "1.0.0",
+  "description": "Risk calculation pipeline - calculates PFE metrics from trade data",
+  
+  "entry_node": "sg_scenario_gen",
+  "exit_node": "sg_pfe_output",
+  
+  "execution_mode": "synchronous",
+  "dark_output_mode": "cached",
+  "error_policy": "use_cached",
+  
+  "nodes": [
+    {
+      "name": "sg_scenario_gen",
+      "borrows": "scenario_generator",
+      "role": "entry"
+    },
+    {
+      "name": "sg_pricer",
+      "borrows": "trade_pricer"
+    },
+    {
+      "name": "sg_netting",
+      "borrows": "netting_calculator"
+    },
+    {
+      "name": "sg_pfe_output",
+      "borrows": "pfe_calculator",
+      "role": "exit"
+    }
+  ],
+  
+  "edges": [
+    { "from": "sg_scenario_gen", "to": "sg_pricer" },
+    { "from": "sg_pricer", "to": "sg_netting" },
+    { "from": "sg_netting", "to": "sg_pfe_output" }
+  ]
+}

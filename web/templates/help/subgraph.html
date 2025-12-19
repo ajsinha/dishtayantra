@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}Subgraph Feature - Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feature-card {
+        border-left: 4px solid #667eea;
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    }
+    .code-block {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 15px;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+    .state-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    .state-active { background: #10b981; }
+    .state-suspended { background: #ef4444; }
+    .state-running { background: #f59e0b; }
+    .diagram-box {
+        border: 2px solid #667eea;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: monospace;
+        background: #f8f9ff;
+        white-space: pre;
+        overflow-x: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('help') }}">Help</a></li>
+                <li class="breadcrumb-item active">Subgraph Feature</li>
+            </ol>
+        </nav>
+        
+        <h2><i class="bi bi-diagram-2"></i> Subgraph Feature</h2>
+        <p class="lead">Modular, reusable computation units within DAGs</p>
+    </div>
+</div>
+
+<!-- Overview Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card feature-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+            </div>
+            <div class="card-body">
+                <p>A <strong>subgraph</strong> is a self-contained computation graph that acts as a single node within a parent graph. This enables:</p>
+                <ul>
+                    <li><strong>Modular Design</strong> - Break complex pipelines into reusable components</li>
+                    <li><strong>Dynamic Control</strong> - Light up or light down subgraphs at runtime</li>
+                    <li><strong>Resource Efficiency</strong> - Subgraphs borrow calculators from parent (no duplication)</li>
+                    <li><strong>Hierarchical Composition</strong> - Up to 3 levels of nested subgraphs</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb"></i> <strong>Key Insight:</strong> A subgraph receives data only from its parent graph - it cannot subscribe to external data sources directly.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visual Representation -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Visual Structure</h5>
+            </div>
+            <div class="card-body">
+                <div class="diagram-box">
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           PARENT GRAPH                                          │
+│                                                                                 │
+│   ┌──────────┐      ┌──────────┐      ╔═══════════════════════════════════╗    │
+│   │  Node A  │ ───▶ │  Node B  │ ───▶ ║         SUBGRAPH (as Node)        ║    │
+│   │(Subscriber)     │(Calculator)     ║  ┌─────────────────────────────┐  ║    │
+│   └──────────┘      └──────────┘      ║  │  ┌─────┐   ┌─────┐   ┌─────┐│  ║    │
+│                                       ║  │  │ SG1 │ → │ SG2 │ → │ SG3 ││  ║    │
+│                                       ║  │  │Entry│   │     │   │Exit ││  ║    │
+│                                       ║  │  └─────┘   └─────┘   └─────┘│  ║    │
+│                                       ║  └─────────────────────────────┘  ║    │
+│                                       ╚════════════════╤══════════════════╝    │
+│                                                        │                        │
+│                                                        ▼                        │
+│                                               ┌──────────┐      ┌──────────┐   │
+│                                               │  Node C  │ ───▶ │  Node D  │   │
+│                                               └──────────┘      └──────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-code-square"></i> Inline Definition</h5>
+            </div>
+            <div class="card-body">
+                <p>Define subgraph directly in the parent DAG JSON:</p>
+                <pre class="code-block"><code>{
+  "name": "validation_subgraph",
+  "type": "SubgraphNode",
+  "config": {
+    "entry_connection": "trade_input",
+    "exit_connections": ["risk_subgraph"],
+    "execution_mode": "synchronous"
+  },
+  "subgraph": {
+    "name": "validation_pipeline",
+    "entry_node": "sg_validate",
+    "exit_node": "sg_filter",
+    "nodes": [
+      {"name": "sg_validate", "borrows": "validator"},
+      {"name": "sg_filter", "borrows": "filter"}
+    ],
+    "edges": [
+      {"from": "sg_validate", "to": "sg_filter"}
+    ]
+  }
+}</code></pre>
+                <p class="text-muted mt-2"><small>Best for: Simple, one-off subgraphs (2-3 nodes)</small></p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-code"></i> External File</h5>
+            </div>
+            <div class="card-body">
+                <p>Reference an external subgraph JSON file:</p>
+                <pre class="code-block"><code>{
+  "name": "risk_subgraph",
+  "type": "SubgraphNode",
+  "config": {
+    "subgraph_file": "subgraphs/risk_calc.json",
+    "entry_connection": "validation_subgraph",
+    "exit_connections": ["output"]
+  }
+}</code></pre>
+                <p class="mt-3">External file (<code>subgraphs/risk_calc.json</code>):</p>
+                <pre class="code-block"><code>{
+  "name": "risk_calculation",
+  "entry_node": "sg_scenario",
+  "exit_node": "sg_pfe",
+  "nodes": [...],
+  "edges": [...]
+}</code></pre>
+                <p class="text-muted mt-2"><small>Best for: Reusable modules shared across DAGs</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Light Up / Light Down -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Light Up / Light Down Control</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><span class="state-indicator state-active"></span> Light Up (Active)</h6>
+                        <ul>
+                            <li>Subgraph participates in calculation cycles</li>
+                            <li>Dirty signals propagate through</li>
+                            <li>Fresh calculations performed</li>
+                        </ul>
+                        
+                        <h6><span class="state-indicator state-suspended"></span> Light Down (Suspended)</h6>
+                        <ul>
+                            <li>Subgraph is skipped in calculation cycles</li>
+                            <li>Dirty signals STOP at subgraph boundary</li>
+                            <li>Cached output is used (configurable)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Dark Output Modes</h6>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Mode</th>
+                                    <th>Behavior</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>cached</code></td>
+                                    <td>Returns last computed output</td>
+                                </tr>
+                                <tr>
+                                    <td><code>passthrough</code></td>
+                                    <td>Passes input directly to output</td>
+                                </tr>
+                                <tr>
+                                    <td><code>block</code></td>
+                                    <td>Returns <code>None</code>, blocking downstream</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Node Borrowing -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Node Borrowing</h5>
+            </div>
+            <div class="card-body">
+                <p>Subgraph nodes <strong>borrow</strong> calculators from parent graph nodes:</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Parent Graph Defines:</h6>
+                        <pre class="code-block"><code>"calculators": [
+  {
+    "name": "trade_pricer",
+    "type": "TradePricerCalculator",
+    "config": {...}
+  }
+]</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Subgraph Borrows:</h6>
+                        <pre class="code-block"><code>"nodes": [
+  {
+    "name": "sg_pricer",
+    "borrows": "trade_pricer"
+  }
+]</code></pre>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Important:</strong> The parent graph must define all nodes that subgraphs borrow from.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Reference -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-terminal"></i> REST API</h5>
+            </div>
+            <div class="card-body">
+                <h6>Control Subgraph</h6>
+                <pre class="code-block"><code>POST /dag/&lt;dag_name&gt;/subgraph/control
+
+Body:
+{
+  "command": "light_up" | "light_down" | "light_up_all" | "light_down_all",
+  "subgraph": "subgraph_name",
+  "reason": "optional reason"
+}</code></pre>
+
+                <h6 class="mt-4">Get Status</h6>
+                <pre class="code-block"><code>GET /dag/&lt;dag_name&gt;/subgraph/status
+
+Response:
+{
+  "dag_name": "trading_pipeline",
+  "subgraph_count": 2,
+  "subgraphs": {
+    "validation_subgraph": {
+      "state": "active",
+      "is_active": true,
+      "metrics": {...}
+    }
+  }
+}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Best Practices -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-check2-circle"></i> Best Practices</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>✅ Do</h6>
+                        <ul>
+                            <li>Keep subgraphs focused - one responsibility</li>
+                            <li>Use meaningful names</li>
+                            <li>Document which nodes are borrowed</li>
+                            <li>Plan for suspension behavior</li>
+                            <li>Monitor metrics regularly</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>❌ Don't</h6>
+                        <ul>
+                            <li>Nest more than 3 levels deep</li>
+                            <li>Create circular dependencies</li>
+                            <li>Forget to define borrowed nodes in parent</li>
+                            <li>Ignore error policies</li>
+                            <li>Use subgraphs for trivial single-node operations</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Example -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-code"></i> Complete Example</h5>
+            </div>
+            <div class="card-body">
+                <p>See <code>config/example/dags/trading_pipeline_with_subgraphs.json</code> for a complete working example.</p>
+                
+                <p>Run the demonstration script:</p>
+                <pre class="code-block"><code>python example/subgraph_demo.py</code></pre>
+                
+                <p class="mt-3">This demonstrates:</p>
+                <ul>
+                    <li>Inline subgraph definition</li>
+                    <li>External file loading</li>
+                    <li>Light up / light down control</li>
+                    <li>Supervisor bulk operations</li>
+                    <li>Dirty propagation behavior</li>
+                    <li>Metrics collection</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

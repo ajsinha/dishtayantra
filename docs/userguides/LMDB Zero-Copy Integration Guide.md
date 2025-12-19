@@ -2,7 +2,7 @@
 
 ## Overview
 
-DishtaYantra v1.1.1 introduces **LMDB-based zero-copy data exchange** for native calculators (Java, C++, Rust). This feature enables lightning-fast transfer of large payloads (100KB+) between the Python DAG engine and native code without serialization overhead.
+DishtaYantra v1.2.0 introduces **LMDB-based zero-copy data exchange** for native calculators (Java, C++, Rust). This feature enables lightning-fast transfer of large payloads (100KB+) between the Python DAG engine and native code without serialization overhead.
 
 ### Why LMDB?
 
@@ -601,4 +601,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.2.0** | Patent Pending | © 2025-2030 Ashutosh Sinha

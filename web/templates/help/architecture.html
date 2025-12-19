@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <h1 class="mb-0">System Architecture</h1>
-                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.1.2</p>
+                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.2.0</p>
                 </div>
             </div>
         </div>
@@ -35,6 +35,7 @@
                         <a href="#overview" class="btn btn-outline-primary btn-sm">Overview</a>
                         <a href="#layers" class="btn btn-outline-primary btn-sm">Architecture Layers</a>
                         <a href="#dag-engine" class="btn btn-outline-primary btn-sm">DAG Engine</a>
+                        <a href="#subgraphs" class="btn btn-outline-info btn-sm"><i class="bi bi-diagram-2"></i> Subgraphs</a>
                         <a href="#calculators" class="btn btn-outline-primary btn-sm">Multi-Language Calculators</a>
                         <a href="#lmdb-transport" class="btn btn-outline-info btn-sm"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy</a>
                         <a href="#pubsub" class="btn btn-outline-primary btn-sm">Pub/Sub Framework</a>
@@ -96,7 +97,7 @@
                         <div class="bg-dark text-light p-4 rounded" style="font-family: 'Courier New', monospace; font-size: 0.75rem; overflow-x: auto;">
 <pre class="mb-0" style="color: #00ff00;">
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DishtaYantra v1.1.1                                │
+│                           DishtaYantra v1.2.0                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
 │  │   Web UI     │  │  REST API    │  │   Admin      │  │   Help Center   │  │
@@ -402,6 +403,232 @@ Timeline:
         </div>
     </div>
 
+    <!-- Subgraph Architecture -->
+    <div class="row mb-4" id="subgraphs">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Subgraph Architecture (Graph-as-a-Node)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Subgraphs enable modular, reusable computation units that can be dynamically controlled at runtime.</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb-fill me-2"></i>
+                        <strong>Key Concept:</strong> A subgraph is a complete computation graph that appears as a single node in the parent graph, enabling hierarchical composition and dynamic "light up/light down" control.
+                    </div>
+
+                    <!-- Subgraph Visual -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-image me-2"></i>Visual Representation</h6>
+                    <div class="bg-dark text-light p-4 rounded mb-4" style="font-family: monospace; font-size: 0.75rem; overflow-x: auto;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           PARENT GRAPH                                          │
+│                                                                                 │
+│   ┌──────────┐      ┌──────────┐      ╔═══════════════════════════════════╗    │
+│   │  Node A  │ ───▶ │  Node B  │ ───▶ ║         SUBGRAPH (as Node)        ║    │
+│   │(Subscriber)     │(Calculator)     ║  ┌─────────────────────────────┐  ║    │
+│   └──────────┘      └──────────┘      ║  │  ┌─────┐   ┌─────┐   ┌─────┐│  ║    │
+│                                       ║  │  │ SG1 │ → │ SG2 │ → │ SG3 ││  ║    │
+│                                       ║  │  │Entry│   │     │   │Exit ││  ║    │
+│                                       ║  │  └─────┘   └─────┘   └─────┘│  ║    │
+│                                       ║  └─────────────────────────────┘  ║    │
+│                                       ╚════════════════╤══════════════════╝    │
+│                                                        │                        │
+│                                                        ▼                        │
+│                                               ┌──────────┐      ┌──────────┐   │
+│                                               │  Node C  │ ───▶ │  Node D  │   │
+│                                               │(Calculator)     │(Publisher)   │
+│                                               └──────────┘      └──────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+</pre>
+                    </div>
+
+                    <!-- Key Features -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-star me-2"></i>Key Features</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center p-3">
+                                    <i class="bi bi-layers text-primary" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2 mb-1">Hierarchical Composition</h6>
+                                    <small class="text-muted">Nest subgraphs up to 3 levels deep for complex pipelines</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center p-3">
+                                    <i class="bi bi-lightbulb text-success" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2 mb-1">Light Up / Light Down</h6>
+                                    <small class="text-muted">Dynamically activate or suspend subgraphs at runtime</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center p-3">
+                                    <i class="bi bi-arrow-left-right text-info" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2 mb-1">Node Borrowing</h6>
+                                    <small class="text-muted">Subgraph nodes borrow calculators from parent - no duplication</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration Examples -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-code-square me-2"></i>Configuration Examples</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Inline Subgraph Definition</h6>
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #98c379;">
+{
+  "name": "validation_subgraph",
+  "type": "SubgraphNode",
+  "config": {
+    "execution_mode": "synchronous"
+  },
+  <span style="color: #e5c07b;">"subgraph"</span>: {
+    "name": "validation_pipeline",
+    "entry_node": "sg_validate",
+    "exit_node": "sg_filter",
+    "nodes": [
+      {"name": "sg_validate", <span style="color: #56b6c2;">"borrows": "validator"</span>},
+      {"name": "sg_enrich", "borrows": "enricher"},
+      {"name": "sg_filter", "borrows": "filter"}
+    ],
+    "edges": [
+      {"from": "sg_validate", "to": "sg_enrich"},
+      {"from": "sg_enrich", "to": "sg_filter"}
+    ]
+  }
+}
+</pre>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">External File Reference</h6>
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #98c379;">
+{
+  "name": "risk_subgraph",
+  "type": "SubgraphNode",
+  "config": {
+    <span style="color: #e5c07b;">"subgraph_file": "subgraphs/risk.json"</span>,
+    "execution_mode": "synchronous"
+  }
+}
+
+<span style="color: #5c6370;">// In config/subgraphs/risk.json:</span>
+{
+  "name": "risk_calculation",
+  "entry_node": "sg_scenario",
+  "exit_node": "sg_pfe",
+  "dark_output_mode": "cached",
+  "nodes": [
+    {"name": "sg_scenario", <span style="color: #56b6c2;">"borrows": "scenario_gen"</span>},
+    {"name": "sg_pricer", "borrows": "pricer"},
+    {"name": "sg_pfe", "borrows": "pfe_calc"}
+  ],
+  "edges": [...]
+}
+</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Light Up / Light Down -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-toggle-on me-2"></i>Light Up / Light Down Control</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                                <h6><span class="badge bg-success">🟢 Light Up (Active)</span></h6>
+                                <ul class="mb-0 small">
+                                    <li>Subgraph participates in calculation cycles</li>
+                                    <li>Dirty signals propagate through internal nodes</li>
+                                    <li>Fresh calculations are performed</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded" style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);">
+                                <h6><span class="badge bg-danger">🔴 Light Down (Suspended)</span></h6>
+                                <ul class="mb-0 small">
+                                    <li>Subgraph is skipped in calculation cycles</li>
+                                    <li>Dirty signals STOP at subgraph boundary</li>
+                                    <li>Cached output is returned (configurable)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dark Output Modes -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-moon-stars me-2"></i>Dark Output Modes</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Mode</th>
+                                    <th>Behavior When Suspended</th>
+                                    <th>Use Case</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>cached</code></td>
+                                    <td>Returns last computed output</td>
+                                    <td>Most common - maintains downstream consistency</td>
+                                </tr>
+                                <tr>
+                                    <td><code>passthrough</code></td>
+                                    <td>Passes input directly to output</td>
+                                    <td>When subgraph is optional/bypass-able</td>
+                                </tr>
+                                <tr>
+                                    <td><code>block</code></td>
+                                    <td>Returns <code>None</code>, blocks downstream</td>
+                                    <td>When downstream should not execute</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- API & Control -->
+                    <h6 class="border-bottom pb-2"><i class="bi bi-terminal me-2"></i>REST API Control</h6>
+                    <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #61afef;">
+# Light up a specific subgraph
+POST /dag/{dag_name}/subgraph/control
+{
+  "command": "light_up",
+  "subgraph": "risk_subgraph",
+  "reason": "Market opened"
+}
+
+# Light down all subgraphs
+POST /dag/{dag_name}/subgraph/control
+{
+  "command": "light_down_all",
+  "reason": "Maintenance window"
+}
+
+# Get subgraph status
+GET /dag/{dag_name}/subgraph/status
+→ Returns: state, metrics, execution count, latency, cache hits
+</pre>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('help_subgraph') }}" class="btn btn-primary">
+                            <i class="bi bi-book me-2"></i>Full Subgraph Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Multi-Language Calculators -->
     <div class="row mb-4" id="calculators">
         <div class="col-12">
@@ -615,7 +842,7 @@ DishtaYantra          │ External Service
         <div class="col-12">
             <div class="card border-0 shadow-sm" style="border-left: 4px solid #06b6d4 !important;">
                 <div class="card-header text-white" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
-                    <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2"></i>LMDB Zero-Copy Data Exchange <span class="badge bg-warning text-dark ms-2">v1.1.2 Patent Pending</span></h5>
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2"></i>LMDB Zero-Copy Data Exchange <span class="badge bg-warning text-dark ms-2">v1.1.2+ Patent Pending</span></h5>
                 </div>
                 <div class="card-body">
                     <p>DishtaYantra v1.1.2 introduces <strong>LMDB-based zero-copy data exchange</strong> for native calculators. This patent-pending innovation enables 100-1000x faster data transfer for large payloads compared to traditional serialization.</p>

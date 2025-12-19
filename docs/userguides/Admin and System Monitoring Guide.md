@@ -8,7 +8,7 @@
 
 ## Overview
 
-DishtaYantra v1.1.1 introduces comprehensive admin features including real-time system monitoring, log viewing, and enhanced navigation. These features are accessible only to users with the **admin** role.
+DishtaYantra v1.2.0 introduces comprehensive admin features including real-time system monitoring, log viewing, and enhanced navigation. These features are accessible only to users with the **admin** role.
 
 ---
 

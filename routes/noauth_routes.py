@@ -39,6 +39,7 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/tibco-integration', 'help_tibco_integration', self.help_tibco_integration)
         self.app.add_url_rule('/help/ibmmq-integration', 'help_ibmmq_integration', self.help_ibmmq_integration)
         self.app.add_url_rule('/help/inmemory-integration', 'help_inmemory_integration', self.help_inmemory_integration)
+        self.app.add_url_rule('/help/subgraph', 'help_subgraph', self.help_subgraph)
     
     def about(self):
         """About page"""
@@ -151,3 +152,7 @@ class NoAuthRoutes:
     def help_inmemory_integration(self):
         """In-Memory Pub/Sub integration help page"""
         return render_template('help/inmemory_integration.html')
+    
+    def help_subgraph(self):
+        """Subgraph feature help page"""
+        return render_template('help/subgraph.html')
