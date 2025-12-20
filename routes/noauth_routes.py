@@ -1,4 +1,8 @@
-"""Non-authenticated routes module - accessible without login"""
+"""
+Non-authenticated routes module - accessible without login
+
+Version: 1.5.0
+"""
 from flask import render_template
 
 
@@ -40,6 +44,7 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/ibmmq-integration', 'help_ibmmq_integration', self.help_ibmmq_integration)
         self.app.add_url_rule('/help/inmemory-integration', 'help_inmemory_integration', self.help_inmemory_integration)
         self.app.add_url_rule('/help/subgraph', 'help_subgraph', self.help_subgraph)
+        self.app.add_url_rule('/help/prometheus-monitoring', 'help_prometheus_monitoring', self.help_prometheus_monitoring)
     
     def about(self):
         """About page"""
@@ -156,3 +161,7 @@ class NoAuthRoutes:
     def help_subgraph(self):
         """Subgraph feature help page"""
         return render_template('help/subgraph.html')
+    
+    def help_prometheus_monitoring(self):
+        """Prometheus monitoring integration help page"""
+        return render_template('help/prometheus_monitoring.html')

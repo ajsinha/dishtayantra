@@ -6,13 +6,22 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, and **LMDB zero-copy data exchange**.
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.2.0
+## What's New in Version 1.5.0
+
+### PFE Research Module (NEW)
+- **Comprehensive PFE Framework**: Real-time Potential Future Exposure calculations with Monte Carlo simulation
+- **Realistic Data Generation**: Synthetic trades with full cashflow schedules, market data, counterparties, CSAs
+- **SA-CCR Calculator**: Full Basel III/IV Standardized Approach implementation
+- **CVA/DVA Calculator**: Credit Valuation Adjustment with spread sensitivity
+- **Kafka Integration**: All data streams through Kafka for DAG consumption
+- **Performance**: 31-56x speedup with C++ calculators vs pure Python
+- **Research Paper**: Comprehensive research paper with theoretical foundations, 35+ references
 
 ### Subgraph Feature (Graph-as-a-Node)
 - **Modular Composition**: Encapsulate complex pipelines as single nodes in parent graph
@@ -578,7 +587,7 @@ status = server.get_server_status()
 
 ## Changelog
 
-### Version 1.2.0 (Current)
+### Version 1.5.0 (Current)
 - Subgraph feature (graph-as-a-node pattern)
 - Light up / light down dynamic control
 - Supervisor bulk operations
@@ -682,4 +691,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v1.2.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.5.0** | Patent Pending | © 2025-2030 Ashutosh Sinha

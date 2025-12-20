@@ -1,4 +1,4 @@
-# DishtaYantra v1.2.0 - Quick Start Guide
+# DishtaYantra v1.5.0 - Quick Start Guide
 
 ## 🚀 Getting Started
 
@@ -6,10 +6,10 @@
 
 ```bash
 # For tar.gz
-tar -xzvf dishtayantra_v1.2.0_subgraph.tar.gz
+tar -xzvf dishtayantra_v1.5.0_subgraph.tar.gz
 
 # For zip
-unzip dishtayantra_v1.2.0_subgraph.zip
+unzip dishtayantra_v1.5.0_subgraph.zip
 
 cd dishtayantra_pkg
 ```
@@ -34,7 +34,7 @@ Default credentials:
 
 ---
 
-## 🆕 New in v1.2.0: Subgraph Feature
+## 🆕 New in v1.5.0: Subgraph Feature
 
 ### What are Subgraphs?
 

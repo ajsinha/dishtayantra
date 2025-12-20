@@ -111,7 +111,7 @@
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="bi bi-diagram-3" style="color: #10b981;"></i> System Architecture
-                    <span class="badge text-white ms-2" style="background: #10b981;">1.2.0</span>
+                    <span class="badge text-white ms-2" style="background: #10b981;">1.5.0</span>
                 </h5>
                 <p class="card-text">Comprehensive technical architecture including layers, components, multi-language calculators, and deployment.</p>
                 <a href="{{ url_for('help_architecture') }}" class="btn btn-sm text-white" style="background: #10b981;">
@@ -537,6 +537,50 @@
                 </ul>
                 <a href="{{ url_for('help_inmemory_integration') }}" class="btn btn-sm text-white" style="background: #10b981;">
                     <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monitoring Section -->
+<h3 class="section-title"><i class="bi bi-graph-up"></i> Monitoring & Observability</h3>
+<div class="row mb-5">
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #e6522c;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-speedometer2" style="color: #e6522c;"></i> Prometheus Monitoring
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #10b981, #059669);">1.5.0</span>
+                </h5>
+                <p class="card-text">Comprehensive Prometheus metrics integration for real-time observability of DAG execution, calculator performance, and system health.</p>
+                <ul class="small text-muted mb-3">
+                    <li>/metrics - Prometheus scraping endpoint</li>
+                    <li>/health - Kubernetes-compatible health checks</li>
+                    <li>Pre-built Grafana dashboard included</li>
+                    <li>Production-ready alert rules</li>
+                </ul>
+                <a href="{{ url_for('help_prometheus_monitoring') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #e6522c, #da4e2a);">
+                    <i class="bi bi-speedometer2"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #4a90c2;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-heart-pulse" style="color: #4a90c2;"></i> Health Endpoints
+                </h5>
+                <p class="card-text">Kubernetes-compatible liveness and readiness probes for container orchestration.</p>
+                <ul class="small text-muted mb-3">
+                    <li>/health/live - Liveness probe</li>
+                    <li>/health/ready - Readiness probe</li>
+                    <li>Component-level health checks</li>
+                    <li>JSON response format</li>
+                </ul>
+                <a href="{{ url_for('help_prometheus_monitoring') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-right"></i> View Details
                 </a>
             </div>
         </div>

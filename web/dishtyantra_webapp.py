@@ -13,7 +13,7 @@ from core.user_registry import UserRegistry
 from core.properties_configurator import PropertiesConfigurator
 
 # Import route handlers
-from routes import AuthRoutes, NoAuthRoutes, DashboardRoutes, DAGRoutes, CacheRoutes, UserRoutes, DAGDesignerRoutes
+from routes import AuthRoutes, NoAuthRoutes, DashboardRoutes, DAGRoutes, CacheRoutes, UserRoutes, DAGDesignerRoutes, MetricsRoutes
 from routes.admin_routes import AdminRoutes
 
 # Configure logging
@@ -160,6 +160,7 @@ class DishtaYantraWebApp:
         self.user_routes = UserRoutes(self.app, self.user_registry, admin_required)
         self.dagdesigner_routes = DAGDesignerRoutes(self.app, self.dag_server, self.user_registry, login_required)
         self.admin_routes = AdminRoutes(self.app, self.dag_server)
+        self.metrics_routes = MetricsRoutes(self.app, self.dag_server, self.redis_cache)
 
         logger.info("Route handlers initialized successfully")
 

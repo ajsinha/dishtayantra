@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}Prometheus Monitoring - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .metric-badge {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+    .endpoint-card {
+        border-left: 4px solid #e6522c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+    <span class="badge bg-success ms-2">v1.5.0</span>
+</div>
+
+<h2><i class="bi bi-speedometer2" style="color: #e6522c;"></i> Prometheus Monitoring Integration</h2>
+<p class="lead">Comprehensive metrics and health endpoints for real-time observability of your DAG pipelines.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
+    </div>
+    <div class="card-body">
+        <p>DishtaYantra v1.5.0 includes built-in Prometheus metrics integration providing:</p>
+        <div class="row">
+            <div class="col-md-6">
+                <ul>
+                    <li><strong>DAG Metrics</strong> - Execution counts, latency, active DAGs</li>
+                    <li><strong>Node Metrics</strong> - Per-node performance tracking</li>
+                    <li><strong>Calculator Metrics</strong> - Calculator call rates and duration</li>
+                    <li><strong>Messaging Metrics</strong> - Throughput, lag, queue depth</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul>
+                    <li><strong>Cache Metrics</strong> - Hit/miss rates, evictions</li>
+                    <li><strong>Database Metrics</strong> - Connection pool health</li>
+                    <li><strong>System Metrics</strong> - CPU, memory, threads</li>
+                    <li><strong>Health Endpoints</strong> - Kubernetes-compatible probes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Endpoints -->
+<div class="card mb-4 endpoint-card">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Metrics Endpoints</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Purpose</th>
+                    <th>Auth</th>
+                    <th>Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/metrics</code></td>
+                    <td>Prometheus scraping endpoint</td>
+                    <td><span class="badge bg-success">None</span></td>
+                    <td>Prometheus text format</td>
+                </tr>
+                <tr>
+                    <td><code>/metrics/json</code></td>
+                    <td>Metrics in JSON (debugging)</td>
+                    <td><span class="badge bg-success">None</span></td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td><code>/health</code></td>
+                    <td>Overall health status</td>
+                    <td><span class="badge bg-success">None</span></td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td><code>/health/live</code></td>
+                    <td>Kubernetes liveness probe</td>
+                    <td><span class="badge bg-success">None</span></td>
+                    <td>JSON</td>
+                </tr>
+                <tr>
+                    <td><code>/health/ready</code></td>
+                    <td>Kubernetes readiness probe</td>
+                    <td><span class="badge bg-success">None</span></td>
+                    <td>JSON</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Quick Start -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5>
+    </div>
+    <div class="card-body">
+        <h6>1. Install Dependencies</h6>
+        <div class="code-block">pip install prometheus-client psutil</div>
+        
+        <h6 class="mt-4">2. Test Metrics Endpoint</h6>
+        <div class="code-block">curl http://localhost:5002/metrics</div>
+        
+        <h6 class="mt-4">3. Test Health Endpoint</h6>
+        <div class="code-block">curl http://localhost:5002/health</div>
+        
+        <h6 class="mt-4">4. Configure Prometheus</h6>
+        <div class="code-block"># prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'dishtayantra'
+    static_configs:
+      - targets: ['localhost:5002']
+    metrics_path: '/metrics'</div>
+    </div>
+</div>
+
+<!-- Available Metrics -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-list-check"></i> Available Metrics</h5>
+    </div>
+    <div class="card-body">
+        <h6><i class="bi bi-diagram-3"></i> DAG Metrics</h6>
+        <table class="table table-sm table-bordered mb-4">
+            <thead class="table-light">
+                <tr><th>Metric</th><th>Type</th><th>Labels</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>dishtayantra_dag_executions_total</code></td><td>Counter</td><td>dag_name, status</td><td>Total DAG executions</td></tr>
+                <tr><td><code>dishtayantra_dag_execution_duration_seconds</code></td><td>Histogram</td><td>dag_name</td><td>DAG execution latency</td></tr>
+                <tr><td><code>dishtayantra_active_dags</code></td><td>Gauge</td><td>-</td><td>Currently running DAGs</td></tr>
+                <tr><td><code>dishtayantra_dag_nodes_total</code></td><td>Gauge</td><td>dag_name</td><td>Nodes per DAG</td></tr>
+            </tbody>
+        </table>
+
+        <h6><i class="bi bi-calculator"></i> Calculator Metrics</h6>
+        <table class="table table-sm table-bordered mb-4">
+            <thead class="table-light">
+                <tr><th>Metric</th><th>Type</th><th>Labels</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>dishtayantra_calculator_calls_total</code></td><td>Counter</td><td>calculator_name, calculator_type, status</td><td>Calculator invocations</td></tr>
+                <tr><td><code>dishtayantra_calculator_duration_seconds</code></td><td>Histogram</td><td>calculator_name, calculator_type</td><td>Calculator latency</td></tr>
+                <tr><td><code>dishtayantra_calculator_errors_total</code></td><td>Counter</td><td>calculator_name, calculator_type, error_type</td><td>Calculator errors</td></tr>
+            </tbody>
+        </table>
+
+        <h6><i class="bi bi-envelope"></i> Messaging Metrics</h6>
+        <table class="table table-sm table-bordered mb-4">
+            <thead class="table-light">
+                <tr><th>Metric</th><th>Type</th><th>Labels</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>dishtayantra_messages_received_total</code></td><td>Counter</td><td>transport, topic, dag_name</td><td>Messages received</td></tr>
+                <tr><td><code>dishtayantra_messages_published_total</code></td><td>Counter</td><td>transport, topic, dag_name</td><td>Messages published</td></tr>
+                <tr><td><code>dishtayantra_message_queue_depth</code></td><td>Gauge</td><td>transport, queue_name</td><td>Queue depth</td></tr>
+                <tr><td><code>dishtayantra_kafka_consumer_lag</code></td><td>Gauge</td><td>consumer_group, topic, partition</td><td>Kafka consumer lag</td></tr>
+            </tbody>
+        </table>
+
+        <h6><i class="bi bi-hdd"></i> Cache Metrics</h6>
+        <table class="table table-sm table-bordered mb-4">
+            <thead class="table-light">
+                <tr><th>Metric</th><th>Type</th><th>Labels</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>dishtayantra_cache_hits_total</code></td><td>Counter</td><td>cache_name</td><td>Cache hits</td></tr>
+                <tr><td><code>dishtayantra_cache_misses_total</code></td><td>Counter</td><td>cache_name</td><td>Cache misses</td></tr>
+                <tr><td><code>dishtayantra_cache_size</code></td><td>Gauge</td><td>cache_name</td><td>Number of cached items</td></tr>
+                <tr><td><code>dishtayantra_cache_evictions_total</code></td><td>Counter</td><td>cache_name</td><td>Cache evictions</td></tr>
+            </tbody>
+        </table>
+
+        <h6><i class="bi bi-cpu"></i> System Metrics</h6>
+        <table class="table table-sm table-bordered">
+            <thead class="table-light">
+                <tr><th>Metric</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>dishtayantra_system_cpu_usage</code></td><td>Gauge</td><td>CPU usage percentage</td></tr>
+                <tr><td><code>dishtayantra_system_memory_percent</code></td><td>Gauge</td><td>Memory usage percentage</td></tr>
+                <tr><td><code>dishtayantra_uptime_seconds</code></td><td>Gauge</td><td>Application uptime</td></tr>
+                <tr><td><code>dishtayantra_process_threads</code></td><td>Gauge</td><td>Active thread count</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Health Response Examples -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Health Response Examples</h5>
+    </div>
+    <div class="card-body">
+        <h6>/health Response</h6>
+        <div class="code-block">{
+  "status": "healthy",
+  "timestamp": "2025-12-19T10:30:00Z",
+  "version": "1.5.0",
+  "uptime_seconds": 3600.5,
+  "components": {
+    "dag_server": {
+      "status": "healthy",
+      "dags_loaded": 5
+    },
+    "cache": {
+      "status": "healthy",
+      "type": "inmemory",
+      "keys": 1250
+    }
+  }
+}</div>
+
+        <h6 class="mt-4">/health/live Response</h6>
+        <div class="code-block">{
+  "status": "alive",
+  "timestamp": "2025-12-19T10:30:00Z"
+}</div>
+
+        <h6 class="mt-4">/health/ready Response</h6>
+        <div class="code-block">{
+  "status": "ready",
+  "checks": {
+    "dag_server": "ready",
+    "cache": "ready"
+  },
+  "timestamp": "2025-12-19T10:30:00Z"
+}</div>
+    </div>
+</div>
+
+<!-- Instrumenting Custom Code -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-code-slash"></i> Instrumenting Custom Calculators</h5>
+    </div>
+    <div class="card-body">
+        <p>Add metrics to your custom calculators using decorators:</p>
+        <div class="code-block">from core.metrics import metrics, track_execution_time, count_calls
+
+class MyCalculator:
+    @track_execution_time(
+        metrics.calculator_duration,
+        {'calculator_name': 'my_calc', 'calculator_type': 'python'}
+    )
+    @count_calls(
+        metrics.calculator_calls,
+        {'calculator_name': 'my_calc', 'calculator_type': 'python'}
+    )
+    def calculate(self, data):
+        # Your calculation logic
+        return result</div>
+
+        <h6 class="mt-4">Recording Custom Metrics</h6>
+        <div class="code-block">from core.metrics import metrics
+
+# Increment counter
+metrics.dag_executions.labels(dag_name="my_dag", status="success").inc()
+
+# Record histogram observation
+metrics.dag_execution_duration.labels(dag_name="my_dag").observe(0.5)
+
+# Set gauge value
+metrics.active_dags.set(3)
+
+# Time a block of code
+with metrics.calculator_duration.labels(
+    calculator_name="my_calc",
+    calculator_type="python"
+).time():
+    perform_calculation()</div>
+    </div>
+</div>
+
+<!-- Alert Rules -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-bell"></i> Pre-configured Alert Rules</h5>
+    </div>
+    <div class="card-body">
+        <p>Production-ready alerts are provided in <code>docker/alert_rules.yml</code>:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Alert</th><th>Condition</th><th>Severity</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>DishtaYantraDown</td><td>Application unreachable for 1 minute</td><td><span class="badge bg-danger">Critical</span></td></tr>
+                <tr><td>DAGExecutionErrors</td><td>Error rate > 10% for 5 minutes</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                <tr><td>DAGExecutionSlow</td><td>p95 latency > 30 seconds for 5 minutes</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                <tr><td>HighCPUUsage</td><td>CPU > 80% for 5 minutes</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                <tr><td>CriticalMemoryUsage</td><td>Memory > 95% for 2 minutes</td><td><span class="badge bg-danger">Critical</span></td></tr>
+                <tr><td>KafkaConsumerLag</td><td>Lag > 10000 for 5 minutes</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                <tr><td>DBPoolExhausted</td><td>All connections used for 5 minutes</td><td><span class="badge bg-danger">Critical</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Grafana Dashboard -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Grafana Dashboard</h5>
+    </div>
+    <div class="card-body">
+        <p>A pre-built Grafana dashboard is included at <code>docker/grafana_dashboard.json</code>.</p>
+        <h6>Dashboard Panels:</h6>
+        <ul>
+            <li><strong>Active DAGs</strong> - Current running DAG count</li>
+            <li><strong>DAG Executions/sec</strong> - Throughput rate</li>
+            <li><strong>CPU/Memory Usage</strong> - System resources</li>
+            <li><strong>DAG Execution Latency</strong> - p50, p95, p99 percentiles</li>
+            <li><strong>DAG Executions by Status</strong> - Success vs Error breakdown</li>
+            <li><strong>Message Throughput</strong> - Received/Published rates</li>
+            <li><strong>Calculator Latency</strong> - Per-calculator performance</li>
+            <li><strong>Cache Hit/Miss Rate</strong> - Cache efficiency</li>
+        </ul>
+        <h6 class="mt-3">Import Dashboard:</h6>
+        <ol>
+            <li>Open Grafana</li>
+            <li>Go to Dashboards → Import</li>
+            <li>Upload <code>docker/grafana_dashboard.json</code></li>
+            <li>Select Prometheus data source</li>
+            <li>Click Import</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Kubernetes Deployment -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-cloud"></i> Kubernetes Deployment</h5>
+    </div>
+    <div class="card-body">
+        <h6>Pod Annotations for Prometheus Operator</h6>
+        <div class="code-block">apiVersion: v1
+kind: Pod
+metadata:
+  name: dishtayantra
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "5002"
+    prometheus.io/path: "/metrics"
+spec:
+  containers:
+    - name: dishtayantra
+      image: dishtayantra:1.5.0
+      ports:
+        - containerPort: 5002
+      livenessProbe:
+        httpGet:
+          path: /health/live
+          port: 5002
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /health/ready
+          port: 5002
+        initialDelaySeconds: 5
+        periodSeconds: 5</div>
+    </div>
+</div>
+
+<!-- Troubleshooting -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+    </div>
+    <div class="card-body">
+        <h6>Metrics Not Available</h6>
+        <ul>
+            <li>Ensure <code>prometheus-client</code> is installed: <code>pip install prometheus-client</code></li>
+            <li>Check application logs for metric errors</li>
+            <li>Test endpoint directly: <code>curl http://localhost:5002/metrics</code></li>
+        </ul>
+
+        <h6 class="mt-3">Prometheus Scrape Errors</h6>
+        <ul>
+            <li>Check Prometheus targets page: <code>http://localhost:9090/targets</code></li>
+            <li>Verify firewall allows port 5002</li>
+            <li>Confirm target address in prometheus.yml</li>
+        </ul>
+
+        <h6 class="mt-3">High Cardinality Issues</h6>
+        <ul>
+            <li>Avoid using trade IDs or timestamps as labels</li>
+            <li>Use aggregated labels instead of unique identifiers</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

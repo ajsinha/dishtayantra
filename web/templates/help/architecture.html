@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <h1 class="mb-0">System Architecture</h1>
-                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.2.0</p>
+                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.5.0</p>
                 </div>
             </div>
         </div>
@@ -41,6 +41,7 @@
                         <a href="#pubsub" class="btn btn-outline-primary btn-sm">Pub/Sub Framework</a>
                         <a href="#webapp" class="btn btn-outline-primary btn-sm">Web Application</a>
                         <a href="#monitoring" class="btn btn-outline-primary btn-sm">Monitoring</a>
+                        <a href="#prometheus" class="btn btn-outline-danger btn-sm"><i class="bi bi-speedometer2"></i> Prometheus</a>
                         <a href="#ha" class="btn btn-outline-primary btn-sm">High Availability</a>
                         <a href="#security" class="btn btn-outline-primary btn-sm">Security</a>
                         <a href="#performance" class="btn btn-outline-primary btn-sm">Performance</a>
@@ -97,7 +98,7 @@
                         <div class="bg-dark text-light p-4 rounded" style="font-family: 'Courier New', monospace; font-size: 0.75rem; overflow-x: auto;">
 <pre class="mb-0" style="color: #00ff00;">
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DishtaYantra v1.2.0                                │
+│                           DishtaYantra v1.5.0                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
 │  │   Web UI     │  │  REST API    │  │   Admin      │  │   Help Center   │  │
@@ -1274,6 +1275,144 @@ DishtaYantra          │ External Service
 │  │    └── Download capability                                     │  │
 │  └───────────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
+</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prometheus Metrics Integration -->
+    <div class="row mb-4" id="prometheus">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #e6522c, #da4e2a);">
+                    <h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Prometheus Metrics Integration (v1.5.0)</h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Comprehensive Prometheus metrics for real-time observability of DAG execution, calculator performance, messaging throughput, and system health.</p>
+                    
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-link-45deg me-2"></i>Metrics Endpoints</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Endpoint</th><th>Purpose</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><code>/metrics</code></td><td>Prometheus scraping (text format)</td></tr>
+                                    <tr><td><code>/metrics/json</code></td><td>JSON format (debugging)</td></tr>
+                                    <tr><td><code>/health</code></td><td>Overall health status</td></tr>
+                                    <tr><td><code>/health/live</code></td><td>Kubernetes liveness probe</td></tr>
+                                    <tr><td><code>/health/ready</code></td><td>Kubernetes readiness probe</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-graph-up me-2"></i>Metrics Categories</h6>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-diagram-3 text-primary"></i>
+                                        <small class="d-block">DAG Metrics</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-calculator text-success"></i>
+                                        <small class="d-block">Calculator Metrics</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-envelope text-warning"></i>
+                                        <small class="d-block">Messaging Metrics</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-light p-2 rounded text-center">
+                                        <i class="bi bi-hdd text-info"></i>
+                                        <small class="d-block">Cache Metrics</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-list-check me-2"></i>Key Metrics</h6>
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.7rem;">
+<pre class="mb-0" style="color: #00ff00;">
+# DAG Execution
+dishtayantra_dag_executions_total{dag_name, status}
+dishtayantra_dag_execution_duration_seconds{dag_name}
+dishtayantra_active_dags
+
+# Calculator Performance
+dishtayantra_calculator_calls_total{name, type, status}
+dishtayantra_calculator_duration_seconds{name, type}
+
+# Messaging
+dishtayantra_messages_received_total{transport, topic}
+dishtayantra_messages_published_total{transport, topic}
+dishtayantra_kafka_consumer_lag{group, topic}
+
+# System
+dishtayantra_system_cpu_usage
+dishtayantra_system_memory_percent
+dishtayantra_uptime_seconds
+</pre>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-bell me-2"></i>Alert Rules</h6>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr><th>Alert</th><th>Severity</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>DishtaYantraDown</td><td><span class="badge bg-danger">Critical</span></td></tr>
+                                    <tr><td>DAGExecutionErrors</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                                    <tr><td>HighCPUUsage</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                                    <tr><td>CriticalMemoryUsage</td><td><span class="badge bg-danger">Critical</span></td></tr>
+                                    <tr><td>KafkaConsumerLag</td><td><span class="badge bg-warning text-dark">Warning</span></td></tr>
+                                    <tr><td>DBPoolExhausted</td><td><span class="badge bg-danger">Critical</span></td></tr>
+                                </tbody>
+                            </table>
+                            <a href="{{ url_for('help_prometheus_monitoring') }}" class="btn btn-sm text-white" style="background: #e6522c;">
+                                <i class="bi bi-book"></i> Full Documentation
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="bg-dark text-light p-3 rounded mt-4" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Prometheus Monitoring Stack                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                      DishtaYantra v1.5.0                             │    │
+│  │  ┌────────────────────────────────────────────────────────────────┐  │    │
+│  │  │                  Metrics Module                                 │  │    │
+│  │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐          │  │    │
+│  │  │  │ Counters │ │  Gauges  │ │Histograms│ │   Info   │          │  │    │
+│  │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘          │  │    │
+│  │  └────────────────────────────────────────────────────────────────┘  │    │
+│  │  ┌────────────────────────────────────────────────────────────────┐  │    │
+│  │  │  /metrics  │  /health  │  /health/live  │  /health/ready      │  │    │
+│  │  └────────────────────────────────────────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                    │                                         │
+│                                    ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                      Prometheus + Grafana                            │    │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐                 │    │
+│  │  │   Scraper    │ │     TSDB     │ │   Grafana    │                 │    │
+│  │  │  (15s int)   │ │   (Storage)  │ │  Dashboard   │                 │    │
+│  │  └──────────────┘ └──────────────┘ └──────────────┘                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
 </pre>
                     </div>
                 </div>

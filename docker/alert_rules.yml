@@ -1,0 +1,214 @@
+# =============================================================================
+# Prometheus Alert Rules for DishtaYantra
+# =============================================================================
+#
+# Alert rules for monitoring DishtaYantra health and performance.
+#
+# Usage:
+#   Reference in prometheus.yml:
+#   rule_files:
+#     - "alert_rules.yml"
+#
+# Author: Ashutosh Sinha
+# Email: ajsinha@gmail.com
+# Version: 1.5.0
+# =============================================================================
+
+groups:
+  - name: dishtayantra_alerts
+    interval: 30s
+    rules:
+      # =======================================================================
+      # Application Health Alerts
+      # =======================================================================
+      - alert: DishtaYantraDown
+        expr: up{job="dishtayantra"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DishtaYantra application is down"
+          description: "DishtaYantra instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: DishtaYantraHealthCheckFailed
+        expr: dishtayantra_health_check_status == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DishtaYantra health check failed"
+          description: "Component {{ $labels.component }} health check is failing on {{ $labels.instance }}."
+
+      # =======================================================================
+      # DAG Execution Alerts
+      # =======================================================================
+      - alert: DAGExecutionErrors
+        expr: rate(dishtayantra_dag_executions_total{status="error"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DAG execution errors detected"
+          description: "DAG {{ $labels.dag_name }} has error rate > 10% over the last 5 minutes."
+
+      - alert: DAGExecutionSlow
+        expr: histogram_quantile(0.95, rate(dishtayantra_dag_execution_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DAG execution is slow"
+          description: "DAG {{ $labels.dag_name }} 95th percentile execution time is over 30 seconds."
+
+      - alert: NoActiveDAGs
+        expr: dishtayantra_active_dags == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No active DAGs running"
+          description: "No DAGs have been active for more than 10 minutes."
+
+      # =======================================================================
+      # Node Execution Alerts
+      # =======================================================================
+      - alert: NodeExecutionErrors
+        expr: rate(dishtayantra_node_errors_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node execution errors detected"
+          description: "Node {{ $labels.node_name }} in DAG {{ $labels.dag_name }} has high error rate."
+
+      - alert: NodeExecutionSlow
+        expr: histogram_quantile(0.95, rate(dishtayantra_node_execution_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node execution is slow"
+          description: "Node {{ $labels.node_name }} 95th percentile execution time exceeds 10 seconds."
+
+      # =======================================================================
+      # Calculator Alerts
+      # =======================================================================
+      - alert: CalculatorErrors
+        expr: rate(dishtayantra_calculator_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Calculator errors detected"
+          description: "Calculator {{ $labels.calculator_name }} has high error rate."
+
+      - alert: CalculatorSlow
+        expr: histogram_quantile(0.95, rate(dishtayantra_calculator_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Calculator execution is slow"
+          description: "Calculator {{ $labels.calculator_name }} 95th percentile execution time exceeds 5 seconds."
+
+      # =======================================================================
+      # Messaging Alerts
+      # =======================================================================
+      - alert: HighMessageQueueDepth
+        expr: dishtayantra_message_queue_depth > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High message queue depth"
+          description: "Queue {{ $labels.queue_name }} has depth > 1000 for over 5 minutes."
+
+      - alert: KafkaConsumerLag
+        expr: dishtayantra_kafka_consumer_lag > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer group {{ $labels.consumer_group }} has lag > 10000 on topic {{ $labels.topic }}."
+
+      - alert: NoMessagesReceived
+        expr: rate(dishtayantra_messages_received_total[10m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No messages received"
+          description: "No messages received on {{ $labels.transport }} for 15 minutes."
+
+      # =======================================================================
+      # Cache Alerts
+      # =======================================================================
+      - alert: LowCacheHitRatio
+        expr: rate(dishtayantra_cache_hits_total[5m]) / (rate(dishtayantra_cache_hits_total[5m]) + rate(dishtayantra_cache_misses_total[5m])) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit ratio"
+          description: "Cache {{ $labels.cache_name }} hit ratio is below 50%."
+
+      - alert: HighCacheEvictions
+        expr: rate(dishtayantra_cache_evictions_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High cache evictions"
+          description: "Cache {{ $labels.cache_name }} is evicting more than 100 entries per second."
+
+      # =======================================================================
+      # System Resource Alerts
+      # =======================================================================
+      - alert: HighCPUUsage
+        expr: dishtayantra_system_cpu_usage > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80% for more than 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: dishtayantra_system_memory_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85% for more than 5 minutes."
+
+      - alert: CriticalMemoryUsage
+        expr: dishtayantra_system_memory_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage"
+          description: "Memory usage is above 95% - immediate attention required."
+
+      # =======================================================================
+      # Database Connection Pool Alerts
+      # =======================================================================
+      - alert: DBPoolExhausted
+        expr: dishtayantra_db_pool_connections_active >= dishtayantra_db_pool_connections_max
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "Database {{ $labels.database }} connection pool is exhausted."
+
+      - alert: DBPoolHighUtilization
+        expr: dishtayantra_db_pool_connections_active / dishtayantra_db_pool_connections_max > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool high utilization"
+          description: "Database {{ $labels.database }} connection pool utilization is above 80%."

@@ -1,6 +1,6 @@
 # DishtaYantra Architecture Document
 
-## Version 1.2.0
+## Version 1.5.0
 
 © 2025-2030 Ashutosh Sinha
 
@@ -17,22 +17,23 @@
 7. [DAG Execution Engine](#dag-execution-engine)
 8. [Web Application Architecture](#web-application-architecture)
 9. [Admin & Monitoring System](#admin--monitoring-system)
-10. [High Availability](#high-availability)
-11. [Security Architecture](#security-architecture)
-12. [Performance Considerations](#performance-considerations)
-13. [Deployment Architecture](#deployment-architecture)
+10. [Prometheus Metrics Integration](#prometheus-metrics-integration)
+11. [High Availability](#high-availability)
+12. [Security Architecture](#security-architecture)
+13. [Performance Considerations](#performance-considerations)
+14. [Deployment Architecture](#deployment-architecture)
 
 ---
 
 ## System Overview
 
-DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) compute server designed for real-time data processing pipelines. The system supports multiple message brokers, data sources, multi-language calculator integrations, and LMDB zero-copy data exchange.
+DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) compute server designed for real-time data processing pipelines. The system supports multiple message brokers, data sources, multi-language calculator integrations, LMDB zero-copy data exchange, and comprehensive Prometheus monitoring.
 
 ### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DishtaYantra v1.2.0                            │
+│                           DishtaYantra v1.5.0                            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │
 │  │   Web UI     │  │  REST API    │  │   Admin      │  │    Help     │ │
@@ -76,6 +77,12 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 │  │  └─────────────────────────────────────────────────────────────────┘ │ │
 │  │  ┌─────────────────────────────────────────────────────────────────┐ │ │
 │  │  │                  Transformer Framework                           │ │ │
+│  │  └─────────────────────────────────────────────────────────────────┘ │ │
+│  │  ┌─────────────────────────────────────────────────────────────────┐ │ │
+│  │  │               Prometheus Metrics & Monitoring                    │ │ │
+│  │  │  ┌─────────────────────────────────────────────────────────────┐ │ │ │
+│  │  │  │ /metrics │ /health │ Grafana Dashboard │ Alert Rules       │ │ │ │
+│  │  │  └─────────────────────────────────────────────────────────────┘ │ │ │
 │  │  └─────────────────────────────────────────────────────────────────┘ │ │
 │  └─────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -729,6 +736,139 @@ This architecture represents a **patent-pending innovation** not found in any ot
 
 ---
 
+## Prometheus Metrics Integration
+
+DishtaYantra v1.5.0 includes comprehensive Prometheus metrics integration for real-time observability and monitoring.
+
+### Monitoring Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Prometheus Monitoring Stack                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                      DishtaYantra                                │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐ │    │
+│  │  │                  Metrics Module                              │ │    │
+│  │  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐            │ │    │
+│  │  │  │  Counters   │ │   Gauges    │ │ Histograms  │            │ │    │
+│  │  │  │ executions  │ │ active_dags │ │  latency    │            │ │    │
+│  │  │  │ messages    │ │ queue_depth │ │  msg_size   │            │ │    │
+│  │  │  │ errors      │ │ cache_size  │ │  calc_time  │            │ │    │
+│  │  │  └─────────────┘ └─────────────┘ └─────────────┘            │ │    │
+│  │  └──────────────────────────┬──────────────────────────────────┘ │    │
+│  │                             │                                    │    │
+│  │  ┌──────────────────────────┴──────────────────────────────────┐ │    │
+│  │  │              Endpoints                                       │ │    │
+│  │  │  /metrics  │  /health  │  /health/live  │  /health/ready   │ │    │
+│  │  └──────────────────────────┬──────────────────────────────────┘ │    │
+│  └─────────────────────────────┼────────────────────────────────────┘    │
+│                                │                                         │
+│                                ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                      Prometheus                                  │    │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │    │
+│  │  │   Scraper   │ │    TSDB     │ │   Rules     │                │    │
+│  │  │  (15s int)  │ │  (Storage)  │ │  (Alerts)   │                │    │
+│  │  └─────────────┘ └─────────────┘ └─────────────┘                │    │
+│  └──────────────────────────┬──────────────────────────────────────┘    │
+│                             │                                            │
+│                             ▼                                            │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                       Grafana                                    │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐ │    │
+│  │  │ Dashboard: DAG Metrics │ Calculator Perf │ System Health   │ │    │
+│  │  └─────────────────────────────────────────────────────────────┘ │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Metrics Categories
+
+| Category | Metrics | Purpose |
+|----------|---------|---------|
+| DAG | executions, duration, active_count | Track DAG execution and performance |
+| Node | executions, duration, errors | Monitor individual node processing |
+| Calculator | calls, duration, errors | Measure calculator performance |
+| Messaging | received, published, lag, queue_depth | Monitor message throughput |
+| Cache | hits, misses, size, evictions | Track cache efficiency |
+| Database | connections, query_duration | Monitor DB pool health |
+| System | cpu, memory, threads, uptime | System resource monitoring |
+| Health | component_status | Component health checks |
+
+### Metrics Endpoints
+
+| Endpoint | Purpose | Auth Required |
+|----------|---------|---------------|
+| `/metrics` | Prometheus text format metrics | No |
+| `/metrics/json` | JSON format (debugging) | No |
+| `/health` | Overall health status | No |
+| `/health/live` | Kubernetes liveness probe | No |
+| `/health/ready` | Kubernetes readiness probe | No |
+
+### Key Metrics Reference
+
+```
+# DAG Execution Metrics
+dishtayantra_dag_executions_total{dag_name="...", status="success|error"}
+dishtayantra_dag_execution_duration_seconds_bucket{dag_name="...", le="..."}
+dishtayantra_active_dags
+
+# Calculator Metrics
+dishtayantra_calculator_calls_total{calculator_name="...", calculator_type="...", status="..."}
+dishtayantra_calculator_duration_seconds_bucket{calculator_name="...", le="..."}
+
+# Messaging Metrics
+dishtayantra_messages_received_total{transport="kafka|redis|...", topic="..."}
+dishtayantra_messages_published_total{transport="...", topic="..."}
+dishtayantra_kafka_consumer_lag{consumer_group="...", topic="...", partition="..."}
+
+# Cache Metrics
+dishtayantra_cache_hits_total{cache_name="..."}
+dishtayantra_cache_misses_total{cache_name="..."}
+
+# System Metrics
+dishtayantra_system_cpu_usage
+dishtayantra_system_memory_percent
+dishtayantra_uptime_seconds
+```
+
+### Alert Rules
+
+Pre-configured alerts are provided in `docker/alert_rules.yml`:
+
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| DishtaYantraDown | Application unreachable for 1m | Critical |
+| DAGExecutionErrors | Error rate > 10% for 5m | Warning |
+| DAGExecutionSlow | p95 latency > 30s for 5m | Warning |
+| HighCPUUsage | CPU > 80% for 5m | Warning |
+| CriticalMemoryUsage | Memory > 95% for 2m | Critical |
+| KafkaConsumerLag | Lag > 10000 for 5m | Warning |
+| DBPoolExhausted | All connections used for 5m | Critical |
+
+### Integration with Decorators
+
+```python
+from core.metrics import metrics, track_execution_time, count_calls
+
+class MyCalculator:
+    @track_execution_time(
+        metrics.calculator_duration,
+        {'calculator_name': 'my_calc', 'calculator_type': 'python'}
+    )
+    @count_calls(
+        metrics.calculator_calls,
+        {'calculator_name': 'my_calc', 'calculator_type': 'python'}
+    )
+    def calculate(self, data):
+        return result
+```
+
+---
+
 ## High Availability
 
 ### Leader Election Architecture
@@ -985,4 +1125,4 @@ This document contains proprietary and confidential information. Unauthorized co
 
 ---
 
-**DishtaYantra v1.2.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.5.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
