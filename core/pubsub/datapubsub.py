@@ -352,7 +352,32 @@ class DataPublisher(AbstractDataPubSub):
 
 
 class DataSubscriber(AbstractDataPubSub):
-    """Abstract base class for data subscribers"""
+    """
+    Abstract base class for data subscribers.
+    
+    Enhanced in v1.2.0 with automatic packaging of non-dictionary messages.
+    This ensures consistent data format for downstream calculators regardless
+    of the original message format from external sources.
+    
+    Configuration Options:
+        auto_package_non_dict (bool): Enable automatic packaging of non-dict messages (default: True)
+        package_wrapper_key (str): Key name for original data in packaged dict (default: 'payload')
+        add_package_metadata (bool): Add subscriber metadata to packaged messages (default: True)
+        preserve_raw_on_error (bool): If packaging fails, preserve raw data (default: True)
+    
+    Example packaged message:
+        {
+            'payload': <original_data>,
+            '_packaged': True,
+            '_original_type': 'str',
+            '_dag_priority': 5,
+            '_metadata': {
+                'subscriber_name': 'kafka_sub',
+                'source': 'trades_topic',
+                'received_at': '2025-01-13T10:30:00'
+            }
+        }
+    """
 
     def __init__(self, name, source, config, given_internal_queue: queue.Queue = None):
         AbstractDataPubSub.__init__(self, name, config)
@@ -360,12 +385,19 @@ class DataSubscriber(AbstractDataPubSub):
         self.source = source
         self.max_depth = config.get('max_depth', 100000)
 
+        # v1.2.0: Non-dictionary message packaging configuration
+        self.auto_package_non_dict = config.get('auto_package_non_dict', True)
+        self.package_wrapper_key = config.get('package_wrapper_key', 'payload')
+        self.add_package_metadata = config.get('add_package_metadata', True)
+        self.preserve_raw_on_error = config.get('preserve_raw_on_error', True)
+        self._packaged_count = 0  # Track how many messages were auto-packaged
+
         # Use PriorityQueue if not provided, otherwise use given queue
         # Note: If given_internal_queue is provided, it should be a PriorityQueue for priority support
 
         if given_internal_queue is None:
             if self.is_priority_queue():
-                self._internal_queue =queue.PriorityQueue(maxsize=self.max_depth)
+                self._internal_queue = queue.PriorityQueue(maxsize=self.max_depth)
             else:
                 self._internal_queue = queue.Queue(maxsize=self.max_depth)
         else:
@@ -382,7 +414,9 @@ class DataSubscriber(AbstractDataPubSub):
         self._is_priority_queue = isinstance(self._internal_queue, queue.PriorityQueue)
 
         logger.info(
-            f"DataSubscriber {name} initialized for source {source} (Priority: {self._is_priority_queue}, Key: {self.priority_key})")
+            f"DataSubscriber {name} initialized for source {source} "
+            f"(Priority: {self._is_priority_queue}, Key: {self.priority_key}, "
+            f"AutoPackage: {self.auto_package_non_dict})")
 
 
     def set_internal_queue(self, given_queue):
@@ -421,6 +455,85 @@ class DataSubscriber(AbstractDataPubSub):
     def is_message_router(self):
         return False
 
+    def _package_message(self, data: Any) -> dict:
+        """
+        Package non-dictionary messages into a standardized dictionary format.
+        
+        This ensures:
+        1. Consistent format for downstream calculators
+        2. Priority extraction works with a known structure
+        3. Metadata can be attached for debugging/tracing
+        4. Original data type is preserved for proper parsing
+        
+        Args:
+            data: Any type of incoming message (str, int, list, bytes, etc.)
+            
+        Returns:
+            dict: Standardized message dictionary
+            
+        Examples:
+            Input: "TRADE_001,BUY,100,AAPL"
+            Output: {
+                'payload': "TRADE_001,BUY,100,AAPL",
+                '_packaged': True,
+                '_original_type': 'str',
+                '_dag_priority': 5,
+                '_metadata': {...}
+            }
+            
+            Input: [1, 2, 3, 4, 5]
+            Output: {
+                'payload': [1, 2, 3, 4, 5],
+                '_packaged': True,
+                '_original_type': 'list',
+                '_dag_priority': 5,
+                '_metadata': {...}
+            }
+        """
+        # If already a dict, return as-is (backward compatible)
+        if isinstance(data, dict):
+            return data
+        
+        # If it's a DataAwarePayload, convert to dict
+        if isinstance(data, DataAwarePayload):
+            return data.to_dict()
+        
+        try:
+            # Package non-dict into standardized format
+            packaged = {
+                self.package_wrapper_key: data,  # Original data under configured key
+                '_packaged': True,               # Flag indicating auto-packaged
+                '_original_type': type(data).__name__,  # Original type for parsing
+                '_dag_priority': self.priority_extractor.default_priority,  # Default priority
+            }
+            
+            # Add metadata if enabled
+            if self.add_package_metadata:
+                packaged['_metadata'] = {
+                    'subscriber_name': self.name,
+                    'source': self.source,
+                    'received_at': datetime.now().isoformat(),
+                    'packaging_version': '1.2.0'
+                }
+            
+            # Track packaging statistics
+            with self._lock:
+                self._packaged_count += 1
+            
+            logger.debug(f"Packaged {type(data).__name__} message in subscriber {self.name}")
+            return packaged
+            
+        except Exception as e:
+            logger.warning(f"Failed to package message in {self.name}: {e}")
+            if self.preserve_raw_on_error:
+                # Return minimal wrapper on error
+                return {
+                    self.package_wrapper_key: data,
+                    '_packaged': True,
+                    '_package_error': str(e)
+                }
+            raise
+
     def start(self):
         """Start the subscriber"""
         if not self._subscriber_thread or not self._subscriber_thread.is_alive():
@@ -430,7 +543,12 @@ class DataSubscriber(AbstractDataPubSub):
             logger.info(f"Subscriber {self.name} started")
 
     def _subscription_loop(self):
-        """Main subscription loop - handles both PriorityQueue and regular Queue"""
+        """
+        Main subscription loop - handles both PriorityQueue and regular Queue.
+        
+        Enhanced in v1.2.0 to automatically package non-dictionary messages
+        for consistent downstream processing.
+        """
         while not self._stop_event.is_set():
             self._suspend_event.wait()  # Block if suspended
 
@@ -443,6 +561,10 @@ class DataSubscriber(AbstractDataPubSub):
 
                 data = self._do_subscribe()
                 if data is not None:
+                    # v1.2.0: Auto-package non-dictionary messages
+                    if self.auto_package_non_dict:
+                        data = self._package_message(data)
+                    
                     if self._is_priority_queue:
                         # Priority queue behavior: extract priority and add with sequence for FIFO within priority
                         priority = self.priority_extractor.resolve(data)
@@ -520,7 +642,7 @@ class DataSubscriber(AbstractDataPubSub):
         return self._internal_queue.qsize()
 
     def details(self):
-        """Return details in JSON format"""
+        """Return details in JSON format including packaging statistics"""
         with self._lock:
             return {
                 'name': self.name,
@@ -531,7 +653,11 @@ class DataSubscriber(AbstractDataPubSub):
                 'receive_count': self._receive_count,
                 'suspended': not self._suspend_event.is_set(),
                 'priority_queue_enabled': self._is_priority_queue,
-                'priority_key': self.priority_key
+                'priority_key': self.priority_key,
+                # v1.2.0: Packaging statistics
+                'auto_package_enabled': self.auto_package_non_dict,
+                'packaged_count': self._packaged_count,
+                'package_wrapper_key': self.package_wrapper_key
             }
 
     def stop(self):

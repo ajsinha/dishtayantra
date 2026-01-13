@@ -113,6 +113,10 @@ class AbstractKafkaConsumerWrapper(ABC):
         """Iterator interface."""
         pass
 
+    @abstractmethod
+    def get_single_message(self) -> Optional[Any]:
+        """Get a single message (for compatibility)."""
+        pass
 
 # =============================================================================
 # kafka-python Wrappers

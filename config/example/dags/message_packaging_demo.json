@@ -1,0 +1,212 @@
+{
+  "_comment": "DishtaYantra v1.2.0 - Example DAG demonstrating Non-Dictionary Message Packaging",
+  "_description": "This DAG shows how to use auto_package_non_dict to handle CSV strings, JSON arrays, and other non-dict messages from Kafka and other sources",
+  "_version": "1.2.0",
+  "_note": "This is an EXAMPLE DAG in config/example/dags/ - copy to config/dags/ to use. Requires Kafka running on localhost:9092",
+  
+  "name": "message_packaging_demo",
+  "start_time": null,
+  "duration": null,
+  
+  "subscribers": [
+    {
+      "_comment": "Kafka subscriber receiving CSV trade strings like 'TRADE_001,BUY,100,AAPL,150.25'",
+      "name": "kafka_csv_trades",
+      "config": {
+        "source": "kafka://topic/csv_trades",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "csv_trade_consumer",
+        "max_depth": 10000,
+        
+        "_feature": "Non-Dictionary Message Packaging (v1.2.0)",
+        "auto_package_non_dict": true,
+        "package_wrapper_key": "payload",
+        "add_package_metadata": true,
+        "preserve_raw_on_error": true,
+        
+        "_explanation": "With auto_package_non_dict=true, a CSV string like 'TRADE_001,BUY,100,AAPL' becomes: {'payload': 'TRADE_001,BUY,100,AAPL', '_packaged': true, '_original_type': 'str', '_metadata': {...}}"
+      }
+    },
+    {
+      "_comment": "Kafka subscriber for JSON arrays - uses different wrapper key",
+      "name": "kafka_json_batches",
+      "config": {
+        "source": "kafka://topic/batch_data",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "batch_consumer",
+        "max_depth": 5000,
+        
+        "auto_package_non_dict": true,
+        "package_wrapper_key": "items",
+        "add_package_metadata": true,
+        
+        "_explanation": "JSON arrays are packaged with wrapper key 'items': {'items': [{'id': 1}, {'id': 2}], '_packaged': true, '_original_type': 'list'}"
+      }
+    },
+    {
+      "_comment": "Kafka subscriber with packaging DISABLED - for when Kafka sends dict messages",
+      "name": "kafka_dict_input",
+      "config": {
+        "source": "kafka://topic/json_records",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "json_consumer",
+        "max_depth": 1000,
+        
+        "auto_package_non_dict": false,
+        
+        "_explanation": "Set to false when Kafka messages are already JSON dictionaries - no packaging needed"
+      }
+    },
+    {
+      "_comment": "In-memory subscriber with priority queue and packaging (no metadata for performance)",
+      "name": "inmemory_market_data",
+      "config": {
+        "source": "inmemory://market_data",
+        "max_depth": 50000,
+        "queue_type": "priority",
+        "dag_priority_key": "_priority",
+        
+        "auto_package_non_dict": true,
+        "package_wrapper_key": "market_tick",
+        "add_package_metadata": false,
+        
+        "_explanation": "Metadata disabled for high-frequency feeds to reduce overhead. Uses inmemory:// URI format (v1.2.0)"
+      }
+    }
+  ],
+  
+  "publishers": [
+    {
+      "name": "kafka_processed_output",
+      "config": {
+        "destination": "kafka://topic/processed_trades",
+        "bootstrap_servers": ["localhost:9092"]
+      }
+    },
+    {
+      "name": "file_audit_log",
+      "config": {
+        "destination": "file:///tmp/dishtayantra/processed_trades.jsonl",
+        "publish_interval": 5,
+        "batch_size": 50
+      }
+    }
+  ],
+  
+  "calculators": [
+    {
+      "_comment": "Calculator that handles packaged messages",
+      "name": "trade_enricher",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "processed_by": "message_packaging_demo",
+          "version": "1.2.0",
+          "processing_timestamp": null
+        },
+        "_note": "This calculator receives packaged messages. Check data.get('_packaged') to detect them."
+      }
+    },
+    {
+      "_comment": "Value calculator for trade processing",
+      "name": "trade_value_calc",
+      "type": "MultiplicationCalculator",
+      "config": {
+        "arguments": ["price", "quantity"],
+        "output_attribute": "notional_value"
+      }
+    }
+  ],
+  
+  "transformers": [
+    {
+      "name": "output_filter",
+      "type": "AttributeFilterDataTransformer",
+      "config": {
+        "keep_attributes": [
+          "trade_id", "side", "quantity", "symbol", "price", 
+          "notional_value", "processed_by", "processing_timestamp",
+          "payload", "_packaged", "_original_type"
+        ]
+      }
+    }
+  ],
+  
+  "nodes": [
+    {
+      "_comment": "Entry node for CSV trade strings from Kafka",
+      "name": "csv_input_node",
+      "type": "SubscriptionNode",
+      "config": {},
+      "subscriber": "kafka_csv_trades"
+    },
+    {
+      "_comment": "Enrich trade data",
+      "name": "enrichment_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "trade_enricher"
+    },
+    {
+      "_comment": "Output processed trades",
+      "name": "output_node",
+      "type": "PublicationNode",
+      "config": {},
+      "publishers": ["kafka_processed_output", "file_audit_log"],
+      "input_transformers": ["output_filter"]
+    }
+  ],
+  
+  "edges": [
+    {
+      "from_node": "csv_input_node",
+      "to_node": "enrichment_node"
+    },
+    {
+      "from_node": "enrichment_node",
+      "to_node": "output_node"
+    }
+  ],
+  
+  "_usage_notes": {
+    "description": "This DAG demonstrates the v1.2.0 non-dictionary message packaging feature with Kafka",
+    "prerequisites": [
+      "Kafka running on localhost:9092",
+      "Create topics: csv_trades, batch_data, json_records, processed_trades"
+    ],
+    "supported_uri_formats": [
+      "mem://queue/name - Standard in-memory queue",
+      "mem://topic/name - Standard in-memory topic", 
+      "mem://name - Simple format (v1.2.0)",
+      "inmemory://name - Alternative format (v1.2.0)",
+      "memory://name - Alternative format (v1.2.0)"
+    ],
+    "key_configurations": {
+      "auto_package_non_dict": "Enable automatic wrapping of non-dict messages (default: true)",
+      "package_wrapper_key": "Key name for original data in wrapped dict (default: 'payload')",
+      "add_package_metadata": "Include subscriber/source/timestamp metadata (default: true)",
+      "preserve_raw_on_error": "Keep raw data if packaging fails (default: true)"
+    },
+    "packaged_message_format": {
+      "payload": "<original_data>",
+      "_packaged": true,
+      "_original_type": "str|int|list|bytes|etc",
+      "_dag_priority": 5,
+      "_metadata": {
+        "subscriber_name": "name",
+        "source": "source_uri",
+        "received_at": "ISO_timestamp",
+        "packaging_version": "1.2.0"
+      }
+    },
+    "testing": [
+      "1. Start Kafka: bin/kafka-server-start.sh config/server.properties",
+      "2. Create topic: bin/kafka-topics.sh --create --topic csv_trades --bootstrap-server localhost:9092",
+      "3. Copy this DAG to config/dags/",
+      "4. Start DishtaYantra: python run_server.py",
+      "5. Send CSV: bin/kafka-console-producer.sh --topic csv_trades --bootstrap-server localhost:9092",
+      "6. Type: TRADE_001,BUY,100,AAPL,150.25",
+      "7. Check output in /tmp/dishtayantra/processed_trades.jsonl"
+    ]
+  }
+}

@@ -243,10 +243,20 @@ class DAGRoutes:
         # POST method - handle message submission
         try:
             message = request.form.get('message')
+            is_raw = request.form.get('is_raw', 'false').lower() == 'true'
+            
             if not message:
                 return jsonify({'error': 'No message provided'}), 400
 
-            message_data = json.loads(message)
+            # Parse message based on format
+            if is_raw:
+                # v1.2.0: Raw message mode - send as string without JSON parsing
+                # The subscriber with auto_package_non_dict=true will package it
+                message_data = message
+                logger.info(f"Publishing raw message to {subscriber_name}: {message[:100]}...")
+            else:
+                # JSON mode - parse and validate
+                message_data = json.loads(message)
 
             # Get the subscriber from DAG
             dag = self.dag_server.dags.get(dag_name)
@@ -259,7 +269,8 @@ class DAGRoutes:
 
             # Check if subscriber type supports publishing
             source = subscriber.source
-            if not any(prefix in source for prefix in ['mem://', 'kafka://', 'redischannel://', 'activemq://']):
+            supported_prefixes = ['mem://', 'inmemory://', 'memory://', 'kafka://', 'redischannel://', 'activemq://']
+            if not any(prefix in source for prefix in supported_prefixes):
                 return jsonify({'error': 'Subscriber type does not support publishing'}), 400
 
             # Create a temporary publisher to the same source
@@ -271,7 +282,9 @@ class DAGRoutes:
             temp_publisher.publish(message_data)
             temp_publisher.stop()
 
-            return jsonify({'success': True, 'message': 'Message published successfully'})
+            msg_type = 'raw' if is_raw else 'JSON'
+            logger.info(f"Successfully published {msg_type} message to {subscriber_name}")
+            return jsonify({'success': True, 'message': f'{msg_type} message published successfully'})
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON: {str(e)}")
             return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400

@@ -2,6 +2,55 @@
 
 {% block title %}Publish Message - {{ dag_name }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    .raw-message-info {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 10px;
+    }
+    .raw-message-info.active {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border-color: #28a745;
+    }
+    .message-type-badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .format-selector {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    .format-selector .form-check {
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        transition: all 0.2s;
+    }
+    .format-selector .form-check:hover {
+        background: #e9ecef;
+    }
+    .format-selector .form-check-input:checked + .form-check-label {
+        font-weight: 600;
+    }
+    .example-formats {
+        font-size: 0.85rem;
+    }
+    .example-formats code {
+        background: #e9ecef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
     <div class="col-md-12">
@@ -16,24 +65,65 @@
 <div class="row">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header">
-                <h5><i class="bi bi-envelope"></i> Message Details</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-envelope"></i> Message Details</h5>
+                <span id="messageTypeBadge" class="message-type-badge bg-primary text-white">
+                    <i class="bi bi-braces"></i> JSON
+                </span>
             </div>
             <div class="card-body">
                 <form id="publishForm" method="POST">
-                    <div class="mb-3">
-                        <label for="publishMessage" class="form-label">Message (JSON)</label>
-                        <textarea class="form-control font-monospace" id="publishMessage" name="message" rows="15" placeholder='{"key": "value", "data": "example"}'></textarea>
-                        <small class="form-text text-muted">Enter a valid JSON message to publish to the subscriber.</small>
+                    <!-- Message Format Selector -->
+                    <div class="format-selector">
+                        <label class="form-label fw-bold mb-2">
+                            <i class="bi bi-file-earmark-code"></i> Message Format
+                        </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="messageFormat" id="formatJson" value="json" checked>
+                            <label class="form-check-label" for="formatJson">
+                                <i class="bi bi-braces text-primary"></i> JSON (Dictionary/Object)
+                                <small class="text-muted d-block">Standard JSON format - will be parsed and validated</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="messageFormat" id="formatRaw" value="raw">
+                            <label class="form-check-label" for="formatRaw">
+                                <i class="bi bi-file-text text-success"></i> Raw Text (Non-JSON)
+                                <small class="text-muted d-block">CSV, plain text, or any non-JSON string - sent as-is</small>
+                            </label>
+                        </div>
                     </div>
 
-                    <div id="publishResult"></div>
+                    <!-- Message Input -->
+                    <div class="mb-3">
+                        <label for="publishMessage" class="form-label" id="messageLabel">Message (JSON)</label>
+                        <textarea class="form-control font-monospace" id="publishMessage" name="message" rows="12" placeholder='{"key": "value", "data": "example"}'></textarea>
+                        <small class="form-text text-muted" id="messageHint">Enter a valid JSON message to publish to the subscriber.</small>
+                    </div>
 
-                    <div class="d-flex gap-2">
+                    <!-- Raw Message Info Box -->
+                    <div id="rawMessageInfo" class="raw-message-info" style="display: none;">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-info-circle-fill text-warning me-2 mt-1"></i>
+                            <div>
+                                <strong>Raw Message Mode (v1.2.0)</strong>
+                                <p class="mb-1 small">The message will be sent exactly as entered without JSON parsing. If the subscriber has <code>auto_package_non_dict: true</code>, it will be automatically packaged into:</p>
+                                <pre class="mb-0 small bg-white p-2 rounded border"><code>{
+  "payload": "&lt;your message&gt;",
+  "_packaged": true,
+  "_original_type": "str"
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="publishResult" class="mt-3"></div>
+
+                    <div class="d-flex gap-2 mt-3">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-send"></i> Publish Message
                         </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="validateJson()">
+                        <button type="button" class="btn btn-outline-secondary" id="validateBtn" onclick="validateJson()">
                             <i class="bi bi-check-circle"></i> Validate JSON
                         </button>
                         <button type="button" class="btn btn-outline-secondary" onclick="clearMessage()">
@@ -63,7 +153,35 @@
 
                     <dt class="col-sm-5">Last Receive:</dt>
                     <dd class="col-sm-7">{{ subscriber_info.last_receive or 'Never' }}</dd>
+
+                    {% if subscriber_info.auto_package_enabled is defined %}
+                    <dt class="col-sm-5">Auto Package:</dt>
+                    <dd class="col-sm-7">
+                        {% if subscriber_info.auto_package_enabled %}
+                        <span class="badge bg-success">Enabled</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Disabled</span>
+                        {% endif %}
+                    </dd>
+                    {% endif %}
                 </dl>
+            </div>
+        </div>
+
+        <!-- Example Formats Card -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-code-square"></i> Example Formats</h5>
+            </div>
+            <div class="card-body example-formats">
+                <p class="fw-bold mb-2">JSON Format:</p>
+                <code class="d-block mb-3">{"trade_id": "T001", "symbol": "AAPL"}</code>
+                
+                <p class="fw-bold mb-2">Raw CSV String:</p>
+                <code class="d-block mb-3">TRADE_001,BUY,100,AAPL,150.25</code>
+                
+                <p class="fw-bold mb-2">Raw Delimited:</p>
+                <code class="d-block mb-0">T001|BUY|AAPL|100|150.25</code>
             </div>
         </div>
 
@@ -73,8 +191,9 @@
             </div>
             <div class="card-body">
                 <ul class="mb-0 small">
-                    <li>Ensure your message is valid JSON format</li>
-                    <li>Use the "Validate JSON" button to check syntax before publishing</li>
+                    <li><strong>JSON mode:</strong> Message is parsed and validated before sending</li>
+                    <li><strong>Raw mode:</strong> Message is sent exactly as entered (CSV, text, etc.)</li>
+                    <li>Raw messages work best with <code>auto_package_non_dict: true</code> subscribers</li>
                     <li>Messages are published immediately to the subscriber queue</li>
                 </ul>
             </div>
@@ -90,7 +209,49 @@ $(document).ready(function() {
         e.preventDefault();
         publishMessage();
     });
+
+    // Handle format radio button changes
+    $('input[name="messageFormat"]').on('change', function() {
+        updateUIForFormat();
+    });
+
+    // Initialize UI
+    updateUIForFormat();
 });
+
+function updateUIForFormat() {
+    var isRaw = $('#formatRaw').is(':checked');
+    var badge = $('#messageTypeBadge');
+    var label = $('#messageLabel');
+    var hint = $('#messageHint');
+    var validateBtn = $('#validateBtn');
+    var rawInfo = $('#rawMessageInfo');
+    var textarea = $('#publishMessage');
+
+    if (isRaw) {
+        // Raw/Non-JSON mode
+        badge.removeClass('bg-primary').addClass('bg-success')
+             .html('<i class="bi bi-file-text"></i> Raw Text');
+        label.text('Message (Raw Text)');
+        hint.text('Enter any text message - CSV, delimited, plain text. Will be sent exactly as entered.');
+        validateBtn.prop('disabled', true).addClass('d-none');
+        rawInfo.slideDown(200).addClass('active');
+        textarea.attr('placeholder', 'TRADE_001,BUY,100,AAPL,150.25');
+    } else {
+        // JSON mode
+        badge.removeClass('bg-success').addClass('bg-primary')
+             .html('<i class="bi bi-braces"></i> JSON');
+        label.text('Message (JSON)');
+        hint.text('Enter a valid JSON message to publish to the subscriber.');
+        validateBtn.prop('disabled', false).removeClass('d-none');
+        rawInfo.slideUp(200).removeClass('active');
+        textarea.attr('placeholder', '{"key": "value", "data": "example"}');
+    }
+}
+
+function isRawMode() {
+    return $('#formatRaw').is(':checked');
+}
 
 function validateJson() {
     var message = $('#publishMessage').val();
@@ -121,30 +282,39 @@ function clearMessage() {
 function publishMessage() {
     var message = $('#publishMessage').val();
     var resultDiv = $('#publishResult');
+    var rawMode = isRawMode();
 
     if (!message.trim()) {
         resultDiv.html('<div class="alert alert-warning alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-exclamation-triangle"></i> Please enter a message to publish.</div>');
         return;
     }
 
-    try {
-        JSON.parse(message);
-    } catch (e) {
-        resultDiv.html('<div class="alert alert-danger alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-x-circle"></i> Invalid JSON: ' + e.message + '</div>');
-        return;
+    // Only validate JSON if not in raw mode
+    if (!rawMode) {
+        try {
+            JSON.parse(message);
+        } catch (e) {
+            resultDiv.html('<div class="alert alert-danger alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-x-circle"></i> Invalid JSON: ' + e.message + '</div>');
+            return;
+        }
     }
 
     // Show loading state
-    resultDiv.html('<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Publishing message...</div>');
+    var modeText = rawMode ? 'raw text' : 'JSON';
+    resultDiv.html('<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Publishing ' + modeText + ' message...</div>');
 
     $.ajax({
         url: '{{ url_for("publish_message", dag_name=dag_name, subscriber_name=subscriber_name) }}',
         method: 'POST',
-        data: { message: message },
+        data: { 
+            message: message,
+            is_raw: rawMode ? 'true' : 'false'
+        },
         success: function(response) {
-            resultDiv.html('<div class="alert alert-success alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button><i class="bi bi-check-circle"></i> Message published successfully!</div>');
-            // Optionally clear the message after successful publish
-            // $('#publishMessage').val('');
+            var successMsg = rawMode 
+                ? '<i class="bi bi-check-circle"></i> Raw message published successfully! It will be auto-packaged by the subscriber.'
+                : '<i class="bi bi-check-circle"></i> JSON message published successfully!';
+            resultDiv.html('<div class="alert alert-success alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button>' + successMsg + '</div>');
         },
         error: function(xhr) {
             var error = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
