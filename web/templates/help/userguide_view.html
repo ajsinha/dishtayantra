@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<!-- Highlight.js for code syntax highlighting - using atom-one-dark theme -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+<style>
+    .doc-header {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.3);
+    }
+    .doc-header h1 {
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .doc-header .filename {
+        opacity: 0.8;
+        font-size: 0.9rem;
+    }
+    
+    .doc-content {
+        background: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* Markdown Content Styling */
+    .doc-content h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e3a5f;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #00d4aa;
+    }
+    .doc-content h2 {
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: #2d5a87;
+        margin-top: 2rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    .doc-content h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #1e3a5f;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .doc-content h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    .doc-content h5, .doc-content h6 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #4b5563;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .doc-content p {
+        line-height: 1.8;
+        margin-bottom: 1rem;
+        color: #374151;
+    }
+    
+    .doc-content ul, .doc-content ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+    .doc-content li {
+        margin-bottom: 0.5rem;
+        line-height: 1.7;
+    }
+    
+    /* Code blocks - Enhanced visibility */
+    .doc-content pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1.25rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border: 1px solid #334155;
+    }
+    .doc-content pre code {
+        background: transparent !important;
+        padding: 0 !important;
+        color: #e2e8f0 !important;
+        font-size: inherit;
+        border: none !important;
+    }
+    
+    /* Inline code - High visibility */
+    .doc-content code {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.88em;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+        border: 1px solid #fcd34d;
+        font-weight: 500;
+    }
+    
+    /* Code inside paragraphs and lists */
+    .doc-content p code,
+    .doc-content li code,
+    .doc-content td code {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.15rem 0.4rem;
+        border-radius: 3px;
+        font-size: 0.85em;
+        border: 1px solid #fcd34d;
+    }
+    
+    /* Tables - Enhanced styling */
+    .doc-content table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        border: 2px solid #1e3a5f;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(30, 58, 95, 0.15);
+    }
+    .doc-content thead {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    }
+    .doc-content thead tr {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    }
+    .doc-content th {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        color: white !important;
+        padding: 1rem 1.25rem;
+        text-align: left;
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 0.025em;
+        border-bottom: 2px solid #00d4aa;
+    }
+    .doc-content tbody {
+        background: white;
+    }
+    .doc-content td {
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+        background: white;
+        vertical-align: top;
+        color: #374151;
+    }
+    .doc-content tbody tr:nth-child(even) {
+        background: #f8fafc;
+    }
+    .doc-content tbody tr:nth-child(even) td {
+        background: #f8fafc;
+    }
+    .doc-content tbody tr:hover td {
+        background: #dbeafe !important;
+    }
+    .doc-content tbody tr:last-child td {
+        border-bottom: none;
+    }
+    /* Code inside table cells */
+    .doc-content th code,
+    .doc-content td code {
+        background: #fef3c7 !important;
+        color: #92400e !important;
+        padding: 0.2rem 0.5rem !important;
+        border-radius: 4px !important;
+        font-size: 0.85em !important;
+        border: 1px solid #fcd34d !important;
+        font-weight: 500 !important;
+        white-space: nowrap;
+    }
+    
+    /* Table responsive wrapper */
+    .table-wrapper {
+        overflow-x: auto;
+        margin: 1.5rem 0;
+        border-radius: 10px;
+    }
+    .table-wrapper table {
+        margin: 0;
+    }
+    
+    /* Blockquotes */
+    .doc-content blockquote {
+        border-left: 4px solid #00d4aa;
+        background: #f0fdf9;
+        padding: 1rem 1.5rem;
+        margin: 1.5rem 0;
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: #065f46;
+    }
+    
+    /* Links */
+    .doc-content a {
+        color: #2563eb;
+        text-decoration: none;
+    }
+    .doc-content a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Horizontal rule */
+    .doc-content hr {
+        border: none;
+        height: 2px;
+        background: linear-gradient(to right, #00d4aa, #2d5a87, #00d4aa);
+        margin: 2rem 0;
+    }
+    
+    /* Images */
+    .doc-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Table of Contents (if generated) */
+    .doc-content .toc {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .doc-content .toc ul {
+        margin-bottom: 0;
+    }
+    
+    /* Highlight.js overrides */
+    .doc-content .highlight {
+        background: #0f172a;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+        overflow-x: auto;
+    }
+    
+    /* Ensure hljs classes have proper colors */
+    .doc-content pre code.hljs {
+        background: transparent !important;
+        color: #abb2bf !important;
+        padding: 0 !important;
+    }
+    
+    /* Pygments/CodeHilite styles (when using Python markdown) */
+    .doc-content .codehilite {
+        background: #0f172a;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+        overflow-x: auto;
+        border: 1px solid #334155;
+    }
+    .doc-content .codehilite pre {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    .doc-content .codehilite code {
+        background: transparent !important;
+        border: none !important;
+        color: #abb2bf !important;
+    }
+    
+    /* Pygments token colors */
+    .doc-content .codehilite .k { color: #c678dd; }  /* Keyword */
+    .doc-content .codehilite .kn { color: #c678dd; } /* Keyword.Namespace */
+    .doc-content .codehilite .kd { color: #c678dd; } /* Keyword.Declaration */
+    .doc-content .codehilite .n { color: #abb2bf; }  /* Name */
+    .doc-content .codehilite .s { color: #98c379; }  /* String */
+    .doc-content .codehilite .s1 { color: #98c379; } /* String.Single */
+    .doc-content .codehilite .s2 { color: #98c379; } /* String.Double */
+    .doc-content .codehilite .c { color: #5c6370; font-style: italic; }  /* Comment */
+    .doc-content .codehilite .c1 { color: #5c6370; font-style: italic; } /* Comment.Single */
+    .doc-content .codehilite .o { color: #56b6c2; }  /* Operator */
+    .doc-content .codehilite .p { color: #abb2bf; }  /* Punctuation */
+    .doc-content .codehilite .mi { color: #d19a66; } /* Number.Integer */
+    .doc-content .codehilite .mf { color: #d19a66; } /* Number.Float */
+    .doc-content .codehilite .nb { color: #e5c07b; } /* Name.Builtin */
+    .doc-content .codehilite .nf { color: #61afef; } /* Name.Function */
+    .doc-content .codehilite .nc { color: #e5c07b; } /* Name.Class */
+    .doc-content .codehilite .nn { color: #e5c07b; } /* Name.Namespace */
+    
+    /* Copy button for code blocks */
+    .code-block-wrapper {
+        position: relative;
+    }
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #94a3b8;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+    
+    /* Navigation buttons */
+    .nav-buttons {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Print styles */
+    @media print {
+        .nav-buttons, .doc-header, .navbar, .footer {
+            display: none !important;
+        }
+        .doc-content {
+            box-shadow: none;
+            padding: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="nav-buttons">
+    <a href="{{ url_for('help_userguides') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to User Guides
+    </a>
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-house"></i> Help Home
+    </a>
+    <button class="btn btn-outline-secondary" onclick="window.print()">
+        <i class="bi bi-printer"></i> Print
+    </button>
+</div>
+
+<!-- Document Header -->
+<div class="doc-header">
+    <i class="bi bi-file-earmark-text" style="font-size: 1.5rem; color: #00d4aa; margin-right: 0.5rem;"></i>
+    <h1>{{ title }}</h1>
+    <div class="filename">
+        <i class="bi bi-file-code"></i> {{ filename }}
+    </div>
+</div>
+
+<!-- Document Content -->
+<div class="doc-content" id="docContent">
+    {{ content }}
+</div>
+
+<!-- Back to Top -->
+<div class="text-center mt-4">
+    <a href="#" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-up"></i> Back to Top
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Highlight.js for syntax highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/properties.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Wrap tables in responsive wrapper
+    document.querySelectorAll('#docContent table').forEach((table) => {
+        if (!table.parentElement.classList.contains('table-wrapper')) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        }
+        // Add Bootstrap-like classes
+        table.classList.add('table-styled');
+    });
+    
+    // Apply syntax highlighting to all code blocks
+    document.querySelectorAll('#docContent pre code').forEach((block) => {
+        // Ensure code block has proper styling before highlight
+        block.style.color = '#e2e8f0';
+        block.style.background = 'transparent';
+        hljs.highlightElement(block);
+    });
+    
+    // Wrap pre blocks for copy button
+    document.querySelectorAll('#docContent pre').forEach((pre) => {
+        // Skip if already wrapped
+        if (pre.parentElement.classList.contains('code-block-wrapper')) return;
+        
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper';
+        pre.parentNode.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+        
+        // Add copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+        copyBtn.onclick = function() {
+            const code = pre.querySelector('code') || pre;
+            navigator.clipboard.writeText(code.textContent).then(function() {
+                copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                setTimeout(function() {
+                    copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+                }, 2000);
+            });
+        };
+        wrapper.appendChild(copyBtn);
+    });
+    
+    // Add IDs to headings for anchor links
+    document.querySelectorAll('#docContent h1, #docContent h2, #docContent h3').forEach((heading) => {
+        if (!heading.id) {
+            heading.id = heading.textContent.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+        }
+    });
+    
+    // Fix any remaining code elements that might be invisible
+    document.querySelectorAll('#docContent code').forEach((code) => {
+        // Only fix inline code, not code inside pre
+        if (code.parentElement.tagName !== 'PRE') {
+            code.style.background = '#fef3c7';
+            code.style.color = '#92400e';
+            code.style.border = '1px solid #fcd34d';
+        }
+    });
+});
+</script>
+{% endblock %}

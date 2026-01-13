@@ -1,9 +1,129 @@
 """
 Non-authenticated routes module - accessible without login
 
-Version: 1.5.0
+Version: 1.5.1
 """
-from flask import render_template
+import os
+import logging
+from flask import render_template, abort, request
+from markupsafe import Markup
+
+logger = logging.getLogger(__name__)
+
+
+def render_markdown_to_html(markdown_text):
+    """
+    Convert markdown text to HTML with syntax highlighting.
+    Uses markdown library with code highlighting extensions.
+    """
+    try:
+        import markdown
+        
+        # Use simpler extension names that work reliably
+        extensions = [
+            'tables',           # Table support
+            'fenced_code',      # ```code``` blocks
+            'codehilite',       # Syntax highlighting
+            'toc',              # Table of contents
+            'sane_lists',       # Better list handling
+            'nl2br',            # Newlines to <br>
+        ]
+        
+        extension_configs = {
+            'codehilite': {
+                'css_class': 'highlight',
+                'linenums': False,
+                'guess_lang': True,
+            },
+            'toc': {
+                'permalink': True,
+            }
+        }
+        
+        md = markdown.Markdown(extensions=extensions, extension_configs=extension_configs)
+        html_content = md.convert(markdown_text)
+        return html_content
+    except ImportError as e:
+        # Fallback: manual conversion including table support
+        import re
+        
+        html = markdown_text
+        
+        # Process tables first (before other transformations)
+        def convert_table(match):
+            table_text = match.group(0)
+            lines = table_text.strip().split('\n')
+            if len(lines) < 2:
+                return table_text
+            
+            result = ['<table>', '<thead>', '<tr>']
+            
+            # Header row
+            header_cells = [cell.strip() for cell in lines[0].split('|') if cell.strip()]
+            for cell in header_cells:
+                # Convert inline formatting in headers
+                cell = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', cell)
+                cell = re.sub(r'`([^`]+)`', r'<code>\1</code>', cell)
+                result.append(f'<th>{cell}</th>')
+            result.extend(['</tr>', '</thead>', '<tbody>'])
+            
+            # Data rows (skip separator line)
+            for line in lines[2:]:
+                if line.strip() and not re.match(r'^[\|\-\:\s]+$', line):
+                    result.append('<tr>')
+                    cells = [cell.strip() for cell in line.split('|') if cell.strip()]
+                    for cell in cells:
+                        # Convert inline formatting
+                        cell = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', cell)
+                        cell = re.sub(r'`([^`]+)`', r'<code>\1</code>', cell)
+                        result.append(f'<td>{cell}</td>')
+                    result.append('</tr>')
+            
+            result.extend(['</tbody>', '</table>'])
+            return '\n'.join(result)
+        
+        # Match markdown tables (lines starting with |)
+        html = re.sub(
+            r'(?:^\|.+\|$\n?)+',
+            convert_table,
+            html,
+            flags=re.MULTILINE
+        )
+        
+        # Convert code blocks
+        html = re.sub(r'```(\w+)?\n(.*?)```', r'<pre><code class="language-\1">\2</code></pre>', html, flags=re.DOTALL)
+        
+        # Convert inline code (but not inside <code> tags already)
+        html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
+        
+        # Convert headers
+        html = re.sub(r'^#### (.+)$', r'<h4>\1</h4>', html, flags=re.MULTILINE)
+        html = re.sub(r'^### (.+)$', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+        html = re.sub(r'^## (.+)$', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+        html = re.sub(r'^# (.+)$', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+        
+        # Convert bold and italic
+        html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
+        html = re.sub(r'\*(.+?)\*', r'<em>\1</em>', html)
+        
+        # Convert horizontal rules
+        html = re.sub(r'^---+$', r'<hr>', html, flags=re.MULTILINE)
+        
+        # Convert line breaks to paragraphs
+        html = re.sub(r'\n\n+', r'</p>\n<p>', html)
+        html = f'<p>{html}</p>'
+        
+        # Clean up empty paragraphs
+        html = re.sub(r'<p>\s*</p>', '', html)
+        html = re.sub(r'<p>\s*(<table>)', r'\1', html)
+        html = re.sub(r'(</table>)\s*</p>', r'\1', html)
+        html = re.sub(r'<p>\s*(<h[1-6]>)', r'\1', html)
+        html = re.sub(r'(</h[1-6]>)\s*</p>', r'\1', html)
+        html = re.sub(r'<p>\s*(<pre>)', r'\1', html)
+        html = re.sub(r'(</pre>)\s*</p>', r'\1', html)
+        html = re.sub(r'<p>\s*(<hr>)', r'\1', html)
+        
+        return html
 
 
 class NoAuthRoutes:
@@ -45,6 +165,10 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/inmemory-integration', 'help_inmemory_integration', self.help_inmemory_integration)
         self.app.add_url_rule('/help/subgraph', 'help_subgraph', self.help_subgraph)
         self.app.add_url_rule('/help/prometheus-monitoring', 'help_prometheus_monitoring', self.help_prometheus_monitoring)
+        
+        # v1.5.1: User Guides (Markdown) routes
+        self.app.add_url_rule('/help/userguides', 'help_userguides', self.help_userguides)
+        self.app.add_url_rule('/help/userguides/<path:filename>', 'help_userguide_view', self.help_userguide_view)
     
     def about(self):
         """About page"""
@@ -53,6 +177,123 @@ class NoAuthRoutes:
     def help_index(self):
         """Help index page"""
         return render_template('help/index.html')
+    
+    def help_userguides(self):
+        """
+        List all available user guides (markdown files).
+        v1.5.1: Just-in-time markdown rendering.
+        """
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
+        userguides_path = os.path.join(docs_path, 'userguides')
+        
+        guides = []
+        categories = {
+            'pubsub': [],      # PubSub integrations
+            'calculator': [],  # Calculator integrations
+            'feature': [],     # Core features
+            'admin': [],       # Admin/System
+            'other': []        # Other guides
+        }
+        
+        # Scan for markdown files
+        if os.path.exists(userguides_path):
+            for filename in sorted(os.listdir(userguides_path)):
+                if filename.endswith('.md'):
+                    filepath = os.path.join(userguides_path, filename)
+                    title = filename.replace('.md', '').replace('-', ' ').replace('_', ' ')
+                    
+                    # Get file size and modification time
+                    stat = os.stat(filepath)
+                    size_kb = stat.st_size / 1024
+                    
+                    guide_info = {
+                        'filename': filename,
+                        'title': title,
+                        'size_kb': round(size_kb, 1),
+                        'path': f'userguides/{filename}'
+                    }
+                    
+                    # Categorize
+                    lower_title = title.lower()
+                    if any(x in lower_title for x in ['kafka', 'rabbit', 'redis', 'activemq', 'tibco', 'websphere', 'grpc', 'rest', 'file', 'inmemory', 'sql', 'aerospike', 'metronome', 'pubsub', 'subscriber', 'publisher']):
+                        categories['pubsub'].append(guide_info)
+                    elif any(x in lower_title for x in ['calculator', 'py4j', 'pybind', 'rust', 'java', 'c++']):
+                        categories['calculator'].append(guide_info)
+                    elif any(x in lower_title for x in ['admin', 'user', 'monitor', 'prometheus', 'log']):
+                        categories['admin'].append(guide_info)
+                    elif any(x in lower_title for x in ['subgraph', 'autoclone', 'cache', 'lmdb', 'router', 'packaging', 'resilient']):
+                        categories['feature'].append(guide_info)
+                    else:
+                        categories['other'].append(guide_info)
+                    
+                    guides.append(guide_info)
+        
+        # Also check docs root for ARCHITECTURE.md etc
+        root_docs = []
+        if os.path.exists(docs_path):
+            for filename in sorted(os.listdir(docs_path)):
+                if filename.endswith('.md'):
+                    filepath = os.path.join(docs_path, filename)
+                    if os.path.isfile(filepath):
+                        title = filename.replace('.md', '').replace('-', ' ').replace('_', ' ')
+                        stat = os.stat(filepath)
+                        root_docs.append({
+                            'filename': filename,
+                            'title': title,
+                            'size_kb': round(stat.st_size / 1024, 1),
+                            'path': filename
+                        })
+        
+        return render_template(
+            'help/userguides.html',
+            guides=guides,
+            categories=categories,
+            root_docs=root_docs,
+            total_count=len(guides) + len(root_docs)
+        )
+    
+    def help_userguide_view(self, filename):
+        """
+        Render a single markdown file as HTML.
+        v1.5.1: Just-in-time rendering with syntax highlighting.
+        """
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
+        
+        # Security: Prevent directory traversal
+        filename = os.path.basename(filename)
+        if '..' in filename or filename.startswith('/'):
+            abort(403)
+        
+        # Check if it's in userguides or root docs
+        filepath = os.path.join(docs_path, 'userguides', filename)
+        if not os.path.exists(filepath):
+            filepath = os.path.join(docs_path, filename)
+        
+        if not os.path.exists(filepath) or not filepath.endswith('.md'):
+            abort(404)
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                markdown_content = f.read()
+            
+            # Convert markdown to HTML
+            html_content = render_markdown_to_html(markdown_content)
+            
+            # Get title from first heading or filename
+            title = filename.replace('.md', '').replace('-', ' ').replace('_', ' ')
+            if markdown_content.startswith('# '):
+                first_line = markdown_content.split('\n')[0]
+                title = first_line.replace('# ', '').strip()
+            
+            return render_template(
+                'help/userguide_view.html',
+                title=title,
+                filename=filename,
+                content=Markup(html_content)
+            )
+        except Exception as e:
+            logger.error(f"Error rendering markdown file {filename}: {e}")
+            abort(500)
     
     def help_getting_started(self):
         """Getting started help page"""

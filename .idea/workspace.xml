@@ -6,16 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="af748d30-f39d-4f34-82e6-d73978720218" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/message_packaging_demo.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/message_packaging_demo.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/metrics/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/metrics/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/metrics/prometheus_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/metrics/prometheus_metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/pubsubfactory.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/pubsubfactory.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/calculators/csv_trade_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/example/calculators/csv_trade_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/publish_message.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/publish_message.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/message_packaging_demo.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/noauth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/noauth_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
