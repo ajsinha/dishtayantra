@@ -6,13 +6,13 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, and **LMDB zero-copy data exchange**.
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.2.0
+## What's New in Version 1.5.1
 
 ### DataSubscriber Non-Dictionary Message Packaging (NEW)
 - **Automatic Packaging**: Non-dictionary messages (strings, lists, bytes) automatically wrapped into standardized dict format
@@ -21,6 +21,15 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 - **Type Preservation**: Original data type stored in `_original_type` field for proper parsing
 - **Configurable**: Enable/disable per subscriber with `auto_package_non_dict` option
 - **Backward Compatible**: Dictionary messages pass through unchanged
+
+### Extended In-Memory URI Support (NEW)
+- **New URI Formats**: `inmemory://name`, `memory://name`, `mem://name` (simple format)
+- **Flexible Configuration**: Use any format for in-memory pubsub sources/destinations
+
+### Enhanced Publish Message UI (NEW)
+- **Raw Message Support**: Publish non-JSON messages (CSV, text) directly from web UI
+- **Format Selector**: Toggle between JSON and Raw Text modes
+- **Visual Feedback**: Clear indication of message type being published
 
 ### Subgraph Feature (Graph-as-a-Node)
 - **Modular Composition**: Encapsulate complex pipelines as single nodes in parent graph

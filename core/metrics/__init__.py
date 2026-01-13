@@ -41,4 +41,4 @@ __all__ = [
     'update_system_metrics',
 ]
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'

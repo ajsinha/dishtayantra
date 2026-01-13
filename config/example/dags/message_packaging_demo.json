@@ -1,7 +1,7 @@
 {
-  "_comment": "DishtaYantra v1.2.0 - Example DAG demonstrating Non-Dictionary Message Packaging",
+  "_comment": "DishtaYantra v1.5.1 - Example DAG demonstrating Non-Dictionary Message Packaging",
   "_description": "This DAG shows how to use auto_package_non_dict to handle CSV strings, JSON arrays, and other non-dict messages from Kafka and other sources",
-  "_version": "1.2.0",
+  "_version": "1.5.1",
   "_note": "This is an EXAMPLE DAG in config/example/dags/ - copy to config/dags/ to use. Requires Kafka running on localhost:9092",
   
   "name": "message_packaging_demo",
@@ -18,7 +18,7 @@
         "group_id": "csv_trade_consumer",
         "max_depth": 10000,
         
-        "_feature": "Non-Dictionary Message Packaging (v1.2.0)",
+        "_feature": "Non-Dictionary Message Packaging (v1.5.1)",
         "auto_package_non_dict": true,
         "package_wrapper_key": "payload",
         "add_package_metadata": true,
@@ -70,7 +70,7 @@
         "package_wrapper_key": "market_tick",
         "add_package_metadata": false,
         
-        "_explanation": "Metadata disabled for high-frequency feeds to reduce overhead. Uses inmemory:// URI format (v1.2.0)"
+        "_explanation": "Metadata disabled for high-frequency feeds to reduce overhead. Uses inmemory:// URI format (v1.5.1)"
       }
     }
   ],
@@ -101,7 +101,7 @@
       "config": {
         "defaults": {
           "processed_by": "message_packaging_demo",
-          "version": "1.2.0",
+          "version": "1.5.1",
           "processing_timestamp": null
         },
         "_note": "This calculator receives packaged messages. Check data.get('_packaged') to detect them."
@@ -169,7 +169,7 @@
   ],
   
   "_usage_notes": {
-    "description": "This DAG demonstrates the v1.2.0 non-dictionary message packaging feature with Kafka",
+    "description": "This DAG demonstrates the v1.5.1 non-dictionary message packaging feature with Kafka",
     "prerequisites": [
       "Kafka running on localhost:9092",
       "Create topics: csv_trades, batch_data, json_records, processed_trades"
@@ -177,9 +177,9 @@
     "supported_uri_formats": [
       "mem://queue/name - Standard in-memory queue",
       "mem://topic/name - Standard in-memory topic", 
-      "mem://name - Simple format (v1.2.0)",
-      "inmemory://name - Alternative format (v1.2.0)",
-      "memory://name - Alternative format (v1.2.0)"
+      "mem://name - Simple format (v1.5.1)",
+      "inmemory://name - Alternative format (v1.5.1)",
+      "memory://name - Alternative format (v1.5.1)"
     ],
     "key_configurations": {
       "auto_package_non_dict": "Enable automatic wrapping of non-dict messages (default: true)",
@@ -196,7 +196,7 @@
         "subscriber_name": "name",
         "source": "source_uri",
         "received_at": "ISO_timestamp",
-        "packaging_version": "1.2.0"
+        "packaging_version": "1.5.1"
       }
     },
     "testing": [

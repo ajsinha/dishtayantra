@@ -104,7 +104,7 @@ class DishtaYantraMetrics:
             registry=self._registry
         )
         self.app_info.info({
-            'version': '1.5.0',
+            'version': '1.5.1',
             'name': 'DishtaYantra',
             'description': 'Real-Time DAG Processing Engine'
         })
