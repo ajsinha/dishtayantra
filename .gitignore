@@ -5,6 +5,7 @@ __pycache__/
 
 # --- Environments ---
 data/
+logs/
 .venv/
 venv/
 ENV/

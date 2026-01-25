@@ -1,31 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="8f8c7aa2-a860-4c37-bdf8-77d0d51f0f56" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/dishtayantra.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/calculator/core_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/core_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/calculator/cpp_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/cpp_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/calculator/rust_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/rust_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_process.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cpp/src/dishtayantra_cpp.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/cpp/src/dishtayantra_cpp.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ARCHITECTURE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/dagserver.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/noauth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/noauth_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/rust/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/dishtyantra_webapp.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/dishtyantra_webapp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rust_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rust_integration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,11 +29,17 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.run_server.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "ai.playground.ignore.import.keys.banner.in.settings": "true",
     "git-widget-placeholder": "main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
     "vue.rearranger.settings.migration": "true"
@@ -127,11 +115,14 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1769372392707</updated>
-      <workItem from="1769372394242" duration="35000" />
+      <workItem from="1769372394242" duration="452000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/dishtayantra$run_server.coverage" NAME="run_server Coverage Results" MODIFIED="1769372668935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
