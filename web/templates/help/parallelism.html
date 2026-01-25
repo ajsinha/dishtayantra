@@ -1,0 +1,915 @@
+{% extends "base.html" %}
+
+{% block title %}Parallelism Guide - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-hero {
+        background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #f59e0b 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(14, 165, 233, 0.3);
+    }
+    .help-hero h1 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .section-card {
+        margin-bottom: 1.5rem;
+    }
+    .section-card.worker-pool {
+        border-left: 4px solid #0ea5e9;
+    }
+    .section-card.free-threading {
+        border-left: 4px solid #f59e0b;
+    }
+    .code-block {
+        white-space: pre;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1.5rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Consolas', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+    }
+    .code-block .comment { color: #64748b; }
+    .code-block .string { color: #a5f3fc; }
+    .code-block .key { color: #7dd3fc; }
+    .code-block .value { color: #34d399; }
+    .architecture-diagram {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        font-family: 'Monaco', monospace;
+        font-size: 0.85rem;
+        white-space: pre;
+        overflow-x: auto;
+    }
+    .table-config th {
+        background: #1e3a5f;
+        color: white;
+    }
+    .table-config td {
+        vertical-align: middle;
+    }
+    .nav-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+    .tip-box {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        border-left: 4px solid #10b981;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-left: 4px solid #f59e0b;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        border-left: 4px solid #0ea5e9;
+        padding: 1rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    .thread-diagram {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .thread-box {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .thread-blocked {
+        background: #fecaca;
+        color: #991b1b;
+    }
+    .thread-running {
+        background: #bbf7d0;
+        color: #166534;
+    }
+    .comparison-table {
+        margin-top: 2rem;
+    }
+    .comparison-table th {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+    }
+    .nav-tabs .nav-link {
+        font-weight: 600;
+        padding: 1rem 2rem;
+    }
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid #0ea5e9;
+    }
+    .tab-icon-worker {
+        color: #0ea5e9;
+    }
+    .tab-icon-freethreading {
+        color: #f59e0b;
+    }
+    .performance-card {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .performance-card h5 {
+        color: #00d4aa;
+        margin-bottom: 1rem;
+    }
+    .performance-metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .performance-metric:last-child {
+        border-bottom: none;
+    }
+    .metric-label {
+        color: rgba(255,255,255,0.8);
+    }
+    .metric-value {
+        color: #00d4aa;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="help-hero">
+    <div class="d-flex justify-content-between align-items-start flex-wrap">
+        <div>
+            <h1><i class="bi bi-lightning-charge-fill"></i> Parallelism Guide</h1>
+            <p class="lead mb-0 opacity-90">Two Approaches to Scale DishtaYantra: Worker Pool (Multiprocessing) & Free-Threading (No-GIL)</p>
+        </div>
+        <span class="badge bg-white text-primary">v1.5.2</span>
+    </div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('help') }}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Back to Help
+        </a>
+        <a href="{{ url_for('admin_workers') }}" class="btn btn-light">
+            <i class="bi bi-cpu"></i> Open Worker Pool UI
+        </a>
+    </div>
+</div>
+
+<!-- Introduction -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Choosing a Parallelism Strategy</h5>
+    </div>
+    <div class="card-body">
+        <p class="lead">DishtaYantra v1.5.2 offers two complementary approaches to achieve parallelism and maximize CPU utilization:</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card h-100" style="border-left: 4px solid #0ea5e9;">
+                    <div class="card-body">
+                        <h5 class="text-primary"><i class="bi bi-cpu"></i> Worker Pool (Multiprocessing)</h5>
+                        <p>Distributes DAGs across multiple <strong>processes</strong>. Each worker runs in its own Python interpreter, completely bypassing the GIL.</p>
+                        <ul class="mb-0">
+                            <li><strong>Best for:</strong> Production environments</li>
+                            <li><strong>Stability:</strong> Mature, battle-tested</li>
+                            <li><strong>Isolation:</strong> Worker crashes don't affect others</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100" style="border-left: 4px solid #f59e0b;">
+                    <div class="card-body">
+                        <h5 style="color: #f59e0b;"><i class="bi bi-lightning-charge"></i> Free-Threading (No-GIL)</h5>
+                        <p>Uses Python 3.13+ with GIL disabled for true <strong>thread-level</strong> parallelism within a single process.</p>
+                        <ul class="mb-0">
+                            <li><strong>Best for:</strong> Experimentation, specific workloads</li>
+                            <li><strong>Stability:</strong> Experimental (Python 3.13+)</li>
+                            <li><strong>Memory:</strong> Shared memory between threads</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-4" id="parallelismTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="worker-pool-tab" data-bs-toggle="tab" data-bs-target="#worker-pool" type="button" role="tab">
+            <i class="bi bi-cpu tab-icon-worker"></i> Worker Pool (Multiprocessing)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="free-threading-tab" data-bs-toggle="tab" data-bs-target="#free-threading" type="button" role="tab">
+            <i class="bi bi-lightning-charge tab-icon-freethreading"></i> Free-Threading (No-GIL)
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="parallelismTabContent">
+    
+    <!-- ==================== WORKER POOL TAB ==================== -->
+    <div class="tab-pane fade show active" id="worker-pool" role="tabpanel">
+        
+        <!-- Overview -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Worker Pool Architecture</h5>
+            </div>
+            <div class="card-body">
+                <p>The Worker Pool distributes DAG execution across multiple worker processes. Each process has its own Python interpreter, completely bypassing the GIL.</p>
+                
+                <div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                      MAIN PROCESS (Orchestrator)                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Web Server  │  │ DAG Manager │  │ Affinity Manager        │  │
+│  └─────────────┘  └─────────────┘  │ (weight_based strategy) │  │
+│                                     └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+              │ Control Queues            │ Status Queue
+              ▼                           ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   Worker 0      │ │   Worker 1      │ │   Worker 2      │
+│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ ┌─────────────┐ │
+│ │   DAG_A     │ │ │ │   DAG_B     │ │ │ │   DAG_C     │ │
+│ │   DAG_D     │ │ │ │   DAG_E     │ │ │ │   DAG_F     │ │
+│ └─────────────┘ │ │ └─────────────┘ │ │ └─────────────┘ │
+│   CPU Core 0    │ │   CPU Core 1    │ │   CPU Core 2    │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+         │                  │                   │
+         └──────────────────┴───────────────────┘
+                           │
+                    LMDB (shared data)
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-check-circle text-success"></i> Key Benefits</h6>
+                        <ul>
+                            <li><strong>True Parallelism</strong> - Each worker is a separate process</li>
+                            <li><strong>DAG Affinity</strong> - Keep related DAGs together</li>
+                            <li><strong>Cache Locality</strong> - Better performance</li>
+                            <li><strong>Fault Isolation</strong> - Worker crash doesn't affect others</li>
+                            <li><strong>Auto-Restart</strong> - Automatic recovery</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-gear text-primary"></i> Components</h6>
+                        <ul>
+                            <li><strong>WorkerPoolManager</strong> - Orchestrates workers</li>
+                            <li><strong>DAGWorkerProcess</strong> - Individual worker</li>
+                            <li><strong>AffinityManager</strong> - DAG assignment</li>
+                            <li><strong>HealthMonitor</strong> - Crash detection</li>
+                            <li><strong>LMDB Pub/Sub</strong> - Cross-worker communication</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Start -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5>
+            </div>
+            <div class="card-body">
+                <h6>Step 1: Enable Worker Pool</h6>
+                <p>Edit <code>config/worker_config.json</code>:</p>
+                <pre class="code-block">{
+    <span class="key">"worker_pool"</span>: {
+        <span class="key">"enabled"</span>: <span class="value">true</span>,  <span class="comment">// Change from false to true</span>
+        <span class="key">"num_workers"</span>: <span class="value">4</span>     <span class="comment">// Or "auto" for CPU count</span>
+    }
+}</pre>
+                
+                <h6 class="mt-4">Step 2: Start DishtaYantra</h6>
+                <pre class="code-block">python run_server.py</pre>
+                
+                <h6 class="mt-4">Step 3: Verify Workers</h6>
+                <p>Open <strong>Admin → Worker Pool</strong> to see all workers running.</p>
+                
+                <div class="tip-box">
+                    <strong><i class="bi bi-lightbulb"></i> Tip:</strong> Start with 4 workers (default), then tune based on your workload and available CPU cores.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Configuration -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-sliders"></i> Complete Configuration</h5>
+            </div>
+            <div class="card-body">
+                <pre class="code-block">{
+    <span class="key">"worker_pool"</span>: {
+        <span class="key">"enabled"</span>: <span class="value">false</span>,  <span class="comment">// Set to true to enable multiprocessing</span>
+        <span class="key">"num_workers"</span>: <span class="value">4</span>,  <span class="comment">// Default is 4 (use "auto" for CPU count)</span>
+        <span class="key">"min_workers"</span>: <span class="value">2</span>,
+        <span class="key">"max_workers"</span>: <span class="value">32</span>,
+        <span class="key">"auto_restart_on_crash"</span>: <span class="value">true</span>,
+        <span class="key">"max_restart_attempts"</span>: <span class="value">3</span>,
+        <span class="key">"restart_backoff_seconds"</span>: <span class="value">5</span>,
+        <span class="key">"health_check_interval_seconds"</span>: <span class="value">5</span>
+    },
+    
+    <span class="key">"affinity"</span>: {
+        <span class="key">"default_strategy"</span>: <span class="string">"weight_based"</span>,
+        <span class="key">"rebalance_enabled"</span>: <span class="value">true</span>,
+        <span class="key">"rebalance_threshold"</span>: <span class="value">0.3</span>,
+        <span class="key">"allow_dag_pinning"</span>: <span class="value">true</span>,
+        <span class="key">"allow_exclusive_workers"</span>: <span class="value">true</span>
+    },
+    
+    <span class="key">"communication"</span>: {
+        <span class="key">"use_lmdb_for_cross_worker"</span>: <span class="value">true</span>,
+        <span class="key">"lmdb_path"</span>: <span class="string">"data/worker_lmdb"</span>,
+        <span class="key">"lmdb_map_size_mb"</span>: <span class="value">1024</span>
+    }
+}</pre>
+                
+                <h6 class="mt-4">Configuration Options</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>enabled</code></td><td><code>false</code></td><td>Enable/disable worker pool multiprocessing</td></tr>
+                            <tr><td><code>num_workers</code></td><td><code>4</code></td><td>Number of workers (or <code>"auto"</code> for CPU count)</td></tr>
+                            <tr><td><code>min_workers</code></td><td><code>2</code></td><td>Minimum worker count</td></tr>
+                            <tr><td><code>max_workers</code></td><td><code>32</code></td><td>Maximum worker count</td></tr>
+                            <tr><td><code>default_strategy</code></td><td><code>"weight_based"</code></td><td>DAG assignment strategy</td></tr>
+                            <tr><td><code>auto_restart_on_crash</code></td><td><code>true</code></td><td>Automatically restart crashed workers</td></tr>
+                            <tr><td><code>max_restart_attempts</code></td><td><code>3</code></td><td>Max consecutive restart attempts before giving up</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DAG Affinity -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> DAG Affinity Configuration</h5>
+            </div>
+            <div class="card-body">
+                <h6>Affinity Strategies</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Strategy</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>weight_based</code></td><td>Assigns DAGs to the worker with lowest estimated load (default)</td></tr>
+                            <tr><td><code>round_robin</code></td><td>Distributes DAGs evenly across workers</td></tr>
+                            <tr><td><code>least_loaded</code></td><td>Uses actual CPU metrics for assignment</td></tr>
+                            <tr><td><code>random</code></td><td>Random assignment (for testing)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h6 class="mt-4">Pinning a DAG to a Specific Worker</h6>
+                <pre class="code-block">{
+    <span class="key">"name"</span>: <span class="string">"critical_dag"</span>,
+    <span class="key">"worker_affinity"</span>: {
+        <span class="key">"pinned_worker"</span>: <span class="value">0</span>  <span class="comment">// Always runs on Worker 0</span>
+    }
+}</pre>
+                
+                <h6 class="mt-4">Exclusive Worker (Single DAG)</h6>
+                <pre class="code-block">{
+    <span class="key">"name"</span>: <span class="string">"high_priority_dag"</span>,
+    <span class="key">"worker_affinity"</span>: {
+        <span class="key">"exclusive"</span>: <span class="value">true</span>  <span class="comment">// Gets its own dedicated worker</span>
+    }
+}</pre>
+                
+                <h6 class="mt-4">Preferred Workers</h6>
+                <pre class="code-block">{
+    <span class="key">"name"</span>: <span class="string">"data_dag"</span>,
+    <span class="key">"worker_affinity"</span>: {
+        <span class="key">"preferred_workers"</span>: <span class="value">[0, 1]</span>  <span class="comment">// Prefer Workers 0 or 1</span>
+    }
+}</pre>
+            </div>
+        </div>
+        
+        <!-- Cross-Worker Communication -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Cross-Worker Communication (LMDB)</h5>
+            </div>
+            <div class="card-body">
+                <p>DAGs on different workers can communicate via LMDB pub/sub using the <code>lmdb://</code> URI scheme:</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Publisher (Worker 0)</h6>
+                        <pre class="code-block">{
+    <span class="key">"name"</span>: <span class="string">"cross_worker_pub"</span>,
+    <span class="key">"config"</span>: {
+        <span class="key">"destination"</span>: <span class="string">"lmdb://shared_channel"</span>
+    }
+}</pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Subscriber (Worker 1)</h6>
+                        <pre class="code-block">{
+    <span class="key">"name"</span>: <span class="string">"cross_worker_sub"</span>,
+    <span class="key">"config"</span>: {
+        <span class="key">"source"</span>: <span class="string">"lmdb://shared_channel"</span>
+    }
+}</pre>
+                    </div>
+                </div>
+                
+                <h6 class="mt-4">Why LMDB?</h6>
+                <ul>
+                    <li><strong>Memory-mapped</strong> - Zero-copy reads across processes</li>
+                    <li><strong>Multiple readers</strong> - Many workers can read simultaneously</li>
+                    <li><strong>ACID compliant</strong> - Data integrity guaranteed</li>
+                    <li><strong>Persistent</strong> - Survives worker restarts</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Health Monitoring -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Health Monitoring & Auto-Restart</h5>
+            </div>
+            <div class="card-body">
+                <h6>How It Works</h6>
+                <ol>
+                    <li><strong>Heartbeat Monitoring</strong> - Workers send heartbeats every 2 seconds</li>
+                    <li><strong>Unhealthy Detection</strong> - No heartbeat for 3 intervals = unhealthy</li>
+                    <li><strong>Crash Detection</strong> - Process not alive = crashed</li>
+                    <li><strong>Auto-Restart</strong> - Crashed workers restart with exponential backoff</li>
+                    <li><strong>DAG Restoration</strong> - DAGs automatically reloaded on restarted worker</li>
+                </ol>
+                
+                <h6 class="mt-4">Restart Backoff Schedule</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Attempt</th>
+                                <th>Backoff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>5 seconds</td></tr>
+                            <tr><td>2</td><td>10 seconds</td></tr>
+                            <tr><td>3</td><td>20 seconds</td></tr>
+                            <tr><td>4+</td><td>Max 60 seconds</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- API Endpoints -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-plug"></i> API Endpoints</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Endpoint</th>
+                                <th>Method</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>/api/workers/status</code></td>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td>Get status of all workers</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/workers/{id}</code></td>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td>Get specific worker details</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/workers/{id}/restart</code></td>
+                                <td><span class="badge bg-primary">POST</span></td>
+                                <td>Restart a worker</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/workers/pool/start</code></td>
+                                <td><span class="badge bg-primary">POST</span></td>
+                                <td>Start the worker pool</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/workers/pool/stop</code></td>
+                                <td><span class="badge bg-primary">POST</span></td>
+                                <td>Stop the worker pool</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/workers/dag/{name}/migrate</code></td>
+                                <td><span class="badge bg-primary">POST</span></td>
+                                <td>Migrate DAG to another worker</td>
+                            </tr>
+                            <tr>
+                                <td><code>/api/workers/assignments</code></td>
+                                <td><span class="badge bg-success">GET</span></td>
+                                <td>Get all DAG-to-worker assignments</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Best Practices -->
+        <div class="card section-card worker-pool">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Best Practices</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3 border-success">
+                            <div class="card-body">
+                                <h6 class="text-success"><i class="bi bi-check-circle"></i> DO</h6>
+                                <ul class="mb-0">
+                                    <li>Co-locate related DAGs on the same worker</li>
+                                    <li>Use exclusive workers for critical DAGs</li>
+                                    <li>Use LMDB for cross-worker communication</li>
+                                    <li>Monitor worker health regularly</li>
+                                    <li>Start with 4 workers (default), tune later</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3 border-danger">
+                            <div class="card-body">
+                                <h6 class="text-danger"><i class="bi bi-x-circle"></i> DON'T</h6>
+                                <ul class="mb-0">
+                                    <li>Don't create more workers than CPU cores</li>
+                                    <li>Don't pin all DAGs (let affinity work)</li>
+                                    <li>Don't ignore high restart counts</li>
+                                    <li>Don't use in-memory queues across workers</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- ==================== FREE-THREADING TAB ==================== -->
+    <div class="tab-pane fade" id="free-threading" role="tabpanel">
+        
+        <!-- What is Free-Threading -->
+        <div class="card section-card free-threading">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> What is Free-Threading? <span class="badge bg-warning text-dark ms-2"><i class="bi bi-award"></i> Patent Pending</span></h5>
+            </div>
+            <div class="card-body">
+                <p>Python has historically had a <strong>Global Interpreter Lock (GIL)</strong> - a mutex that protects access to Python objects, preventing multiple threads from executing Python bytecode simultaneously. This means that even on a 32-core machine, only <strong>one thread</strong> could execute Python code at a time.</p>
+                
+                <div class="thread-diagram">
+                    <h6 class="text-center mb-3"><i class="bi bi-lock-fill text-danger"></i> Traditional Python (with GIL)</h6>
+                    <div class="text-center">
+                        <span class="thread-box thread-running">Thread 1 (Running)</span>
+                        <span class="thread-box thread-blocked">Thread 2 (Blocked)</span>
+                        <span class="thread-box thread-blocked">Thread 3 (Blocked)</span>
+                        <span class="thread-box thread-blocked">Thread 4 (Blocked)</span>
+                    </div>
+                    <p class="text-center text-muted mt-2"><small>Only one thread executes Python code at a time</small></p>
+                </div>
+                
+                <p><strong>Free-Threading</strong> (also called "no-GIL" or "GIL-free") removes this limitation, allowing multiple threads to execute Python code <strong>truly in parallel</strong> across all CPU cores.</p>
+                
+                <div class="thread-diagram">
+                    <h6 class="text-center mb-3"><i class="bi bi-unlock-fill text-success"></i> Free-Threading Python (no GIL)</h6>
+                    <div class="text-center">
+                        <span class="thread-box thread-running">Thread 1 (Running)</span>
+                        <span class="thread-box thread-running">Thread 2 (Running)</span>
+                        <span class="thread-box thread-running">Thread 3 (Running)</span>
+                        <span class="thread-box thread-running">Thread 4 (Running)</span>
+                    </div>
+                    <p class="text-center text-muted mt-2"><small>All threads execute Python code simultaneously</small></p>
+                </div>
+                
+                <div class="info-box">
+                    <strong><i class="bi bi-calendar-event"></i> Timeline:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Python 3.13</strong> (October 2024): Experimental free-threading support introduced</li>
+                        <li><strong>Python 3.14</strong> (October 2025): Improved free-threading with better performance</li>
+                        <li><strong>Future</strong>: Free-threading expected to become the default</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Why it matters -->
+        <div class="card section-card free-threading">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Why Free-Threading Matters for DishtaYantra</h5>
+            </div>
+            <div class="card-body">
+                <p>DishtaYantra is inherently a <strong>multi-threaded application</strong>. Each DAG creates multiple threads:</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Component</th>
+                                <th>Threads Per Instance</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Subscribers</strong></td><td>1 per subscriber</td><td>Listen for incoming messages</td></tr>
+                            <tr><td><strong>Publishers</strong></td><td>1 per publisher (if batched)</td><td>Send outgoing messages</td></tr>
+                            <tr><td><strong>Compute Thread</strong></td><td>1 per DAG</td><td>Process data through nodes</td></tr>
+                            <tr><td><strong>Time Window Checker</strong></td><td>1 per DAG (if configured)</td><td>Monitor time windows</td></tr>
+                            <tr><td><strong>Metronome Nodes</strong></td><td>1 per metronome</td><td>Generate periodic events</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="performance-card">
+                    <h5><i class="bi bi-speedometer2"></i> Potential Performance Impact</h5>
+                    <div class="performance-metric">
+                        <span class="metric-label">Compute-bound workloads</span>
+                        <span class="metric-value">Up to 10-20x faster</span>
+                    </div>
+                    <div class="performance-metric">
+                        <span class="metric-label">Mixed workloads</span>
+                        <span class="metric-value">2-5x faster</span>
+                    </div>
+                    <div class="performance-metric">
+                        <span class="metric-label">I/O-bound workloads</span>
+                        <span class="metric-value">Minimal change (already parallelized)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Start -->
+        <div class="card section-card free-threading">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start: Building Free-Threading Python</h5>
+            </div>
+            <div class="card-body">
+                <h6>Option 1: Build from Source</h6>
+                <pre class="code-block"><span class="comment"># Download Python 3.13+</span>
+wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz
+tar xzf Python-3.13.0.tgz
+cd Python-3.13.0
+
+<span class="comment"># Configure with --disable-gil</span>
+./configure --disable-gil --enable-optimizations --prefix=/opt/python-3.13-freethreaded
+
+<span class="comment"># Build and install</span>
+make -j$(nproc)
+sudo make install
+
+<span class="comment"># Create virtual environment</span>
+/opt/python-3.13-freethreaded/bin/python3 -m venv venv-ft
+source venv-ft/bin/activate
+
+<span class="comment"># Verify</span>
+python --version
+python -c "import sys; print(f'GIL: {sys._is_gil_enabled()}')"</pre>
+                
+                <h6 class="mt-4">Option 2: Docker with Free-Threading</h6>
+                <pre class="code-block"><span class="comment"># Dockerfile for DishtaYantra with Free-Threading Python</span>
+FROM ubuntu:24.04
+
+<span class="comment"># Install build dependencies</span>
+RUN apt-get update && apt-get install -y \
+    build-essential wget \
+    libbz2-dev libffi-dev libgdbm-dev \
+    liblzma-dev libncurses5-dev libreadline-dev \
+    libsqlite3-dev libssl-dev zlib1g-dev
+
+<span class="comment"># Download and build Python 3.13 with free-threading</span>
+WORKDIR /tmp
+RUN wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz && \
+    tar xzf Python-3.13.0.tgz && \
+    cd Python-3.13.0 && \
+    ./configure --disable-gil --enable-optimizations --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /tmp/Python-3.13.0*
+
+<span class="comment"># Install DishtaYantra</span>
+WORKDIR /app
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8888
+CMD ["python3", "run_server.py"]</pre>
+            </div>
+        </div>
+        
+        <!-- Thread Safety -->
+        <div class="card section-card free-threading">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> Thread Safety in Custom Calculators</h5>
+            </div>
+            <div class="card-body">
+                <p>With free-threading, your custom calculators may run truly in parallel. Ensure thread safety:</p>
+                
+                <pre class="code-block">import threading
+
+class MyCalculator(DataCalculator):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._lock = threading.Lock()  <span class="comment"># Use locks for shared state</span>
+        self._counter = 0
+    
+    def calculate(self, data):
+        <span class="comment"># Thread-safe counter increment</span>
+        with self._lock:
+            self._counter += 1
+            local_count = self._counter
+        
+        <span class="comment"># Process data (this part runs in parallel)</span>
+        result = self._process(data)
+        return result</pre>
+                
+                <h6 class="mt-4">Avoid Global Mutable State</h6>
+                <pre class="code-block"><span class="comment"># BAD - Global mutable state</span>
+results = []  <span class="comment"># This will have race conditions!</span>
+
+class BadCalculator(DataCalculator):
+    def calculate(self, data):
+        results.append(data)  <span class="comment"># Race condition!</span>
+        return data
+
+<span class="comment"># GOOD - Instance-level or thread-local state</span>
+class GoodCalculator(DataCalculator):
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._results = []
+        self._lock = threading.Lock()
+    
+    def calculate(self, data):
+        with self._lock:
+            self._results.append(data)
+        return data</pre>
+                
+                <div class="warning-box">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Warning:</strong>
+                    Free-threading is still experimental. Some packages may not yet support it. Check for compatible versions.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Troubleshooting -->
+        <div class="card section-card free-threading">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bug"></i> Troubleshooting</h5>
+            </div>
+            <div class="card-body">
+                <h6>Issue: Package Installation Fails</h6>
+                <pre class="code-block"><span class="comment"># Some C extensions may not support free-threading yet</span>
+<span class="comment"># Try installing without binary wheels</span>
+pip install package-name --no-binary :all:
+
+<span class="comment"># Or check for a compatible version</span>
+pip install package-name==version</pre>
+                
+                <h6 class="mt-4">Issue: Performance Not Improving</h6>
+                <ul>
+                    <li>Verify GIL is actually disabled: <code>sys._is_gil_enabled()</code></li>
+                    <li>Check if workload is I/O bound (I/O bound tasks already benefit from threading)</li>
+                    <li>Ensure you have enough CPU cores for parallel execution</li>
+                    <li>Profile your code to find bottlenecks</li>
+                </ul>
+                
+                <h6 class="mt-4">Issue: Segmentation Faults</h6>
+                <pre class="code-block"><span class="comment"># Identify problematic packages</span>
+python -c "import package_name"  <span class="comment"># Test each package</span>
+
+<span class="comment"># Run with debugging</span>
+PYTHONFAULTHANDLER=1 python run_server.py</pre>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="card comparison-table">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-table"></i> Comparison: Worker Pool vs Free-Threading</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th><i class="bi bi-cpu text-primary"></i> Worker Pool</th>
+                        <th><i class="bi bi-lightning-charge" style="color: #f59e0b;"></i> Free-Threading</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Python Version</strong></td>
+                        <td>Any (3.8+)</td>
+                        <td>3.13+ with <code>--disable-gil</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stability</strong></td>
+                        <td><span class="badge bg-success">Production Ready</span></td>
+                        <td><span class="badge bg-warning text-dark">Experimental</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parallelism Type</strong></td>
+                        <td>Multi-process</td>
+                        <td>Multi-thread</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Memory Sharing</strong></td>
+                        <td>LMDB / IPC</td>
+                        <td>Direct (same process)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fault Isolation</strong></td>
+                        <td><span class="text-success">Complete</span> (process crash)</td>
+                        <td><span class="text-warning">None</span> (thread crash = process crash)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Memory Overhead</strong></td>
+                        <td>Higher (per-process)</td>
+                        <td>Lower (shared)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Communication</strong></td>
+                        <td>LMDB pub/sub, queues</td>
+                        <td>Direct Python objects</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Best For</strong></td>
+                        <td>Production, fault tolerance, heterogeneous workloads</td>
+                        <td>Compute-intensive, memory-sharing scenarios</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="tip-box mt-3">
+            <strong><i class="bi bi-lightbulb"></i> Recommendation:</strong> Use <strong>Worker Pool</strong> for production deployments. Experiment with <strong>Free-Threading</strong> for compute-intensive workloads once Python 3.14+ stabilizes the feature.
+        </div>
+    </div>
+</div>
+
+<!-- Navigation -->
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+    <a href="{{ url_for('help_lmdb_integration') }}" class="btn btn-outline-primary">
+        LMDB Integration <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+{% endblock %}

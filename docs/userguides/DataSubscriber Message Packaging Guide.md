@@ -1,6 +1,6 @@
 # DataSubscriber Non-Dictionary Message Packaging Guide
 
-**DishtaYantra v1.5.1**
+**DishtaYantra v1.5.2**
 
 **Author:** Ashutosh Sinha  
 **Email:** ajsinha@gmail.com  
@@ -24,7 +24,7 @@
 
 ## Overview
 
-DishtaYantra v1.5.1 introduces **automatic packaging of non-dictionary messages** in the DataSubscriber class. This enhancement ensures consistent data format for downstream calculators regardless of the original message format from external sources like Kafka, RabbitMQ, REST APIs, and other message brokers.
+DishtaYantra v1.5.2 introduces **automatic packaging of non-dictionary messages** in the DataSubscriber class. This enhancement ensures consistent data format for downstream calculators regardless of the original message format from external sources like Kafka, RabbitMQ, REST APIs, and other message brokers.
 
 ---
 
@@ -65,7 +65,7 @@ The DataSubscriber now **automatically wraps non-dictionary messages** into a st
         'subscriber_name': 'kafka_sub',
         'source': 'trades_topic',
         'received_at': '2025-01-13T10:30:00.123456',
-        'packaging_version': '1.5.1'
+        'packaging_version': '1.5.2'
     }
 }
 ```
@@ -172,7 +172,7 @@ def _package_message(self, data):
         'subscriber_name': 'kafka_trade_sub',
         'source': 'trades_topic',
         'received_at': '2025-01-13T10:30:00.123456',
-        'packaging_version': '1.5.1'
+        'packaging_version': '1.5.2'
     }
 }
 ```
@@ -195,7 +195,7 @@ def _package_message(self, data):
         'subscriber_name': 'rest_api_sub',
         'source': '/api/data',
         'received_at': '2025-01-13T10:31:00.789012',
-        'packaging_version': '1.5.1'
+        'packaging_version': '1.5.2'
     }
 }
 ```
@@ -218,7 +218,7 @@ b'\x00\x01\x02\x03\x04'
         'subscriber_name': 'file_sub',
         'source': '/data/binary_feed',
         'received_at': '2025-01-13T10:32:00.456789',
-        'packaging_version': '1.5.1'
+        'packaging_version': '1.5.2'
     }
 }
 ```
@@ -490,7 +490,7 @@ The `details()` method now includes packaging statistics:
 
 ## Conclusion
 
-The non-dictionary message packaging feature in DishtaYantra v1.5.1 provides:
+The non-dictionary message packaging feature in DishtaYantra v1.5.2 provides:
 
 - **Consistency**: All calculators receive dictionary format
 - **Traceability**: Metadata tracks message origin

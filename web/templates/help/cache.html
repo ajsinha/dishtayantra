@@ -183,7 +183,7 @@
     </div>
     <div class="card-body">
         <p>Access the cache from custom calculators or transformers:</p>
-        <div class="code-block">from core.pubsub.inmemory_redisclone import InMemoryRedisClone
+        <pre class="code-block">from core.pubsub.inmemory_redisclone import InMemoryRedisClone
 
 class CacheReadCalculator(DataCalculator):
     def __init__(self, name, config):
@@ -210,7 +210,7 @@ class CacheWriteCalculator(DataCalculator):
         key = f"result:{data['id']}"
         self.cache.set(key, data, ttl=3600)
         return data</div>
-    </div>
+    </pre>
 </div>
 
 <!-- API -->
@@ -220,7 +220,7 @@ class CacheWriteCalculator(DataCalculator):
     </div>
     <div class="card-body">
         <p>Available methods on <code>InMemoryRedisClone</code>:</p>
-        <div class="code-block">cache = InMemoryRedisClone()
+        <pre class="code-block">cache = InMemoryRedisClone()
 
 # Basic operations
 cache.set("key", "value")           # Set value
@@ -240,6 +240,6 @@ cache.expire("key", 3600)           # Set TTL on existing key
 # Utility
 cache.flushall()                    # Clear all keys
 cache.dbsize()                      # Get number of keys</div>
-    </div>
+    </pre>
 </div>
 {% endblock %}

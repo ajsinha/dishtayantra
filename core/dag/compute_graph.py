@@ -23,7 +23,16 @@ logger = logging.getLogger(__name__)
 class ComputeGraph:
     """Compute graph for DAG execution"""
 
-    def __init__(self, config):
+    def __init__(self, config, lazy_init=False):
+        """
+        Initialize ComputeGraph.
+        
+        Args:
+            config: DAG configuration dict or path to JSON file
+            lazy_init: If True, only load config without creating subscribers/publishers.
+                      This is used in main process when worker pool is enabled.
+                      Components are created later when DAG is actually started.
+        """
         self.prop_conf = PropertiesConfigurator()
         # Load config if it's a file path
         if isinstance(config, str):
@@ -104,8 +113,18 @@ class ComputeGraph:
         # This is set when DAG is manually suspended via UI
         self._ui_suspended = False
 
-        self._build_components()
-        self.build_dag()
+        # v1.5.2: Lazy initialization support
+        # When lazy_init=True, we only load config metadata (for main process with worker pool)
+        # Components are created when DAG is actually started in main process or loaded in worker
+        self._lazy_init = lazy_init
+        self._components_built = False
+        
+        if not lazy_init:
+            self._build_components()
+            self.build_dag()
+            self._components_built = True
+        else:
+            logger.info(f"DAG {self.name}: Lazy initialization (components deferred)")
 
         logger.info(f"ComputeGraph {self.name} initialized")
 
@@ -401,6 +420,14 @@ class ComputeGraph:
             force: If True, start even if outside time window and don't auto-suspend
                    (This is always True for UI-driven starts)
         """
+        # v1.5.2: Build components if lazy-initialized
+        # This happens when DAG runs in main process but was loaded with lazy_init=True
+        if not self._components_built:
+            logger.info(f"DAG {self.name}: Building deferred components...")
+            self._build_components()
+            self.build_dag()
+            self._components_built = True
+        
         # Check if we're starting outside the time window
         if self.start_time and self.end_time:
             if not self.is_in_time_window():
@@ -607,13 +634,14 @@ class ComputeGraph:
 
             time.sleep(0.01)  # Small delay to prevent CPU spinning
 
-    def clone(self, start_time=None, duration=None):
+    def clone(self, start_time=None, duration=None, lazy_init=False):
         """
         Clone the DAG with optional time window override.
 
         Args:
             start_time: New start time in HHMM format, or None to remove time window
             duration: New duration string (e.g., "1h", "30m"), or None for default (-5m)
+            lazy_init: If True, create with lazy initialization (v1.5.2)
 
         Rules:
             - If both start_time and duration are None: Remove time window (perpetual running)
@@ -656,7 +684,8 @@ class ComputeGraph:
             else:
                 logger.info(f"Cloning {self.name} to {new_name} with start_time={start_time}, duration=default (-5m)")
 
-        cloned_dag = ComputeGraph(cloned_config)
+        # v1.5.2: Pass lazy_init to cloned DAG
+        cloned_dag = ComputeGraph(cloned_config, lazy_init=lazy_init)
 
         logger.info(f"Cloned DAG {self.name} to {new_name}")
         logger.info(f"  Original: start_time={self.start_time}, duration={self.duration}, end_time={self.end_time}")
@@ -670,7 +699,95 @@ class ComputeGraph:
         return json.dumps(self.config, indent=2)
 
     def details(self):
-        """Return details of the compute graph"""
+        """Return details of the compute graph
+        
+        v1.5.2: Updated to work with lazy-initialized DAGs. When components aren't
+        built, returns info from config instead of empty dictionaries.
+        """
+        # v1.5.2: Get subscriber/publisher info from config if lazy-initialized
+        if not self._components_built:
+            # Extract info from config for lazy-initialized DAGs
+            subscribers_info = {}
+            for sub_cfg in self.config.get('subscribers', []):
+                name = sub_cfg.get('name')
+                config = sub_cfg.get('config', {})
+                subscribers_info[name] = {
+                    'name': name,
+                    'type': sub_cfg.get('type', 'Unknown'),
+                    'source': config.get('source', 'N/A'),
+                    'config': config,
+                    'queue_depth': 0,
+                    'status': 'not_started (lazy init)'
+                }
+            
+            publishers_info = {}
+            for pub_cfg in self.config.get('publishers', []):
+                name = pub_cfg.get('name')
+                config = pub_cfg.get('config', {})
+                publishers_info[name] = {
+                    'name': name,
+                    'type': pub_cfg.get('type', 'Unknown'),
+                    'destination': config.get('destination', 'N/A'),
+                    'config': config,
+                    'status': 'not_started (lazy init)'
+                }
+            
+            calculators_info = {}
+            for calc_cfg in self.config.get('calculators', []):
+                name = calc_cfg.get('name')
+                calculators_info[name] = {
+                    'name': name,
+                    'type': calc_cfg.get('type', 'Unknown'),
+                    'config': calc_cfg.get('config', {}),
+                    'status': 'not_started (lazy init)'
+                }
+            
+            transformers_info = {}
+            for trans_cfg in self.config.get('transformers', []):
+                name = trans_cfg.get('name')
+                transformers_info[name] = {
+                    'name': name,
+                    'type': trans_cfg.get('type', 'Unknown'),
+                    'config': trans_cfg.get('config', {}),
+                    'status': 'not_started (lazy init)'
+                }
+            
+            nodes_info = {}
+            for node_cfg in self.config.get('nodes', []):
+                name = node_cfg.get('name')
+                nodes_info[name] = {
+                    'name': name,
+                    'type': node_cfg.get('type', 'Unknown'),
+                    'config': node_cfg.get('config', {}),
+                    'status': 'not_started (lazy init)'
+                }
+            
+            edges_info = []
+            for edge_cfg in self.config.get('edges', []):
+                edges_info.append({
+                    'from_node': edge_cfg.get('from_node'),
+                    'to_node': edge_cfg.get('to_node')
+                })
+            
+            return {
+                'name': self.name,
+                'start_time': self.start_time,
+                'end_time': self.end_time,
+                'duration': self.duration,
+                'is_running': False,  # Can't be running if lazy-initialized
+                'is_suspended': False,
+                'ui_override': self._ui_override,
+                'ui_suspended': self._ui_suspended,
+                'lazy_init': True,
+                'nodes': nodes_info,
+                'edges': edges_info,
+                'subscribers': subscribers_info,
+                'publishers': publishers_info,
+                'calculators': calculators_info,
+                'transformers': transformers_info
+            }
+        
+        # Normal path - components are built
         result = {
             'name': self.name,
             'start_time': self.start_time,
@@ -680,6 +797,7 @@ class ComputeGraph:
             'is_suspended': not self._suspend_event.is_set(),
             'ui_override': self._ui_override,
             'ui_suspended': self._ui_suspended,
+            'lazy_init': False,
             'nodes': {name: node.details() for name, node in self.nodes.items()},
             'edges': [edge.details() for edge in self.edges],
             'subscribers': {name: sub.details() for name, sub in self.subscribers.items()},

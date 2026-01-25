@@ -92,7 +92,7 @@
         <p class="text-muted">In-memory messaging is built into DishtaYantra. No external dependencies needed.</p>
 
         <h6 class="mt-4">1. Queue Publisher</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'mem://queue/orders'
@@ -100,10 +100,10 @@ config = {
 
 publisher = create_publisher('order_pub', config)
 publisher.publish({'order_id': 'ORD-001', 'amount': 99.99})
-# Note: Don't call stop() if you want the queue to persist</div>
+# Note: Don't call stop() if you want the queue to persist</pre>
 
         <h6 class="mt-4">2. Queue Subscriber</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'mem://queue/orders'
@@ -113,18 +113,18 @@ subscriber = create_subscriber('order_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
 
         <h6 class="mt-4">3. Topic Publisher (Broadcast)</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'destination': 'mem://topic/events'
 }
 
 publisher = create_publisher('event_pub', config)
-publisher.publish({'event': 'user_login', 'user_id': 123})</div>
+publisher.publish({'event': 'user_login', 'user_id': 123})</pre>
 
         <h6 class="mt-4">4. Topic Subscriber</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'source': 'mem://topic/events'
 }
 
@@ -132,7 +132,7 @@ subscriber = create_subscriber('event_sub', config)
 subscriber.start()
 # All subscribers on this topic receive all messages
 data = subscriber.get_data(block_time=5)
-print(f"Received: {data}")</div>
+print(f"Received: {data}")</pre>
     </div>
 </div>
 
@@ -170,7 +170,7 @@ print(f"Received: {data}")</div>
         </ul>
 
         <h6 class="mt-4">Using InMemoryRedis</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher, create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher, create_subscriber
 
 # Publisher
 pub_config = {'destination': 'inmemoryredis://queue/tasks'}
@@ -182,10 +182,10 @@ sub_config = {'source': 'inmemoryredis://queue/tasks'}
 subscriber = create_subscriber('task_sub', sub_config)
 subscriber.start()
 data = subscriber.get_data(block_time=1)
-print(f"Received: {data}")</div>
+print(f"Received: {data}")</pre>
 
         <h6 class="mt-4">Direct RedisClone Access</h6>
-        <div class="code-block python">from core.pubsub.inmemory_redisclone import InMemoryRedisClone
+        <pre class="code-block python">from core.pubsub.inmemory_redisclone import InMemoryRedisClone
 
 # Get singleton instance
 redis = InMemoryRedisClone.get_instance()
@@ -207,7 +207,7 @@ redis.subscribe('channel1', handler)
 redis.publish('channel1', 'Hello!')
 
 # Persistence
-redis.save('/path/to/data.json')</div>
+redis.save('/path/to/data.json')</pre>
     </div>
 </div>
 
@@ -226,7 +226,7 @@ redis.save('/path/to/data.json')</div>
         </table>
 
         <h6 class="mt-4">DAG Node Configuration</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "mem_input",
   "type": "DataSubscriberNode",
   "config": {
@@ -240,7 +240,7 @@ redis.save('/path/to/data.json')</div>
   "config": {
     "destination": "mem://topic/processed_events"
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -323,17 +323,17 @@ redis.save('/path/to/data.json')</div>
         <div class="row">
             <div class="col-md-6">
                 <h6 class="text-muted">Development (In-Memory)</h6>
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "source": "mem://queue/orders"
-}</div>
+}</pre>
             </div>
             <div class="col-md-6">
                 <h6 class="text-success">Production (Kafka)</h6>
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "source": "kafka://topic/orders",
   "bootstrap_servers": ["kafka:9092"],
   "kafka_library": "confluent-kafka"
-}</div>
+}</pre>
             </div>
         </div>
         <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Tip:</strong> Use environment-based configuration to switch between development (in-memory) and production (external broker) without code changes.</div>

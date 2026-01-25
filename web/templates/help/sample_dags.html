@@ -58,7 +58,7 @@
     </div>
     <div class="card-body">
         <p>Minimal DAG that reads from one queue and writes to another. Perfect for testing.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "simple_passthrough",
   
   "subscribers": [
@@ -110,9 +110,9 @@
     {"from_node": "input_node", "to_node": "process_node"},
     {"from_node": "process_node", "to_node": "output_node"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- Data Enrichment Pipeline -->
 <div class="card mb-4">
@@ -124,7 +124,7 @@
     </div>
     <div class="card-body">
         <p>Applies defaults, performs calculations, and filters output attributes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "data_enrichment_pipeline",
   "start_time": "0800",
   "duration": "10h",
@@ -209,9 +209,9 @@
     {"from_node": "enrich", "to_node": "calculate"},
     {"from_node": "calculate", "to_node": "publish"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- Kafka Pipeline -->
 <div class="card mb-4">
@@ -224,7 +224,7 @@
     </div>
     <div class="card-body">
         <p>Consumes from Kafka, processes data, and produces to another topic.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "kafka_stream_processor",
   "start_time": "0600",
   "duration": "18h",
@@ -283,9 +283,9 @@
     {"from_node": "consume", "to_node": "process"},
     {"from_node": "process", "to_node": "produce"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- File Backup Pipeline -->
 <div class="card mb-4">
@@ -298,7 +298,7 @@
     </div>
     <div class="card-body">
         <p>Publishes to both a queue and a file for backup purposes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "multi_output_backup",
   
   "subscribers": [
@@ -358,9 +358,9 @@
     {"from_node": "input", "to_node": "process"},
     {"from_node": "process", "to_node": "output"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- AutoClone Scalable DAG -->
 <div class="card mb-4">
@@ -372,7 +372,7 @@
     </div>
     <div class="card-body">
         <p>Automatically scales from 1 to 5 instances during peak hours.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "scalable_pipeline",
   "start_time": "0600",
   "duration": "16h",
@@ -435,9 +435,9 @@
     {"from_node": "ingest", "to_node": "process"},
     {"from_node": "process", "to_node": "output"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- Heartbeat/Metronome -->
 <div class="card mb-4">
@@ -449,7 +449,7 @@
     </div>
     <div class="card-body">
         <p>Generates periodic heartbeat events for monitoring.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "heartbeat_monitor",
   
   "subscribers": [
@@ -506,9 +506,9 @@
     {"from_node": "heartbeat_gen", "to_node": "process"},
     {"from_node": "process", "to_node": "publish_status"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- Perpetual Always-On -->
 <div class="card mb-4">
@@ -520,7 +520,7 @@
     </div>
     <div class="card-body">
         <p>Runs 24/7 without any time window restrictions.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "always_on_processor",
   
   "subscribers": [
@@ -572,9 +572,9 @@
     {"from_node": "input", "to_node": "process"},
     {"from_node": "process", "to_node": "output"}
   ]
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- DAG with Subgraphs -->
 <div class="card mb-4">
@@ -592,7 +592,7 @@
             <i class="bi bi-lightbulb-fill"></i> 
             <strong>Key Concept:</strong> Subgraphs borrow calculators from the parent graph using the <code>borrows</code> property.
         </div>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "trading_pipeline_with_subgraphs",
   
   "subscribers": [
@@ -695,18 +695,18 @@
     { "from": "sg_pricer", "to": "sg_netting" },
     { "from": "sg_netting", "to": "sg_pfe_output" }
   ]
-}</div>
+}</pre>
         <div class="mt-3">
             <h6><i class="bi bi-toggle-on"></i> Runtime Control (REST API)</h6>
-            <div class="code-block" style="max-height: 150px;"><span style="color: #5c6370;"># Light down risk_subgraph (suspend calculations, use cached output)</span>
+            <pre class="code-block" style="max-height: 150px;"><span style="color: #5c6370;"># Light down risk_subgraph (suspend calculations, use cached output)</span>
 POST /dag/trading_pipeline_with_subgraphs/subgraph/control
 {"command": "light_down", "subgraph": "risk_subgraph", "reason": "Market closed"}
 
 <span style="color: #5c6370;"># Light up risk_subgraph (resume calculations)</span>
 POST /dag/trading_pipeline_with_subgraphs/subgraph/control
-{"command": "light_up", "subgraph": "risk_subgraph", "reason": "Market opened"}</div>
-        </div>
-    </div>
+{"command": "light_up", "subgraph": "risk_subgraph", "reason": "Market opened"}</pre>
+        </pre>
+    </pre>
 </div>
 
 <!-- C++ Calculator DAG -->
@@ -726,7 +726,7 @@ POST /dag/trading_pipeline_with_subgraphs/subgraph/control
             <strong>Requirement:</strong> C++ calculator module must be compiled and installed. See 
             <a href="{{ url_for('help_pybind11_integration') }}">C++ Integration Guide</a>.
         </div>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "cpp_monte_carlo_pricer",
   
   "subscribers": [
@@ -819,9 +819,9 @@ POST /dag/trading_pipeline_with_subgraphs/subgraph/control
         result["trade_id"] = input["trade_id"];
         <span style="color: #c678dd;">return</span> result;
     }
-};</div>
-    </div>
-</div>
+};</pre>
+    </pre>
+</pre>
 
 <!-- Rust Calculator DAG -->
 <div class="card mb-4">
@@ -840,7 +840,7 @@ POST /dag/trading_pipeline_with_subgraphs/subgraph/control
             <strong>Requirement:</strong> Rust calculator must be compiled with <code>maturin build --release</code>. See 
             <a href="{{ url_for('help_rust_integration') }}">Rust Integration Guide</a>.
         </div>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "rust_var_calculator",
   
   "subscribers": [
@@ -941,9 +941,9 @@ POST /dag/trading_pipeline_with_subgraphs/subgraph/control
         output.insert("var_99".to_string(), var.into_py(py));
         Ok(output)
     }
-}</div>
-    </div>
-</div>
+}</pre>
+    </pre>
+</pre>
 
 <!-- Using Samples -->
 <div class="card mb-4">

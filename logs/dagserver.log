@@ -1,0 +1,831 @@
+2026-01-24 19:43:03,929 - __main__ - INFO - Starting DishtaYantra Compute Server
+2026-01-24 19:43:03,997 - core.metrics.prometheus_metrics - WARNING - prometheus_client not installed. Metrics will be disabled. Install with: pip install prometheus-client
+2026-01-24 19:43:03,997 - core.metrics.prometheus_metrics - WARNING - Using dummy metrics (prometheus_client not available)
+2026-01-24 19:43:04,006 - __main__ - WARNING - External module path does not exist: /opt/custom_modules
+2026-01-24 19:43:04,006 - __main__ - WARNING - External module path does not exist: /home/ashutosh/my_plugins
+2026-01-24 19:43:04,006 - __main__ - WARNING - External module path does not exist: /opt/analytics
+2026-01-24 19:43:04,012 - __main__ - INFO - Initializing JVM Manager for Py4J gateway connections...
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - INFO - Loaded JVM config from config/jvm_config.json
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - INFO - Parsed 2 gateway configs, 8 calculator definitions
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - INFO - Initializing JVM Manager...
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - INFO - Starting JVM for gateway 'primary'...
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - WARNING - No JAR files found in /home/ashutosh/PycharmProjects/dishtayantra/java/lib
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - WARNING - Run 'java/build.sh' to compile Java code and download dependencies
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - ERROR - No valid classpath entries found!
+2026-01-24 19:43:04,012 - core.jvm.jvm_manager - ERROR - Please run: cd java && ./build.sh
+2026-01-24 19:43:04,013 - core.jvm.jvm_manager - ERROR - Failed to build Java command for primary
+2026-01-24 19:43:04,013 - core.jvm.jvm_manager - INFO - Connecting to gateway 'primary' at localhost:25333
+2026-01-24 19:43:04,013 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25333)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:04,014 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25333)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:04,014 - py4j.java_gateway - INFO - Exception while shutting down callback server
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1986, in shutdown
+    self._gateway_client.shutdown_gateway()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1006, in shutdown_gateway
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+2026-01-24 19:43:04,014 - core.jvm.jvm_manager - WARNING - Connection to localhost:25333 failed, retrying in 2s...
+2026-01-24 19:43:06,015 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25333)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:06,015 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25333)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:06,016 - py4j.java_gateway - INFO - Exception while shutting down callback server
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1986, in shutdown
+    self._gateway_client.shutdown_gateway()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1006, in shutdown_gateway
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+2026-01-24 19:43:06,016 - core.jvm.jvm_manager - WARNING - Connection to localhost:25333 failed, retrying in 2s...
+2026-01-24 19:43:08,017 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25333)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:08,017 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25333)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:08,018 - py4j.java_gateway - INFO - Exception while shutting down callback server
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1986, in shutdown
+    self._gateway_client.shutdown_gateway()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1006, in shutdown_gateway
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25333)
+2026-01-24 19:43:08,018 - core.jvm.jvm_manager - ERROR - Failed to connect to localhost:25333: An error occurred while trying to connect to the Java server (localhost:25333)
+2026-01-24 19:43:08,019 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25334)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:08,019 - py4j.java_gateway - ERROR - An error occurred while trying to connect to the Java server (localhost:25334)
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25334)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+2026-01-24 19:43:08,019 - py4j.java_gateway - INFO - Exception while shutting down callback server
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1885, in _eager_load
+    self.jvm.System.currentTimeMillis()
+    ^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1712, in __getattr__
+    answer = self._gateway_client.send_command(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1036, in send_command
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25334)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 982, in _get_connection
+    connection = self.deque.pop()
+                 ^^^^^^^^^^^^^^^^
+IndexError: pop from an empty deque
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1132, in start
+    self.socket.connect((self.address, self.port))
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1986, in shutdown
+    self._gateway_client.shutdown_gateway()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1006, in shutdown_gateway
+    connection = self._get_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 984, in _get_connection
+    connection = self._create_connection()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 990, in _create_connection
+    connection.start()
+  File "/home/ashutosh/PycharmProjects/dishtayantra/.venv/lib/python3.12/site-packages/py4j/java_gateway.py", line 1144, in start
+    raise Py4JNetworkError(msg, e)
+py4j.protocol.Py4JNetworkError: An error occurred while trying to connect to the Java server (localhost:25334)
+2026-01-24 19:43:08,019 - core.jvm.jvm_manager - WARNING - Connection to localhost:25334 failed, retrying in 2s...
+2026-01-24 19:43:08,260 - __main__ - INFO - 
+Received keyboard interrupt - shutting down gracefully...
+2026-01-24 19:43:08,260 - __main__ - WARNING - Web application not initialized
+2026-01-24 19:43:08,260 - core.jvm.jvm_manager - INFO - Shutting down JVM Manager...
+2026-01-24 19:43:08,260 - core.jvm.jvm_manager - INFO - JVM Manager shutdown complete
+2026-01-24 19:43:31,354 - __main__ - INFO - Starting DishtaYantra Compute Server
+2026-01-24 19:43:31,413 - core.metrics.prometheus_metrics - WARNING - prometheus_client not installed. Metrics will be disabled. Install with: pip install prometheus-client
+2026-01-24 19:43:31,413 - core.metrics.prometheus_metrics - WARNING - Using dummy metrics (prometheus_client not available)
+2026-01-24 19:43:31,422 - __main__ - WARNING - External module path does not exist: /opt/custom_modules
+2026-01-24 19:43:31,422 - __main__ - WARNING - External module path does not exist: /home/ashutosh/my_plugins
+2026-01-24 19:43:31,422 - __main__ - WARNING - External module path does not exist: /opt/analytics
+2026-01-24 19:43:31,426 - __main__ - INFO - Initializing JVM Manager for Py4J gateway connections...
+2026-01-24 19:43:31,426 - core.jvm.jvm_manager - INFO - Loaded JVM config from config/jvm_config.json
+2026-01-24 19:43:31,426 - core.jvm.jvm_manager - INFO - Parsed 2 gateway configs, 8 calculator definitions
+2026-01-24 19:43:31,426 - core.jvm.jvm_manager - INFO - Initializing JVM Manager...
+2026-01-24 19:43:31,426 - core.jvm.jvm_manager - INFO - Starting JVM for gateway 'primary'...
+2026-01-24 19:43:31,427 - core.jvm.jvm_manager - INFO - JVM for primary started (PID: 171475)
+2026-01-24 19:43:35,428 - core.jvm.jvm_manager - INFO - JVM gateway primary is ready on port 25333
+2026-01-24 19:43:35,428 - core.jvm.jvm_manager - INFO - Connecting to gateway 'primary' at localhost:25333
+2026-01-24 19:43:35,469 - core.jvm.jvm_manager - INFO - Connected to gateway 'primary' with 4 connections
+2026-01-24 19:43:35,469 - core.jvm.jvm_manager - INFO - Config monitoring started (interval: 600 seconds)
+2026-01-24 19:43:35,469 - core.jvm.jvm_manager - INFO - JVM Manager initialized successfully
+2026-01-24 19:43:35,470 - __main__ - INFO - JVM Manager initialized with 1 gateway connections
+2026-01-24 19:43:35,470 - __main__ - INFO - Worker pool is disabled in configuration
+2026-01-24 19:43:35,470 - web.dishtyantra_webapp - INFO - Initializing DishtaYantra Web Application...
+2026-01-24 19:43:35,471 - web.dishtyantra_webapp - INFO - Configuration loaded successfully
+2026-01-24 19:43:35,471 - web.dishtyantra_webapp - INFO - Initializing core components...
+2026-01-24 19:43:35,471 - core.user_registry - INFO - Loaded 6 users from ./config/users.json
+2026-01-24 19:43:35,471 - core.user_registry - INFO - UserRegistry initialized with file: ./config/users.json, reload interval: 600s
+2026-01-24 19:43:35,471 - core.dag.dag_server - INFO - Initializing DAGComputeServer...
+2026-01-24 19:43:35,471 - core.dag.dag_server - INFO - Found 2 DAG configuration file(s)
+2026-01-24 19:43:35,471 - core.dag.dag_server - INFO - Loading DAG from: ./config/dags/metronome_heartbeat.json
+2026-01-24 19:43:35,471 - core.dag.compute_graph - INFO - DAG heartbeat_monitor: No start_time provided, running perpetually
+2026-01-24 19:43:35,471 - core.pubsub.pubsubfactory - INFO - Creating subscriber heartbeat_subscriber_1 for source metronome
+2026-01-24 19:43:35,475 - core.pubsub.datapubsub - INFO - DataSubscriber heartbeat_subscriber_1 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-01-24 19:43:35,475 - core.dag.compute_graph - INFO - Created subscriber: heartbeat_subscriber_1
+2026-01-24 19:43:35,475 - core.pubsub.pubsubfactory - INFO - Creating subscriber heartbeat_subscriber_2 for source metronome
+2026-01-24 19:43:35,475 - core.pubsub.datapubsub - INFO - DataSubscriber heartbeat_subscriber_2 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-01-24 19:43:35,475 - core.dag.compute_graph - INFO - Created subscriber: heartbeat_subscriber_2
+2026-01-24 19:43:35,475 - core.pubsub.pubsubfactory - INFO - Creating subscriber heartbeat_subscriber_3 for source metronome
+2026-01-24 19:43:35,475 - core.pubsub.datapubsub - INFO - DataSubscriber heartbeat_subscriber_3 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-01-24 19:43:35,476 - core.dag.compute_graph - INFO - Created subscriber: heartbeat_subscriber_3
+2026-01-24 19:43:35,476 - core.pubsub.pubsubfactory - INFO - Creating subscriber composite_heartbeat_subscriber for source fanin://heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3
+2026-01-24 19:43:35,477 - core.pubsub.datapubsub - INFO - DataSubscriber composite_heartbeat_subscriber initialized for source heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3 (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-01-24 19:43:35,477 - core.pubsub.fanin_datapubsub - INFO - CompositeDataSubscriber composite_heartbeat_subscriber initialized
+2026-01-24 19:43:35,478 - core.dag.compute_graph - INFO - Created subscriber: composite_heartbeat_subscriber
+2026-01-24 19:43:35,478 - core.pubsub.datapubsub - INFO - DataSubscriber heartbeat_subscriber_1 queue updated (Priority: False)
+2026-01-24 19:43:35,478 - core.pubsub.fanin_datapubsub - INFO - Added subscriber 'heartbeat_subscriber_1' to composite 'composite_heartbeat_subscriber'
+2026-01-24 19:43:35,478 - core.pubsub.datapubsub - INFO - DataSubscriber heartbeat_subscriber_2 queue updated (Priority: False)
+2026-01-24 19:43:35,478 - core.pubsub.fanin_datapubsub - INFO - Added subscriber 'heartbeat_subscriber_2' to composite 'composite_heartbeat_subscriber'
+2026-01-24 19:43:35,478 - core.pubsub.datapubsub - INFO - DataSubscriber heartbeat_subscriber_3 queue updated (Priority: False)
+2026-01-24 19:43:35,478 - core.pubsub.fanin_datapubsub - INFO - Added subscriber 'heartbeat_subscriber_3' to composite 'composite_heartbeat_subscriber'
+2026-01-24 19:43:35,478 - core.pubsub.pubsubfactory - INFO - Creating publisher heartbeat_publisher for destination mem://topic/heartbeat_topic
+2026-01-24 19:43:35,479 - core.pubsub.datapubsub - INFO - DataPublisher heartbeat_publisher initialized for destination mem://topic/heartbeat_topic (Priority: False, Key: _dag_priority)
+2026-01-24 19:43:35,479 - core.pubsub.inmemorypubsub - INFO - InMemoryPubSub initialized
+2026-01-24 19:43:35,479 - core.pubsub.inmemorypubsub - INFO - Created topic: heartbeat_topic
+2026-01-24 19:43:35,479 - core.pubsub.inmemory_datapubsub - INFO - InMemoryDataPublisher created for mem://topic/heartbeat_topic
+2026-01-24 19:43:35,479 - core.dag.compute_graph - INFO - Created publisher: heartbeat_publisher
+2026-01-24 19:43:35,479 - core.pubsub.pubsubfactory - INFO - Creating publisher heartbeat_log for destination file:///tmp/log/dagserver/heartbeat.jsonl
+2026-01-24 19:43:35,480 - core.pubsub.datapubsub - INFO - DataPublisher heartbeat_log initialized for destination file:///tmp/log/dagserver/heartbeat.jsonl (Priority: False, Key: _dag_priority)
+2026-01-24 19:43:35,480 - core.pubsub.file_datapubsub - INFO - File publisher created for /tmp/log/dagserver/heartbeat.jsonl
+2026-01-24 19:43:35,480 - core.dag.compute_graph - INFO - Created publisher: heartbeat_log
+2026-01-24 19:43:35,480 - core.dag.compute_graph - INFO - Created calculator: heartbeat_enrichment
+2026-01-24 19:43:35,480 - core.core_utils - INFO - Attempting to instantiate RandomCalculator from core.calculator.random_calculator
+2026-01-24 19:43:35,481 - core.core_utils - INFO - Successfully instantiated RandomCalculator
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - Created calculator: random_calculator
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - Created node: metronome_node
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - Created node: random_calculator_node
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - Created edge: metronome_node_to_random_calculator_node
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - DAG built successfully with 2 nodes and 1 edges
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - ComputeGraph heartbeat_monitor initialized
+2026-01-24 19:43:35,481 - core.dag.dag_server - INFO - Successfully loaded DAG: heartbeat_monitor
+2026-01-24 19:43:35,481 - core.dag.dag_server - INFO - Loading DAG from: ./config/dags/ash_dag_with_auto_clone.json
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO - DAG ash_dag_with_auto_clone: Using duration-based time window
+2026-01-24 19:43:35,481 - core.dag.compute_graph - INFO -   start_time=0800, duration=10h15m, end_time=1815
+2026-01-24 19:43:35,481 - core.pubsub.pubsubfactory - INFO - Creating subscriber kafka_input for source kafka://topic/input_data
+2026-01-24 19:43:35,507 - core.pubsub.datapubsub - INFO - DataSubscriber kafka_input initialized for source kafka://topic/input_data (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-01-24 19:43:35,508 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-24 19:43:35,510 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <checking_api_versions_recv> [IPv4 ('127.0.0.1', 9092)]>: Broker version identified as 2.6
+2026-01-24 19:43:35,510 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Connection complete.
+2026-01-24 19:43:35,511 - kafka.consumer.subscription_state - INFO - Updating subscribed topics to: ('input_data',)
+2026-01-24 19:43:35,511 - core.pubsub.kafka_datapubsub - INFO - kafka-python consumer initialized: ['input_data']
+2026-01-24 19:43:35,511 - core.pubsub.kafka_datapubsub - INFO - Kafka subscriber created for topic input_data using kafka-python
+2026-01-24 19:43:35,511 - core.dag.compute_graph - INFO - Created subscriber: kafka_input
+2026-01-24 19:43:35,511 - core.pubsub.pubsubfactory - INFO - Creating publisher file_output for destination file:///tmp/data/output.json
+2026-01-24 19:43:35,511 - core.pubsub.datapubsub - INFO - DataPublisher file_output initialized for destination file:///tmp/data/output.json (Priority: False, Key: _dag_priority)
+2026-01-24 19:43:35,511 - core.pubsub.file_datapubsub - INFO - File publisher created for /tmp/data/output.json
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created publisher: file_output
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created calculator: data_transformer
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created transformer: null_transformer
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created node: input_node
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created node: calc_node
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created node: output_node
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created edge: input_node_to_calc_node
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - Created edge: calc_node_to_output_node
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - DAG built successfully with 3 nodes and 2 edges
+2026-01-24 19:43:35,512 - core.dag.compute_graph - INFO - ComputeGraph ash_dag_with_auto_clone initialized
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - Successfully loaded DAG: ash_dag_with_auto_clone
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - AutoClone manager loop started
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - AutoClone manager thread started
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - Time window monitor: Starting monitoring loop
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - Time window monitor thread started (checks every 60 seconds)
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - Connecting to Zookeeper at localhost:2181...
+2026-01-24 19:43:35,512 - core.dag.dag_server - INFO - DAGComputeServer initialized with 2 DAG(s)
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - ======================================================================
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - AUTO-START: Checking which DAGs should be started on system startup
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - ======================================================================
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - AUTO-START: DAG 'heartbeat_monitor' is PERPETUAL - will be started
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - AUTO-START: DAG 'ash_dag_with_auto_clone' is OUTSIDE time window (0800-1815) - will NOT be started
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - AUTO-START: 1 DAG(s) will be started with 5 second intervals
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - ----------------------------------------------------------------------
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - 
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - **********************************************************************
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - *  AUTO-START: STARTING DAG 'heartbeat_monitor'
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - *  Reason: PERPETUAL (no time window)
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - *  Progress: 1 of 1
+2026-01-24 19:43:35,513 - core.dag.dag_server - INFO - **********************************************************************
+2026-01-24 19:43:35,513 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_1 started
+2026-01-24 19:43:35,513 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_2 started
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_3 started
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-01-24 19:43:35,514 - core.pubsub.fanin_datapubsub - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' started 3/3 child subscribers
+2026-01-24 19:43:35,514 - kazoo.client - INFO - Connecting to localhost(127.0.0.1):2181, use_ssl: False
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-01-24 19:43:35,514 - core.pubsub.datapubsub - INFO - Subscriber composite_heartbeat_subscriber resumed
+2026-01-24 19:43:35,514 - core.pubsub.fanin_datapubsub - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' resumed 3/3 child subscribers
+2026-01-24 19:43:35,514 - core.dag.node_implementations - INFO - Metronome node metronome_node started with interval 10s
+2026-01-24 19:43:35,515 - core.dag.compute_graph - INFO - ComputeGraph heartbeat_monitor started
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - 
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - ██████████████████████████████████████████████████████████████████████
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - █  DAG STATE CHANGE: STARTED
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - █  DAG Name: heartbeat_monitor
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - █  Reason: User/system initiated start (main process)
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - █  Timestamp: 2026-01-24 19:43:35
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - ██████████████████████████████████████████████████████████████████████
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - 
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - AUTO-START: Successfully started DAG 'heartbeat_monitor'
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - 
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - ======================================================================
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - AUTO-START: Completed - 1 DAG(s) processed
+2026-01-24 19:43:35,515 - core.dag.dag_server - INFO - ======================================================================
+2026-01-24 19:43:35,515 - core.pubsub.inmemory_redisclone - INFO - Created dump directory: data
+2026-01-24 19:43:35,515 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:43:35,515 - core.pubsub.inmemory_redisclone - INFO - No dump file found at data/inmemory_redisclone.json, starting with empty cache
+2026-01-24 19:43:35,515 - core.pubsub.inmemory_redisclone - INFO - InMemoryRedisClone initialized: dump_file=data/inmemory_redisclone.json, dump_interval=300s
+2026-01-24 19:43:35,515 - web.dishtyantra_webapp - INFO - DAGComputeServer initialized in single-process mode
+2026-01-24 19:43:35,515 - web.dishtyantra_webapp - INFO - Core components initialized successfully
+2026-01-24 19:43:35,516 - web.dishtyantra_webapp - INFO - Initializing route handlers...
+2026-01-24 19:43:35,528 - routes.metrics_routes - INFO - Metrics routes initialized
+2026-01-24 19:43:35,532 - web.dishtyantra_webapp - INFO - Route handlers initialized successfully
+2026-01-24 19:43:35,533 - web.dishtyantra_webapp - INFO - DishtaYantra Web Application initialized successfully
+2026-01-24 19:43:35,533 - web.dishtyantra_webapp - INFO - Starting DishtaYantra Web Application on 0.0.0.0:5002
+2026-01-24 19:43:35,533 - kazoo.client - INFO - Zookeeper connection established, state: CONNECTED
+2026-01-24 19:43:35,533 - core.dag.dag_server - INFO - Connected to Zookeeper, starting election...
+2026-01-24 19:43:35,535 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5002
+ * Running on http://192.168.2.58:5002
+2026-01-24 19:43:35,535 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-24 19:43:35,537 - core.dag.dag_server - INFO - Elected as primary DAG server
+2026-01-24 19:43:35,537 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber composite_heartbeat_subscriber resumed
+2026-01-24 19:43:35,538 - core.pubsub.fanin_datapubsub - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' resumed 3/3 child subscribers
+2026-01-24 19:43:35,538 - core.dag.compute_graph - INFO - ComputeGraph heartbeat_monitor resumed
+2026-01-24 19:43:35,538 - core.pubsub.datapubsub - INFO - Subscriber kafka_input resumed
+2026-01-24 19:43:35,538 - core.dag.compute_graph - INFO - ComputeGraph ash_dag_with_auto_clone resumed
+2026-01-24 19:43:40,513 - core.dag.dag_server - INFO - Time window monitor: Beginning DAG monitoring
+2026-01-24 19:43:45,518 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:43:50,097 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:43:50] "GET /help/py4j-integration HTTP/1.1" 200 -
+2026-01-24 19:43:53,965 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:43:53] "GET /jvm HTTP/1.1" 200 -
+2026-01-24 19:43:53,986 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:43:53] "GET /api/jvm/config HTTP/1.1" 200 -
+2026-01-24 19:43:53,987 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:43:53] "GET /api/jvm/status HTTP/1.1" 200 -
+2026-01-24 19:43:53,990 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:43:53] "GET /api/jvm/calculators HTTP/1.1" 200 -
+2026-01-24 19:43:55,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:44:05,516 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:44:15,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:44:25,522 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:44:35,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:44:45,349 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:44:45] "GET /help HTTP/1.1" 200 -
+2026-01-24 19:44:45,517 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:44:53,301 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:44:53] "GET /help/py4j-integration HTTP/1.1" 200 -
+2026-01-24 19:44:55,522 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:45:05,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:45:15,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:45:25,517 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:45:35,523 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:45:45,525 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:45:55,521 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:05,525 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:07,954 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:07] "GET /dashboard HTTP/1.1" 200 -
+2026-01-24 19:46:15,522 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:18,812 - core.dag.compute_graph - INFO - DAG ash_dag_with_auto_clone: Started outside time window - UI override enabled, auto-suspend disabled
+2026-01-24 19:46:18,813 - core.pubsub.datapubsub - INFO - Subscriber kafka_input started
+2026-01-24 19:46:18,813 - core.pubsub.datapubsub - INFO - Subscriber kafka_input resumed
+2026-01-24 19:46:18,814 - core.dag.compute_graph - INFO - DAG ash_dag_with_auto_clone: Time window checker started
+2026-01-24 19:46:18,814 - core.dag.compute_graph - INFO - DAG ash_dag_with_auto_clone: Time window monitor started (0800-1815)
+2026-01-24 19:46:18,814 - core.dag.compute_graph - INFO - ComputeGraph ash_dag_with_auto_clone started
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - 
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - ██████████████████████████████████████████████████████████████████████
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - █  DAG STATE CHANGE: STARTED
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - █  DAG Name: ash_dag_with_auto_clone
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - █  Reason: User/system initiated start (main process)
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - █  Timestamp: 2026-01-24 19:46:18
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - ██████████████████████████████████████████████████████████████████████
+2026-01-24 19:46:18,814 - core.dag.dag_server - INFO - 
+2026-01-24 19:46:18,815 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:18] "[32mPOST /dag/ash_dag_with_auto_clone/start HTTP/1.1[0m" 302 -
+2026-01-24 19:46:18,818 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:18] "GET /dashboard HTTP/1.1" 200 -
+2026-01-24 19:46:18,822 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=oryxpro:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to oryxpro:9092 [('127.0.1.1', 9092) IPv4]
+2026-01-24 19:46:18,822 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
+2026-01-24 19:46:18,823 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. 
+2026-01-24 19:46:19,013 - kafka.cluster - INFO - Coordinator for group/etl_consumer is BrokerMetadata(nodeId='coordinator-0', host='oryxpro', port=9092, rack=None)
+2026-01-24 19:46:19,013 - kafka.coordinator - INFO - Discovered coordinator coordinator-0 for group etl_consumer
+2026-01-24 19:46:19,014 - kafka.coordinator.heartbeat - INFO - Starting new heartbeat thread
+2026-01-24 19:46:19,014 - kafka.coordinator.consumer - INFO - Revoking previously assigned partitions set() for group etl_consumer
+2026-01-24 19:46:19,014 - kafka.coordinator - INFO - Failed to join group etl_consumer: NodeNotReadyError: coordinator-0
+2026-01-24 19:46:19,015 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=oryxpro:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to oryxpro:9092 [('127.0.1.1', 9092) IPv4]
+2026-01-24 19:46:19,015 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
+2026-01-24 19:46:19,109 - kafka.coordinator - INFO - (Re-)joining group etl_consumer
+2026-01-24 19:46:19,214 - kafka.coordinator - INFO - Received member id kafka-python-2.2.15-e1f5fb4a-cecc-47b0-9bc0-498a1a017e34 for group etl_consumer; will retry join-group
+2026-01-24 19:46:19,214 - kafka.coordinator - INFO - Failed to join group etl_consumer: [Error 79] MemberIdRequiredError
+2026-01-24 19:46:19,214 - kafka.coordinator - INFO - (Re-)joining group etl_consumer
+2026-01-24 19:46:19,223 - kafka.coordinator - INFO - Successfully joined group etl_consumer <Generation 48 (member_id: kafka-python-2.2.15-e1f5fb4a-cecc-47b0-9bc0-498a1a017e34, protocol: range)>
+2026-01-24 19:46:19,223 - kafka.coordinator - INFO - Elected group leader -- performing partition assignments using range
+2026-01-24 19:46:19,243 - kafka.consumer.subscription_state - INFO - Updated partition assignment: [TopicPartition(topic='input_data', partition=0)]
+2026-01-24 19:46:19,243 - kafka.coordinator.consumer - INFO - Setting newly assigned partitions {TopicPartition(topic='input_data', partition=0)} for group etl_consumer
+2026-01-24 19:46:24,201 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:24] "GET /dag/ash_dag_with_auto_clone/details HTTP/1.1" 200 -
+2026-01-24 19:46:25,520 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:27,313 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:27] "GET /dag/ash_dag_with_auto_clone/subscriber/kafka_input/publish HTTP/1.1" 200 -
+2026-01-24 19:46:35,044 - routes.dag_routes - INFO - Publishing raw message to kafka_input: A,B...
+2026-01-24 19:46:35,044 - core.pubsub.pubsubfactory - INFO - Creating publisher temp_pub_kafka_input for destination kafka://topic/input_data
+2026-01-24 19:46:35,045 - core.pubsub.datapubsub - INFO - DataPublisher temp_pub_kafka_input initialized for destination kafka://topic/input_data (Priority: False, Key: _dag_priority)
+2026-01-24 19:46:35,045 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-01-24 19:46:35,048 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:9092 <checking_api_versions_recv> [IPv4 ('127.0.0.1', 9092)]>: Broker version identified as 2.6
+2026-01-24 19:46:35,048 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Connection complete.
+2026-01-24 19:46:35,048 - core.pubsub.kafka_datapubsub - INFO - kafka-python producer initialized: localhost:9092
+2026-01-24 19:46:35,049 - core.pubsub.kafka_datapubsub - INFO - Kafka publisher created for topic input_data using kafka-python
+2026-01-24 19:46:35,151 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=0 host=oryxpro:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to oryxpro:9092 [('127.0.1.1', 9092) IPv4]
+2026-01-24 19:46:35,151 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
+2026-01-24 19:46:35,151 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. 
+2026-01-24 19:46:35,163 - kafka.producer.kafka - INFO - <KafkaProducer client_id=kafka-python-producer-1 transactional_id=None>: Closing the Kafka producer with 9223372036.0 secs timeout.
+2026-01-24 19:46:35,163 - kafka.conn - INFO - <BrokerConnection client_id=kafka-python-producer-1, node_id=0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Closing connection. 
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO - 
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO - ======================================================================
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO -   UI MESSAGE PUBLISH - SUCCESS
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO -   DAG: ash_dag_with_auto_clone
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO -   Subscriber: kafka_input
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO -   Destination: kafka://topic/input_data
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO -   Message Type: raw
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO -   Message Preview: A,B
+2026-01-24 19:46:35,164 - routes.dag_routes - INFO - ======================================================================
+2026-01-24 19:46:35,164 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:35] "POST /dag/ash_dag_with_auto_clone/subscriber/kafka_input/publish HTTP/1.1" 200 -
+2026-01-24 19:46:35,520 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:41,015 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:41] "GET /dag/ash_dag_with_auto_clone/details HTTP/1.1" 200 -
+2026-01-24 19:46:44,403 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:46:44,403 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:46:44,412 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:44] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:46:45,518 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:49,439 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:46:49,439 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:46:49,440 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:49] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:46:54,468 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:46:54,468 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:46:54,469 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:54] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:46:55,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:46:59,496 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:46:59,496 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:46:59,497 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:46:59] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:47:04,531 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:47:04,532 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:47:04,532 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:47:04] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:47:05,519 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:47:09,562 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:47:09,562 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:47:09,563 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:47:09] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:47:14,592 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:47:14,592 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:47:14,593 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:47:14] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:47:15,523 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:47:19,622 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:47:19,622 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:47:19,622 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:47:19] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:47:24,650 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:47:24,650 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:47:24,651 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:47:24] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -
+2026-01-24 19:47:25,523 - core.dag.node_implementations - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-01-24 19:47:28,921 - core.jvm.jvm_manager - INFO - Shutting down JVM Manager...
+2026-01-24 19:47:29,678 - routes.dashboard_routes - INFO - DAG ash_dag_with_auto_clone has built components, 3 nodes
+2026-01-24 19:47:29,678 - routes.dashboard_routes - INFO - Rendering state page with 3 nodes
+2026-01-24 19:47:29,679 - werkzeug - INFO - 127.0.0.1 - - [24/Jan/2026 19:47:29] "GET /dag/ash_dag_with_auto_clone/state HTTP/1.1" 200 -

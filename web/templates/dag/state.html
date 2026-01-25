@@ -52,6 +52,16 @@
         font-size: 12px;
         padding: 4px 8px;
     }
+    .worker-info-banner {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .worker-info-banner i {
+        font-size: 1.2em;
+    }
 </style>
 {% endblock %}
 
@@ -68,6 +78,51 @@
         </div>
         <h2><i class="bi bi-graph-up"></i> DAG State: {{ dag_name }}</h2>
         <p class="text-muted">Current input/output state and errors for each node</p>
+
+        {% if worker_id is not none and has_worker_state %}
+        <div class="worker-info-banner">
+            <i class="bi bi-cpu"></i> <strong>Running in Worker {{ worker_id }}</strong>
+            <span class="badge bg-success ms-2"><i class="bi bi-broadcast"></i> Live State</span>
+            <p class="mb-0 mt-2" style="font-size: 0.9em;">
+                Showing real-time state from worker process. Data refreshes automatically.
+            </p>
+        </div>
+        {% elif is_lazy_init and worker_id is not none %}
+        <div class="worker-info-banner" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+            <i class="bi bi-cpu"></i> <strong>Running in Worker {{ worker_id }}</strong>
+            <span class="badge bg-warning text-dark ms-2"><i class="bi bi-clock"></i> Config Only</span>
+            <p class="mb-0 mt-2" style="font-size: 0.9em;">
+                Could not fetch live state from worker. Showing configured nodes.
+            </p>
+        </div>
+        {% elif is_lazy_init %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> <strong>DAG Not Started</strong>
+            <p class="mb-0">This DAG has not been started yet. The table shows the configured nodes.</p>
+        </div>
+        {% endif %}
+
+        {% if subscriber_states %}
+        <div class="card mt-3 mb-3">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-inbox"></i> Subscriber Queue Status
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for sub_name, sub_info in subscriber_states.items() %}
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between align-items-center p-2 border rounded mb-2">
+                            <span><strong>{{ sub_name }}</strong></span>
+                            <span class="badge {% if sub_info.queue_depth > 100 %}bg-warning{% elif sub_info.queue_depth > 0 %}bg-primary{% else %}bg-secondary{% endif %}">
+                                Queue: {{ sub_info.queue_depth }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Auto-refresh toggle -->
         <div class="auto-refresh-toggle mt-3">
@@ -102,6 +157,7 @@
                         <thead class="table-dark">
                             <tr>
                                 <th>Node Name</th>
+                                <th>Type</th>
                                 <th>Status</th>
                                 <th>Calculation Count</th>
                                 <th>Last Calculation</th>
@@ -111,11 +167,15 @@
                             </tr>
                         </thead>
                         <tbody id="stateTableBody">
+                            {% if node_states %}
                             {% for node in node_states %}
                             <tr>
                                 <td><strong>{{ node.name }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ node.type if node.type else 'Unknown' }}</span></td>
                                 <td>
-                                    {% if node.isdirty %}
+                                    {% if node.status_note %}
+                                    <span class="badge bg-info">{{ node.status_note }}</span>
+                                    {% elif node.isdirty %}
                                     <span class="badge bg-warning text-dark">Dirty</span>
                                     {% else %}
                                     <span class="badge bg-success">Clean</span>
@@ -180,6 +240,13 @@
                                 </td>
                             </tr>
                             {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    <i class="bi bi-info-circle"></i> No nodes configured for this DAG
+                                </td>
+                            </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

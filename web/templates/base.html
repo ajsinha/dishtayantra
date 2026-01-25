@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
@@ -460,6 +462,50 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        
+        /* Global Code Block Styling for Prism.js */
+        pre.code-block,
+        div.code-block {
+            background: #2d3748 !important;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            line-height: 1.5;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre;
+        }
+        pre.code-block code,
+        div.code-block code {
+            font-family: inherit;
+            font-size: inherit;
+            background: transparent !important;
+            padding: 0;
+            color: inherit;
+            white-space: pre;
+        }
+        /* Language-specific left borders */
+        pre.code-block.json, div.code-block.json { border-left: 4px solid #10b981; }
+        pre.code-block.python, div.code-block.python { border-left: 4px solid #3776ab; }
+        pre.code-block.java, div.code-block.java { border-left: 4px solid #f89820; }
+        pre.code-block.bash, div.code-block.bash, 
+        pre.code-block.shell, div.code-block.shell { border-left: 4px solid #64748b; }
+        pre.code-block.yaml, div.code-block.yaml { border-left: 4px solid #cb171e; }
+        pre.code-block.javascript, div.code-block.javascript,
+        pre.code-block.js, div.code-block.js { border-left: 4px solid #f7df1e; }
+        pre.code-block.properties, div.code-block.properties { border-left: 4px solid #6b7280; }
+        
+        /* Override Prism default styles */
+        pre[class*="language-"],
+        code[class*="language-"] {
+            font-family: 'Monaco', 'Menlo', 'Consolas', 'Liberation Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -504,6 +550,16 @@
                             <li>
                                 <a class="dropdown-item" href="{{ url_for('system_monitoring') }}">
                                     <i class="bi bi-activity"></i> System Monitoring
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('admin_workers') }}">
+                                    <i class="bi bi-cpu"></i> Worker Pool
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('jvm_management') }}">
+                                    <i class="bi bi-hdd-stack"></i> JVM Management
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
@@ -586,6 +642,60 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Prism.js for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-properties.min.js"></script>
+    <script>
+    // Auto-format code blocks with Prism.js syntax highlighting
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find all div.code-block elements and convert them to proper pre/code structure
+        document.querySelectorAll('div.code-block').forEach(function(div) {
+            // Determine language from class
+            var lang = 'none';
+            if (div.classList.contains('json')) lang = 'json';
+            else if (div.classList.contains('python')) lang = 'python';
+            else if (div.classList.contains('java')) lang = 'java';
+            else if (div.classList.contains('bash') || div.classList.contains('shell')) lang = 'bash';
+            else if (div.classList.contains('yaml') || div.classList.contains('yml')) lang = 'yaml';
+            else if (div.classList.contains('javascript') || div.classList.contains('js')) lang = 'javascript';
+            else if (div.classList.contains('properties')) lang = 'properties';
+            
+            // Get the text content
+            var content = div.textContent || div.innerText;
+            
+            // Create pre and code elements
+            var pre = document.createElement('pre');
+            pre.className = div.className;
+            
+            var code = document.createElement('code');
+            code.className = 'language-' + lang;
+            code.textContent = content;
+            
+            pre.appendChild(code);
+            
+            // Replace div with pre
+            div.parentNode.replaceChild(pre, div);
+            
+            // Highlight
+            if (typeof Prism !== 'undefined' && lang !== 'none') {
+                Prism.highlightElement(code);
+            }
+        });
+        
+        // Also highlight any pre > code elements that are already properly formatted
+        document.querySelectorAll('pre code[class*="language-"]').forEach(function(code) {
+            if (typeof Prism !== 'undefined') {
+                Prism.highlightElement(code);
+            }
+        });
+    });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

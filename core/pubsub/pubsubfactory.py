@@ -18,9 +18,10 @@ def create_publisher(name, config):
     Supported destinations:
         - mem://queue/queue_name - In-memory queue
         - mem://topic/topic_name - In-memory topic
-        - mem://name - Simple in-memory (v1.5.1)
-        - inmemory://name - Alternative in-memory format (v1.5.1)
-        - memory://name - Alternative in-memory format (v1.5.1)
+        - mem://name - Simple in-memory (v1.5.2)
+        - inmemory://name - Alternative in-memory format (v1.5.2)
+        - memory://name - Alternative in-memory format (v1.5.2)
+        - lmdb://channel_name - LMDB cross-process pub/sub (v1.5.2)
         - file://path/to/file - File-based
         - kafka://topic/topic_name - Apache Kafka
         - activemq://queue/queue_name - ActiveMQ queue
@@ -57,16 +58,16 @@ def create_publisher(name, config):
         from core.pubsub.inmemory_datapubsub import InMemoryDataPublisher
         return InMemoryDataPublisher(name, destination, config)
     elif destination.startswith('mem://'):
-        # Simple mem:// format (v1.5.1) - e.g., mem://my_queue
+        # Simple mem:// format (v1.5.2) - e.g., mem://my_queue
         from core.pubsub.inmemory_datapubsub import InMemoryDataPublisher
         return InMemoryDataPublisher(name, destination, config)
     elif destination.startswith('inmemory://'):
-        # inmemory:// format (v1.5.1) - e.g., inmemory://batch_data_queue
+        # inmemory:// format (v1.5.2) - e.g., inmemory://batch_data_queue
         from core.pubsub.inmemory_datapubsub import InMemoryDataPublisher
         normalized_dest = 'mem://' + destination[len('inmemory://'):]
         return InMemoryDataPublisher(name, normalized_dest, config)
     elif destination.startswith('memory://'):
-        # memory:// format (v1.5.1) - e.g., memory://market_data
+        # memory:// format (v1.5.2) - e.g., memory://market_data
         from core.pubsub.inmemory_datapubsub import InMemoryDataPublisher
         normalized_dest = 'mem://' + destination[len('memory://'):]
         return InMemoryDataPublisher(name, normalized_dest, config)
@@ -151,6 +152,11 @@ def create_publisher(name, config):
         from core.pubsub.metronome_datapubsub import MetronomeDataPublisher
         return MetronomeDataPublisher(name, destination, config)
 
+    # LMDB (v1.5.2) - for cross-process communication
+    elif destination.startswith('lmdb://'):
+        from core.pubsub.lmdbpubsub import create_lmdb_publisher
+        return create_lmdb_publisher(name, config)
+
     else:
         raise ValueError(f"Unknown destination type: {destination}")
 
@@ -169,9 +175,10 @@ def create_subscriber(name, config):
     Supported sources:
         - mem://queue/queue_name - In-memory queue
         - mem://topic/topic_name - In-memory topic
-        - mem://name - Simple in-memory (v1.5.1)
-        - inmemory://name - Alternative in-memory format (v1.5.1)
-        - memory://name - Alternative in-memory format (v1.5.1)
+        - mem://name - Simple in-memory (v1.5.2)
+        - inmemory://name - Alternative in-memory format (v1.5.2)
+        - memory://name - Alternative in-memory format (v1.5.2)
+        - lmdb://channel_name - LMDB cross-process pub/sub (v1.5.2)
         - file://path/to/file - File-based
         - kafka://topic/topic_name - Apache Kafka
         - activemq://queue/queue_name - ActiveMQ queue
@@ -215,17 +222,17 @@ def create_subscriber(name, config):
         from core.pubsub.inmemory_datapubsub import InMemoryDataSubscriber
         return InMemoryDataSubscriber(name, source, config)
     elif source.startswith('mem://'):
-        # Simple mem:// format (v1.5.1) - e.g., mem://my_queue
+        # Simple mem:// format (v1.5.2) - e.g., mem://my_queue
         from core.pubsub.inmemory_datapubsub import InMemoryDataSubscriber
         return InMemoryDataSubscriber(name, source, config)
     elif source.startswith('inmemory://'):
-        # inmemory:// format (v1.5.1) - e.g., inmemory://batch_data_queue
+        # inmemory:// format (v1.5.2) - e.g., inmemory://batch_data_queue
         from core.pubsub.inmemory_datapubsub import InMemoryDataSubscriber
         # Normalize to mem:// format for consistency
         normalized_source = 'mem://' + source[len('inmemory://'):]
         return InMemoryDataSubscriber(name, normalized_source, config)
     elif source.startswith('memory://'):
-        # memory:// format (v1.5.1) - e.g., memory://market_data
+        # memory:// format (v1.5.2) - e.g., memory://market_data
         from core.pubsub.inmemory_datapubsub import InMemoryDataSubscriber
         # Normalize to mem:// format for consistency
         normalized_source = 'mem://' + source[len('memory://'):]
@@ -302,6 +309,11 @@ def create_subscriber(name, config):
     elif source == 'metronome':
         from core.pubsub.metronome_datapubsub import MetronomeDataSubscriber
         return MetronomeDataSubscriber(name, source, config)
+
+    # LMDB (v1.5.2) - for cross-process communication
+    elif source.startswith('lmdb://'):
+        from core.pubsub.lmdbpubsub import create_lmdb_subscriber
+        return create_lmdb_subscriber(name, config)
 
     else:
         raise ValueError(f"Unknown source type: {source}")

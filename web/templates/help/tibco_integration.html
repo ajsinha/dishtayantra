@@ -93,16 +93,16 @@
     <div class="card-body">
         <h6>1. TIBCO EMS Server</h6>
         <p class="small text-muted">TIBCO EMS requires a valid license. Contact TIBCO for evaluation or production licenses.</p>
-        <div class="code-block bash"># Default ports:
+        <pre class="code-block bash"># Default ports:
 # STOMP: 7222 (same as main port with STOMP enabled)
 # Admin: 7222
-# SSL: 7243</div>
+# SSL: 7243</pre>
 
         <h6 class="mt-4">2. Install Python Client</h6>
-        <div class="code-block bash">pip install stomp.py</div>
+        <pre class="code-block bash">pip install stomp.py</pre>
 
         <h6 class="mt-4">3. Queue Publisher</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'tibco://queue/orders',
@@ -114,10 +114,10 @@ config = {
 
 publisher = create_publisher('order_pub', config)
 publisher.publish({'order_id': 'ORD-001', 'amount': 5000.00})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">4. Queue Subscriber</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'tibco://queue/orders',
@@ -131,10 +131,10 @@ subscriber = create_subscriber('order_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
 
         <h6 class="mt-4">5. Topic Publisher</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'destination': 'tibco://topic/market.data',
     'host': 'tibco-ems.example.com',
     'port': 7222,
@@ -144,7 +144,7 @@ subscriber.stop()</div>
 
 publisher = create_publisher('market_pub', config)
 publisher.publish({'symbol': 'AAPL', 'price': 178.50, 'volume': 1000000})
-publisher.stop()</div>
+publisher.stop()</pre>
     </div>
 </div>
 
@@ -187,7 +187,7 @@ publisher.stop()</div>
         </table>
 
         <h6 class="mt-4">Fault-Tolerant Configuration</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "tibco_input",
   "type": "DataSubscriberNode",
   "config": {
@@ -201,7 +201,7 @@ publisher.stop()</div>
     "ssl": true,
     "ssl_ca_certs": "/etc/ssl/tibco-ca.pem"
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -210,7 +210,7 @@ publisher.stop()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient TIBCO EMS</h5></div>
     <div class="card-body">
         <p>Use the resilient version for automatic reconnection and failover:</p>
-        <div class="code-block python">from core.pubsub.resilient_tibcoems import ResilientTibcoEMSConsumer
+        <pre class="code-block python">from core.pubsub.resilient_tibcoems import ResilientTibcoEMSConsumer
 
 consumer = ResilientTibcoEMSConsumer(
     hosts=[
@@ -229,7 +229,7 @@ for message in consumer:
     print(f"Received: {message.body}")
     consumer.ack(message)
 
-consumer.disconnect()</div>
+consumer.disconnect()</pre>
 
         <h6 class="mt-4">Resilient Configuration</h6>
         <table class="table table-sm table-bordered">

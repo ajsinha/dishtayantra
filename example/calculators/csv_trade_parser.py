@@ -1,7 +1,7 @@
 """
 Example Calculator: CSV Trade Parser with Packaged Message Support
 
-This calculator demonstrates how to handle the v1.5.1 auto-packaged
+This calculator demonstrates how to handle the v1.5.2 auto-packaged
 non-dictionary messages from DataSubscriber.
 
 When auto_package_non_dict is enabled, non-dict messages are wrapped:
@@ -19,7 +19,7 @@ When auto_package_non_dict is enabled, non-dict messages are wrapped:
     }
 
 Author: Ashutosh Sinha
-Version: 1.5.1
+Version: 1.5.2
 """
 
 import logging
@@ -72,7 +72,7 @@ class CSVTradeParserCalculator:
         """
         self._processed_count += 1
         
-        # Check if this is a packaged message (v1.5.1 feature)
+        # Check if this is a packaged message (v1.5.2 feature)
         if data.get('_packaged'):
             return self._process_packaged_message(data)
         else:
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     print("Testing CSVTradeParserCalculator with Packaged Messages")
     print("=" * 60)
     
-    # Test 1: Packaged CSV string (v1.5.1 format)
+    # Test 1: Packaged CSV string (v1.5.2 format)
     packaged_input = {
         'payload': "TRADE_001,BUY,100,AAPL,150.25",
         '_packaged': True,
@@ -261,7 +261,7 @@ if __name__ == '__main__':
             'subscriber_name': 'kafka_csv_trades',
             'source': 'kafka://topic/csv_trades',
             'received_at': '2025-01-13T10:30:00.123456',
-            'packaging_version': '1.5.1'
+            'packaging_version': '1.5.2'
         }
     }
     

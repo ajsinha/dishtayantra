@@ -1,6 +1,6 @@
 # DishtaYantra Architecture Document
 
-## Version 1.5.0
+## Version 1.6.0
 
 © 2025-2030 Ashutosh Sinha
 
@@ -11,38 +11,48 @@
 1. [System Overview](#system-overview)
 2. [Architecture Layers](#architecture-layers)
 3. [Core Components](#core-components)
-4. [Multi-Language Calculator Architecture](#multi-language-calculator-architecture)
-5. [LMDB Zero-Copy Data Exchange](#lmdb-zero-copy-data-exchange)
-6. [Pub/Sub Framework](#pubsub-framework)
-7. [DAG Execution Engine](#dag-execution-engine)
-8. [Web Application Architecture](#web-application-architecture)
-9. [Admin & Monitoring System](#admin--monitoring-system)
-10. [Prometheus Metrics Integration](#prometheus-metrics-integration)
-11. [High Availability](#high-availability)
-12. [Security Architecture](#security-architecture)
-13. [Performance Considerations](#performance-considerations)
-14. [Deployment Architecture](#deployment-architecture)
+4. [Worker Pool Architecture](#worker-pool-architecture)
+5. [JVM Manager Architecture](#jvm-manager-architecture)
+6. [Multi-Language Calculator Architecture](#multi-language-calculator-architecture)
+7. [LMDB Zero-Copy Data Exchange](#lmdb-zero-copy-data-exchange)
+8. [Pub/Sub Framework](#pubsub-framework)
+9. [DAG Execution Engine](#dag-execution-engine)
+10. [Web Application Architecture](#web-application-architecture)
+11. [Admin & Monitoring System](#admin--monitoring-system)
+12. [Prometheus Metrics Integration](#prometheus-metrics-integration)
+13. [High Availability](#high-availability)
+14. [Security Architecture](#security-architecture)
+15. [Performance Considerations](#performance-considerations)
+16. [Deployment Architecture](#deployment-architecture)
 
 ---
 
 ## System Overview
 
-DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) compute server designed for real-time data processing pipelines. The system supports multiple message brokers, data sources, multi-language calculator integrations, LMDB zero-copy data exchange, and comprehensive Prometheus monitoring.
+DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) compute server designed for real-time data processing pipelines. The system supports multiple message brokers, data sources, multi-language calculator integrations, LMDB zero-copy data exchange, multiprocessing worker pool with DAG affinity, and comprehensive Prometheus monitoring.
 
 ### High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           DishtaYantra v1.5.0                            │
+│                           DishtaYantra v1.6.0                            │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐ │
-│  │   Web UI     │  │  REST API    │  │   Admin      │  │    Help     │ │
-│  │  Dashboard   │  │  Endpoints   │  │  Monitoring  │  │   Center    │ │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └─────────────┘ │
-│         │                 │                 │                           │
-│  ┌──────┴─────────────────┴─────────────────┴─────────────────────────┐ │
+│  │   Web UI     │  │  REST API    │  │   Admin      │  │   Worker    │ │
+│  │  Dashboard   │  │  Endpoints   │  │  Monitoring  │  │   Pool UI   │ │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
+│         │                 │                 │                  │        │
+│  ┌──────┴─────────────────┴─────────────────┴──────────────────┴──────┐ │
 │  │                      Flask Application Layer                        │ │
 │  │            (Routes, Authentication, Session Management)             │ │
+│  └────────────────────────────────┬────────────────────────────────────┘ │
+│                                   │                                      │
+│  ┌────────────────────────────────┴────────────────────────────────────┐ │
+│  │                     Worker Pool Manager (v1.5.2)                     │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │ │
+│  │  │  Affinity   │  │   Health    │  │    LMDB     │  │   Auto     │  │ │
+│  │  │  Manager    │  │   Monitor   │  │   Pub/Sub   │  │  Restart   │  │ │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │ │
 │  └────────────────────────────────┬────────────────────────────────────┘ │
 │                                   │                                      │
 │  ┌────────────────────────────────┴────────────────────────────────────┐ │
@@ -71,7 +81,7 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 │  │  ┌─────────────────────────────────────────────────────────────────┐ │ │
 │  │  │                  Pub/Sub Framework                               │ │ │
 │  │  │  ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐   │ │ │
-│  │  │  │ Kafka │ │Rabbit │ │ Redis │ │Active │ │ File  │ │  SQL  │   │ │ │
+│  │  │  │ Kafka │ │Rabbit │ │ Redis │ │Active │ │ File  │ │  LMDB │   │ │ │
 │  │  │  │       │ │  MQ   │ │       │ │  MQ   │ │       │ │       │   │ │ │
 │  │  │  └───────┘ └───────┘ └───────┘ └───────┘ └───────┘ └───────┘   │ │ │
 │  │  └─────────────────────────────────────────────────────────────────┘ │ │
@@ -191,6 +201,252 @@ Represents a single DAG with all its nodes and edges.
 │ - input_queue   │     │ - output_data   │     │ - no output     │
 │ - output_data   │     │                 │     │                 │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+---
+
+## Worker Pool Architecture
+
+### Overview (v1.5.2)
+
+The Worker Pool provides true CPU parallelism by distributing DAG execution across multiple worker processes, bypassing Python's Global Interpreter Lock (GIL).
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      MAIN PROCESS (Orchestrator)                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ Web Server  │  │ DAG Manager │  │ Affinity Manager        │  │
+│  │             │  │             │  │ (weight_based strategy) │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│         │              │                      │                  │
+│  ┌──────┴──────────────┴──────────────────────┴───────────────┐ │
+│  │                 Worker Pool Manager                         │ │
+│  │  ┌─────────────────┐  ┌────────────────────────────────┐   │ │
+│  │  │ Health Monitor  │  │ Status Processing Thread       │   │ │
+│  │  │ (heartbeats)    │  │ (worker status aggregation)    │   │ │
+│  │  └─────────────────┘  └────────────────────────────────┘   │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+              │ Control Queues            │ Status Queue
+              ▼                           ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   Worker 0      │ │   Worker 1      │ │   Worker 2      │
+│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ ┌─────────────┐ │
+│ │   DAG_A     │ │ │ │   DAG_B     │ │ │ │   DAG_C     │ │
+│ │   DAG_D     │ │ │ │   DAG_E     │ │ │ │   DAG_F     │ │
+│ └─────────────┘ │ │ └─────────────┘ │ │ └─────────────┘ │
+│   (Process)     │ │   (Process)     │ │   (Process)     │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+         │                  │                   │
+         └──────────────────┴───────────────────┘
+                           │
+                    LMDB (shared data)
+```
+
+### Components
+
+| Component | Description |
+|-----------|-------------|
+| **WorkerPoolManager** | Orchestrates worker lifecycle, DAG assignments, and health monitoring |
+| **DAGWorkerProcess** | Individual worker process that runs assigned DAGs |
+| **DAGAffinityManager** | Determines optimal DAG-to-worker assignments |
+| **WorkerHealthMonitor** | Tracks worker health via heartbeats, triggers auto-restart |
+| **LMDBDataPublisher/Subscriber** | Cross-process pub/sub for inter-worker communication |
+
+### DAG Affinity Strategies
+
+1. **weight_based** (default): Assigns DAGs to the worker with lowest estimated load
+2. **round_robin**: Distributes DAGs evenly across workers
+3. **least_loaded**: Uses actual CPU metrics for assignment
+4. **random**: Random assignment for testing
+
+### Worker Affinity Configuration
+
+```json
+{
+    "name": "critical_dag",
+    "worker_affinity": {
+        "pinned_worker": 0,      // Force to Worker 0
+        "exclusive": true,       // Get dedicated worker
+        "preferred_workers": [0, 1]  // Preference list
+    }
+}
+```
+
+### Health Monitoring & Auto-Restart
+
+```
+                    ┌───────────────────┐
+                    │  WorkerHealthMonitor │
+                    └─────────┬─────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+     ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+     │ Heartbeat   │  │ Process     │  │ Auto        │
+     │ Tracking    │  │ Liveness    │  │ Restart     │
+     │ (2s interval)│  │ Check       │  │ (backoff)   │
+     └─────────────┘  └─────────────┘  └─────────────┘
+```
+
+- **Heartbeat Interval**: 2 seconds
+- **Unhealthy Threshold**: 3 missed heartbeats (15 seconds)
+- **Restart Backoff**: Exponential (5s, 10s, 20s, max 60s)
+- **Max Restart Attempts**: Configurable (default: 3)
+
+### Cross-Worker Communication (LMDB Pub/Sub)
+
+```
+┌─────────────────┐                    ┌─────────────────┐
+│   Worker 0      │                    │   Worker 1      │
+│ ┌─────────────┐ │                    │ ┌─────────────┐ │
+│ │ Publisher   │ │                    │ │ Subscriber  │ │
+│ │ lmdb://chan │─┼──────────────────▶│ │ lmdb://chan │ │
+│ └─────────────┘ │     LMDB File      │ └─────────────┘ │
+└─────────────────┘    (memory-mapped) └─────────────────┘
+```
+
+Benefits:
+- Zero-copy reads across processes
+- Multiple readers simultaneously
+- ACID compliant data integrity
+- Persistent across worker restarts
+
+---
+
+## JVM Manager Architecture
+
+### Overview (v1.6.0)
+
+The JVM Manager provides centralized management of Java Virtual Machine instances and Py4J gateway connections for Java calculator integration.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        JVM Manager (v1.6.0)                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────────┐    ┌───────────────────────────────────────────┐  │
+│  │  jvm_config.json │───▶│              JVMManager                   │  │
+│  │                  │    │  - Gateway configs                        │  │
+│  │  - gateways[]    │    │  - Calculator definitions                 │  │
+│  │  - calculators   │    │  - Health monitoring thread               │  │
+│  │  - jvm options   │    │  - Config change detection                │  │
+│  └──────────────────┘    └───────────────────┬───────────────────────┘  │
+│                                              │                           │
+│                    ┌─────────────────────────┼─────────────────────────┐ │
+│                    │                         │                         │ │
+│              ┌─────┴─────┐             ┌─────┴─────┐             ┌─────┴─────┐
+│              │ Gateway 1 │             │ Gateway 2 │             │ Gateway N │
+│              │ "primary" │             │"secondary"│             │  "custom" │
+│              │           │             │           │             │           │
+│              │ Py4J Pool │             │ Py4J Pool │             │ Py4J Pool │
+│              │ (4 conn)  │             │ (2 conn)  │             │ (N conn)  │
+│              └─────┬─────┘             └─────┬─────┘             └─────┬─────┘
+│                    │                         │                         │
+│              ┌─────┴─────┐             ┌─────┴─────┐             ┌─────┴─────┐
+│              │   JVM 1   │             │   JVM 2   │             │   JVM N   │
+│              │           │             │           │             │           │
+│              │ Heap: 2GB │             │ Heap: 1GB │             │ Heap:Conf │
+│              │ G1GC      │             │ Defaults  │             │ Options   │
+│              └───────────┘             └───────────┘             └───────────┘
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Configuration File (jvm_config.json)
+
+```json
+{
+    "jvm_manager": {
+        "enabled": true,
+        "auto_start_on_load": true,
+        "health_check_interval_seconds": 30,
+        "config_check_interval_seconds": 600,
+        "shutdown_timeout_seconds": 30
+    },
+    "gateways": [
+        {
+            "name": "primary",
+            "enabled": true,
+            "host": "localhost",
+            "base_port": 25333,
+            "pool_size": 4,
+            "jvm": {
+                "auto_start": true,
+                "heap_size_mb": 512,
+                "max_heap_size_mb": 2048,
+                "jvm_options": ["-XX:+UseG1GC"],
+                "classpath": ["java/lib/*"]
+            }
+        }
+    ],
+    "calculators": {
+        "definitions": {
+            "MathCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples...",
+                "gateway": "primary",
+                "default_config": {}
+            }
+        }
+    }
+}
+```
+
+### Health Monitoring
+
+The JVM Manager includes automatic health monitoring:
+
+1. **Health Check Thread**: Runs every 30 seconds (configurable)
+   - Checks JVM process status
+   - Verifies gateway connections
+   - Auto-restarts failed JVMs if `auto_start` is enabled
+
+2. **Config Change Detection**: Monitors every 10 minutes (configurable)
+   - Detects changes to jvm_config.json
+   - Automatically restarts affected JVMs with new settings
+
+3. **Graceful Shutdown**: On application shutdown
+   - Closes all gateway connections
+   - Terminates JVM processes with configurable timeout
+   - Force kills if timeout exceeded
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/jvm/status` | GET | Get JVM Manager status |
+| `/api/jvm/gateways` | GET | List all gateways |
+| `/api/jvm/gateways/{name}` | GET | Get gateway details |
+| `/api/jvm/gateways/{name}/stop` | POST | Stop a JVM |
+| `/api/jvm/gateways/{name}/restart` | POST | Restart a JVM |
+| `/api/jvm/gateways/{name}/reconnect` | POST | Reconnect gateway |
+| `/api/jvm/reload-config` | POST | Reload configuration |
+| `/api/jvm/calculators` | GET | List Java calculators |
+
+### Worker Process Integration
+
+Worker processes automatically connect to existing JVM gateways:
+
+```
+Main Process                          Worker Process
+┌─────────────────────┐               ┌─────────────────────┐
+│  JVM Manager        │               │  JVM Manager        │
+│  - Starts JVMs      │               │  - Connect only     │
+│  - Creates gateways │               │  - No JVM start     │
+│  - Health monitor   │               │  - Uses existing    │
+└──────────┬──────────┘               └──────────┬──────────┘
+           │                                     │
+           ▼                                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Py4J Gateway Pool                         │
+│              (localhost:25333, 25334, ...)                   │
+└─────────────────────────────────────────────────────────────┘
+           │                                     │
+           ▼                                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   JVM Process (shared)                       │
+│            DishtaYantraGateway with Calculators             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---

@@ -283,7 +283,7 @@
     </div>
     <div class="card-body">
         <h6>Step 1: Install Rust</h6>
-        <div class="code-block bash"># Install Rust via rustup (all platforms)
+        <pre class="code-block bash"># Install Rust via rustup (all platforms)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Restart shell or run:
@@ -291,20 +291,20 @@ source $HOME/.cargo/env
 
 # Verify installation
 rustc --version
-cargo --version</div>
+cargo --version</pre>
         
         <h6 class="mt-4">Step 2: Install maturin (Build Tool)</h6>
-        <div class="code-block bash"># Via pip (recommended)
+        <pre class="code-block bash"># Via pip (recommended)
 pip install maturin
 
 # Via cargo
 cargo install maturin
 
 # Verify
-maturin --version</div>
+maturin --version</pre>
 
         <h6 class="mt-4">Step 3: Create Project Structure</h6>
-        <div class="code-block bash"># Create new Rust project
+        <pre class="code-block bash"># Create new Rust project
 mkdir dishtayantra_rust
 cd dishtayantra_rust
 
@@ -316,7 +316,7 @@ maturin init --bindings pyo3
 # ├── Cargo.toml
 # ├── pyproject.toml
 # └── src/
-#     └── lib.rs</div>
+#     └── lib.rs</pre>
     </div>
 </div>
 
@@ -327,7 +327,7 @@ maturin init --bindings pyo3
     </div>
     <div class="card-body">
         <h6>Cargo.toml Configuration</h6>
-        <div class="code-block toml">[package]
+        <pre class="code-block toml">[package]
 name = "dishtayantra_rust"
 version = "1.1.0"
 edition = "2021"
@@ -346,10 +346,10 @@ rayon = "1.8"  # For parallel processing
 [profile.release]
 opt-level = 3
 lto = true
-codegen-units = 1</div>
+codegen-units = 1</pre>
 
         <h6 class="mt-4">Base Calculator Trait and Implementations</h6>
-        <div class="code-block rust">// src/lib.rs
+        <pre class="code-block rust">// src/lib.rs
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyAny};
 use std::collections::HashMap;
@@ -508,10 +508,10 @@ impl MathCalculator {
         dict.set_item("calculation_count", self.calculation_count)?;
         Ok(dict.into())
     }
-}</div>
+}</pre>
 
         <h6 class="mt-4">Trade Pricing Calculator (Financial)</h6>
-        <div class="code-block rust">/// High-performance trade pricing calculator
+        <pre class="code-block rust">/// High-performance trade pricing calculator
 #[pyclass]
 struct TradePricingCalculator {
     name: String,
@@ -599,10 +599,10 @@ impl TradePricingCalculator {
         dict.set_item("calculation_count", self.calculation_count)?;
         Ok(dict.into())
     }
-}</div>
+}</pre>
 
         <h6 class="mt-4">Module Registration</h6>
-        <div class="code-block rust">/// Python module definition
+        <pre class="code-block rust">/// Python module definition
 #[pymodule]
 fn dishtayantra_rust(_py: Python, m: &PyModule) -> PyResult&lt;()&gt; {
     m.add_class::&lt;PassthruCalculator&gt;()?;
@@ -610,7 +610,7 @@ fn dishtayantra_rust(_py: Python, m: &PyModule) -> PyResult&lt;()&gt; {
     m.add_class::&lt;TradePricingCalculator&gt;()?;
     // Add more calculators here
     Ok(())
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -635,33 +635,33 @@ fn dishtayantra_rust(_py: Python, m: &PyModule) -> PyResult&lt;()&gt; {
         </ul>
         <div class="tab-content mt-3">
             <div class="tab-pane fade show active" id="build-dev">
-                <div class="code-block bash"># Build and install in current environment (development)
+                <pre class="code-block bash"># Build and install in current environment (development)
 maturin develop
 
 # With release optimizations
 maturin develop --release
 
 # The module is now importable
-python -c "import dishtayantra_rust; print(dir(dishtayantra_rust))"</div>
+python -c "import dishtayantra_rust; print(dir(dishtayantra_rust))"</pre>
             </div>
             <div class="tab-pane fade" id="build-release">
-                <div class="code-block bash"># Build release wheel
+                <pre class="code-block bash"># Build release wheel
 maturin build --release
 
 # Output: target/wheels/dishtayantra_rust-1.1.0-*.whl
 
 # Install the wheel
-pip install target/wheels/dishtayantra_rust-*.whl</div>
+pip install target/wheels/dishtayantra_rust-*.whl</pre>
             </div>
             <div class="tab-pane fade" id="build-wheel">
-                <div class="code-block bash"># Build wheels for multiple Python versions
+                <pre class="code-block bash"># Build wheels for multiple Python versions
 maturin build --release --interpreter python3.10 python3.11 python3.12
 
 # Build manylinux wheel (for distribution)
 maturin build --release --manylinux 2014
 
 # Upload to PyPI
-maturin upload target/wheels/*</div>
+maturin upload target/wheels/*</pre>
             </div>
         </div>
 
@@ -680,7 +680,7 @@ maturin upload target/wheels/*</div>
         </ul>
         <div class="tab-content mt-3">
             <div class="tab-pane fade show active" id="platform-linux">
-                <div class="code-block bash"># No additional dependencies needed
+                <pre class="code-block bash"># No additional dependencies needed
 # Output: dishtayantra_rust.cpython-311-x86_64-linux-gnu.so
 
 # For manylinux compatibility
@@ -688,10 +688,10 @@ maturin build --release --manylinux 2014
 
 # Copy to DishtaYantra
 cp target/release/libdishtayantra_rust.so \
-   /path/to/dishtayantra/core/calculator/dishtayantra_rust.so</div>
+   /path/to/dishtayantra/core/calculator/dishtayantra_rust.so</pre>
             </div>
             <div class="tab-pane fade" id="platform-macos">
-                <div class="code-block bash"># Xcode Command Line Tools required
+                <pre class="code-block bash"># Xcode Command Line Tools required
 xcode-select --install
 
 # Build for Apple Silicon (M1/M2)
@@ -701,10 +701,10 @@ maturin build --release --target aarch64-apple-darwin
 maturin build --release --target x86_64-apple-darwin
 
 # Build universal binary
-maturin build --release --target universal2-apple-darwin</div>
+maturin build --release --target universal2-apple-darwin</pre>
             </div>
             <div class="tab-pane fade" id="platform-windows">
-                <div class="code-block bash"># Visual Studio Build Tools required
+                <pre class="code-block bash"># Visual Studio Build Tools required
 # Output: dishtayantra_rust.cp311-win_amd64.pyd
 
 # Build
@@ -712,7 +712,7 @@ maturin build --release
 
 # Copy to DishtaYantra
 copy target\release\dishtayantra_rust.dll ^
-     C:\path\to\dishtayantra\core\calculator\dishtayantra_rust.pyd</div>
+     C:\path\to\dishtayantra\core\calculator\dishtayantra_rust.pyd</pre>
             </div>
         </div>
     </div>
@@ -725,7 +725,7 @@ copy target\release\dishtayantra_rust.dll ^
     </div>
     <div class="card-body">
         <h6>RustCalculator Wrapper Class</h6>
-        <div class="code-block python"># core/calculator/rust_calculator.py
+        <pre class="code-block python"># core/calculator/rust_calculator.py
 import importlib
 import logging
 from typing import Dict, Any
@@ -784,10 +784,10 @@ class RustCalculator:
         """Get calculator details."""
         details = dict(self._rust_instance.details())
         details['wrapper'] = 'RustCalculator'
-        return details</div>
+        return details</pre>
 
         <h6 class="mt-4">Using Rust Calculators in Python</h6>
-        <div class="code-block python"># Direct usage
+        <pre class="code-block python"># Direct usage
 from core.calculator.rust_calculator import RustCalculator
 
 # Create calculator
@@ -806,10 +806,10 @@ result = calc.calculate(data)
 print(result)  # {'price1': 100.0, 'price2': 105.0, 'price3': 98.0, 'avg_price': 101.0}
 
 # Get details
-print(calc.details())</div>
+print(calc.details())</pre>
 
         <h6 class="mt-4">CalculatorFactory Integration</h6>
-        <div class="code-block python"># The CalculatorFactory automatically handles Rust calculators
+        <pre class="code-block python"># The CalculatorFactory automatically handles Rust calculators
 from core.calculator.core_calculator import CalculatorFactory
 
 config = {
@@ -819,7 +819,7 @@ config = {
     'commission_rate': 0.002
 }
 
-calc = CalculatorFactory.create('pricing_calc', config)</div>
+calc = CalculatorFactory.create('pricing_calc', config)</pre>
     </div>
 </div>
 
@@ -831,7 +831,7 @@ calc = CalculatorFactory.create('pricing_calc', config)</div>
     <div class="card-body">
         <p>Configure a Rust calculator in your DAG JSON:</p>
         
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "rust_powered_dag",
   "start_time": "0900",
   "duration": "8h",
@@ -865,7 +865,7 @@ calc = CalculatorFactory.create('pricing_calc', config)</div>
     {"from": "subscriber", "to": "rust_pricing"},
     {"from": "rust_pricing", "to": "publisher"}
   ]
-}</div>
+}</pre>
 
         <h6 class="mt-4">Configuration Options</h6>
         <table class="table table-bordered">
@@ -909,7 +909,7 @@ calc = CalculatorFactory.create('pricing_calc', config)</div>
     </div>
     <div class="card-body">
         <h6>Example: Parallel Processing with Rayon</h6>
-        <div class="code-block rust">use rayon::prelude::*;
+        <pre class="code-block rust">use rayon::prelude::*;
 
 #[pyclass]
 struct ParallelCalculator {
@@ -955,10 +955,10 @@ impl ParallelCalculator {
         dict.set_item("calculation_count", self.calculation_count)?;
         Ok(dict.into())
     }
-}</div>
+}</pre>
 
         <h6 class="mt-4">Example: Risk Calculator with ndarray</h6>
-        <div class="code-block rust">// Add to Cargo.toml: ndarray = "0.15"
+        <pre class="code-block rust">// Add to Cargo.toml: ndarray = "0.15"
 use ndarray::{Array1, Array2};
 
 #[pyclass]
@@ -1021,7 +1021,7 @@ impl RiskCalculator {
         dict.set_item("confidence_level", self.confidence_level)?;
         Ok(dict.into())
     }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -1032,7 +1032,7 @@ impl RiskCalculator {
     </div>
     <div class="card-body">
         <h6>1. Release the GIL for CPU-Bound Work</h6>
-        <div class="code-block rust">fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        <pre class="code-block rust">fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
     // Extract data while holding GIL
     let values: Vec&lt;f64&gt; = data.get_item("values")?.unwrap().extract()?;
     
@@ -1046,10 +1046,10 @@ impl RiskCalculator {
     let output = PyDict::new(py);
     output.set_item("result", result)?;
     Ok(output.into())
-}</div>
+}</pre>
 
         <h6 class="mt-4">2. Use Proper Error Handling</h6>
-        <div class="code-block rust">fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
+        <pre class="code-block rust">fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt; {
     // Use ? for proper error propagation to Python
     let price: f64 = data
         .get_item("price")?
@@ -1058,10 +1058,10 @@ impl RiskCalculator {
         .map_err(|_| PyErr::new::&lt;pyo3::exceptions::PyTypeError, _&gt;("'price' must be a number"))?;
     
     // ...
-}</div>
+}</pre>
 
         <h6 class="mt-4">3. Use Interior Mutability for Thread Safety</h6>
-        <div class="code-block rust">use std::sync::Mutex;
+        <pre class="code-block rust">use std::sync::Mutex;
 
 #[pyclass]
 struct ThreadSafeCalculator {
@@ -1083,15 +1083,15 @@ impl ThreadSafeCalculator {
         result.set_item("running_total", current)?;
         Ok(result.into())
     }
-}</div>
+}</pre>
 
         <h6 class="mt-4">4. Optimize Cargo.toml for Production</h6>
-        <div class="code-block toml">[profile.release]
+        <pre class="code-block toml">[profile.release]
 opt-level = 3          # Maximum optimization
 lto = true             # Link-time optimization
 codegen-units = 1      # Better optimization, slower compile
 panic = "abort"        # Smaller binary
-strip = true           # Strip symbols</div>
+strip = true           # Strip symbols</pre>
     </div>
 </div>
 
@@ -1102,24 +1102,24 @@ strip = true           # Strip symbols</div>
     </div>
     <div class="card-body">
         <h6>Issue: Module Not Found</h6>
-        <div class="code-block bash"># Ensure module is installed
+        <pre class="code-block bash"># Ensure module is installed
 pip list | grep dishtayantra
 
 # Or ensure it's in Python path
 export PYTHONPATH="/path/to/module:$PYTHONPATH"
 
 # Verify import
-python -c "import dishtayantra_rust"</div>
+python -c "import dishtayantra_rust"</pre>
 
         <h6 class="mt-4">Issue: Maturin Build Fails</h6>
-        <div class="code-block bash"># Update maturin
+        <pre class="code-block bash"># Update maturin
 pip install --upgrade maturin
 
 # Check Rust version
 rustup update stable
 
 # Clear target directory
-cargo clean</div>
+cargo clean</pre>
 
         <h6 class="mt-4">Issue: Type Conversion Errors</h6>
         <ul>

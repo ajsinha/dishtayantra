@@ -131,16 +131,16 @@
     </div>
     <div class="card-body">
         <h6>1. Install Dependencies</h6>
-        <div class="code-block">pip install prometheus-client psutil</div>
+        <pre class="code-block">pip install prometheus-client psutil</div>
         
         <h6 class="mt-4">2. Test Metrics Endpoint</h6>
-        <div class="code-block">curl http://localhost:5002/metrics</div>
+        <pre class="code-block">curl http://localhost:5002/metrics</div>
         
         <h6 class="mt-4">3. Test Health Endpoint</h6>
-        <div class="code-block">curl http://localhost:5002/health</div>
+        <pre class="code-block">curl http://localhost:5002/health</div>
         
         <h6 class="mt-4">4. Configure Prometheus</h6>
-        <div class="code-block"># prometheus.yml
+        <pre class="code-block"># prometheus.yml
 global:
   scrape_interval: 15s
 
@@ -149,7 +149,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:5002']
     metrics_path: '/metrics'</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Available Metrics -->
@@ -231,7 +231,7 @@ scrape_configs:
     </div>
     <div class="card-body">
         <h6>/health Response</h6>
-        <div class="code-block">{
+        <pre class="code-block">{
   "status": "healthy",
   "timestamp": "2025-12-19T10:30:00Z",
   "version": "1.5.0",
@@ -250,13 +250,13 @@ scrape_configs:
 }</div>
 
         <h6 class="mt-4">/health/live Response</h6>
-        <div class="code-block">{
+        <pre class="code-block">{
   "status": "alive",
   "timestamp": "2025-12-19T10:30:00Z"
 }</div>
 
         <h6 class="mt-4">/health/ready Response</h6>
-        <div class="code-block">{
+        <pre class="code-block">{
   "status": "ready",
   "checks": {
     "dag_server": "ready",
@@ -264,7 +264,7 @@ scrape_configs:
   },
   "timestamp": "2025-12-19T10:30:00Z"
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Instrumenting Custom Code -->
@@ -274,7 +274,7 @@ scrape_configs:
     </div>
     <div class="card-body">
         <p>Add metrics to your custom calculators using decorators:</p>
-        <div class="code-block">from core.metrics import metrics, track_execution_time, count_calls
+        <pre class="code-block">from core.metrics import metrics, track_execution_time, count_calls
 
 class MyCalculator:
     @track_execution_time(
@@ -290,7 +290,7 @@ class MyCalculator:
         return result</div>
 
         <h6 class="mt-4">Recording Custom Metrics</h6>
-        <div class="code-block">from core.metrics import metrics
+        <pre class="code-block">from core.metrics import metrics
 
 # Increment counter
 metrics.dag_executions.labels(dag_name="my_dag", status="success").inc()
@@ -307,7 +307,7 @@ with metrics.calculator_duration.labels(
     calculator_type="python"
 ).time():
     perform_calculation()</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Alert Rules -->
@@ -370,7 +370,7 @@ with metrics.calculator_duration.labels(
     </div>
     <div class="card-body">
         <h6>Pod Annotations for Prometheus Operator</h6>
-        <div class="code-block">apiVersion: v1
+        <pre class="code-block">apiVersion: v1
 kind: Pod
 metadata:
   name: dishtayantra
@@ -396,7 +396,7 @@ spec:
           port: 5002
         initialDelaySeconds: 5
         periodSeconds: 5</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Troubleshooting -->

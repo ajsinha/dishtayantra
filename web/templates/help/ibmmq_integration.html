@@ -92,7 +92,7 @@
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
     <div class="card-body">
         <h6>1. Start IBM MQ (Docker - Developer Edition)</h6>
-        <div class="code-block bash">docker run -d --name ibmmq \
+        <pre class="code-block bash">docker run -d --name ibmmq \
   -e LICENSE=accept \
   -e MQ_QMGR_NAME=QM1 \
   -e MQ_APP_PASSWORD=passw0rd \
@@ -101,17 +101,17 @@
   icr.io/ibm-messaging/mq:latest
 
 # Web Console: https://localhost:9443/ibmmq/console (admin/passw0rd)
-# MQ Port: 1414</div>
+# MQ Port: 1414</pre>
 
         <h6 class="mt-4">2. Install Python Client</h6>
-        <div class="code-block bash"># IBM MQ Client Library (pymqi)
+        <pre class="code-block bash"># IBM MQ Client Library (pymqi)
 pip install pymqi
 
 # Or use STOMP connector (requires MQ STOMP support)
-pip install stomp.py</div>
+pip install stomp.py</pre>
 
         <h6 class="mt-4">3. Queue Publisher</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'websphere://queue/DEV.QUEUE.1',
@@ -125,10 +125,10 @@ config = {
 
 publisher = create_publisher('order_pub', config)
 publisher.publish({'order_id': 'ORD-001', 'amount': 10000.00})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">4. Queue Subscriber</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'websphere://queue/DEV.QUEUE.1',
@@ -144,10 +144,10 @@ subscriber = create_subscriber('order_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
 
         <h6 class="mt-4">5. Topic Publisher</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'destination': 'websphere://topic/DEV/TOPIC/1',
     'host': 'localhost',
     'port': 1414,
@@ -159,7 +159,7 @@ subscriber.stop()</div>
 
 publisher = create_publisher('event_pub', config)
 publisher.publish({'event': 'trade_executed', 'symbol': 'IBM'})
-publisher.stop()</div>
+publisher.stop()</pre>
     </div>
 </div>
 
@@ -201,7 +201,7 @@ publisher.stop()</div>
         </table>
 
         <h6 class="mt-4">DAG Node Configuration</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "ibmmq_input",
   "type": "DataSubscriberNode",
   "config": {
@@ -214,7 +214,7 @@ publisher.stop()</div>
     "password": "secret",
     "ssl_cipher_spec": "TLS_RSA_WITH_AES_256_CBC_SHA256"
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -223,7 +223,7 @@ publisher.stop()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient IBM MQ</h5></div>
     <div class="card-body">
         <p>Use the resilient version for automatic reconnection:</p>
-        <div class="code-block python">from core.pubsub.resilient_websphere import ResilientWebSphereMQConsumer
+        <pre class="code-block python">from core.pubsub.resilient_websphere import ResilientWebSphereMQConsumer
 
 consumer = ResilientWebSphereMQConsumer(
     host='mq.example.com',
@@ -242,7 +242,7 @@ for message in consumer:
     print(f"Received: {message}")
     consumer.commit()
 
-consumer.disconnect()</div>
+consumer.disconnect()</pre>
     </div>
 </div>
 
@@ -251,14 +251,14 @@ consumer.disconnect()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-hdd-network"></i> Multi-Instance Queue Manager</h5></div>
     <div class="card-body">
         <p>IBM MQ supports multi-instance queue managers for high availability:</p>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "source": "websphere://queue/PROD.ORDERS",
   "connection_name_list": "mq-primary.example.com(1414),mq-standby.example.com(1414)",
   "queue_manager": "QMHA",
   "channel": "APP.SVRCONN",
   "username": "mqapp",
   "password": "secret"
-}</div>
+}</pre>
         <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Tip:</strong> Use <code>connection_name_list</code> with comma-separated host(port) pairs for automatic failover.</div>
     </div>
 </div>

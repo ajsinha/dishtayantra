@@ -121,6 +121,20 @@
         </div>
     </div>
     <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #1e3a5f;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-gear-wide-connected" style="color: #1e3a5f;"></i> Configuration Files
+                    <span class="badge text-white ms-2" style="background: #1e3a5f;">1.5.2</span>
+                </h5>
+                <p class="card-text">Complete reference for application.properties, worker_config.json, users.json and DAG configuration files.</p>
+                <a href="{{ url_for('help_configuration') }}" class="btn btn-sm text-white" style="background: #1e3a5f;">
+                    View Reference <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4 mb-3">
         <div class="card help-card">
             <div class="card-body">
                 <h5 class="card-title">
@@ -135,7 +149,7 @@
     </div>
 </div>
 
-<!-- User Guides Section (v1.5.1) -->
+<!-- User Guides Section (v1.5.2) -->
 <h3 class="section-title"><i class="bi bi-journal-richtext"></i> User Guides & Documentation <span class="badge bg-success ms-2">NEW</span></h3>
 <div class="row mb-5">
     <div class="col-12">
@@ -597,6 +611,26 @@
                 </ul>
                 <a href="{{ url_for('help_prometheus_monitoring') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #e6522c, #da4e2a);">
                     <i class="bi bi-speedometer2"></i> Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #0ea5e9;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-cpu" style="color: #0ea5e9;"></i> Worker Pool & DAG Affinity
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">1.5.2</span>
+                </h5>
+                <p class="card-text">Multiprocessing worker pool for true CPU parallelism. DAG affinity keeps related DAGs together for cache locality.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Configurable number of worker processes</li>
+                    <li>Pin DAGs to specific workers</li>
+                    <li>Auto-restart on worker crash</li>
+                    <li>Cross-worker LMDB communication</li>
+                </ul>
+                <a href="{{ url_for('help_worker_pool') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+                    <i class="bi bi-cpu"></i> Learn More <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
         </div>

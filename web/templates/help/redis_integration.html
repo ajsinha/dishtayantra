@@ -90,16 +90,16 @@
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
     <div class="card-body">
         <h6>1. Start Redis (Docker)</h6>
-        <div class="code-block bash">docker run -d --name redis -p 6379:6379 redis:latest
+        <pre class="code-block bash">docker run -d --name redis -p 6379:6379 redis:latest
 
 # With persistence
-docker run -d --name redis -p 6379:6379 redis:latest --appendonly yes</div>
+docker run -d --name redis -p 6379:6379 redis:latest --appendonly yes</pre>
 
         <h6 class="mt-4">2. Install Python Client</h6>
-        <div class="code-block bash">pip install redis</div>
+        <pre class="code-block bash">pip install redis</pre>
 
         <h6 class="mt-4">3. Pub/Sub Publisher (Topic)</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'redis://topic/events',
@@ -109,10 +109,10 @@ config = {
 
 publisher = create_publisher('event_pub', config)
 publisher.publish({'event': 'user_login', 'user_id': 123})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">4. Pub/Sub Subscriber (Topic)</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'redis://topic/events',
@@ -124,10 +124,10 @@ subscriber = create_subscriber('event_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
 
         <h6 class="mt-4">5. List-Based Queue Publisher</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'destination': 'redis://queue/tasks',
     'host': 'localhost',
     'port': 6379
@@ -135,10 +135,10 @@ subscriber.stop()</div>
 
 publisher = create_publisher('task_pub', config)
 publisher.publish({'task': 'process_order', 'order_id': 'ORD-001'})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">6. List-Based Queue Subscriber</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'source': 'redis://queue/tasks',
     'host': 'localhost',
     'port': 6379
@@ -148,7 +148,7 @@ subscriber = create_subscriber('task_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)  # BRPOP with timeout
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
     </div>
 </div>
 
@@ -190,7 +190,7 @@ subscriber.stop()</div>
         </table>
 
         <h6 class="mt-4">DAG Node Configuration</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "redis_input",
   "type": "DataSubscriberNode",
   "config": {
@@ -200,7 +200,7 @@ subscriber.stop()</div>
     "password": "secret",
     "db": 0
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -209,7 +209,7 @@ subscriber.stop()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient Redis</h5></div>
     <div class="card-body">
         <p>Use the resilient version for automatic reconnection:</p>
-        <div class="code-block python">from core.pubsub.resilient_redis import ResilientRedisSubscriber
+        <pre class="code-block python">from core.pubsub.resilient_redis import ResilientRedisSubscriber
 
 subscriber = ResilientRedisSubscriber(
     host='localhost',
@@ -223,7 +223,7 @@ subscriber = ResilientRedisSubscriber(
 for message in subscriber:
     print(f"Received: {message}")
 
-subscriber.close()</div>
+subscriber.close()</pre>
     </div>
 </div>
 
@@ -232,7 +232,7 @@ subscriber.close()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-memory"></i> In-Memory Redis Clone</h5></div>
     <div class="card-body">
         <p>DishtaYantra includes an in-memory Redis-compatible implementation for development and testing:</p>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher, create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher, create_subscriber
 
 # Use 'inmemoryredis://' protocol - no actual Redis needed!
 config = {
@@ -245,7 +245,7 @@ publisher.publish({'test': 'data'})
 subscriber = create_subscriber('test_sub', {'source': 'inmemoryredis://queue/test_queue'})
 subscriber.start()
 data = subscriber.get_data(block_time=1)
-print(f"Received: {data}")</div>
+print(f"Received: {data}")</pre>
         <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Use Case:</strong> Perfect for unit testing and development without running an actual Redis server.</div>
     </div>
 </div>

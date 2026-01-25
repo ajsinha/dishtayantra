@@ -83,14 +83,14 @@
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
     <div class="card-body">
         <h6>1. Start RabbitMQ (Docker)</h6>
-        <div class="code-block bash">docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
-# Management UI: http://localhost:15672 (guest/guest)</div>
+        <pre class="code-block bash">docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+# Management UI: http://localhost:15672 (guest/guest)</pre>
 
         <h6 class="mt-4">2. Install Python Client</h6>
-        <div class="code-block bash">pip install pika</div>
+        <pre class="code-block bash">pip install pika</pre>
 
         <h6 class="mt-4">3. Queue Publisher</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'rabbitmq://queue/orders',
@@ -102,10 +102,10 @@ config = {
 
 publisher = create_publisher('order_pub', config)
 publisher.publish({'order_id': 'ORD-001', 'amount': 99.99})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">4. Queue Subscriber</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'rabbitmq://queue/orders',
@@ -119,7 +119,7 @@ subscriber = create_subscriber('order_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
     </div>
 </div>
 
@@ -166,7 +166,7 @@ subscriber.stop()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient RabbitMQ</h5></div>
     <div class="card-body">
         <p>Use the resilient version for automatic reconnection:</p>
-        <div class="code-block python">from core.pubsub.resilient_rabbitmq import ResilientRabbitMQConsumer
+        <pre class="code-block python">from core.pubsub.resilient_rabbitmq import ResilientRabbitMQConsumer
 
 consumer = ResilientRabbitMQConsumer(
     host='localhost',
@@ -177,7 +177,7 @@ consumer = ResilientRabbitMQConsumer(
 
 for message in consumer:
     print(f"Received: {message}")
-    consumer.ack(message)</div>
+    consumer.ack(message)</pre>
         <div class="tip-box"><strong><i class="bi bi-lightbulb"></i> Tip:</strong> Always use resilient versions in production for automatic failover.</div>
     </div>
 </div>

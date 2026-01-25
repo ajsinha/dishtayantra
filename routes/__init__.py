@@ -2,7 +2,7 @@
 Routes Module - Contains all application route handlers
 ========================================================
 
-Version: 1.5.0
+Version: 1.6.0
 """
 from .auth_routes import AuthRoutes
 from .noauth_routes import NoAuthRoutes
@@ -12,6 +12,8 @@ from .cache_routes import CacheRoutes
 from .user_routes import UserRoutes
 from .dagdesigner_routes import DAGDesignerRoutes
 from .metrics_routes import MetricsRoutes
+from .worker_routes import WorkerRoutes
+from .jvm_routes import JVMRoutes
 
 __all__ = [
     'AuthRoutes',
@@ -21,5 +23,7 @@ __all__ = [
     'CacheRoutes',
     'UserRoutes',
     'DAGDesignerRoutes',
-    'MetricsRoutes'
+    'MetricsRoutes',
+    'WorkerRoutes',
+    'JVMRoutes'
 ]

@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}JVM Management - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .jvm-hero {
+        background: linear-gradient(135deg, #f89820 0%, #ea6227 50%, #d44527 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+    .jvm-hero h2 {
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    .status-card {
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    .status-card:hover {
+        transform: translateY(-3px);
+    }
+    .gateway-card {
+        border-left: 4px solid #f89820;
+    }
+    .gateway-card.connected {
+        border-left-color: #10b981;
+    }
+    .gateway-card.disconnected {
+        border-left-color: #ef4444;
+    }
+    .stat-box {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1e3a5f;
+    }
+    .stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    .calculator-badge {
+        background: linear-gradient(135deg, #f89820, #ea6227);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        margin: 0;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .code-block code {
+        font-family: inherit;
+        font-size: inherit;
+        background: transparent;
+        padding: 0;
+        white-space: pre;
+    }
+    .memory-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+    .memory-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #10b981, #059669);
+        transition: width 0.3s;
+    }
+    .memory-bar-fill.warning {
+        background: linear-gradient(90deg, #f59e0b, #d97706);
+    }
+    .memory-bar-fill.danger {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="jvm-hero">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-cpu"></i> JVM Management</h2>
+            <p class="mb-0 opacity-75">Manage Java Virtual Machines and Py4J Gateway connections</p>
+        </div>
+        <div>
+            {% if jvm_available %}
+            <span class="badge bg-success fs-6"><i class="bi bi-check-circle"></i> JVM Manager Active</span>
+            {% else %}
+            <span class="badge bg-secondary fs-6"><i class="bi bi-x-circle"></i> JVM Manager Inactive</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if not jvm_available %}
+<!-- JVM Not Available -->
+<div class="alert alert-warning">
+    <h5><i class="bi bi-exclamation-triangle"></i> JVM Manager Not Initialized</h5>
+    <p class="mb-2">The JVM Manager is not currently active. This could be because:</p>
+    <ul class="mb-3">
+        <li>Py4J is not installed (<code>pip install py4j</code>)</li>
+        <li>JVM Manager is disabled in <code>config/jvm_config.json</code></li>
+        <li>No Java runtime is available</li>
+    </ul>
+    <p class="mb-0">Check the server logs for more details or refer to the 
+        <a href="/help/py4j-integration">Py4J Integration Guide</a>.
+    </p>
+</div>
+{% else %}
+
+<!-- Overview Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="gateway-count">{{ jvm_status.gateways | length }}</div>
+            <div class="stat-label">Gateways Configured</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value text-success" id="connected-count">
+                {% set connected = [] %}
+                {% for name, gw in jvm_status.gateways.items() %}
+                    {% if gw.connected %}{% set _ = connected.append(1) %}{% endif %}
+                {% endfor %}
+                {{ connected | length }}
+            </div>
+            <div class="stat-label">Connected</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="calculator-count">-</div>
+            <div class="stat-label">Java Calculators</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="total-requests">-</div>
+            <div class="stat-label">Total Requests</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gateway Cards -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Py4J Gateways</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-warning me-2" onclick="reloadConfig()">
+                <i class="bi bi-arrow-clockwise"></i> Reload Config
+            </button>
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshGateways()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-4" id="gateways-container">
+            {% for name, gw in jvm_status.gateways.items() %}
+            <div class="col-md-6">
+                <div class="card status-card gateway-card {{ 'connected' if gw.connected else 'disconnected' }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="card-title mb-1">
+                                    <i class="bi bi-hdd-network"></i> {{ name }}
+                                </h5>
+                                <small class="text-muted">Gateway Instance</small>
+                            </div>
+                            {% if gw.connected %}
+                            <span class="badge bg-success">Connected</span>
+                            {% else %}
+                            <span class="badge bg-danger">Disconnected</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Status</small>
+                                <strong>{{ 'Active' if gw.jvm_started else 'Inactive' }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">JVM PID</small>
+                                <strong>{{ gw.jvm_pid or 'N/A' }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Connections</small>
+                                <strong>{{ gw.active_connections }}</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Requests</small>
+                                <strong>{{ gw.total_requests }}</strong>
+                            </div>
+                        </div>
+                        
+                        {% if gw.start_time %}
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> Started: {{ gw.start_time }}
+                        </small>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            {% if gw.jvm_started %}
+                            <button class="btn btn-sm btn-danger" onclick="stopJVM('{{ name }}')">
+                                <i class="bi bi-stop-circle"></i> Stop
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="restartJVM('{{ name }}')">
+                                <i class="bi bi-arrow-repeat"></i> Restart
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-success" onclick="restartJVM('{{ name }}')">
+                                <i class="bi bi-play-circle"></i> Start
+                            </button>
+                            {% endif %}
+                            {% if not gw.connected %}
+                            <button class="btn btn-sm btn-primary" onclick="reconnectGateway('{{ name }}')">
+                                <i class="bi bi-link"></i> Connect
+                            </button>
+                            {% endif %}
+                            <a href="/jvm/gateway/{{ name }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-info-circle"></i> Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Java Calculators -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-calculator"></i> Java Calculators</h5>
+        <a href="/jvm/calculators" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-list"></i> View All
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="calculators-table">
+                <thead>
+                    <tr>
+                        <th>Calculator Name</th>
+                        <th>Java Class</th>
+                        <th>Gateway</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Loading calculators...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Preview -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">JVM configuration is defined in <code>config/jvm_config.json</code></p>
+        <pre class="code-block"><code class="language-json" id="config-preview">Loading configuration...</code></pre>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCalculators();
+    loadConfig();
+    updateStats();
+});
+
+function loadCalculators() {
+    fetch('/api/jvm/calculators')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.querySelector('#calculators-table tbody');
+                const calculators = data.data.definitions || [];
+                
+                document.getElementById('calculator-count').textContent = calculators.length;
+                
+                if (calculators.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No calculators defined</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = calculators.map(calc => `
+                    <tr>
+                        <td>
+                            <span class="calculator-badge">${calc.name}</span>
+                        </td>
+                        <td><code class="small">${calc.java_class}</code></td>
+                        <td>${calc.gateway}</td>
+                        <td class="small">${calc.description || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading calculators:', err);
+            document.querySelector('#calculators-table tbody').innerHTML = 
+                '<tr><td colspan="4" class="text-center text-danger">Error loading calculators</td></tr>';
+        });
+}
+
+function loadConfig() {
+    fetch('/api/jvm/config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const codeElement = document.getElementById('config-preview');
+                codeElement.textContent = JSON.stringify(data.data, null, 2);
+                // Re-highlight with Prism
+                if (typeof Prism !== 'undefined') {
+                    Prism.highlightElement(codeElement);
+                }
+            }
+        })
+        .catch(err => {
+            document.getElementById('config-preview').textContent = 'Error loading configuration';
+        });
+}
+
+function updateStats() {
+    fetch('/api/jvm/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let totalRequests = 0;
+                for (const [name, gw] of Object.entries(data.data.gateways || {})) {
+                    totalRequests += gw.total_requests || 0;
+                }
+                document.getElementById('total-requests').textContent = totalRequests;
+            }
+        });
+}
+
+function refreshGateways() {
+    location.reload();
+}
+
+function reconnectGateway(name) {
+    fetch(`/api/jvm/gateways/${name}/reconnect`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Gateway reconnected successfully');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed to reconnect: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function stopJVM(name) {
+    if (!confirm(`Are you sure you want to stop JVM "${name}"? Any active calculations will be interrupted.`)) {
+        return;
+    }
+    
+    fetch(`/api/jvm/gateways/${name}/stop`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: false })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'JVM stopped successfully');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed to stop JVM: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function restartJVM(name) {
+    showAlert('info', `Restarting JVM "${name}"... This may take a few seconds.`);
+    
+    fetch(`/api/jvm/gateways/${name}/restart`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'JVM restarted successfully');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('danger', 'Failed to restart JVM: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function reloadConfig() {
+    if (!confirm('Reload JVM configuration? This may restart JVMs with changed settings.')) {
+        return;
+    }
+    
+    showAlert('info', 'Reloading configuration...');
+    
+    fetch('/api/jvm/reload-config', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Configuration reloaded');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed to reload: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>
+{% endblock %}

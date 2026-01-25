@@ -9,10 +9,11 @@ logger = logging.getLogger(__name__)
 class DAGRoutes:
     """Handles DAG management routes"""
     
-    def __init__(self, app, dag_server, admin_required):
+    def __init__(self, app, dag_server, admin_required, worker_pool=None):
         self.app = app
         self.dag_server = dag_server
         self.admin_required = admin_required
+        self.worker_pool = worker_pool  # v1.5.2: Worker pool for DAG dispatch
         self._register_routes()
     
     def _register_routes(self):
@@ -172,10 +173,22 @@ class DAGRoutes:
         return redirect(url_for('dashboard'))
     
     def start_dag(self, dag_name):
-        """Start a DAG"""
+        """Start a DAG
+        
+        v1.5.2: DAGComputeServer.start() handles worker pool dispatch automatically
+        """
         try:
             self.dag_server.start(dag_name)
-            flash(f'DAG {dag_name} started', 'success')
+            
+            # Check where it's running to show appropriate message
+            if self.worker_pool and self.worker_pool.is_running():
+                worker_id = self.worker_pool.get_dag_assignment(dag_name)
+                if worker_id is not None:
+                    flash(f'DAG {dag_name} started on Worker {worker_id}', 'success')
+                else:
+                    flash(f'DAG {dag_name} started', 'success')
+            else:
+                flash(f'DAG {dag_name} started', 'success')
         except Exception as e:
             logger.error(f"Error starting DAG: {str(e)}")
             flash(f'Error starting DAG: {str(e)}', 'error')
@@ -183,10 +196,22 @@ class DAGRoutes:
         return redirect(url_for('dashboard'))
     
     def stop_dag(self, dag_name):
-        """Stop a DAG"""
+        """Stop a DAG
+        
+        v1.5.2: DAGComputeServer.stop() handles worker pool automatically
+        """
         try:
+            # Check where it was running before stopping
+            worker_id = None
+            if self.worker_pool and self.worker_pool.is_running():
+                worker_id = self.worker_pool.get_dag_assignment(dag_name)
+            
             self.dag_server.stop(dag_name)
-            flash(f'DAG {dag_name} stopped', 'success')
+            
+            if worker_id is not None:
+                flash(f'DAG {dag_name} stopped (was on Worker {worker_id})', 'success')
+            else:
+                flash(f'DAG {dag_name} stopped', 'success')
         except Exception as e:
             logger.error(f"Error stopping DAG: {str(e)}")
             flash(f'Error stopping DAG: {str(e)}', 'error')
@@ -216,7 +241,12 @@ class DAGRoutes:
         return redirect(url_for('dashboard'))
     
     def publish_message(self, dag_name, subscriber_name):
-        """Display the publish message page (GET) or handle message submission (POST)"""
+        """Display the publish message page (GET) or handle message submission (POST)
+        
+        v1.5.2: Updated to work with lazy-initialized DAGs. When worker pool is enabled,
+        DAG components aren't built in main process, so we get subscriber config directly
+        from the DAG configuration instead of the subscriber object.
+        """
         if request.method == 'GET':
             try:
                 details = self.dag_server.details(dag_name)
@@ -258,38 +288,71 @@ class DAGRoutes:
                 # JSON mode - parse and validate
                 message_data = json.loads(message)
 
-            # Get the subscriber from DAG
+            # Get the DAG
             dag = self.dag_server.dags.get(dag_name)
             if not dag:
                 return jsonify({'error': 'DAG not found'}), 404
 
+            # v1.5.2: Get subscriber config from DAG config (works with lazy-init)
+            # When worker pool is enabled, dag.subscribers may be empty, but dag.config
+            # always has the full configuration
+            subscriber_config = None
+            source = None
+            
+            # First try to get from built subscriber (if components are built)
             subscriber = dag.subscribers.get(subscriber_name)
-            if not subscriber:
-                return jsonify({'error': 'Subscriber not found'}), 404
+            if subscriber:
+                source = subscriber.source
+                subscriber_config = subscriber.config.copy()
+            else:
+                # Fallback to DAG config (for lazy-initialized DAGs)
+                for sub_cfg in dag.config.get('subscribers', []):
+                    if sub_cfg.get('name') == subscriber_name:
+                        subscriber_config = sub_cfg.get('config', {}).copy()
+                        source = subscriber_config.get('source')
+                        break
+            
+            if not subscriber_config or not source:
+                return jsonify({'error': f'Subscriber {subscriber_name} not found in DAG configuration'}), 404
 
             # Check if subscriber type supports publishing
-            source = subscriber.source
             supported_prefixes = ['mem://', 'inmemory://', 'memory://', 'kafka://', 'redischannel://', 'activemq://']
             if not any(prefix in source for prefix in supported_prefixes):
                 return jsonify({'error': 'Subscriber type does not support publishing'}), 400
 
             # Create a temporary publisher to the same source
             from core.pubsub.pubsubfactory import create_publisher
-            config = subscriber.config.copy()
-            config['destination'] = source
+            subscriber_config['destination'] = source
 
-            temp_publisher = create_publisher(f'temp_pub_{subscriber_name}', config)
+            temp_publisher = create_publisher(f'temp_pub_{subscriber_name}', subscriber_config)
             temp_publisher.publish(message_data)
             temp_publisher.stop()
 
             msg_type = 'raw' if is_raw else 'JSON'
-            logger.info(f"Successfully published {msg_type} message to {subscriber_name}")
+            
+            # v1.5.2: Distinct log message for UI publish success
+            logger.info("")
+            logger.info("=" * 70)
+            logger.info("  UI MESSAGE PUBLISH - SUCCESS")
+            logger.info(f"  DAG: {dag_name}")
+            logger.info(f"  Subscriber: {subscriber_name}")
+            logger.info(f"  Destination: {source}")
+            logger.info(f"  Message Type: {msg_type}")
+            if isinstance(message_data, str):
+                preview = message_data[:100] + '...' if len(message_data) > 100 else message_data
+                logger.info(f"  Message Preview: {preview}")
+            else:
+                logger.info(f"  Message Keys: {list(message_data.keys()) if isinstance(message_data, dict) else 'N/A'}")
+            logger.info("=" * 70)
+            
             return jsonify({'success': True, 'message': f'{msg_type} message published successfully'})
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON: {str(e)}")
             return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
         except Exception as e:
             logger.error(f"Error publishing message: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return jsonify({'error': str(e)}), 500
     
     def subgraph_control(self, dag_name):

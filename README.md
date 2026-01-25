@@ -6,13 +6,30 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, and **LMDB zero-copy data exchange**.
 
-[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.5.1
+## What's New in Version 1.5.2
+
+### Worker Pool & Multiprocessing (MAJOR)
+- **Multiprocessing Worker Pool**: True CPU parallelism by bypassing Python's GIL
+- **DAG Worker Affinity**: Pin DAGs to specific workers for cache locality
+- **Configurable Workers**: Default 4 workers, configurable via `config/worker_config.json`
+- **Load Balancing**: Weight-based, round-robin, least-loaded, or random strategies
+- **Health Monitoring**: Heartbeat-based worker health tracking
+- **Auto-Restart**: Crashed workers automatically restart with exponential backoff
+- **DAG Restoration**: DAGs automatically reloaded after worker restart
+- **Web UI**: Real-time monitoring, manual restart, DAG migration
+
+### LMDB Cross-Process Pub/Sub (NEW)
+- **Cross-Worker Communication**: `lmdb://channel_name` URI scheme
+- **Memory-Mapped**: Zero-copy reads across processes
+- **Multiple Readers**: Many workers can read simultaneously
+- **ACID Compliant**: Data integrity guaranteed
+- **LMDBDataPublisher/LMDBDataSubscriber**: Standard pub/sub interface
 
 ### DataSubscriber Non-Dictionary Message Packaging (NEW)
 - **Automatic Packaging**: Non-dictionary messages (strings, lists, bytes) automatically wrapped into standardized dict format
@@ -69,8 +86,9 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 
 ### Core Capabilities
 - **Multi-threaded DAG Execution**: Efficient parallel processing with topologically sorted node execution
+- **Worker Pool**: Multiprocessing with DAG affinity for true CPU parallelism
 - **Subgraph Support**: Modular graph-as-a-node pattern with dynamic light up/down control
-- **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory
+- **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory, LMDB
 - **Various Data Sources**: File, SQL databases, Aerospike, Redis, REST, gRPC, custom implementations
 - **Web UI**: Professional Flask-based dashboard with role-based access control
 - **High Availability**: Zookeeper-based leader election for primary/failover setup

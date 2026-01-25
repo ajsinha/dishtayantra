@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Java Calculators - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculator-hero {
+        background: linear-gradient(135deg, #f89820 0%, #ea6227 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+    .calculator-card {
+        border-radius: 12px;
+        transition: all 0.3s;
+        border-left: 4px solid #f89820;
+    }
+    .calculator-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .java-class {
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.8rem;
+        background: #f1f5f9;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        word-break: break-all;
+    }
+    .config-preview {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.75rem;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+    .gateway-badge {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="calculator-hero">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-calculator"></i> Java Calculators</h2>
+            <p class="mb-0 opacity-75">Pre-configured Java calculators available via Py4J</p>
+        </div>
+        <a href="/jvm" class="btn btn-light">
+            <i class="bi bi-arrow-left"></i> Back to JVM Management
+        </a>
+    </div>
+</div>
+
+{% if calculators %}
+<div class="row g-4">
+    {% for calc in calculators %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card calculator-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-box-seam text-warning"></i> {{ calc.name }}
+                    </h5>
+                    <span class="gateway-badge">{{ calc.gateway }}</span>
+                </div>
+                
+                <p class="card-text small text-muted mb-3">
+                    {{ calc.description or 'No description available' }}
+                </p>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1">Java Class:</small>
+                    <code class="java-class">{{ calc.java_class }}</code>
+                </div>
+                
+                {% if calc.default_config %}
+                <div>
+                    <small class="text-muted d-block mb-1">Default Config:</small>
+                    <div class="config-preview">{{ calc.default_config | tojson(indent=2) }}</div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="/jvm/calculator/{{ calc.name }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-code-slash"></i> View Details & Usage
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h5><i class="bi bi-info-circle"></i> No Java Calculators Defined</h5>
+    <p class="mb-0">
+        Configure Java calculators in <code>config/jvm_config.json</code> under the <code>calculators.definitions</code> section.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

@@ -23,6 +23,7 @@
         margin-right: 10px;
     }
     .code-block {
+        white-space: pre;
         background: #1e293b;
         color: #e2e8f0;
         padding: 1rem;
@@ -75,10 +76,10 @@
             <li><strong>Virtual Environment</strong> (recommended) - To isolate dependencies</li>
         </ul>
         <p>Check your Python version:</p>
-        <div class="code-block">
+        <pre class="code-block">
 python --version
 # Should output: Python 3.8.x or higher
-        </div>
+        </pre>
     </div>
 </div>
 
@@ -89,21 +90,21 @@ python --version
     </div>
     <div class="card-body">
         <h6>Step 2.1: Extract the Archive</h6>
-        <div class="code-block">
+        <pre class="code-block">
 unzip dishtayantra.zip -d dishtayantra
 cd dishtayantra
-        </div>
+        </pre>
         
         <h6 class="mt-3">Step 2.2: Create Virtual Environment (Recommended)</h6>
-        <div class="code-block">
+        <pre class="code-block">
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-        </div>
+        </pre>
         
         <h6 class="mt-3">Step 2.3: Install Dependencies</h6>
-        <div class="code-block">
+        <pre class="code-block">
 pip install -r requirements.txt
-        </div>
+        </pre>
         
         <div class="tip-box">
             <strong><i class="bi bi-lightbulb"></i> Tip:</strong> If you only need basic functionality, you can skip optional dependencies like kafka-python, pika (RabbitMQ), etc.
@@ -118,11 +119,11 @@ pip install -r requirements.txt
     </div>
     <div class="card-body">
         <p>Start the DishtaYantra server with:</p>
-        <div class="code-block">
+        <pre class="code-block">
 python run_server.py
-        </div>
+        </pre>
         <p class="mt-3">You should see output like:</p>
-        <div class="code-block">
+        <pre class="code-block">
 INFO - Initializing DishtaYantra Web Application...
 INFO - Configuration loaded successfully
 INFO - Initializing core components...
@@ -131,7 +132,7 @@ INFO - DAGComputeServer initialized with 1 DAG(s)
 AUTO-START: Checking which DAGs should be started on system startup
 ======================================================================
 INFO - Starting DishtaYantra Web Application on 0.0.0.0:5000
-        </div>
+        </pre>
         <p class="mt-3">The server is now running at <strong>http://localhost:5000</strong></p>
     </div>
 </div>
@@ -185,7 +186,7 @@ INFO - Starting DishtaYantra Web Application on 0.0.0.0:5000
         </ol>
         
         <p class="mt-3">Here's a simple example DAG configuration:</p>
-        <div class="code-block">
+        <pre class="code-block">
 {
   "name": "my_first_dag",
   "subscribers": [
@@ -229,7 +230,7 @@ INFO - Starting DishtaYantra Web Application on 0.0.0.0:5000
     { "from_node": "process_node", "to_node": "output_node" }
   ]
 }
-        </div>
+        </pre>
     </div>
 </div>
 

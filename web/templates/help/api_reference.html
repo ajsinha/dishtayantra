@@ -71,15 +71,15 @@
     <div class="card-body">
         <p>DishtaYantra exposes REST APIs for managing DAGs, cache, and users. All endpoints require authentication via session cookies (login first via UI or API).</p>
         <h6>Base URL</h6>
-        <div class="code-block">http://localhost:5000</div>
+        <pre class="code-block">http://localhost:5000</div>
         
         <h6 class="mt-3">Authentication</h6>
         <p>Login first to obtain a session cookie:</p>
-        <div class="code-block">POST /login
+        <pre class="code-block">POST /login
 Content-Type: application/x-www-form-urlencoded
 
 username=admin&password=admin</div>
-    </div>
+    </pre>
 </div>
 
 <!-- DAG Endpoints -->
@@ -97,7 +97,7 @@ username=admin&password=admin</div>
         <!-- Get DAG Details -->
         <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag/&lt;dag_name&gt;</span></h6>
         <p>Get detailed information about a specific DAG.</p>
-        <div class="code-block">GET /dag/my_dag_name
+        <pre class="code-block">GET /dag/my_dag_name
 
 Response: HTML page with DAG details, nodes, edges, statistics</div>
         
@@ -106,7 +106,7 @@ Response: HTML page with DAG details, nodes, edges, statistics</div>
         <!-- Create DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/create_dag</span></h6>
         <p>Create a new DAG from JSON configuration.</p>
-        <div class="code-block">POST /create_dag
+        <pre class="code-block">POST /create_dag
 Content-Type: application/x-www-form-urlencoded
 
 dag_name=my_new_dag&dag_config={"name":"my_new_dag","subscribers":[...],"nodes":[...]}</div>
@@ -116,7 +116,7 @@ dag_name=my_new_dag&dag_config={"name":"my_new_dag","subscribers":[...],"nodes":
         <!-- Start DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/start_dag/&lt;dag_name&gt;</span></h6>
         <p>Start a stopped DAG.</p>
-        <div class="code-block">POST /start_dag/my_dag_name
+        <pre class="code-block">POST /start_dag/my_dag_name
 
 Response: Redirect to dashboard with success/error message</div>
         
@@ -125,7 +125,7 @@ Response: Redirect to dashboard with success/error message</div>
         <!-- Stop DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/stop_dag/&lt;dag_name&gt;</span></h6>
         <p>Stop a running DAG.</p>
-        <div class="code-block">POST /stop_dag/my_dag_name
+        <pre class="code-block">POST /stop_dag/my_dag_name
 
 Response: Redirect to dashboard with success/error message</div>
         
@@ -134,7 +134,7 @@ Response: Redirect to dashboard with success/error message</div>
         <!-- Delete DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/delete_dag/&lt;dag_name&gt;</span></h6>
         <p>Delete a DAG permanently. <strong>Admin only.</strong></p>
-        <div class="code-block">POST /delete_dag/my_dag_name
+        <pre class="code-block">POST /delete_dag/my_dag_name
 
 Response: Redirect to dashboard with success/error message</div>
         
@@ -143,11 +143,11 @@ Response: Redirect to dashboard with success/error message</div>
         <!-- Clone DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/clone_dag/&lt;dag_name&gt;</span></h6>
         <p>Clone an existing DAG with a new name and optional modifications.</p>
-        <div class="code-block">POST /clone_dag/original_dag
+        <pre class="code-block">POST /clone_dag/original_dag
 Content-Type: application/x-www-form-urlencoded
 
 new_name=cloned_dag&start_time=0900&duration=8h</div>
-    </div>
+    </pre>
 </div>
 
 <!-- DAG Designer Endpoints -->
@@ -165,7 +165,7 @@ new_name=cloned_dag&start_time=0900&duration=8h</div>
         <!-- List DAGs for Designer -->
         <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag-designer/list-dags</span></h6>
         <p>Get list of all DAGs for the designer dropdown.</p>
-        <div class="code-block">GET /dag-designer/list-dags
+        <pre class="code-block">GET /dag-designer/list-dags
 
 Response:
 {
@@ -177,7 +177,7 @@ Response:
         <!-- Load DAG -->
         <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/dag-designer/load/&lt;dag_name&gt;</span></h6>
         <p>Load a DAG configuration for editing.</p>
-        <div class="code-block">GET /dag-designer/load/my_dag
+        <pre class="code-block">GET /dag-designer/load/my_dag
 
 Response:
 {
@@ -190,7 +190,7 @@ Response:
         <!-- Save DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/dag-designer/save</span></h6>
         <p>Save a DAG configuration from the designer.</p>
-        <div class="code-block">POST /dag-designer/save
+        <pre class="code-block">POST /dag-designer/save
 Content-Type: application/json
 
 {
@@ -210,7 +210,7 @@ Response:
         <!-- Validate DAG -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/dag-designer/validate</span></h6>
         <p>Validate a DAG configuration without saving.</p>
-        <div class="code-block">POST /dag-designer/validate
+        <pre class="code-block">POST /dag-designer/validate
 Content-Type: application/json
 
 {
@@ -223,7 +223,7 @@ Response:
   "errors": [],
   "warnings": []
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Cache Endpoints -->
@@ -241,7 +241,7 @@ Response:
         <!-- Query Cache -->
         <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/cache/query?pattern=*</span></h6>
         <p>Query cache keys matching a pattern.</p>
-        <div class="code-block">GET /cache/query?pattern=user:*
+        <pre class="code-block">GET /cache/query?pattern=user:*
 
 Response: HTML page with matching keys and values</div>
         
@@ -250,7 +250,7 @@ Response: HTML page with matching keys and values</div>
         <!-- Create Cache Entry -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/cache/create</span></h6>
         <p>Create a new cache entry. <strong>Admin only.</strong></p>
-        <div class="code-block">POST /cache/create
+        <pre class="code-block">POST /cache/create
 Content-Type: application/x-www-form-urlencoded
 
 key=my_key&value={"data":"value"}&value_type=object&ttl=3600</div>
@@ -299,7 +299,7 @@ key=my_key&value={"data":"value"}&value_type=object&ttl=3600</div>
         <!-- Download Cache -->
         <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/cache/download</span></h6>
         <p>Download entire cache as JSON file. <strong>Admin only.</strong></p>
-    </div>
+    </pre>
 </div>
 
 <!-- User Management Endpoints -->
@@ -319,7 +319,7 @@ key=my_key&value={"data":"value"}&value_type=object&ttl=3600</div>
         <!-- Create User -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/users/create</span></h6>
         <p>Create a new user.</p>
-        <div class="code-block">POST /users/create
+        <pre class="code-block">POST /users/create
 Content-Type: application/x-www-form-urlencoded
 
 username=newuser&password=secret&full_name=New User&roles=user,operator</div>
@@ -341,7 +341,7 @@ username=newuser&password=secret&full_name=New User&roles=user,operator</div>
         <!-- Toggle User Active -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/users/toggle/&lt;username&gt;</span></h6>
         <p>Enable or disable a user account.</p>
-    </div>
+    </pre>
 </div>
 
 <!-- Messaging Endpoints -->
@@ -359,11 +359,11 @@ username=newuser&password=secret&full_name=New User&roles=user,operator</div>
         <!-- Publish Message -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/publish</span></h6>
         <p>Publish a message to an in-memory queue or topic.</p>
-        <div class="code-block">POST /publish
+        <pre class="code-block">POST /publish
 Content-Type: application/x-www-form-urlencoded
 
 destination=mem://queue/my_queue&message={"id":1,"data":"test"}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Authentication Endpoints -->
@@ -375,7 +375,7 @@ destination=mem://queue/my_queue&message={"id":1,"data":"test"}</div>
         <!-- Login -->
         <h6><span class="method-badge method-post">POST</span> <span class="endpoint-path">/login</span></h6>
         <p>Authenticate and create session.</p>
-        <div class="code-block">POST /login
+        <pre class="code-block">POST /login
 Content-Type: application/x-www-form-urlencoded
 
 username=admin&password=admin
@@ -387,7 +387,7 @@ Response: Redirect to /dashboard on success, back to /login on failure</div>
         <!-- Logout -->
         <h6><span class="method-badge method-get">GET</span> <span class="endpoint-path">/logout</span></h6>
         <p>End session and logout.</p>
-    </div>
+    </pre>
 </div>
 
 <!-- Public Endpoints -->

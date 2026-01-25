@@ -12,12 +12,29 @@ logger = logging.getLogger(__name__)
 
 
 class DAGComputeServer:
-    """Server for managing multiple DAG compute graphs"""
+    """Server for managing multiple DAG compute graphs
+    
+    v1.5.2: Now accepts worker_pool directly from run_server.py for early initialization.
+    """
 
-    def __init__(self, dag_config_folder, zookeeper_hosts='localhost:2181'):
+    def __init__(self, dag_config_folder, zookeeper_hosts='localhost:2181', worker_pool=None):
+        """
+        Initialize DAGComputeServer.
+        
+        Args:
+            dag_config_folder: Path to folder containing DAG JSON configs
+            zookeeper_hosts: Zookeeper connection string for leader election
+            worker_pool: WorkerPoolManager instance for multiprocess execution (v1.5.2)
+        """
         self.dag_config_folder = dag_config_folder
         self.dags = {}
         self._lock = threading.Lock()
+        self._auto_started = False  # v1.5.2: Track if auto-start was already done
+        
+        # v1.5.2: Worker pool - now passed directly from run_server.py
+        self._worker_pool = worker_pool
+        if worker_pool:
+            logger.info(f"DAGComputeServer initialized with worker pool ({worker_pool.num_workers} workers)")
 
         # AutoClone tracking
         self.autoclone_info = {}  # dag_name -> {clones: [clone_names], config: {}, status: ''}
@@ -55,11 +72,18 @@ class DAGComputeServer:
 
         logger.info(f"DAGComputeServer initialized with {len(self.dags)} DAG(s)")
         
-        # Auto-start eligible DAGs (perpetual or within time window)
+        # v1.5.2: Auto-start eligible DAGs
+        # Worker pool is already initialized and ready (passed from run_server.py)
         self._auto_start_eligible_dags()
+        self._auto_started = True
 
     def _load_dags(self):
-        """Load all DAG configurations from folder"""
+        """Load all DAG configurations from folder
+        
+        v1.5.2: When worker pool is enabled, DAGs are loaded with lazy_init=True
+        to prevent creating duplicate subscribers in the main process.
+        Components are only created when the DAG is dispatched to a worker.
+        """
         # Create folder if it doesn't exist
         if not os.path.exists(self.dag_config_folder):
             logger.warning(f"DAG config folder {self.dag_config_folder} does not exist, creating it...")
@@ -80,12 +104,18 @@ class DAGComputeServer:
             return
 
         logger.info(f"Found {len(json_files)} DAG configuration file(s)")
+        
+        # v1.5.2: Use lazy initialization when worker pool is enabled
+        # This prevents creating duplicate Kafka consumers in main process
+        use_lazy_init = self._worker_pool is not None
+        if use_lazy_init:
+            logger.info("Worker pool enabled - DAGs will be loaded with lazy initialization")
 
         for filename in json_files:
             filepath = os.path.join(self.dag_config_folder, filename)
             try:
                 logger.info(f"Loading DAG from: {filepath}")
-                dag = ComputeGraph(filepath)
+                dag = ComputeGraph(filepath, lazy_init=use_lazy_init)
                 with self._lock:
                     self.dags[dag.name] = dag
                 logger.info(f"Successfully loaded DAG: {dag.name}")
@@ -184,41 +214,61 @@ class DAGComputeServer:
         1. DAGs that have a time window configured
         2. Are not currently running
         3. Have now entered their time window
+        
+        v1.5.2: Uses self.start() to properly dispatch to worker pool
         """
         import time as time_module
         
         logger.info("Time window monitor: Starting monitoring loop")
         
+        # v1.5.2: Brief initial wait to let auto-start complete first
+        self._time_window_stop_event.wait(5)
+        
+        if self._time_window_stop_event.is_set():
+            logger.info("Time window monitor: Stopped during initialization wait")
+            return
+        
+        logger.info("Time window monitor: Beginning DAG monitoring")
+        
         while not self._time_window_stop_event.is_set():
             try:
+                # Collect DAGs to start (don't hold lock while starting)
+                dags_to_start = []
+                
                 with self._lock:
                     for dag_name, dag in self.dags.items():
                         # Skip if no time window configured (perpetual DAGs)
                         if dag.start_time is None or dag.end_time is None:
                             continue
                         
-                        # Skip if already running
+                        # Skip if already running in main process
                         if dag._compute_thread and dag._compute_thread.is_alive():
                             continue
                         
+                        # v1.5.2: Skip if already assigned to a worker
+                        if self._worker_pool and self._worker_pool.is_running():
+                            if self._worker_pool.get_dag_assignment(dag_name) is not None:
+                                continue
+                        
                         # Check if now within time window
                         if dag.is_in_time_window():
-                            logger.info("")
-                            logger.info("!" * 70)
-                            logger.info("!  TIME WINDOW MONITOR: DAG ENTERING TIME WINDOW")
-                            logger.info(f"!  DAG: {dag_name}")
-                            logger.info(f"!  Window: {dag.start_time} - {dag.end_time}")
-                            logger.info("!  ACTION: Starting DAG automatically")
-                            logger.info("!" * 70)
-                            
-                            try:
-                                dag.start()
-                                self._log_dag_state_change(dag_name, "STARTED", 
-                                    f"Entered time window ({dag.start_time}-{dag.end_time})")
-                            except Exception as e:
-                                logger.error(f"Time window monitor: Failed to start DAG '{dag_name}': {e}")
-                        else:
-                            logger.debug(f"Time window monitor: DAG '{dag_name}' still outside window ({dag.start_time}-{dag.end_time})")
+                            dags_to_start.append((dag_name, dag.start_time, dag.end_time))
+                
+                # Start DAGs outside the lock
+                for dag_name, start_time, end_time in dags_to_start:
+                    logger.info("")
+                    logger.info("!" * 70)
+                    logger.info("!  TIME WINDOW MONITOR: DAG ENTERING TIME WINDOW")
+                    logger.info(f"!  DAG: {dag_name}")
+                    logger.info(f"!  Window: {start_time} - {end_time}")
+                    logger.info("!  ACTION: Starting DAG automatically")
+                    logger.info("!" * 70)
+                    
+                    try:
+                        # v1.5.2: Use self.start() to properly dispatch to worker pool
+                        self.start(dag_name)
+                    except Exception as e:
+                        logger.error(f"Time window monitor: Failed to start DAG '{dag_name}': {e}")
                             
             except Exception as e:
                 logger.error(f"Time window monitor error: {e}")
@@ -276,7 +326,11 @@ class DAGComputeServer:
             raise PermissionError("This instance is not primary. Operation not allowed.")
 
     def add_dag(self, config_data, config_filename=None):
-        """Add a new DAG from configuration"""
+        """Add a new DAG from configuration
+        
+        v1.5.2: Uses lazy_init when worker pool is enabled to prevent
+        creating duplicate subscribers in main process.
+        """
         self._check_primary()
 
         if isinstance(config_data, str):
@@ -296,14 +350,20 @@ class DAGComputeServer:
                 with open(filepath, 'w') as f:
                     json.dump(config, f, indent=2)
 
-            dag = ComputeGraph(config)
+            # v1.5.2: Use lazy init when worker pool is enabled
+            use_lazy_init = self._worker_pool is not None
+            dag = ComputeGraph(config, lazy_init=use_lazy_init)
             self.dags[dag_name] = dag
             logger.info(f"Added DAG: {dag_name}")
 
             return dag_name
 
     def start(self, dag_name):
-        """Start a specific DAG"""
+        """Start a specific DAG
+        
+        v1.5.2: If worker pool is configured, dispatches DAG to a worker.
+        Otherwise, runs DAG in main process.
+        """
         self._check_primary()
 
         with self._lock:
@@ -312,45 +372,101 @@ class DAGComputeServer:
 
             dag = self.dags[dag_name]
 
+            # Check if already running in main process
             if dag._compute_thread and dag._compute_thread.is_alive():
-                logger.warning(f"DAG {dag_name} is already running")
+                logger.warning(f"DAG {dag_name} is already running in main process")
                 return
-
-            dag.start()
-            self._log_dag_state_change(dag_name, "STARTED", "User/system initiated start")
+            
+            # v1.5.2: Check if worker pool is available and running
+            if self._worker_pool and self._worker_pool.is_running():
+                # Check if already assigned to a worker
+                worker_id = self._worker_pool.get_dag_assignment(dag_name)
+                if worker_id is not None:
+                    logger.warning(f"DAG {dag_name} is already running on Worker {worker_id}")
+                    return
+                
+                # Dispatch to worker pool
+                dag_config = dag.config
+                if 'name' not in dag_config:
+                    dag_config = dict(dag_config)
+                    dag_config['name'] = dag_name
+                
+                worker_id = self._worker_pool.load_dag(dag_config)
+                self._log_dag_state_change(dag_name, "STARTED", f"Dispatched to Worker {worker_id}")
+                logger.info(f"DAG '{dag_name}' dispatched to Worker {worker_id}")
+            else:
+                # Run in main process
+                dag.start()
+                self._log_dag_state_change(dag_name, "STARTED", "User/system initiated start (main process)")
+    
+    def set_worker_pool(self, worker_pool):
+        """
+        Set the worker pool for DAG execution (v1.5.2)
+        
+        When set, DAGs will be dispatched to worker processes instead of
+        running in the main process.
+        
+        Args:
+            worker_pool: WorkerPoolManager instance or None to disable
+        """
+        self._worker_pool = worker_pool
+        if worker_pool:
+            logger.info("DAGComputeServer: Worker pool integration enabled")
+        else:
+            logger.info("DAGComputeServer: Worker pool integration disabled")
 
     def start_all(self):
-        """Start all DAGs"""
+        """Start all DAGs
+        
+        v1.5.2: Uses integrated start() which handles worker pool dispatch
+        """
         self._check_primary()
 
-        with self._lock:
-            for dag_name, dag in self.dags.items():
-                try:
-                    if not (dag._compute_thread and dag._compute_thread.is_alive()):
-                        dag.start()
-                        logger.info(f"Started DAG: {dag_name}")
-                except Exception as e:
-                    logger.error(f"Error starting DAG {dag_name}: {str(e)}")
+        # Don't hold lock during start() since it acquires its own lock
+        dag_names = list(self.dags.keys())
+        for dag_name in dag_names:
+            try:
+                self.start(dag_name)
+                logger.info(f"Started DAG: {dag_name}")
+            except Exception as e:
+                logger.error(f"Error starting DAG {dag_name}: {str(e)}")
 
     def stop(self, dag_name):
-        """Stop a specific DAG"""
+        """Stop a specific DAG
+        
+        v1.5.2: Handles both main process and worker pool execution
+        """
         with self._lock:
             if dag_name not in self.dags:
                 raise ValueError(f"DAG {dag_name} not found")
 
             dag = self.dags[dag_name]
+            
+            # v1.5.2: Check if running in worker pool
+            if self._worker_pool and self._worker_pool.is_running():
+                worker_id = self._worker_pool.get_dag_assignment(dag_name)
+                if worker_id is not None:
+                    # Unload from worker
+                    self._worker_pool.unload_dag(dag_name)
+                    self._log_dag_state_change(dag_name, "STOPPED", f"Unloaded from Worker {worker_id}")
+                    return
+            
+            # Stop in main process
             dag.stop()
             self._log_dag_state_change(dag_name, "STOPPED", "User/system initiated stop")
 
     def stop_all(self):
-        """Stop all DAGs"""
-        with self._lock:
-            for dag_name, dag in self.dags.items():
-                try:
-                    dag.stop()
-                    self._log_dag_state_change(dag_name, "STOPPED", "Stop all DAGs command")
-                except Exception as e:
-                    logger.error(f"Error stopping DAG {dag_name}: {str(e)}")
+        """Stop all DAGs
+        
+        v1.5.2: Uses integrated stop() which handles worker pool
+        """
+        # Don't hold lock during stop() since it acquires its own lock
+        dag_names = list(self.dags.keys())
+        for dag_name in dag_names:
+            try:
+                self.stop(dag_name)
+            except Exception as e:
+                logger.error(f"Error stopping DAG {dag_name}: {str(e)}")
 
     def suspend(self, dag_name):
         """Suspend a specific DAG (UI-driven)"""
@@ -417,12 +533,25 @@ class DAGComputeServer:
             return self.dags[dag_name].details()
 
     def list_dags(self):
-        """List all DAGs with basic info"""
+        """List all DAGs with basic info
+        
+        v1.5.2: Checks both main process and worker pool for running status
+        """
         with self._lock:
             dag_list = []
 
             for dag_name, dag in self.dags.items():
-                is_running = dag._compute_thread and dag._compute_thread.is_alive()
+                # Check if running in main process
+                is_running_main = dag._compute_thread and dag._compute_thread.is_alive()
+                
+                # v1.5.2: Check if running in worker pool
+                is_running_worker = False
+                worker_id = None
+                if self._worker_pool and self._worker_pool.is_running():
+                    worker_id = self._worker_pool.get_dag_assignment(dag_name)
+                    is_running_worker = worker_id is not None
+                
+                is_running = is_running_main or is_running_worker
                 in_time_window = dag.is_in_time_window()
 
                 # Check if this is an autocloned DAG
@@ -438,6 +567,9 @@ class DAGComputeServer:
                     autoclone_status = info.get('status', 'idle')
                     autoclone_clone_count = len(info.get('clones', []))
 
+                # v1.5.2: Get node count from either built nodes or config
+                node_count = len(dag.nodes) if dag.nodes else len(dag.config.get('nodes', []))
+                
                 dag_list.append({
                     'name': dag_name,
                     'is_running': is_running,
@@ -445,13 +577,16 @@ class DAGComputeServer:
                     'start_time': dag.start_time,
                     'end_time': dag.end_time,
                     'duration': dag.duration,  # Add duration field
-                    'node_count': len(dag.nodes),
+                    'node_count': node_count,
                     'in_time_window': in_time_window,
                     'is_autocloned': parent_dag is not None,
                     'parent_dag': parent_dag,
                     'autoclone_enabled': autoclone_enabled,
                     'autoclone_status': autoclone_status,
-                    'autoclone_clone_count': autoclone_clone_count
+                    'autoclone_clone_count': autoclone_clone_count,
+                    # v1.5.2: Worker pool info
+                    'worker_id': worker_id,
+                    'execution_mode': 'worker' if is_running_worker else ('main' if is_running_main else None)
                 })
             return dag_list
 

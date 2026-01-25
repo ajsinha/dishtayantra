@@ -1,4 +1,4 @@
-# DishtaYantra v1.5.0 - Quick Start Guide
+# DishtaYantra v1.5.2 - Quick Start Guide
 
 ## 🚀 Getting Started
 
@@ -6,10 +6,10 @@
 
 ```bash
 # For tar.gz
-tar -xzvf dishtayantra_v1.5.0_subgraph.tar.gz
+tar -xzvf dishtayantra_v1.5.2_worker_pool.tar.gz
 
 # For zip
-unzip dishtayantra_v1.5.0_subgraph.zip
+unzip dishtayantra_v1.5.2_worker_pool.zip
 
 cd dishtayantra_pkg
 ```
@@ -31,6 +31,63 @@ Access the web interface at: **http://localhost:5000**
 Default credentials:
 - Username: `admin`
 - Password: `admin`
+
+---
+
+## 🆕 New in v1.5.2: Worker Pool & Multiprocessing
+
+### What is the Worker Pool?
+
+The Worker Pool enables **true CPU parallelism** by running DAGs across multiple worker processes:
+
+- **Multi-Core Utilization**: Bypass Python's GIL by using separate processes
+- **DAG Affinity**: Keep related DAGs on the same worker for cache locality
+- **Auto-Restart**: Workers automatically restart after crashes
+- **Cross-Worker Communication**: Use LMDB pub/sub for data sharing between workers
+
+### Enable Worker Pool
+
+Edit `config/worker_config.json`:
+
+```json
+{
+    "worker_pool": {
+        "enabled": true,
+        "num_workers": 4
+    }
+}
+```
+
+### Configure DAG Worker Affinity
+
+```json
+{
+    "name": "my_dag",
+    "worker_affinity": {
+        "pinned_worker": 0
+    }
+}
+```
+
+### Cross-Worker Communication with LMDB
+
+Publisher (DAG on Worker 0):
+```json
+"destination": "lmdb://shared_channel"
+```
+
+Subscriber (DAG on Worker 1):
+```json
+"source": "lmdb://shared_channel"
+```
+
+### Worker Pool UI
+
+Access **Admin → Worker Pool** to:
+- View all workers and their status
+- Monitor CPU/memory usage per worker
+- Migrate DAGs between workers
+- Manually restart workers
 
 ---
 

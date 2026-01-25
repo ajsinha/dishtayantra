@@ -1,29 +1,194 @@
 #!/usr/bin/env python
 """
 Main entry point for DishtaYantra Compute Server
+
+IMPORTANT: This script must be run with `python run_server.py` 
+The multiprocessing worker pool requires the __main__ guard.
 """
 
 import os
 import sys
+import json
+import time
+import multiprocessing
+import warnings
+
+# Suppress LMDB GIL warnings (Python 3.13+ free-threading mode)
+warnings.filterwarnings("ignore", message=".*GIL.*lmdb.*", category=RuntimeWarning)
+
+# CRITICAL: Set start method at module level before any other multiprocessing usage
+# This ensures consistent behavior across all platforms (Windows, macOS, Linux)
+def _setup_multiprocessing():
+    """Setup multiprocessing start method"""
+    try:
+        # 'spawn' is safest and works on all platforms
+        # It starts a fresh Python interpreter for each worker process
+        multiprocessing.set_start_method('spawn', force=True)
+    except RuntimeError:
+        # Already set - this is fine
+        pass
+
+# Only setup if we're the main process
+if __name__ == '__main__':
+    _setup_multiprocessing()
+
 import logging
-from web.dishtyantra_webapp import DishtaYantraWebApp
 from core.properties_configurator import PropertiesConfigurator
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/dagserver.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+# Configure logging - but only set up file handler in main process
+def _setup_logging():
+    """Setup logging configuration"""
+    # Ensure logs directory exists
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('logs/dagserver.log'),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
 
 logger = logging.getLogger(__name__)
 
 
+def _initialize_jvm_manager(props):
+    """
+    Initialize the JVM Manager for Py4J gateway connections.
+    
+    v1.6.0: JVM Manager provides centralized management of JVM instances
+    and Py4J gateways for Java calculator integration.
+    
+    Args:
+        props: PropertiesConfigurator instance
+        
+    Returns:
+        JVMManager instance or None if disabled/failed
+    """
+    jvm_config_path = 'config/jvm_config.json'
+    
+    if not os.path.exists(jvm_config_path):
+        logger.info("JVM configuration not found, Java calculators will not be available")
+        return None
+    
+    try:
+        with open(jvm_config_path, 'r') as f:
+            jvm_config = json.load(f)
+        
+        jvm_manager_config = jvm_config.get('jvm_manager', {})
+        
+        if not jvm_manager_config.get('enabled', True):
+            logger.info("JVM Manager is disabled in configuration")
+            return None
+        
+        if not jvm_manager_config.get('auto_start_on_load', True):
+            logger.info("JVM Manager auto-start is disabled")
+            return None
+        
+        # Import here to avoid circular imports
+        from core.jvm import JVMManager, get_jvm_manager
+        
+        print("\n✓ Initializing JVM Manager...")
+        logger.info("Initializing JVM Manager for Py4J gateway connections...")
+        
+        jvm_manager = get_jvm_manager()
+        jvm_manager.load_config(jvm_config_path)
+        
+        # Initialize without auto-connect (we'll connect after checking JVM availability)
+        if jvm_manager.initialize(auto_connect=True):
+            status = jvm_manager.get_status()
+            gateways = status.get('gateways', {})
+            connected_count = sum(1 for g in gateways.values() if g.get('connected', False))
+            print(f"  • JVM Manager initialized ({connected_count} gateway(s) connected)")
+            logger.info(f"JVM Manager initialized with {connected_count} gateway connections")
+            return jvm_manager
+        else:
+            print("  ⚠ JVM Manager initialized but no gateways connected")
+            logger.warning("JVM Manager initialized but no gateways connected")
+            return jvm_manager
+        
+    except ImportError as e:
+        logger.warning(f"Py4J not available, skipping JVM initialization: {e}")
+        print("  ⚠ Py4J not installed, Java calculators not available")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to initialize JVM Manager: {e}")
+        print(f"  ⚠ Warning: JVM Manager failed to initialize: {e}")
+        return None
+
+
+def _initialize_worker_pool(props):
+    """
+    Initialize the worker pool early, before any other components.
+    
+    v1.5.2: Worker pool is now initialized here in run_server.py to ensure
+    it's ready before DAGComputeServer or WebApp try to use it.
+    
+    Args:
+        props: PropertiesConfigurator instance
+        
+    Returns:
+        WorkerPoolManager instance or None if disabled/failed
+    """
+    worker_config_path = 'config/worker_config.json'
+    
+    if not os.path.exists(worker_config_path):
+        logger.info("Worker pool configuration not found, running in single-process mode")
+        return None
+    
+    try:
+        with open(worker_config_path, 'r') as f:
+            worker_config = json.load(f)
+        
+        pool_config = worker_config.get('worker_pool', {})
+        
+        if not pool_config.get('enabled', False):
+            logger.info("Worker pool is disabled in configuration")
+            return None
+        
+        # Import here to avoid circular imports
+        from core.workers import WorkerPoolManager
+        
+        print("\n✓ Initializing Worker Pool...")
+        logger.info("Initializing Worker Pool Manager...")
+        
+        worker_pool = WorkerPoolManager(
+            config_path=worker_config_path,
+            config=worker_config
+        )
+        
+        # Start the worker pool (waits for workers to report ready)
+        worker_pool.start()
+        
+        num_workers = worker_pool.num_workers
+        print(f"  • Started {num_workers} worker processes")
+        logger.info(f"Worker pool started with {num_workers} workers")
+        
+        # Worker stabilization wait
+        stabilization_seconds = pool_config.get('worker_stabilization_seconds', 10)
+        if stabilization_seconds > 0:
+            print(f"  • Waiting {stabilization_seconds}s for workers to stabilize...")
+            logger.info(f"Waiting {stabilization_seconds}s for workers to fully stabilize...")
+            time.sleep(stabilization_seconds)
+            print("  • Workers ready")
+            logger.info("Worker stabilization complete - ready to dispatch DAGs")
+        
+        return worker_pool
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize worker pool: {e}")
+        print(f"  ⚠ Warning: Worker pool failed to initialize: {e}")
+        print("  • Continuing in single-process mode")
+        return None
+
+
 def main():
     """Main entry point"""
+    # Setup logging first
+    _setup_logging()
+    
     logger.info("Starting DishtaYantra Compute Server")
 
     # Create necessary directories
@@ -33,8 +198,12 @@ def main():
             os.makedirs(directory)
             logger.info(f"Created directory: {directory}")
 
+    # Import webapp here (after multiprocessing setup)
+    from web.dishtyantra_webapp import DishtaYantraWebApp
+    
     # Initialize web application singleton
     webapp = None
+    worker_pool = None
 
     try:
         print("\n✓ Loading application properties...")
@@ -66,9 +235,16 @@ def main():
                     logger.warning(f"External module path does not exist: {resolved_path}")
                     print(f"  ⚠ Warning: Path does not exist: {resolved_path}")
 
-        # Get web application instance
+        # v1.6.0: Initialize JVM Manager for Java calculator support
+        jvm_manager = _initialize_jvm_manager(props)
+
+        # v1.5.2: Initialize worker pool EARLY (before webapp and dag_server)
+        # This ensures workers are ready before any DAGs try to start
+        worker_pool = _initialize_worker_pool(props)
+
+        # Get web application instance, passing the worker pool
         print("\n✓ Initializing DishtaYantra Web Application...")
-        webapp = DishtaYantraWebApp.get_instance()
+        webapp = DishtaYantraWebApp.get_instance(worker_pool=worker_pool)
 
         # Get server configuration
         host = props.get('server.host', '0.0.0.0')
@@ -88,6 +264,8 @@ def main():
         print(f"\n✓ Starting server on {host}:{port}")
         print(f"  Debug mode: {debug}")
         print(f"  SSL: {'Enabled' if ssl_context else 'Disabled'}")
+        print(f"  Worker Pool: {'Enabled (' + str(worker_pool.num_workers) + ' workers)' if worker_pool else 'Disabled'}")
+        print(f"  JVM Manager: {'Enabled' if jvm_manager else 'Disabled'}")
         print("\n" + "=" * 60)
 
         webapp.start(host=host, port=port, debug=debug, ssl_context=ssl_context)
@@ -96,12 +274,18 @@ def main():
         logger.info("\nReceived keyboard interrupt - shutting down gracefully...")
         if webapp:
             webapp.shutdown()
+        elif worker_pool:
+            # Shutdown worker pool if webapp wasn't initialized
+            logger.info("Shutting down worker pool...")
+            worker_pool.stop()
         else:
             logger.warning("Web application not initialized")
     except Exception as e:
         logger.error(f"Error running server: {str(e)}", exc_info=True)
         if webapp:
             webapp.shutdown()
+        elif worker_pool:
+            worker_pool.stop()
         else:
             logger.warning("Web application not initialized, cannot perform shutdown")
         sys.exit(1)

@@ -1,0 +1,168 @@
+{
+    "_comment": "DishtaYantra JVM and Py4J Gateway Configuration - v1.6.0",
+    "_description": "Configure Java Virtual Machine instances and Py4J gateway connections for Java calculator integration",
+    
+    "jvm_manager": {
+        "enabled": false,
+        "_enabled_note": "Set to true to enable automatic JVM management and Py4J gateway initialization",
+        "auto_start_on_load": true,
+        "_auto_start_note": "If true, JVMs are started automatically when application.properties is loaded",
+        "shutdown_timeout_seconds": 30,
+        "health_check_interval_seconds": 30,
+        "config_check_interval_seconds": 600,
+        "_config_check_note": "Check for config file changes every 600 seconds (10 minutes). If changed, affected JVMs are restarted."
+    },
+    
+    "gateways": [
+        {
+            "name": "primary",
+            "enabled": true,
+            "host": "localhost",
+            "base_port": 25333,
+            "pool_size": 4,
+            "_pool_size_note": "Number of gateway server instances (ports 25333-25336)",
+            
+            "jvm": {
+                "auto_start": true,
+                "_auto_start_note": "If true, DishtaYantra will start the JVM subprocess automatically",
+                "java_home": null,
+                "_java_home_note": "Path to JAVA_HOME. If null, uses system default",
+                "heap_size_mb": 512,
+                "max_heap_size_mb": 2048,
+                "jvm_options": [
+                    "-XX:+UseG1GC",
+                    "-XX:MaxGCPauseMillis=100"
+                ],
+                "classpath": [
+                    "java/lib/*"
+                ],
+                "_classpath_note": "Paths relative to DishtaYantra root directory. Run java/build.sh first to compile and download dependencies."
+            },
+            
+            "connection": {
+                "timeout_seconds": 30,
+                "retry_attempts": 3,
+                "retry_delay_seconds": 2,
+                "keep_alive": true
+            }
+        },
+        {
+            "name": "secondary",
+            "enabled": false,
+            "_enabled_note": "Enable for high-throughput scenarios with multiple JVM instances",
+            "host": "localhost",
+            "base_port": 25340,
+            "pool_size": 2,
+            
+            "jvm": {
+                "auto_start": true,
+                "java_home": null,
+                "heap_size_mb": 256,
+                "max_heap_size_mb": 1024,
+                "jvm_options": [],
+                "classpath": [
+                    "java/lib/dishtayantra-calculators.jar",
+                    "java/lib/py4j.jar"
+                ]
+            },
+            
+            "connection": {
+                "timeout_seconds": 30,
+                "retry_attempts": 3,
+                "retry_delay_seconds": 2,
+                "keep_alive": true
+            }
+        }
+    ],
+    
+    "calculators": {
+        "_description": "Pre-defined Java calculator configurations that can be referenced by name in DAGs",
+        
+        "definitions": {
+            "PassthruCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$PassthruCalculator",
+                "description": "Passes input through unchanged (for testing)",
+                "gateway": "primary",
+                "default_config": {}
+            },
+            "MathCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$MathCalculator",
+                "description": "Performs mathematical operations on numeric fields",
+                "gateway": "primary",
+                "default_config": {
+                    "operation": "multiply",
+                    "factor": 2.0
+                }
+            },
+            "TradePricingCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$TradePricingCalculator",
+                "description": "Calculates trade pricing with commission and fees",
+                "gateway": "primary",
+                "default_config": {
+                    "commission_rate": 0.001,
+                    "fee_per_trade": 1.50
+                }
+            },
+            "RiskCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$RiskCalculator",
+                "description": "Calculates Value-at-Risk (VaR) metrics",
+                "gateway": "primary",
+                "default_config": {
+                    "confidence_level": 0.95,
+                    "time_horizon_days": 10
+                }
+            },
+            "StringTransformCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$StringTransformCalculator",
+                "description": "Transforms string fields (uppercase, lowercase, trim)",
+                "gateway": "primary",
+                "default_config": {
+                    "transform": "uppercase"
+                }
+            },
+            "AggregationCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$AggregationCalculator",
+                "description": "Aggregates numeric values (sum, avg, min, max)",
+                "gateway": "primary",
+                "default_config": {
+                    "aggregation": "sum"
+                }
+            },
+            "PortfolioCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$PortfolioCalculator",
+                "description": "Calculates portfolio metrics including NAV and P&L",
+                "gateway": "primary",
+                "default_config": {
+                    "include_unrealized": true
+                }
+            },
+            "DataValidationCalculator": {
+                "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$DataValidationCalculator",
+                "description": "Validates data against configurable rules",
+                "gateway": "primary",
+                "default_config": {
+                    "strict_mode": false
+                }
+            }
+        }
+    },
+    
+    "jar_files": {
+        "_description": "JAR files required for Java calculators",
+        "dishtayantra_jar": "java/lib/dishtayantra-calculators.jar",
+        "py4j_jar": "java/lib/py4j.jar",
+        "additional_jars": []
+    },
+    
+    "logging": {
+        "java_log_level": "INFO",
+        "py4j_log_level": "WARNING",
+        "log_file": "logs/jvm_gateway.log"
+    },
+    
+    "monitoring": {
+        "collect_jvm_metrics": true,
+        "collect_gateway_stats": true,
+        "metrics_interval_seconds": 60
+    }
+}

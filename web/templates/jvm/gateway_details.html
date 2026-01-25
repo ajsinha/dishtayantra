@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Gateway Details: {{ gateway_name }} - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    .status-connected { background: linear-gradient(135deg, #10b981, #059669); }
+    .status-disconnected { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .detail-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+    .detail-card .card-header {
+        background: linear-gradient(135deg, #1e3a5f, #2d5a87);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 1rem 1.25rem;
+    }
+    .detail-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .detail-table td:first-child {
+        font-weight: 500;
+        color: #64748b;
+        width: 40%;
+    }
+    .detail-table td:last-child {
+        font-weight: 600;
+    }
+    .action-btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .jvm-options-list {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+    .classpath-list {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-family: monospace;
+        font-size: 0.85rem;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .badge-status {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/jvm">JVM Management</a></li>
+                <li class="breadcrumb-item active">{{ gateway_name }}</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">
+            <i class="bi bi-hdd-network text-primary"></i> Gateway: {{ gateway_name }}
+            {% if status.connected %}
+            <span class="badge bg-success badge-status ms-2">Connected</span>
+            {% else %}
+            <span class="badge bg-danger badge-status ms-2">Disconnected</span>
+            {% endif %}
+        </h2>
+    </div>
+    <a href="/jvm" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to JVM Management
+    </a>
+</div>
+
+<!-- Action Buttons -->
+<div class="mb-4">
+    {% if status.jvm_started %}
+    <button class="btn btn-danger action-btn" onclick="stopJVM('{{ gateway_name }}')">
+        <i class="bi bi-stop-circle"></i> Stop JVM
+    </button>
+    <button class="btn btn-warning action-btn" onclick="restartJVM('{{ gateway_name }}')">
+        <i class="bi bi-arrow-repeat"></i> Restart JVM
+    </button>
+    {% else %}
+    <button class="btn btn-success action-btn" onclick="restartJVM('{{ gateway_name }}')">
+        <i class="bi bi-play-circle"></i> Start JVM
+    </button>
+    {% endif %}
+    {% if not status.connected %}
+    <button class="btn btn-primary action-btn" onclick="reconnectGateway('{{ gateway_name }}')">
+        <i class="bi bi-link"></i> Reconnect Gateway
+    </button>
+    {% endif %}
+    <button class="btn btn-outline-primary action-btn" onclick="refreshPage()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+</div>
+
+<div class="row">
+    <!-- Configuration -->
+    <div class="col-md-6">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+            </div>
+            <div class="card-body">
+                <table class="table detail-table mb-0">
+                    <tr>
+                        <td>Enabled</td>
+                        <td>
+                            {% if config.enabled %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            {% else %}
+                            <span class="text-danger"><i class="bi bi-x-circle"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Host</td>
+                        <td>{{ config.host }}</td>
+                    </tr>
+                    <tr>
+                        <td>Base Port</td>
+                        <td>{{ config.base_port }}</td>
+                    </tr>
+                    <tr>
+                        <td>Pool Size</td>
+                        <td>{{ config.pool_size }} connections</td>
+                    </tr>
+                    <tr>
+                        <td>Port Range</td>
+                        <td>{{ config.base_port }} - {{ config.base_port + config.pool_size - 1 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Auto Start JVM</td>
+                        <td>
+                            {% if config.jvm_auto_start %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Connection Timeout</td>
+                        <td>{{ config.timeout_seconds }} seconds</td>
+                    </tr>
+                    <tr>
+                        <td>Retry Attempts</td>
+                        <td>{{ config.retry_attempts }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Runtime Status -->
+    <div class="col-md-6">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Runtime Status</h5>
+            </div>
+            <div class="card-body">
+                <table class="table detail-table mb-0">
+                    <tr>
+                        <td>Connection Status</td>
+                        <td>
+                            {% if status.connected %}
+                            <span class="status-indicator status-connected"></span>
+                            <span class="text-success">Connected</span>
+                            {% else %}
+                            <span class="status-indicator status-disconnected"></span>
+                            <span class="text-danger">Disconnected</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>JVM Status</td>
+                        <td>
+                            {% if status.jvm_started %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Running</span>
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-x-circle"></i> Stopped</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>JVM Process ID</td>
+                        <td>{{ status.jvm_pid or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Active Connections</td>
+                        <td>{{ status.active_connections }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Requests</td>
+                        <td>{{ status.total_requests }}</td>
+                    </tr>
+                    <tr>
+                        <td>Errors</td>
+                        <td>
+                            {% if status.errors > 0 %}
+                            <span class="text-danger">{{ status.errors }}</span>
+                            {% else %}
+                            <span class="text-success">{{ status.errors }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Start Time</td>
+                        <td>{{ status.start_time or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Last Health Check</td>
+                        <td>{{ status.last_health_check or 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JVM Settings -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-memory"></i> JVM Memory Settings</h5>
+            </div>
+            <div class="card-body">
+                <table class="table detail-table mb-0">
+                    <tr>
+                        <td>Initial Heap Size</td>
+                        <td>{{ config.heap_size_mb }} MB</td>
+                    </tr>
+                    <tr>
+                        <td>Maximum Heap Size</td>
+                        <td>{{ config.max_heap_size_mb }} MB</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-terminal"></i> JVM Options</h5>
+            </div>
+            <div class="card-body">
+                {% if config.jvm_options %}
+                <div class="jvm-options-list">
+                    {% for opt in config.jvm_options %}
+                    <div>{{ opt }}</div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No custom JVM options configured</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Classpath -->
+<div class="row">
+    <div class="col-12">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-folder"></i> Classpath</h5>
+            </div>
+            <div class="card-body">
+                {% if config.classpath %}
+                <div class="classpath-list">
+                    {% for cp in config.classpath %}
+                    <div>{{ cp }}</div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Using default classpath</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Associated Calculators -->
+<div class="row">
+    <div class="col-12">
+        <div class="card detail-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-calculator"></i> Associated Calculators</h5>
+                <a href="/jvm/calculators" class="btn btn-sm btn-outline-light">View All Calculators</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Calculator Name</th>
+                                <th>Java Class</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calculators-tbody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Loading calculators...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCalculators();
+});
+
+function loadCalculators() {
+    const gatewayName = '{{ gateway_name }}';
+    
+    fetch('/api/jvm/calculators')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('calculators-tbody');
+                const calculators = (data.data.definitions || []).filter(c => c.gateway === gatewayName);
+                
+                if (calculators.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No calculators associated with this gateway</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = calculators.map(calc => `
+                    <tr>
+                        <td><span class="badge bg-warning text-dark">${calc.name}</span></td>
+                        <td><code class="small">${calc.java_class}</code></td>
+                        <td class="small">${calc.description || '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        })
+        .catch(err => {
+            document.getElementById('calculators-tbody').innerHTML = 
+                '<tr><td colspan="3" class="text-center text-danger">Error loading calculators</td></tr>';
+        });
+}
+
+function stopJVM(name) {
+    if (!confirm(`Are you sure you want to stop JVM "${name}"? Any active calculations will be interrupted.`)) {
+        return;
+    }
+    
+    fetch(`/api/jvm/gateways/${name}/stop`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'JVM stopped successfully');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed to stop JVM: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function restartJVM(name) {
+    showAlert('info', `Restarting JVM "${name}"... This may take a few seconds.`);
+    
+    fetch(`/api/jvm/gateways/${name}/restart`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'JVM restarted successfully');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('danger', 'Failed to restart JVM: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function reconnectGateway(name) {
+    fetch(`/api/jvm/gateways/${name}/reconnect`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Gateway reconnected successfully');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed to reconnect: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => {
+            showAlert('danger', 'Error: ' + err.message);
+        });
+}
+
+function refreshPage() {
+    location.reload();
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>
+{% endblock %}

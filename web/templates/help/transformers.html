@@ -56,7 +56,7 @@
             <li><strong>At node input</strong> - Using <code>input_transformers</code> array</li>
             <li><strong>At node output</strong> - Using <code>output_transformers</code> array</li>
         </ul>
-        <div class="code-block">// Define transformer
+        <pre class="code-block">// Define transformer
 {
   "name": "my_transformer",
   "type": "AttributeFilterDataTransformer",
@@ -77,7 +77,7 @@
   "input_transformers": ["my_transformer"],
   "publishers": ["publisher_1"]
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- NullDataTransformer -->
@@ -87,12 +87,12 @@
     </div>
     <div class="card-body">
         <p>Returns a deep copy of the input data. Default transformer.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "copy_trans",
   "type": "NullDataTransformer",
   "config": {}
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- PassthruDataTransformer -->
@@ -102,12 +102,12 @@
     </div>
     <div class="card-body">
         <p>Returns the input data as-is. Most efficient option.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "passthru_trans",
   "type": "PassthruDataTransformer",
   "config": {}
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- AttributeFilterDataTransformer -->
@@ -117,7 +117,7 @@
     </div>
     <div class="card-body">
         <p>Keeps only the specified attributes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "keep_essentials",
   "type": "AttributeFilterDataTransformer",
   "config": {
@@ -127,7 +127,7 @@
 
 // Input:  {"id": 1, "timestamp": 123, "value": 100, "internal": "xxx"}
 // Output: {"id": 1, "timestamp": 123, "value": 100}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- AttributeFilterAwayDataTransformer -->
@@ -137,7 +137,7 @@
     </div>
     <div class="card-body">
         <p>Removes the specified attributes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "remove_sensitive",
   "type": "AttributeFilterAwayDataTransformer",
   "config": {
@@ -147,7 +147,7 @@
 
 // Input:  {"user": "john", "password": "xxx", "email": "john@ex.com"}
 // Output: {"user": "john", "email": "john@ex.com"}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- ApplyDefaultsDataTransformer -->
@@ -157,7 +157,7 @@
     </div>
     <div class="card-body">
         <p>Applies default values for missing or null attributes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "add_defaults",
   "type": "ApplyDefaultsDataTransformer",
   "config": {
@@ -171,7 +171,7 @@
 
 // Input:  {"id": 1, "data": "value"}
 // Output: {"id": 1, "data": "value", "version": "1.0", "source": "dishtayantra", "processed": true}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Transformers vs Calculators -->
@@ -221,7 +221,7 @@
     </div>
     <div class="card-body">
         <p>Create custom transformers by extending <code>DataTransformer</code>:</p>
-        <div class="code-block">from core.transformer.core_transformer import DataTransformer
+        <pre class="code-block">from core.transformer.core_transformer import DataTransformer
 
 class UpperCaseTransformer(DataTransformer):
     def transform(self, data):
@@ -231,6 +231,6 @@ class UpperCaseTransformer(DataTransformer):
             if key in result and isinstance(result[key], str):
                 result[key] = result[key].upper()
         return result</div>
-    </div>
+    </pre>
 </div>
 {% endblock %}

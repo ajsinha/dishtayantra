@@ -332,15 +332,15 @@
     </div>
     <div class="card-body">
         <h6>1. Install Libraries</h6>
-        <div class="code-block bash"># Install both libraries (recommended)
+        <pre class="code-block bash"># Install both libraries (recommended)
 pip install kafka-python confluent-kafka
 
 # Or just one
 pip install kafka-python      # Simpler setup
-pip install confluent-kafka   # Higher performance</div>
+pip install confluent-kafka   # Higher performance</pre>
 
         <h6 class="mt-4">2. Basic Publisher</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'kafka://topic/user_events',
@@ -350,10 +350,10 @@ config = {
 
 publisher = create_publisher('event_publisher', config)
 publisher.publish({'event': 'user_login', 'user_id': 123})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">3. Basic Subscriber</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'kafka://topic/user_events',
@@ -368,7 +368,7 @@ subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
 
-subscriber.stop()</div>
+subscriber.stop()</pre>
 
         <div class="tip-box">
             <strong><i class="bi bi-lightbulb"></i> Pro Tip:</strong> Use <code>kafka_library: 'confluent-kafka'</code> for production workloads to achieve 10x better performance!
@@ -389,7 +389,7 @@ subscriber.stop()</div>
             <div class="col-md-6">
                 <div class="config-section">
                     <h6><span class="library-badge badge-kafka-python">kafka-python</span></h6>
-                    <div class="code-block json">{
+                    <pre class="code-block json">{
   "destination": "kafka://topic/events",
   "bootstrap_servers": ["localhost:9092"],
   "kafka_library": "kafka-python",
@@ -399,13 +399,13 @@ subscriber.stop()</div>
     "batch_size": 16384,
     "linger_ms": 10
   }
-}</div>
+}</pre>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="config-section">
                     <h6><span class="library-badge badge-confluent">confluent-kafka</span></h6>
-                    <div class="code-block json">{
+                    <pre class="code-block json">{
   "destination": "kafka://topic/events",
   "bootstrap_servers": ["localhost:9092"],
   "kafka_library": "confluent-kafka",
@@ -415,13 +415,13 @@ subscriber.stop()</div>
     "batch.num.messages": 10000,
     "linger.ms": 5
   }
-}</div>
+}</pre>
                 </div>
             </div>
         </div>
         
         <h6 class="mt-4">application.properties</h6>
-        <div class="code-block properties"># Kafka library selection
+        <pre class="code-block properties"># Kafka library selection
 kafka.library=confluent-kafka
 
 # Broker configuration
@@ -433,10 +433,10 @@ kafka.producer.retries=3
 
 # Consumer settings
 kafka.consumer.group.id=my_app_group
-kafka.consumer.auto.offset.reset=earliest</div>
+kafka.consumer.auto.offset.reset=earliest</pre>
 
         <h6 class="mt-4">DAG Node Configuration</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "kafka_input",
   "type": "DataSubscriberNode",
   "config": {
@@ -449,7 +449,7 @@ kafka.consumer.auto.offset.reset=earliest</div>
       "enable.auto.commit": true
     }
   }
-}</div>
+}</pre>
 
         <h6 class="mt-4">Configuration Options Reference</h6>
         <table class="table table-sm table-bordered">
@@ -531,7 +531,7 @@ kafka.consumer.auto.offset.reset=earliest</div>
         </div>
         
         <h6>Resilient Producer</h6>
-        <div class="code-block python">from core.pubsub.resilient_kafka import create_resilient_producer
+        <pre class="code-block python">from core.pubsub.resilient_kafka import create_resilient_producer
 
 producer = create_resilient_producer(
     kafka_library='confluent-kafka',
@@ -549,10 +549,10 @@ producer.flush()
 print(f"Buffered messages: {producer.get_buffer_size()}")
 print(f"Failed messages: {len(producer.get_failed_messages())}")
 
-producer.close()</div>
+producer.close()</pre>
 
         <h6 class="mt-4">Resilient Consumer</h6>
-        <div class="code-block python">from core.pubsub.resilient_kafka import create_resilient_consumer
+        <pre class="code-block python">from core.pubsub.resilient_kafka import create_resilient_consumer
 
 consumer = create_resilient_consumer(
     'my-topic',
@@ -567,7 +567,7 @@ consumer = create_resilient_consumer(
 for message in consumer:
     print(f"Received: {message.value}")
 
-consumer.close()</div>
+consumer.close()</pre>
 
         <h6 class="mt-4">Resilient Configuration Options</h6>
         <table class="table table-sm table-bordered">
@@ -608,7 +608,7 @@ consumer.close()</div>
         <div class="row">
             <div class="col-md-6">
                 <h6><i class="bi bi-arrow-up-circle text-success"></i> High Throughput</h6>
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "kafka_library": "confluent-kafka",
   "confluent_config": {
     "queue.buffering.max.messages": 500000,
@@ -618,11 +618,11 @@ consumer.close()</div>
     "linger.ms": 5,
     "acks": 1
   }
-}</div>
+}</pre>
             </div>
             <div class="col-md-6">
                 <h6><i class="bi bi-lightning text-warning"></i> Low Latency</h6>
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "kafka_library": "confluent-kafka",
   "confluent_config": {
     "queue.buffering.max.ms": 0,
@@ -630,7 +630,7 @@ consumer.close()</div>
     "linger.ms": 0,
     "acks": 1
   }
-}</div>
+}</pre>
             </div>
         </div>
         
@@ -657,18 +657,18 @@ consumer.close()</div>
         <div class="row">
             <div class="col-md-6">
                 <h6 class="text-muted">Before (kafka-python)</h6>
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "destination": "kafka://topic/events",
   "bootstrap_servers": ["localhost:9092"],
   "producer_config": {
     "acks": "all",
     "batch_size": 16384
   }
-}</div>
+}</pre>
             </div>
             <div class="col-md-6">
                 <h6 class="text-success">After (confluent-kafka)</h6>
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "destination": "kafka://topic/events",
   "bootstrap_servers": ["localhost:9092"],
   "kafka_library": "confluent-kafka",
@@ -676,7 +676,7 @@ consumer.close()</div>
     "acks": "all",
     "batch.num.messages": 10000
   }
-}</div>
+}</pre>
             </div>
         </div>
         
@@ -685,10 +685,10 @@ consumer.close()</div>
         </div>
         
         <h6 class="mt-4">No Code Changes Needed!</h6>
-        <div class="code-block python"># Same code works with both libraries
+        <pre class="code-block python"># Same code works with both libraries
 publisher = create_publisher('event_pub', config)
 publisher.publish({'data': 'test'})
-publisher.stop()</div>
+publisher.stop()</pre>
     </div>
 </div>
 
@@ -708,9 +708,9 @@ publisher.stop()</div>
                 <div id="trouble1" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
                     <div class="accordion-body">
                         <strong>Solution:</strong> Install a Kafka library:
-                        <div class="code-block bash">pip install kafka-python
+                        <pre class="code-block bash">pip install kafka-python
 # or
-pip install confluent-kafka</div>
+pip install confluent-kafka</pre>
                     </div>
                 </div>
             </div>
@@ -723,7 +723,7 @@ pip install confluent-kafka</div>
                 <div id="trouble2" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
                     <div class="accordion-body">
                         <strong>Solution:</strong> Install pre-built binary:
-                        <div class="code-block bash">pip install confluent-kafka --prefer-binary</div>
+                        <pre class="code-block bash">pip install confluent-kafka --prefer-binary</pre>
                     </div>
                 </div>
             </div>
@@ -753,12 +753,12 @@ pip install confluent-kafka</div>
                 </h2>
                 <div id="trouble4" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
                     <div class="accordion-body">
-                        <div class="code-block python">from core.pubsub.kafka_datapubsub import get_library_info
+                        <pre class="code-block python">from core.pubsub.kafka_datapubsub import get_library_info
 
 info = get_library_info()
 print(f"kafka-python: {info['kafka_python']['available']}")
 print(f"confluent-kafka: {info['confluent_kafka']['available']}")
-print(f"Recommended: {info['recommended']}")</div>
+print(f"Recommended: {info['recommended']}")</pre>
                     </div>
                 </div>
             </div>

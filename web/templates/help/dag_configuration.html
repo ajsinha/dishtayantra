@@ -64,7 +64,7 @@
     </div>
     <div class="card-body">
         <p>A DAG configuration is a JSON object with the following top-level properties:</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "my_dag",
   "start_time": "0900",
   "duration": "8h",
@@ -76,7 +76,7 @@
   "nodes": [ ... ],
   "edges": [ ... ]
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Top-Level Properties -->
@@ -170,7 +170,7 @@
         
         <h6><span class="node-type-badge node-subscription">SubscriptionNode</span></h6>
         <p>Entry point for data. Reads from a subscriber (data source).</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "input_node",
   "type": "SubscriptionNode",
   "subscriber": "kafka_subscriber",
@@ -179,7 +179,7 @@
         
         <h6 class="mt-4"><span class="node-type-badge node-calculation">CalculationNode</span></h6>
         <p>Processes data using a calculator. Most common node type.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "process_node",
   "type": "CalculationNode",
   "calculator": "my_calculator",
@@ -188,7 +188,7 @@
         
         <h6 class="mt-4"><span class="node-type-badge node-publication">PublicationNode</span></h6>
         <p>Exit point for data. Writes to one or more publishers.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "output_node",
   "type": "PublicationNode",
   "publishers": ["kafka_publisher", "file_publisher"],
@@ -198,7 +198,7 @@
         
         <h6 class="mt-4"><span class="node-type-badge node-metronome">MetronomeNode</span></h6>
         <p>Generates periodic events. Useful for scheduled tasks.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "heartbeat_node",
   "type": "MetronomeNode",
   "config": {
@@ -209,12 +209,12 @@
         
         <h6 class="mt-4"><span class="node-type-badge node-sink">SinkNode</span></h6>
         <p>Consumes data without output. Useful for logging or metrics.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "logging_sink",
   "type": "SinkNode",
   "config": {}
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Edges -->
@@ -224,7 +224,7 @@
     </div>
     <div class="card-body">
         <p>Edges define data flow between nodes:</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "from_node": "input_node",
   "to_node": "process_node",
   "pname": "data",
@@ -261,7 +261,7 @@
                 </tr>
             </tbody>
         </table>
-    </div>
+    </pre>
 </div>
 
 <!-- Complete Example -->
@@ -271,7 +271,7 @@
     </div>
     <div class="card-body">
         <p>A complete DAG configuration with all components:</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "data_enrichment_pipeline",
   "start_time": "0800",
   "duration": "10h",
@@ -361,7 +361,7 @@
     {"from_node": "transform", "to_node": "publish"}
   ]
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Related Topics -->

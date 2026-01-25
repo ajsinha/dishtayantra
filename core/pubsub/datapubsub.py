@@ -355,7 +355,7 @@ class DataSubscriber(AbstractDataPubSub):
     """
     Abstract base class for data subscribers.
     
-    Enhanced in v1.5.1 with automatic packaging of non-dictionary messages.
+    Enhanced in v1.5.2 with automatic packaging of non-dictionary messages.
     This ensures consistent data format for downstream calculators regardless
     of the original message format from external sources.
     
@@ -385,7 +385,7 @@ class DataSubscriber(AbstractDataPubSub):
         self.source = source
         self.max_depth = config.get('max_depth', 100000)
 
-        # v1.5.1: Non-dictionary message packaging configuration
+        # v1.5.2: Non-dictionary message packaging configuration
         self.auto_package_non_dict = config.get('auto_package_non_dict', True)
         self.package_wrapper_key = config.get('package_wrapper_key', 'payload')
         self.add_package_metadata = config.get('add_package_metadata', True)
@@ -513,7 +513,7 @@ class DataSubscriber(AbstractDataPubSub):
                     'subscriber_name': self.name,
                     'source': self.source,
                     'received_at': datetime.now().isoformat(),
-                    'packaging_version': '1.5.1'
+                    'packaging_version': '1.5.2'
                 }
             
             # Track packaging statistics
@@ -546,7 +546,7 @@ class DataSubscriber(AbstractDataPubSub):
         """
         Main subscription loop - handles both PriorityQueue and regular Queue.
         
-        Enhanced in v1.5.1 to automatically package non-dictionary messages
+        Enhanced in v1.5.2 to automatically package non-dictionary messages
         for consistent downstream processing.
         """
         while not self._stop_event.is_set():
@@ -561,7 +561,7 @@ class DataSubscriber(AbstractDataPubSub):
 
                 data = self._do_subscribe()
                 if data is not None:
-                    # v1.5.1: Auto-package non-dictionary messages
+                    # v1.5.2: Auto-package non-dictionary messages
                     if self.auto_package_non_dict:
                         data = self._package_message(data)
                     
@@ -654,7 +654,7 @@ class DataSubscriber(AbstractDataPubSub):
                 'suspended': not self._suspend_event.is_set(),
                 'priority_queue_enabled': self._is_priority_queue,
                 'priority_key': self.priority_key,
-                # v1.5.1: Packaging statistics
+                # v1.5.2: Packaging statistics
                 'auto_package_enabled': self.auto_package_non_dict,
                 'packaged_count': self._packaged_count,
                 'package_wrapper_key': self.package_wrapper_key

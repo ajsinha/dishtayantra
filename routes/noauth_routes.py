@@ -1,7 +1,7 @@
 """
 Non-authenticated routes module - accessible without login
 
-Version: 1.5.1
+Version: 1.6.0
 """
 import os
 import logging
@@ -149,7 +149,8 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/sample-dags', 'help_sample_dags', self.help_sample_dags)
         self.app.add_url_rule('/help/api-reference', 'help_api_reference', self.help_api_reference)
         self.app.add_url_rule('/help/glossary', 'help_glossary', self.help_glossary)
-        self.app.add_url_rule('/help/free-threading', 'help_free_threading', self.help_free_threading)
+        self.app.add_url_rule('/help/free-threading', 'help_free_threading', self.help_parallelism)
+        self.app.add_url_rule('/help/parallelism', 'help_parallelism', self.help_parallelism)
         self.app.add_url_rule('/help/py4j-integration', 'help_py4j_integration', self.help_py4j_integration)
         self.app.add_url_rule('/help/pybind11-integration', 'help_pybind11_integration', self.help_pybind11_integration)
         self.app.add_url_rule('/help/rust-integration', 'help_rust_integration', self.help_rust_integration)
@@ -165,8 +166,10 @@ class NoAuthRoutes:
         self.app.add_url_rule('/help/inmemory-integration', 'help_inmemory_integration', self.help_inmemory_integration)
         self.app.add_url_rule('/help/subgraph', 'help_subgraph', self.help_subgraph)
         self.app.add_url_rule('/help/prometheus-monitoring', 'help_prometheus_monitoring', self.help_prometheus_monitoring)
+        self.app.add_url_rule('/help/worker-pool', 'help_worker_pool', self.help_parallelism)
+        self.app.add_url_rule('/help/configuration', 'help_configuration', self.help_configuration)
         
-        # v1.5.1: User Guides (Markdown) routes
+        # v1.5.2: User Guides (Markdown) routes
         self.app.add_url_rule('/help/userguides', 'help_userguides', self.help_userguides)
         self.app.add_url_rule('/help/userguides/<path:filename>', 'help_userguide_view', self.help_userguide_view)
     
@@ -181,7 +184,7 @@ class NoAuthRoutes:
     def help_userguides(self):
         """
         List all available user guides (markdown files).
-        v1.5.1: Just-in-time markdown rendering.
+        v1.5.2: Just-in-time markdown rendering.
         """
         docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
         userguides_path = os.path.join(docs_path, 'userguides')
@@ -255,7 +258,7 @@ class NoAuthRoutes:
     def help_userguide_view(self, filename):
         """
         Render a single markdown file as HTML.
-        v1.5.1: Just-in-time rendering with syntax highlighting.
+        v1.5.2: Just-in-time rendering with syntax highlighting.
         """
         docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
         
@@ -343,9 +346,13 @@ class NoAuthRoutes:
         """Glossary help page"""
         return render_template('help/glossary.html')
     
+    def help_parallelism(self):
+        """Parallelism Guide - Worker Pool & Free-Threading help page (v1.5.2)"""
+        return render_template('help/parallelism.html')
+    
     def help_free_threading(self):
-        """Free-threading Python help page"""
-        return render_template('help/free_threading.html')
+        """Free-threading Python help page - redirects to parallelism guide"""
+        return render_template('help/parallelism.html')
     
     def help_py4j_integration(self):
         """Py4J Java integration help page"""
@@ -406,3 +413,11 @@ class NoAuthRoutes:
     def help_prometheus_monitoring(self):
         """Prometheus monitoring integration help page"""
         return render_template('help/prometheus_monitoring.html')
+    
+    def help_worker_pool(self):
+        """Worker Pool & DAG Affinity help page - redirects to parallelism guide (v1.5.2)"""
+        return render_template('help/parallelism.html')
+    
+    def help_configuration(self):
+        """Configuration files reference (v1.5.2)"""
+        return render_template('help/configuration.html')

@@ -1,0 +1,92 @@
+{
+    "_comment": "Example DAG demonstrating Java calculator integration via Py4J - v1.6.0",
+    "_description": "Trade pricing pipeline using Java TradePricingCalculator for high-performance calculations",
+    
+    "name": "java_trade_pricing_dag",
+    "description": "Trade pricing calculation using Java calculators via Py4J gateway",
+    "version": "1.6.0",
+    
+    "nodes": [
+        {
+            "id": "trade_input",
+            "type": "source",
+            "source": {
+                "type": "pubsub",
+                "uri": "inmemory://trades/input"
+            },
+            "description": "Receives raw trade data"
+        },
+        {
+            "id": "validate_trade",
+            "type": "calculator",
+            "calculator": {
+                "type": "java",
+                "name": "DataValidationCalculator",
+                "config": {
+                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$DataValidationCalculator",
+                    "strict_mode": false,
+                    "required_fields": ["symbol", "price", "quantity", "side"]
+                }
+            },
+            "description": "Validates trade data using Java validator"
+        },
+        {
+            "id": "calculate_pricing",
+            "type": "calculator",
+            "calculator": {
+                "type": "java",
+                "name": "TradePricingCalculator",
+                "config": {
+                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$TradePricingCalculator",
+                    "commission_rate": 0.001,
+                    "tax_rate": 0.002,
+                    "include_vat": true
+                }
+            },
+            "description": "Calculates trade pricing including commission, tax, and VAT"
+        },
+        {
+            "id": "add_timestamp",
+            "type": "calculator",
+            "calculator": {
+                "type": "python",
+                "class": "example.calculators.basic.TimestampCalculator",
+                "config": {
+                    "timestamp_field": "processed_at",
+                    "format": "iso"
+                }
+            },
+            "description": "Adds processing timestamp"
+        },
+        {
+            "id": "pricing_output",
+            "type": "sink",
+            "sink": {
+                "type": "pubsub",
+                "uri": "inmemory://trades/priced"
+            },
+            "description": "Outputs priced trade data"
+        }
+    ],
+    
+    "edges": [
+        {"from": "trade_input", "to": "validate_trade"},
+        {"from": "validate_trade", "to": "calculate_pricing"},
+        {"from": "calculate_pricing", "to": "add_timestamp"},
+        {"from": "add_timestamp", "to": "pricing_output"}
+    ],
+    
+    "metadata": {
+        "author": "DishtaYantra",
+        "category": "java-integration",
+        "tags": ["java", "py4j", "trading", "pricing"],
+        "requires_jvm": true,
+        "example_input": {
+            "symbol": "AAPL",
+            "price": 175.50,
+            "quantity": 100,
+            "side": "BUY",
+            "trader_id": "T001"
+        }
+    }
+}

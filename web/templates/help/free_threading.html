@@ -212,7 +212,7 @@
         </table>
         
         <h6 class="mt-4">Example: 10 DAGs with 5 Subscribers Each</h6>
-        <div class="code-block">Traditional Python (GIL):
+        <pre class="code-block">Traditional Python (GIL):
   - 50 subscriber threads + 10 compute threads + 10 time checker threads = 70 threads
   - But only 1 thread executes Python at a time
   - Effective parallelism: 1 core
@@ -227,7 +227,7 @@ Free-Threading Python:
             <div class="performance-metric">
                 <span class="metric-label">Single DAG (5 nodes)</span>
                 <span class="metric-value">2-3x faster</span>
-            </div>
+            </pre>
             <div class="performance-metric">
                 <span class="metric-label">10 DAGs running concurrently</span>
                 <span class="metric-value">5-10x faster</span>
@@ -262,23 +262,23 @@ Free-Threading Python:
         <h6 class="mt-4">Step 1: Install Build Dependencies</h6>
         
         <p><strong>Ubuntu/Debian:</strong></p>
-        <div class="code-block">sudo apt update
+        <pre class="code-block">sudo apt update
 sudo apt install -y build-essential gdb lcov pkg-config \
     libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev \
     liblzma-dev libncurses5-dev libreadline6-dev libsqlite3-dev \
     libssl-dev lzma lzma-dev tk-dev uuid-dev zlib1g-dev</div>
         
         <p class="mt-3"><strong>RHEL/CentOS/Fedora:</strong></p>
-        <div class="code-block">sudo dnf groupinstall "Development Tools"
+        <pre class="code-block">sudo dnf groupinstall "Development Tools"
 sudo dnf install -y bzip2-devel libffi-devel gdbm-devel \
     xz-devel ncurses-devel readline-devel sqlite-devel \
     openssl-devel tk-devel libuuid-devel zlib-devel</div>
         
         <p class="mt-3"><strong>macOS (with Homebrew):</strong></p>
-        <div class="code-block">brew install openssl readline sqlite3 xz zlib tcl-tk</div>
+        <pre class="code-block">brew install openssl readline sqlite3 xz zlib tcl-tk</div>
         
         <h6 class="mt-4">Step 2: Download Python Source</h6>
-        <div class="code-block"># For Python 3.13 (current stable with free-threading)
+        <pre class="code-block"># For Python 3.13 (current stable with free-threading)
 wget https://www.python.org/ftp/python/3.13.0/Python-3.13.0.tgz
 tar xzf Python-3.13.0.tgz
 cd Python-3.13.0
@@ -289,7 +289,7 @@ cd Python-3.13.0
 # git checkout v3.14.0</div>
         
         <h6 class="mt-4">Step 3: Configure with Free-Threading</h6>
-        <div class="code-block"># The key flag is --disable-gil
+        <pre class="code-block"># The key flag is --disable-gil
 ./configure --prefix=/opt/python-3.13-freethreaded \
             --disable-gil \
             --enable-optimizations \
@@ -305,10 +305,10 @@ cd Python-3.13.0
                 <li><code>--with-lto</code>: Link Time Optimization for better performance</li>
                 <li><code>--enable-shared</code>: Build shared libraries</li>
             </ul>
-        </div>
+        </pre>
         
         <h6 class="mt-4">Step 4: Build and Install</h6>
-        <div class="code-block"># Build (this takes 10-30 minutes depending on your system)
+        <pre class="code-block"># Build (this takes 10-30 minutes depending on your system)
 make -j$(nproc)
 
 # Run tests (optional but recommended)
@@ -318,7 +318,7 @@ make test
 sudo make install</div>
         
         <h6 class="mt-4">Step 5: Verify Free-Threading is Enabled</h6>
-        <div class="code-block"># Check Python version and build info
+        <pre class="code-block"># Check Python version and build info
 /opt/python-3.13-freethreaded/bin/python3 -c "import sys; print(sys.version)"
 
 # Verify GIL is disabled
@@ -332,9 +332,9 @@ else:
 "</div>
         
         <p>Expected output for free-threaded build:</p>
-        <div class="code-block">Python 3.13.0 experimental free-threading build (main, ...) [GCC ...]
+        <pre class="code-block">Python 3.13.0 experimental free-threading build (main, ...) [GCC ...]
 GIL enabled: False</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Using with DishtaYantra -->
@@ -344,7 +344,7 @@ GIL enabled: False</div>
     </div>
     <div class="card-body">
         <h6>Option 1: Create a Virtual Environment</h6>
-        <div class="code-block"># Create venv with free-threaded Python
+        <pre class="code-block"># Create venv with free-threaded Python
 /opt/python-3.13-freethreaded/bin/python3 -m venv ~/dishtayantra-venv
 
 # Activate the virtual environment
@@ -355,7 +355,7 @@ python --version
 python -c "import sys; print(f'GIL: {sys._is_gil_enabled() if hasattr(sys, \"_is_gil_enabled\") else \"N/A\"}')"</div>
         
         <h6 class="mt-4">Option 2: Install Dependencies</h6>
-        <div class="code-block"># Install DishtaYantra requirements
+        <pre class="code-block"># Install DishtaYantra requirements
 pip install --upgrade pip
 pip install -r requirements.txt</div>
         
@@ -367,10 +367,10 @@ pip install -r requirements.txt</div>
                 <li>Some packages may need <code>pip install --no-binary :all:</code> to compile from source</li>
                 <li>Report issues to package maintainers</li>
             </ul>
-        </div>
+        </pre>
         
         <h6 class="mt-4">Option 3: Run DishtaYantra</h6>
-        <div class="code-block"># With virtual environment activated
+        <pre class="code-block"># With virtual environment activated
 cd /path/to/dishtayantra
 python run_server.py
 
@@ -378,7 +378,7 @@ python run_server.py
 /opt/python-3.13-freethreaded/bin/python3 run_server.py</div>
         
         <h6 class="mt-4">Option 4: Docker with Free-Threading Python</h6>
-        <div class="code-block"># Dockerfile for DishtaYantra with Free-Threading Python
+        <pre class="code-block"># Dockerfile for DishtaYantra with Free-Threading Python
 FROM ubuntu:24.04
 
 # Install build dependencies
@@ -407,7 +407,7 @@ COPY . .
 
 EXPOSE 8888
 CMD ["python3", "run_server.py"]</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Best Practices -->
@@ -418,7 +418,7 @@ CMD ["python3", "run_server.py"]</div>
     <div class="card-body">
         <h6>1. Thread Safety in Custom Calculators</h6>
         <p>With free-threading, your custom calculators may run truly in parallel. Ensure thread safety:</p>
-        <div class="code-block">import threading
+        <pre class="code-block">import threading
 
 class MyCalculator(DataCalculator):
     def __init__(self, name, config):
@@ -437,7 +437,7 @@ class MyCalculator(DataCalculator):
         return result</div>
         
         <h6 class="mt-4">2. Avoid Global Mutable State</h6>
-        <div class="code-block"># BAD - Global mutable state
+        <pre class="code-block"># BAD - Global mutable state
 results = []  # This will have race conditions!
 
 class BadCalculator(DataCalculator):
@@ -458,7 +458,7 @@ class GoodCalculator(DataCalculator):
         return data</div>
         
         <h6 class="mt-4">3. Use Thread-Safe Data Structures</h6>
-        <div class="code-block">from queue import Queue  # Thread-safe
+        <pre class="code-block">from queue import Queue  # Thread-safe
 from collections import deque  # NOT thread-safe by default
 import threading
 
@@ -469,7 +469,7 @@ import threading
 # - threading.RLock for reentrant locking</div>
         
         <h6 class="mt-4">4. Monitor Performance</h6>
-        <div class="code-block"># Check CPU utilization to verify parallelism
+        <pre class="code-block"># Check CPU utilization to verify parallelism
 # With GIL: One core at ~100%, others idle
 # Without GIL: Multiple cores at high utilization
 
@@ -484,7 +484,7 @@ def get_cpu_times():
         'system_time': usage.ru_stime,
         'max_memory_mb': usage.ru_maxrss / 1024
     }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Troubleshooting -->
@@ -494,7 +494,7 @@ def get_cpu_times():
     </div>
     <div class="card-body">
         <h6>Issue: Package Installation Fails</h6>
-        <div class="code-block"># Some C extensions may not support free-threading yet
+        <pre class="code-block"># Some C extensions may not support free-threading yet
 # Try installing without binary wheels
 pip install package-name --no-binary :all:
 
@@ -503,7 +503,7 @@ pip install package-name==version</div>
         
         <h6 class="mt-4">Issue: Segmentation Faults</h6>
         <p>If you experience crashes, it may be due to non-thread-safe C extensions:</p>
-        <div class="code-block"># Identify problematic packages
+        <pre class="code-block"># Identify problematic packages
 python -c "import package_name"  # Test each package
 
 # Run with debugging
@@ -518,13 +518,13 @@ PYTHONFAULTHANDLER=1 python run_server.py</div>
         </ul>
         
         <h6 class="mt-4">Issue: Compatibility with Kafka/Redis Libraries</h6>
-        <div class="code-block"># confluent-kafka and redis-py should work, but verify:
+        <pre class="code-block"># confluent-kafka and redis-py should work, but verify:
 python -c "
 from confluent_kafka import Producer
 from redis import Redis
 print('Kafka and Redis libraries loaded successfully')
 "</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Summary -->

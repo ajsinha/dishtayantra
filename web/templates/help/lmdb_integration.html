@@ -22,6 +22,7 @@
         margin-top: 1rem;
     }
     .code-block {
+        white-space: pre;
         background: #1e293b;
         color: #e2e8f0;
         padding: 1rem;
@@ -224,7 +225,7 @@
             </div>
             <div class="card-body">
                 <h6>DAG Node Configuration</h6>
-                <div class="code-block mb-3">
+                <pre class="code-block mb-3">
 {
   "name": "heavy_processor",
   "type": "com.example.HeavyProcessor",
@@ -233,15 +234,15 @@
   <span style="color: #06b6d4;">"lmdb_min_size": 10240,</span>           <span style="color: #64748b;">// Use LMDB for payloads > 10KB</span>
   <span style="color: #06b6d4;">"lmdb_exchange_mode": "both",</span>     <span style="color: #64748b;">// input, output, both, reference</span>
   <span style="color: #06b6d4;">"lmdb_data_format": "msgpack"</span>     <span style="color: #64748b;">// json, msgpack, numpy, arrow</span>
-}</div>
+}</pre>
                 
                 <h6>Application Properties (config/application.properties)</h6>
-                <div class="code-block mb-3">
+                <pre class="code-block mb-3">
 <span style="color: #64748b;"># LMDB Configuration</span>
 lmdb.db.path=/var/dishtayantra/lmdb
 lmdb.map.size=1073741824          <span style="color: #64748b;"># 1GB</span>
 lmdb.max.dbs=100
-lmdb.ttl.seconds=300</div>
+lmdb.ttl.seconds=300</pre>
 
                 <h6>Configuration Options</h6>
                 <div class="table-responsive">
@@ -306,7 +307,7 @@ lmdb.ttl.seconds=300</div>
                 <h6 class="mb-0"><i class="bi bi-cup-hot-fill"></i> Java (lmdbjava)</h6>
             </div>
             <div class="card-body">
-                <div class="code-block" style="font-size: 0.75rem;">
+                <pre class="code-block" style="font-size: 0.75rem;">
 // Check for LMDB reference
 if (data.get("_lmdb_ref")) {
   String inputKey = data.get("_lmdb_input_key");
@@ -318,7 +319,7 @@ if (data.get("_lmdb_ref")) {
   
   // Write output to LMDB
   dbi.put(txn, outputKey, resultBuf);
-}</div>
+}</pre>
                 <p class="small text-muted mt-2 mb-0">
                     <strong>Dependency:</strong> org.lmdbjava:lmdbjava:0.8.3
                 </p>
@@ -333,7 +334,7 @@ if (data.get("_lmdb_ref")) {
                 <h6 class="mb-0"><i class="bi bi-braces"></i> C++ (liblmdb)</h6>
             </div>
             <div class="card-body">
-                <div class="code-block" style="font-size: 0.75rem;">
+                <pre class="code-block" style="font-size: 0.75rem;">
 // Check for LMDB reference
 if (data["_lmdb_ref"].cast&lt;bool&gt;()) {
   MDB_val mdb_key, mdb_data;
@@ -344,7 +345,7 @@ if (data["_lmdb_ref"].cast&lt;bool&gt;()) {
   
   // Process directly from memory map
   process((uint8_t*)mdb_data.mv_data);
-}</div>
+}</pre>
                 <p class="small text-muted mt-2 mb-0">
                     <strong>Compile:</strong> -DUSE_LMDB -llmdb
                 </p>
@@ -359,7 +360,7 @@ if (data["_lmdb_ref"].cast&lt;bool&gt;()) {
                 <h6 class="mb-0"><i class="bi bi-gear-wide-connected"></i> Rust (lmdb-rs)</h6>
             </div>
             <div class="card-body">
-                <div class="code-block" style="font-size: 0.75rem;">
+                <pre class="code-block" style="font-size: 0.75rem;">
 // Check for LMDB reference
 if data.get_item("_lmdb_ref")?.is_true()? {
   let txn = env.begin_ro_txn()?;
@@ -372,7 +373,7 @@ if data.get_item("_lmdb_ref")?.is_true()? {
   
   // Write output
   txn.put(db, &output_key, &result)?;
-}</div>
+}</pre>
                 <p class="small text-muted mt-2 mb-0">
                     <strong>Cargo:</strong> lmdb = "0.8"
                 </p>

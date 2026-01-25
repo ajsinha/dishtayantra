@@ -265,14 +265,14 @@
     </div>
     <div class="card-body">
         <h6>Step 1: Install pybind11</h6>
-        <div class="code-block bash"># Via pip (recommended)
+        <pre class="code-block bash"># Via pip (recommended)
 pip install pybind11
 
 # Via conda
 conda install -c conda-forge pybind11
 
 # Header location (for compilation)
-python -m pybind11 --includes</div>
+python -m pybind11 --includes</pre>
         
         <h6 class="mt-4">Step 2: Install Build Tools</h6>
         
@@ -289,7 +289,7 @@ python -m pybind11 --includes</div>
         </ul>
         <div class="tab-content mt-3">
             <div class="tab-pane fade show active" id="setup-linux">
-                <div class="code-block bash"># Ubuntu/Debian
+                <pre class="code-block bash"># Ubuntu/Debian
 sudo apt-get update
 sudo apt-get install -y build-essential cmake python3-dev
 
@@ -299,10 +299,10 @@ sudo dnf install cmake python3-devel
 
 # Verify
 g++ --version
-cmake --version</div>
+cmake --version</pre>
             </div>
             <div class="tab-pane fade" id="setup-macos">
-                <div class="code-block bash"># Install Xcode Command Line Tools
+                <pre class="code-block bash"># Install Xcode Command Line Tools
 xcode-select --install
 
 # Install CMake via Homebrew
@@ -310,10 +310,10 @@ brew install cmake
 
 # Verify
 clang++ --version
-cmake --version</div>
+cmake --version</pre>
             </div>
             <div class="tab-pane fade" id="setup-windows">
-                <div class="code-block bash"># Install Visual Studio Build Tools
+                <pre class="code-block bash"># Install Visual Studio Build Tools
 # Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
 # Select "Desktop development with C++"
 
@@ -325,7 +325,7 @@ winget install Kitware.CMake
 
 # Verify (in Developer Command Prompt)
 cl.exe
-cmake --version</div>
+cmake --version</pre>
             </div>
         </div>
     </div>
@@ -340,7 +340,7 @@ cmake --version</div>
         <p>C++ calculators must implement the same interface as Python's <code>DataCalculator</code>:</p>
         
         <h6>Calculator Interface (Header)</h6>
-        <div class="code-block cpp">// calculator.hpp
+        <pre class="code-block cpp">// calculator.hpp
 #pragma once
 
 #include &lt;pybind11/pybind11.h&gt;
@@ -402,10 +402,10 @@ protected:
         }
         return default_value;
     }
-};</div>
+};</pre>
         
         <h6 class="mt-4">Example: Passthrough Calculator</h6>
-        <div class="code-block cpp">// passthru_calculator.cpp
+        <pre class="code-block cpp">// passthru_calculator.cpp
 #include "calculator.hpp"
 
 class PassthruCalculator : public Calculator {
@@ -417,10 +417,10 @@ public:
         // Return a copy of the input
         return py::dict(data);
     }
-};</div>
+};</pre>
 
         <h6 class="mt-4">Example: High-Performance Math Calculator</h6>
-        <div class="code-block cpp">// math_calculator.cpp
+        <pre class="code-block cpp">// math_calculator.cpp
 #include "calculator.hpp"
 #include &lt;cmath&gt;
 #include &lt;vector&gt;
@@ -497,10 +497,10 @@ public:
         d["num_arguments"] = arguments_.size();
         return d;
     }
-};</div>
+};</pre>
 
         <h6 class="mt-4">Example: Trade Pricing Calculator (Financial)</h6>
-        <div class="code-block cpp">// trade_pricing_calculator.cpp
+        <pre class="code-block cpp">// trade_pricing_calculator.cpp
 #include "calculator.hpp"
 #include &lt;cmath&gt;
 
@@ -551,10 +551,10 @@ public:
         d["include_vat"] = include_vat_;
         return d;
     }
-};</div>
+};</pre>
 
         <h6 class="mt-4">pybind11 Module Definition</h6>
-        <div class="code-block cpp">// dishtayantra_cpp.cpp - Module definition
+        <pre class="code-block cpp">// dishtayantra_cpp.cpp - Module definition
 #include "calculator.hpp"
 #include "passthru_calculator.cpp"
 #include "math_calculator.cpp"
@@ -585,7 +585,7 @@ PYBIND11_MODULE(dishtayantra_cpp, m) {
         .def(py::init&lt;const std::string&, const py::dict&&gt;())
         .def("calculate", &TradePricingCalculator::calculate)
         .def("details", &TradePricingCalculator::details);
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -596,7 +596,7 @@ PYBIND11_MODULE(dishtayantra_cpp, m) {
     </div>
     <div class="card-body">
         <h6>CMakeLists.txt (Recommended)</h6>
-        <div class="code-block cmake">cmake_minimum_required(VERSION 3.14)
+        <pre class="code-block cmake">cmake_minimum_required(VERSION 3.14)
 project(dishtayantra_cpp)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -620,7 +620,7 @@ target_compile_options(dishtayantra_cpp PRIVATE
 )
 
 # Install to Python site-packages
-install(TARGETS dishtayantra_cpp DESTINATION .)</div>
+install(TARGETS dishtayantra_cpp DESTINATION .)</pre>
 
         <h6 class="mt-4">Build Commands</h6>
         
@@ -640,7 +640,7 @@ install(TARGETS dishtayantra_cpp DESTINATION .)</div>
         </ul>
         <div class="tab-content mt-3">
             <div class="tab-pane fade show active" id="build-linux">
-                <div class="code-block bash"># Using CMake
+                <pre class="code-block bash"># Using CMake
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
@@ -648,10 +648,10 @@ make -j$(nproc)
 # Output: dishtayantra_cpp.cpython-311-x86_64-linux-gnu.so
 
 # Copy to DishtaYantra
-cp dishtayantra_cpp*.so /path/to/dishtayantra/core/calculator/</div>
+cp dishtayantra_cpp*.so /path/to/dishtayantra/core/calculator/</pre>
             </div>
             <div class="tab-pane fade" id="build-macos">
-                <div class="code-block bash"># Using CMake
+                <pre class="code-block bash"># Using CMake
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(sysctl -n hw.ncpu)
@@ -659,10 +659,10 @@ make -j$(sysctl -n hw.ncpu)
 # Output: dishtayantra_cpp.cpython-311-darwin.so
 
 # Copy to DishtaYantra
-cp dishtayantra_cpp*.so /path/to/dishtayantra/core/calculator/</div>
+cp dishtayantra_cpp*.so /path/to/dishtayantra/core/calculator/</pre>
             </div>
             <div class="tab-pane fade" id="build-windows">
-                <div class="code-block bash"># Using CMake (in Developer Command Prompt)
+                <pre class="code-block bash"># Using CMake (in Developer Command Prompt)
 mkdir build
 cd build
 cmake .. -G "Visual Studio 17 2022" -A x64
@@ -671,10 +671,10 @@ cmake --build . --config Release
 # Output: dishtayantra_cpp.cp311-win_amd64.pyd
 
 # Copy to DishtaYantra
-copy Release\dishtayantra_cpp*.pyd C:\path\to\dishtayantra\core\calculator\</div>
+copy Release\dishtayantra_cpp*.pyd C:\path\to\dishtayantra\core\calculator\</pre>
             </div>
             <div class="tab-pane fade" id="build-manual">
-                <div class="code-block bash"># Linux - Manual compilation
+                <pre class="code-block bash"># Linux - Manual compilation
 g++ -O3 -Wall -shared -std=c++17 -fPIC \
     $(python3 -m pybind11 --includes) \
     src/dishtayantra_cpp.cpp \
@@ -685,7 +685,7 @@ clang++ -O3 -Wall -shared -std=c++17 \
     $(python3 -m pybind11 --includes) \
     src/dishtayantra_cpp.cpp \
     -o dishtayantra_cpp$(python3-config --extension-suffix) \
-    -undefined dynamic_lookup</div>
+    -undefined dynamic_lookup</pre>
             </div>
         </div>
         
@@ -709,7 +709,7 @@ clang++ -O3 -Wall -shared -std=c++17 \
         <h6>CppCalculator Wrapper Class</h6>
         <p>DishtaYantra provides a wrapper for C++ calculators:</p>
         
-        <div class="code-block python"># core/calculator/cpp_calculator.py
+        <pre class="code-block python"># core/calculator/cpp_calculator.py
 import importlib
 import logging
 from typing import Dict, Any
@@ -769,10 +769,10 @@ class CppCalculator:
         details = dict(self._cpp_instance.details())
         details['wrapper'] = 'CppCalculator'
         details['language'] = 'C++'
-        return details</div>
+        return details</pre>
 
         <h6 class="mt-4">Using C++ Calculators in Python</h6>
-        <div class="code-block python"># Direct usage
+        <pre class="code-block python"># Direct usage
 from core.calculator.cpp_calculator import CppCalculator
 
 # Create calculator
@@ -791,10 +791,10 @@ result = calc.calculate(data)
 print(result)  # {'value1': 10.5, 'value2': 20.3, 'value3': 5.2, 'total': 36.0}
 
 # Get details
-print(calc.details())</div>
+print(calc.details())</pre>
 
         <h6 class="mt-4">CalculatorFactory Integration</h6>
-        <div class="code-block python"># The CalculatorFactory automatically handles C++ calculators
+        <pre class="code-block python"># The CalculatorFactory automatically handles C++ calculators
 from core.calculator.core_calculator import CalculatorFactory
 
 config = {
@@ -804,7 +804,7 @@ config = {
     'commission_rate': 0.002
 }
 
-calc = CalculatorFactory.create('pricing_calc', config)</div>
+calc = CalculatorFactory.create('pricing_calc', config)</pre>
     </div>
 </div>
 
@@ -816,7 +816,7 @@ calc = CalculatorFactory.create('pricing_calc', config)</div>
     <div class="card-body">
         <p>Configure a C++ calculator in your DAG JSON:</p>
         
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "high_performance_dag",
   "start_time": "0900",
   "duration": "8h",
@@ -850,7 +850,7 @@ calc = CalculatorFactory.create('pricing_calc', config)</div>
     {"from": "subscriber", "to": "cpp_pricing"},
     {"from": "cpp_pricing", "to": "publisher"}
   ]
-}</div>
+}</pre>
 
         <h6 class="mt-4">Configuration Options</h6>
         <table class="table table-bordered">
@@ -894,7 +894,7 @@ calc = CalculatorFactory.create('pricing_calc', config)</div>
     </div>
     <div class="card-body">
         <h6>Example: SIMD-Optimized Vector Calculator</h6>
-        <div class="code-block cpp">// vector_calculator.cpp - Uses SIMD for vectorized operations
+        <pre class="code-block cpp">// vector_calculator.cpp - Uses SIMD for vectorized operations
 #include "calculator.hpp"
 #include &lt;vector&gt;
 #include &lt;immintrin.h&gt;  // AVX/SSE intrinsics
@@ -938,10 +938,10 @@ public:
         
         return result;
     }
-};</div>
+};</pre>
 
         <h6 class="mt-4">Example: Risk Calculator with Eigen</h6>
-        <div class="code-block cpp">// risk_calculator.cpp - Uses Eigen for matrix operations
+        <pre class="code-block cpp">// risk_calculator.cpp - Uses Eigen for matrix operations
 #include "calculator.hpp"
 #include &lt;Eigen/Dense&gt;
 
@@ -986,7 +986,7 @@ public:
         
         return result;
     }
-};</div>
+};</pre>
     </div>
 </div>
 
@@ -997,7 +997,7 @@ public:
     </div>
     <div class="card-body">
         <h6>1. Release the GIL for Long Operations</h6>
-        <div class="code-block cpp">py::dict calculate(const py::dict& data) override {
+        <pre class="code-block cpp">py::dict calculate(const py::dict& data) override {
     // Copy data while holding GIL
     double price = data["price"].cast&lt;double&gt;();
     double quantity = data["quantity"].cast&lt;double&gt;();
@@ -1013,18 +1013,18 @@ public:
     py::dict output;
     output["result"] = result;
     return output;
-}</div>
+}</pre>
 
         <h6 class="mt-4">2. Use Move Semantics</h6>
-        <div class="code-block cpp">// Return by value - pybind11 handles efficiently
+        <pre class="code-block cpp">// Return by value - pybind11 handles efficiently
 py::dict calculate(const py::dict& data) override {
     py::dict result;
     // ... populate result
     return result;  // Moved, not copied
-}</div>
+}</pre>
 
         <h6 class="mt-4">3. Handle Exceptions Properly</h6>
-        <div class="code-block cpp">py::dict calculate(const py::dict& data) override {
+        <pre class="code-block cpp">py::dict calculate(const py::dict& data) override {
     try {
         if (!data.contains("price")) {
             throw std::runtime_error("Missing required field: price");
@@ -1034,10 +1034,10 @@ py::dict calculate(const py::dict& data) override {
         // Will be converted to Python exception
         throw py::value_error(e.what());
     }
-}</div>
+}</pre>
 
         <h6 class="mt-4">4. Thread Safety</h6>
-        <div class="code-block cpp">class ThreadSafeCalculator : public Calculator {
+        <pre class="code-block cpp">class ThreadSafeCalculator : public Calculator {
 private:
     std::mutex mutex_;
     double running_total_ = 0;
@@ -1055,7 +1055,7 @@ public:
         result["running_total"] = running_total_;
         return result;
     }
-};</div>
+};</pre>
     </div>
 </div>
 
@@ -1066,24 +1066,24 @@ public:
     </div>
     <div class="card-body">
         <h6>Issue: Module Not Found</h6>
-        <div class="code-block bash"># Ensure module is in Python path
+        <pre class="code-block bash"># Ensure module is in Python path
 export PYTHONPATH="/path/to/dishtayantra/core/calculator:$PYTHONPATH"
 
 # Or copy to site-packages
-cp dishtayantra_cpp*.so $(python -c "import site; print(site.getsitepackages()[0])")/</div>
+cp dishtayantra_cpp*.so $(python -c "import site; print(site.getsitepackages()[0])")/</pre>
 
         <h6 class="mt-4">Issue: Symbol Not Found / Undefined Symbol</h6>
-        <div class="code-block bash"># Check dependencies
+        <pre class="code-block bash"># Check dependencies
 ldd dishtayantra_cpp*.so  # Linux
 otool -L dishtayantra_cpp*.so  # macOS
 
 # Ensure all libraries are linked
-g++ ... -lpthread -ldl</div>
+g++ ... -lpthread -ldl</pre>
 
         <h6 class="mt-4">Issue: Python Version Mismatch</h6>
-        <div class="code-block bash"># Module was compiled for different Python version
+        <pre class="code-block bash"># Module was compiled for different Python version
 # Recompile with correct Python:
-cmake .. -DPython3_EXECUTABLE=/usr/bin/python3.11</div>
+cmake .. -DPython3_EXECUTABLE=/usr/bin/python3.11</pre>
 
         <h6 class="mt-4">Issue: Segmentation Fault</h6>
         <ul>

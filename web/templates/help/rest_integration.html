@@ -318,21 +318,21 @@
                 <h6>API Key Authentication</h6>
                 <p>Sends an API key in a configurable HTTP header. Most common for third-party APIs.</p>
                 
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "calculator": "rest",
   "endpoint": "https://api.example.com/calculate",
   "auth_type": "api_key",
   "api_key": "sk-your-api-key-here",
   "api_key_header": "X-API-Key"
-}</div>
+}</pre>
                 
                 <p class="mt-3"><strong>HTTP Request:</strong></p>
-                <div class="code-block http">POST /calculate HTTP/1.1
+                <pre class="code-block http">POST /calculate HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
 X-API-Key: sk-your-api-key-here
 
-{"price": 100, "quantity": 10}</div>
+{"price": 100, "quantity": 10}</pre>
 
                 <div class="info-box mt-3">
                     <strong><i class="bi bi-info-circle"></i> Common Header Names:</strong>
@@ -350,21 +350,21 @@ X-API-Key: sk-your-api-key-here
                 <h6>Basic Authentication</h6>
                 <p>Traditional username/password authentication. Credentials are Base64-encoded.</p>
                 
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "calculator": "rest",
   "endpoint": "https://api.example.com/calculate",
   "auth_type": "basic",
   "username": "your_username",
   "password": "your_password"
-}</div>
+}</pre>
                 
                 <p class="mt-3"><strong>HTTP Request:</strong></p>
-                <div class="code-block http">POST /calculate HTTP/1.1
+                <pre class="code-block http">POST /calculate HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
 Authorization: Basic eW91cl91c2VybmFtZTp5b3VyX3Bhc3N3b3Jk
 
-{"price": 100, "quantity": 10}</div>
+{"price": 100, "quantity": 10}</pre>
 
                 <div class="warning-box mt-3">
                     <strong><i class="bi bi-exclamation-triangle"></i> Security Note:</strong>
@@ -377,20 +377,20 @@ Authorization: Basic eW91cl91c2VybmFtZTp5b3VyX3Bhc3N3b3Jk
                 <h6>Bearer Token (OAuth2)</h6>
                 <p>OAuth2-style authentication using a bearer token. Common for modern APIs and JWT authentication.</p>
                 
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "calculator": "rest",
   "endpoint": "https://api.example.com/calculate",
   "auth_type": "bearer",
   "bearer_token": "eyJhbGciOiJIUzI1NiIs..."
-}</div>
+}</pre>
                 
                 <p class="mt-3"><strong>HTTP Request:</strong></p>
-                <div class="code-block http">POST /calculate HTTP/1.1
+                <pre class="code-block http">POST /calculate HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 
-{"price": 100, "quantity": 10}</div>
+{"price": 100, "quantity": 10}</pre>
 
                 <div class="tip-box mt-3">
                     <strong><i class="bi bi-lightbulb"></i> Token Refresh:</strong>
@@ -403,24 +403,24 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
                 <h6>No Authentication</h6>
                 <p>For internal services or public APIs that don't require authentication.</p>
                 
-                <div class="code-block json">{
+                <pre class="code-block json">{
   "calculator": "rest",
   "endpoint": "http://internal-service:8080/calculate",
   "auth_type": "none"
-}</div>
+}</pre>
                 
                 <p class="mt-3"><strong>HTTP Request:</strong></p>
-                <div class="code-block http">POST /calculate HTTP/1.1
+                <pre class="code-block http">POST /calculate HTTP/1.1
 Host: internal-service:8080
 Content-Type: application/json
 
-{"price": 100, "quantity": 10}</div>
+{"price": 100, "quantity": 10}</pre>
             </div>
         </div>
         
         <h6 class="mt-4">Custom Headers</h6>
         <p>Add any additional headers using <code>custom_headers</code>:</p>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "calculator": "rest",
   "endpoint": "https://api.example.com/calculate",
   "auth_type": "api_key",
@@ -430,7 +430,7 @@ Content-Type: application/json
     "X-Tenant-ID": "tenant-123",
     "Accept-Language": "en-US"
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -583,7 +583,7 @@ Content-Type: application/json
     </div>
     <div class="card-body">
         <h6>Basic Example</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "rest_pricing_dag",
   "start_time": "0900",
   "duration": "8h",
@@ -617,10 +617,10 @@ Content-Type: application/json
     {"from": "subscriber", "to": "rest_pricing"},
     {"from": "rest_pricing", "to": "publisher"}
   ]
-}</div>
+}</pre>
 
         <h6 class="mt-4">With Response Transformation</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "id": "risk_api",
   "type": "CalculationNode",
   "calculator": "rest",
@@ -635,7 +635,7 @@ Content-Type: application/json
     "var": 0,
     "risk_level": "unknown"
   }
-}</div>
+}</pre>
 
         <div class="security-box mt-4">
             <strong><i class="bi bi-shield-lock"></i> Security Best Practice:</strong>
@@ -653,7 +653,7 @@ Content-Type: application/json
         <h6>Example 1: Third-Party Pricing API</h6>
         <p>Calling an external pricing service with API key authentication:</p>
         
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "id": "market_data_pricing",
   "type": "CalculationNode",
   "calculator": "rest",
@@ -667,12 +667,12 @@ Content-Type: application/json
   "custom_headers": {
     "X-Request-Source": "dishtayantra"
   }
-}</div>
+}</pre>
 
         <h6 class="mt-4">Example 2: Internal Microservice with Basic Auth</h6>
         <p>Calling an internal risk calculation service:</p>
         
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "id": "internal_risk_calc",
   "type": "CalculationNode",
   "calculator": "rest",
@@ -684,12 +684,12 @@ Content-Type: application/json
   "verify_ssl": false,
   "request_wrapper": "input",
   "response_path": "output"
-}</div>
+}</pre>
 
         <h6 class="mt-4">Example 3: OAuth2 Protected API</h6>
         <p>Calling an OAuth2-protected compliance service:</p>
         
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "id": "compliance_check",
   "type": "CalculationNode",
   "calculator": "rest",
@@ -699,12 +699,12 @@ Content-Type: application/json
   "timeout": 20,
   "include_metadata": true,
   "error_on_http_error": true
-}</div>
+}</pre>
 
         <h6 class="mt-4">Example 4: Graceful Degradation</h6>
         <p>API with fallback values when service is unavailable:</p>
         
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "id": "optional_enrichment",
   "type": "CalculationNode",
   "calculator": "rest",
@@ -718,7 +718,7 @@ Content-Type: application/json
     "enriched": false,
     "enrichment_source": "none"
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -731,7 +731,7 @@ Content-Type: application/json
         <p>Example REST endpoints that work with DishtaYantra REST calculators:</p>
         
         <h6>Python (Flask)</h6>
-        <div class="code-block python">from flask import Flask, request, jsonify
+        <pre class="code-block python">from flask import Flask, request, jsonify
 from functools import wraps
 
 app = Flask(__name__)
@@ -765,10 +765,10 @@ def calculate():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(port=8080)</div>
+    app.run(port=8080)</pre>
 
         <h6 class="mt-4">Node.js (Express)</h6>
-        <div class="code-block python">const express = require('express');
+        <pre class="code-block python">const express = require('express');
 const app = express();
 app.use(express.json());
 
@@ -802,10 +802,10 @@ app.post('/api/risk', basicAuth, (req, res) => {
     });
 });
 
-app.listen(8080);</div>
+app.listen(8080);</pre>
 
         <h6 class="mt-4">Java (Spring Boot)</h6>
-        <div class="code-block python">@RestController
+        <pre class="code-block python">@RestController
 @RequestMapping("/api")
 public class CalculatorController {
 
@@ -831,7 +831,7 @@ public class CalculatorController {
         
         return ResponseEntity.ok(result);
     }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -899,21 +899,21 @@ public class CalculatorController {
     </div>
     <div class="card-body">
         <h6>Issue: Connection Refused</h6>
-        <div class="code-block bash"># Check if endpoint is reachable
+        <pre class="code-block bash"># Check if endpoint is reachable
 curl -v https://api.example.com/health
 
 # Check DNS resolution
 nslookup api.example.com
 
 # Check firewall rules
-telnet api.example.com 443</div>
+telnet api.example.com 443</pre>
 
         <h6 class="mt-4">Issue: SSL Certificate Errors</h6>
-        <div class="code-block bash"># Test SSL certificate
+        <pre class="code-block bash"># Test SSL certificate
 openssl s_client -connect api.example.com:443
 
 # For self-signed certs (development only!)
-# Set verify_ssl: false in config</div>
+# Set verify_ssl: false in config</pre>
 
         <h6 class="mt-4">Issue: Authentication Failures (401/403)</h6>
         <ul>
@@ -922,11 +922,11 @@ openssl s_client -connect api.example.com:443
             <li>Ensure credentials haven't expired</li>
             <li>Verify IP is whitelisted (if applicable)</li>
         </ul>
-        <div class="code-block bash"># Test authentication manually
+        <pre class="code-block bash"># Test authentication manually
 curl -X POST https://api.example.com/calculate \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-key" \
-  -d '{"test": true}'</div>
+  -d '{"test": true}'</pre>
 
         <h6 class="mt-4">Issue: Timeout Errors</h6>
         <ul>

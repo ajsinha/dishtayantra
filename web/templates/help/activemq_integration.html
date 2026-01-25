@@ -92,7 +92,7 @@
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Start</h5></div>
     <div class="card-body">
         <h6>1. Start ActiveMQ (Docker)</h6>
-        <div class="code-block bash">docker run -d --name activemq \
+        <pre class="code-block bash">docker run -d --name activemq \
   -p 61613:61613 \
   -p 61616:61616 \
   -p 8161:8161 \
@@ -100,13 +100,13 @@
 
 # Web Console: http://localhost:8161 (admin/admin)
 # STOMP Port: 61613
-# OpenWire Port: 61616</div>
+# OpenWire Port: 61616</pre>
 
         <h6 class="mt-4">2. Install Python Client</h6>
-        <div class="code-block bash">pip install stomp.py</div>
+        <pre class="code-block bash">pip install stomp.py</pre>
 
         <h6 class="mt-4">3. Queue Publisher</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_publisher
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_publisher
 
 config = {
     'destination': 'activemq://queue/orders',
@@ -118,10 +118,10 @@ config = {
 
 publisher = create_publisher('order_pub', config)
 publisher.publish({'order_id': 'ORD-001', 'product': 'Widget', 'quantity': 10})
-publisher.stop()</div>
+publisher.stop()</pre>
 
         <h6 class="mt-4">4. Queue Subscriber</h6>
-        <div class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
+        <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 
 config = {
     'source': 'activemq://queue/orders',
@@ -135,10 +135,10 @@ subscriber = create_subscriber('order_sub', config)
 subscriber.start()
 data = subscriber.get_data(block_time=5)
 print(f"Received: {data}")
-subscriber.stop()</div>
+subscriber.stop()</pre>
 
         <h6 class="mt-4">5. Topic Publisher</h6>
-        <div class="code-block python">config = {
+        <pre class="code-block python">config = {
     'destination': 'activemq://topic/events',
     'host': 'localhost',
     'port': 61613,
@@ -148,7 +148,7 @@ subscriber.stop()</div>
 
 publisher = create_publisher('event_pub', config)
 publisher.publish({'event': 'order_created', 'timestamp': '2025-01-15T10:30:00'})
-publisher.stop()</div>
+publisher.stop()</pre>
     </div>
 </div>
 
@@ -189,7 +189,7 @@ publisher.stop()</div>
         </table>
 
         <h6 class="mt-4">DAG Node Configuration</h6>
-        <div class="code-block json">{
+        <pre class="code-block json">{
   "name": "activemq_input",
   "type": "DataSubscriberNode",
   "config": {
@@ -200,7 +200,7 @@ publisher.stop()</div>
     "password": "secret",
     "ack": "client"
   }
-}</div>
+}</pre>
     </div>
 </div>
 
@@ -209,7 +209,7 @@ publisher.stop()</div>
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> Resilient ActiveMQ</h5></div>
     <div class="card-body">
         <p>Use the resilient version for automatic reconnection on failures:</p>
-        <div class="code-block python">from core.pubsub.resilient_activemq import ResilientActiveMQConsumer
+        <pre class="code-block python">from core.pubsub.resilient_activemq import ResilientActiveMQConsumer
 
 consumer = ResilientActiveMQConsumer(
     host='localhost',
@@ -226,7 +226,7 @@ for message in consumer:
     print(f"Received: {message.body}")
     consumer.ack(message)
 
-consumer.disconnect()</div>
+consumer.disconnect()</pre>
 
         <h6 class="mt-4">Resilient Configuration</h6>
         <table class="table table-sm table-bordered">

@@ -324,6 +324,7 @@
                             <tr>
                                 <th class="sortable" data-sort="name">Name</th>
                                 <th class="sortable" data-sort="status">Status</th>
+                                <th class="sortable" data-sort="execution">Execution</th>
                                 <th>Time Window</th>
                                 <th class="sortable" data-sort="window-status">Window Status</th>
                                 <th class="sortable" data-sort="nodes">Nodes</th>
@@ -353,6 +354,26 @@
                                         {% endif %}
                                     {% else %}
                                     <span class="badge bg-secondary status-badge">Stopped</span>
+                                    {% endif %}
+                                </td>
+                                <!-- v1.5.2: Execution Location Column -->
+                                <td>
+                                    {% if dag.is_running %}
+                                        {% if dag.worker_id is not none %}
+                                            <span class="badge bg-primary" title="Running on Worker {{ dag.worker_id }}">
+                                                <i class="bi bi-cpu"></i> Worker {{ dag.worker_id }}
+                                            </span>
+                                        {% elif dag.execution_mode == 'main' %}
+                                            <span class="badge bg-info" title="Running in main process">
+                                                <i class="bi bi-pc-display"></i> Main
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-question-circle"></i> Unknown
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <!-- UPDATED: Time Window Column - Shows Duration Instead of End Time -->
@@ -469,7 +490,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="7" class="text-center">No DAGs available</td>
+                                <td colspan="8" class="text-center">No DAGs available</td>
                             </tr>
                             {% endfor %}
                         </tbody>

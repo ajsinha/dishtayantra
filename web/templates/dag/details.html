@@ -95,6 +95,72 @@
         </div>
         <h2><i class="bi bi-diagram-3"></i> DAG Details: {{ dag_name }}</h2>
 
+        <!-- v1.5.2: Execution Location Info -->
+        {% if worker_info %}
+        <div class="card mt-3 mb-3" style="border-left: 4px solid {% if is_running %}#10b981{% else %}#6b7280{% endif %};">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold">
+                            <i class="bi bi-{% if worker_info.execution_mode == 'worker' %}cpu{% else %}pc-display{% endif %}" 
+                               style="color: {% if is_running %}#10b981{% else %}#6b7280{% endif %};"></i> 
+                            Execution:
+                        </span>
+                        
+                        {% if worker_info.execution_mode == 'worker' %}
+                            {# Running in worker process #}
+                            <span class="badge bg-primary fs-6">Worker {{ worker_info.worker_id }}</span>
+                            {% if worker_info.status == 'healthy' or worker_info.status == 'running' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> {{ worker_info.status }}</span>
+                            {% elif worker_info.status == 'unhealthy' %}
+                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> {{ worker_info.status }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ worker_info.status }}</span>
+                            {% endif %}
+                        {% elif worker_info.execution_mode == 'main_process' %}
+                            {# Running in main process with worker pool available #}
+                            <span class="badge bg-info fs-6"><i class="bi bi-pc-display"></i> Main Process</span>
+                            {% if is_running %}
+                                <span class="badge bg-success"><i class="bi bi-play-circle"></i> Running</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-stop-circle"></i> Stopped</span>
+                            {% endif %}
+                            <span class="text-muted small">(Worker pool available)</span>
+                        {% else %}
+                            {# Single process mode #}
+                            <span class="badge bg-secondary fs-6"><i class="bi bi-pc-display"></i> Main Process</span>
+                            {% if is_running %}
+                                <span class="badge bg-success"><i class="bi bi-play-circle"></i> Running</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-stop-circle"></i> Stopped</span>
+                            {% endif %}
+                            <span class="text-muted small">(Single-process mode)</span>
+                        {% endif %}
+                        
+                        {% if worker_info.pid %}
+                            <span class="text-muted small">PID: {{ worker_info.pid }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-3 text-muted small">
+                        {% if worker_info.execution_mode == 'worker' and worker_info.worker_id is not none %}
+                            <span><i class="bi bi-diagram-3"></i> {{ worker_info.dag_count }} DAGs</span>
+                            <span><i class="bi bi-cpu"></i> {{ "%.1f"|format(worker_info.cpu_percent) }}% CPU</span>
+                            <span><i class="bi bi-memory"></i> {{ "%.1f"|format(worker_info.memory_mb) }} MB</span>
+                            <a href="{{ url_for('admin_workers') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-gear"></i> Manage Workers
+                            </a>
+                        {% elif worker_pool_enabled %}
+                            <a href="{{ url_for('admin_workers') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-gear"></i> View Workers
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Auto-refresh toggle -->
         <div class="auto-refresh-toggle mt-3">
             <div class="form-check form-switch">

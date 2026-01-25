@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <h1 class="mb-0">System Architecture</h1>
-                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.5.0</p>
+                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.5.2</p>
                 </div>
             </div>
         </div>
@@ -39,6 +39,7 @@
                         <a href="#calculators" class="btn btn-outline-primary btn-sm">Multi-Language Calculators</a>
                         <a href="#lmdb-transport" class="btn btn-outline-info btn-sm"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy</a>
                         <a href="#pubsub" class="btn btn-outline-primary btn-sm">Pub/Sub Framework</a>
+                        <a href="#worker-pool" class="btn btn-outline-info btn-sm"><i class="bi bi-cpu"></i> Worker Pool</a>
                         <a href="#webapp" class="btn btn-outline-primary btn-sm">Web Application</a>
                         <a href="#monitoring" class="btn btn-outline-primary btn-sm">Monitoring</a>
                         <a href="#prometheus" class="btn btn-outline-danger btn-sm"><i class="bi bi-speedometer2"></i> Prometheus</a>
@@ -62,28 +63,42 @@
                     <p class="lead">DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) compute server designed for real-time data processing pipelines.</p>
                     
                     <div class="row g-4 mt-3">
-                        <div class="col-md-6 col-lg-3">
+                        <div class="col-md-6 col-lg-2">
                             <div class="text-center p-3 bg-light rounded">
                                 <i class="bi bi-diagram-3 text-primary" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">DAG Processing</h6>
                                 <small class="text-muted">Parallel node execution with topological sorting</small>
                             </div>
                         </div>
-                        <div class="col-md-6 col-lg-3">
+                        <div class="col-md-6 col-lg-2">
                             <div class="text-center p-3 bg-light rounded">
                                 <i class="bi bi-hdd-network text-success" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">Multi-Broker</h6>
-                                <small class="text-muted">Kafka, RabbitMQ, Redis, ActiveMQ, and more</small>
+                                <small class="text-muted">Kafka, RabbitMQ, Redis, LMDB, and more</small>
                             </div>
                         </div>
-                        <div class="col-md-6 col-lg-3">
+                        <div class="col-md-6 col-lg-2">
                             <div class="text-center p-3 bg-light rounded">
                                 <i class="bi bi-code-slash text-info" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">Multi-Language</h6>
                                 <small class="text-muted">Python, Java, C++, Rust, REST calculators</small>
                             </div>
                         </div>
-                        <div class="col-md-6 col-lg-3">
+                        <div class="col-md-6 col-lg-2">
+                            <div class="text-center p-3 bg-info bg-opacity-10 rounded border border-info">
+                                <i class="bi bi-cpu text-info" style="font-size: 2.5rem;"></i>
+                                <h6 class="mt-2 mb-1">Worker Pool <span class="badge bg-info" style="font-size: 0.6rem;">v1.5.2</span></h6>
+                                <small class="text-muted">Multiprocess parallelism bypassing GIL</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-2">
+                            <div class="text-center p-3 bg-warning bg-opacity-10 rounded border border-warning">
+                                <i class="bi bi-lightning-charge-fill text-warning" style="font-size: 2.5rem;"></i>
+                                <h6 class="mt-2 mb-1">LMDB PubSub <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">v1.5.2</span></h6>
+                                <small class="text-muted">Zero-copy cross-process messaging</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-2">
                             <div class="text-center p-3 bg-light rounded">
                                 <i class="bi bi-shield-check text-warning" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">High Availability</h6>
@@ -1009,6 +1024,7 @@ DishtaYantra          │ External Service
 │  │ sql://      │ SQLDataPubSub                                     │ │
 │  │ rest://     │ RESTDataPubSub                                    │ │
 │  │ grpc://     │ GRPCDataPubSub                                    │ │
+│  │ lmdb://     │ LMDBDataPubSub (zero-copy cross-process)          │ │
 │  └─────────────┴──────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────┘
 </pre>
@@ -1089,6 +1105,15 @@ DishtaYantra          │ External Service
                                 </div>
                             </div>
                         </div>
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body p-2 text-center">
+                                    <i class="bi bi-lightning-charge-fill text-warning" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">LMDB <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">v1.5.2</span></h6>
+                                    <code class="small">lmdb://channel</code>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Resilient Connections -->
@@ -1116,6 +1141,196 @@ DishtaYantra          │ External Service
                                 </ul>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worker Pool & Massive Parallelism -->
+    <div class="row mb-4" id="worker-pool">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>Worker Pool & Massive Parallelism <span class="badge bg-warning text-dark ms-2">v1.5.2</span></h5>
+                </div>
+                <div class="card-body">
+                    <p class="lead">DishtaYantra v1.5.2 introduces a <strong>multiprocessing worker pool</strong> that enables true CPU parallelism by distributing DAGs across multiple worker processes, bypassing Python's GIL limitation.</p>
+                    
+                    <!-- Architecture Diagram -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-diagram-3 me-2"></i>Worker Pool Architecture</h6>
+                    <div class="bg-dark text-light p-3 rounded mb-4" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        MAIN PROCESS (Orchestrator)                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────────────┐  │
+│  │ Web Server  │  │ DAG Manager │  │ WorkerPoolManager                   │  │
+│  │ (Flask)     │  │ (Config)    │  │ ├─ AffinityManager (DAG assignment) │  │
+│  └─────────────┘  └─────────────┘  │ ├─ HealthMonitor (crash detection)  │  │
+│                                     │ └─ StatusProcessor (heartbeats)    │  │
+│                                     └─────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+          │ Control Queues (load/unload/pause)    ▲ Status Queue (heartbeats)
+          ▼                                       │
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│   Worker 0      │  │   Worker 1      │  │   Worker 2      │  │   Worker N      │
+│ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │  │ ┌─────────────┐ │
+│ │   DAG_A     │ │  │ │   DAG_C     │ │  │ │   DAG_E     │ │  │ │   DAG_G     │ │
+│ │   DAG_B     │ │  │ │   DAG_D     │ │  │ │   DAG_F     │ │  │ │   DAG_H     │ │
+│ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │  │ └─────────────┘ │
+│   CPU Core 0    │  │   CPU Core 1    │  │   CPU Core 2    │  │   CPU Core N    │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         │                    │                    │                    │
+         └────────────────────┴────────────────────┴────────────────────┘
+                                        │
+                              ┌─────────┴─────────┐
+                              │   LMDB PubSub     │
+                              │ (Cross-Worker IPC)│
+                              └───────────────────┘
+</pre>
+                    </div>
+
+                    <div class="row g-4 mt-3">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-check-circle text-success me-2"></i>Key Benefits</h6>
+                            <ul>
+                                <li><strong>True CPU Parallelism</strong> - Each worker runs in separate process, bypassing GIL</li>
+                                <li><strong>DAG Affinity</strong> - Related DAGs can be co-located on same worker</li>
+                                <li><strong>Cache Locality</strong> - Better CPU cache utilization per worker</li>
+                                <li><strong>Fault Isolation</strong> - Worker crash doesn't affect other workers</li>
+                                <li><strong>Auto-Restart</strong> - Crashed workers automatically restart with DAGs restored</li>
+                                <li><strong>Live State Monitoring</strong> - Real-time DAG state fetching from workers</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-gear me-2"></i>Affinity Strategies</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Strategy</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>round_robin</code></td>
+                                            <td>Distribute DAGs evenly across workers</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>weight_based</code></td>
+                                            <td>Consider DAG CPU weight for balanced load</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>least_loaded</code></td>
+                                            <td>Assign to worker with lowest current load</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>pinned_worker</code></td>
+                                            <td>Force DAG to specific worker ID</td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>exclusive</code></td>
+                                            <td>DAG gets dedicated worker (no sharing)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LMDB Cross-Worker Communication -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>LMDB PubSub for Cross-Worker Communication</h6>
+                    <div class="row mt-3">
+                        <div class="col-lg-6">
+                            <p>Workers communicate via <strong>LMDB-based pub/sub</strong> - a memory-mapped, zero-copy transport ideal for inter-process communication:</p>
+                            <ul>
+                                <li><strong>Memory-Mapped I/O</strong> - Direct memory access, no serialization overhead</li>
+                                <li><strong>Multiple Readers</strong> - Many workers can read simultaneously</li>
+                                <li><strong>ACID Compliant</strong> - Data integrity guaranteed</li>
+                                <li><strong>Persistent</strong> - Data survives worker restarts</li>
+                            </ul>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>URI Format:</strong> <code>lmdb://channel_name</code><br>
+                                DAGs on different workers can publish/subscribe to shared LMDB channels.
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌──────────────┐                    ┌──────────────┐
+│  Worker 0    │                    │  Worker 1    │
+│ ┌──────────┐ │   LMDB Channel     │ ┌──────────┐ │
+│ │ DAG_A    │─┼───────────────────▶│ │ DAG_B    │ │
+│ │ Publisher│ │  lmdb://events     │ │Subscriber│ │
+│ └──────────┘ │                    │ └──────────┘ │
+└──────────────┘                    └──────────────┘
+        │                                   │
+        └───────────┬───────────────────────┘
+                    │
+            ┌───────▼───────┐
+            │ LMDB Database │
+            │ data/lmdb/    │
+            │ (memory-mapped)│
+            └───────────────┘
+</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-sliders me-2"></i>Configuration</h6>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <p class="small text-muted">File: <code>config/worker_config.json</code></p>
+                            <div class="bg-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0">{
+  "worker_pool": {
+    "enabled": false,  <span class="text-muted">// Set true to enable</span>
+    "num_workers": 4,
+    "auto_restart_on_crash": true,
+    "health_check_interval_seconds": 5
+  },
+  "affinity": {
+    "default_strategy": "weight_based",
+    "allow_dag_pinning": true,
+    "allow_exclusive_workers": true
+  },
+  "communication": {
+    "use_lmdb_for_cross_worker": true,
+    "lmdb_path": "data/worker_lmdb"
+  }
+}</pre>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <p class="small text-muted">DAG-level affinity in DAG JSON:</p>
+                            <div class="bg-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0">{
+  "name": "critical_trading_dag",
+  "worker_affinity": {
+    "pinned_worker": 0  <span class="text-muted">// Always run on Worker 0</span>
+  }
+}
+
+{
+  "name": "high_frequency_dag",
+  "worker_affinity": {
+    "exclusive": true  <span class="text-muted">// Dedicated worker</span>
+  }
+}</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('help_worker_pool') }}" class="btn btn-info">
+                            <i class="bi bi-cpu me-2"></i>Full Worker Pool Documentation
+                        </a>
+                        <a href="{{ url_for('admin_workers') }}" class="btn btn-outline-info ms-2">
+                            <i class="bi bi-window me-2"></i>Worker Pool UI
+                        </a>
                     </div>
                 </div>
             </div>

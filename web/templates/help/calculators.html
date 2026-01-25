@@ -51,14 +51,14 @@
     </div>
     <div class="card-body">
         <p>Calculators are used in <code>CalculationNode</code> to process data. They receive a data dictionary and return a processed result.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "my_calculator",
   "type": "ApplyDefaultsCalculator",
   "config": {
     "defaults": {"status": "active"}
   }
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- NullCalculator -->
@@ -68,7 +68,7 @@
     </div>
     <div class="card-body">
         <p>Returns a deep copy of the input data. Useful for creating isolated copies.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "copy_calc",
   "type": "NullCalculator",
   "config": {}
@@ -76,7 +76,7 @@
 
 // Input:  {"id": 1, "name": "test"}
 // Output: {"id": 1, "name": "test"}  (deep copy)</div>
-    </div>
+    </pre>
 </div>
 
 <!-- PassthruCalculator -->
@@ -86,12 +86,12 @@
     </div>
     <div class="card-body">
         <p>Returns the input data as-is (same reference). Most efficient for pass-through scenarios.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "passthru_calc",
   "type": "PassthruCalculator",
   "config": {}
 }</div>
-    </div>
+    </pre>
 </div>
 
 <!-- ApplyDefaultsCalculator -->
@@ -101,7 +101,7 @@
     </div>
     <div class="card-body">
         <p>Applies default values for missing or null attributes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "defaults_calc",
   "type": "ApplyDefaultsCalculator",
   "config": {
@@ -115,7 +115,7 @@
 
 // Input:  {"id": 1, "status": null}
 // Output: {"id": 1, "status": "pending", "priority": 1, "processed": false}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- AttributeFilterCalculator -->
@@ -125,7 +125,7 @@
     </div>
     <div class="card-body">
         <p>Keeps only the specified attributes, removing all others.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "filter_calc",
   "type": "AttributeFilterCalculator",
   "config": {
@@ -135,7 +135,7 @@
 
 // Input:  {"id": 1, "name": "test", "secret": "xxx", "timestamp": 123}
 // Output: {"id": 1, "name": "test", "timestamp": 123}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- AttributeFilterAwayCalculator -->
@@ -145,7 +145,7 @@
     </div>
     <div class="card-body">
         <p>Removes the specified attributes, keeping all others.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "remove_secrets_calc",
   "type": "AttributeFilterAwayCalculator",
   "config": {
@@ -155,7 +155,7 @@
 
 // Input:  {"id": 1, "name": "test", "password": "xxx", "data": "value"}
 // Output: {"id": 1, "name": "test", "data": "value"}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- AdditionCalculator -->
@@ -165,7 +165,7 @@
     </div>
     <div class="card-body">
         <p>Adds the values of specified attributes and outputs the sum.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "sum_calc",
   "type": "AdditionCalculator",
   "config": {
@@ -176,7 +176,7 @@
 
 // Input:  {"price": 100, "tax": 10, "shipping": 5}
 // Output: {"total": 115}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- MultiplicationCalculator -->
@@ -186,7 +186,7 @@
     </div>
     <div class="card-body">
         <p>Multiplies the values of specified attributes.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "multiply_calc",
   "type": "MultiplicationCalculator",
   "config": {
@@ -197,7 +197,7 @@
 
 // Input:  {"quantity": 5, "unit_price": 20}
 // Output: {"line_total": 100}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- AttributeNameChangeCalculator -->
@@ -207,7 +207,7 @@
     </div>
     <div class="card-body">
         <p>Renames attributes based on a mapping.</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "rename_calc",
   "type": "AttributeNameChangeCalculator",
   "config": {
@@ -221,7 +221,7 @@
 
 // Input:  {"old_id": 1, "user_name": "john", "dt": 123}
 // Output: {"new_id": 1, "username": "john", "timestamp": 123}</div>
-    </div>
+    </pre>
 </div>
 
 <!-- Custom Calculators -->
@@ -231,7 +231,7 @@
     </div>
     <div class="card-body">
         <p>Create your own calculators by extending <code>DataCalculator</code>:</p>
-        <div class="code-block">from core.calculator.core_calculator import DataCalculator
+        <pre class="code-block">from core.calculator.core_calculator import DataCalculator
 
 class MyCustomCalculator(DataCalculator):
     def calculate(self, data):
@@ -241,11 +241,11 @@ class MyCustomCalculator(DataCalculator):
         result['processed_by'] = 'MyCustomCalculator'
         return result</div>
         <p class="mt-3">Reference custom calculators using the full module path:</p>
-        <div class="code-block">{
+        <pre class="code-block">{
   "name": "custom_calc",
   "type": "mymodule.calculators.MyCustomCalculator",
   "config": {}
 }</div>
-    </div>
+    </pre>
 </div>
 {% endblock %}

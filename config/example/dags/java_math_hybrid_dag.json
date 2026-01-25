@@ -1,0 +1,108 @@
+{
+    "_comment": "Example DAG demonstrating Java Math Calculator via Py4J - v1.6.0",
+    "_description": "Hybrid Python-Java pipeline demonstrating seamless integration",
+    
+    "name": "java_math_hybrid_dag",
+    "description": "Hybrid pipeline combining Python preprocessing with Java math calculations",
+    "version": "1.6.0",
+    
+    "nodes": [
+        {
+            "id": "data_input",
+            "type": "source",
+            "source": {
+                "type": "pubsub",
+                "uri": "inmemory://math/input"
+            },
+            "description": "Receives numeric data for processing"
+        },
+        {
+            "id": "python_normalize",
+            "type": "calculator",
+            "calculator": {
+                "type": "python",
+                "class": "example.calculators.basic.PassthruCalculator",
+                "config": {
+                    "add_metadata": true
+                }
+            },
+            "description": "Python preprocessing step"
+        },
+        {
+            "id": "java_sum",
+            "type": "calculator",
+            "calculator": {
+                "type": "java",
+                "name": "MathSumCalculator",
+                "config": {
+                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$MathCalculator",
+                    "operation": "sum",
+                    "arguments": ["value1", "value2", "value3"],
+                    "output_attribute": "total"
+                }
+            },
+            "description": "Java calculator for high-performance summation"
+        },
+        {
+            "id": "java_multiply",
+            "type": "calculator",
+            "calculator": {
+                "type": "java",
+                "name": "MathMultiplyCalculator",
+                "config": {
+                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$MathCalculator",
+                    "operation": "multiply",
+                    "arguments": ["total", "multiplier"],
+                    "output_attribute": "final_result"
+                }
+            },
+            "description": "Java calculator for multiplication"
+        },
+        {
+            "id": "java_transform",
+            "type": "calculator",
+            "calculator": {
+                "type": "java",
+                "name": "StringTransformCalculator",
+                "config": {
+                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$StringTransformCalculator",
+                    "operation": "uppercase",
+                    "source_field": "label",
+                    "target_field": "label_upper"
+                }
+            },
+            "description": "Java string transformation"
+        },
+        {
+            "id": "result_output",
+            "type": "sink",
+            "sink": {
+                "type": "pubsub",
+                "uri": "inmemory://math/output"
+            },
+            "description": "Outputs calculated results"
+        }
+    ],
+    
+    "edges": [
+        {"from": "data_input", "to": "python_normalize"},
+        {"from": "python_normalize", "to": "java_sum"},
+        {"from": "java_sum", "to": "java_multiply"},
+        {"from": "java_multiply", "to": "java_transform"},
+        {"from": "java_transform", "to": "result_output"}
+    ],
+    
+    "metadata": {
+        "author": "DishtaYantra",
+        "category": "java-integration",
+        "tags": ["java", "py4j", "math", "hybrid", "python"],
+        "requires_jvm": true,
+        "example_input": {
+            "value1": 10.5,
+            "value2": 20.3,
+            "value3": 15.7,
+            "multiplier": 2.0,
+            "label": "calculation result"
+        }
+    }
+}

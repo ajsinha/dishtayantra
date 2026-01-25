@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration Files - Help - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.3);
+    }
+    .help-hero h1 {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    .section-card {
+        margin-bottom: 1.5rem;
+    }
+    .config-file-card {
+        border-left: 4px solid #4a90c2;
+    }
+    .worker-config-card {
+        border-left: 4px solid #0ea5e9;
+    }
+    .code-block {
+        white-space: pre;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1.5rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Consolas', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+    }
+    .code-block .comment { color: #64748b; }
+    .code-block .string { color: #a5f3fc; }
+    .code-block .key { color: #7dd3fc; }
+    .code-block .value { color: #34d399; }
+    .code-block .prop-key { color: #fbbf24; }
+    .table-config th {
+        background: #1e3a5f;
+        color: white;
+    }
+    .table-config td {
+        vertical-align: middle;
+    }
+    .file-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .nav-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+    .toc-card {
+        position: sticky;
+        top: 1rem;
+    }
+    .toc-link {
+        color: #1e3a5f;
+        text-decoration: none;
+        display: block;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    .toc-link:hover {
+        background: #f1f5f9;
+    }
+    .toc-link.active {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="help-hero">
+    <div class="d-flex justify-content-between align-items-start flex-wrap">
+        <div>
+            <h1><i class="bi bi-gear-wide-connected"></i> Configuration Files</h1>
+            <p class="lead mb-0 opacity-90">Complete Reference for DishtaYantra Configuration</p>
+        </div>
+        <span class="badge bg-white text-primary">v1.5.2</span>
+    </div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('help') }}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Back to Help
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Table of Contents -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <div class="card toc-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-list-ul"></i> Contents</h6>
+            </div>
+            <div class="card-body p-2">
+                <a href="#application-properties" class="toc-link">application.properties</a>
+                <a href="#worker-config" class="toc-link">worker_config.json</a>
+                <a href="#users-json" class="toc-link">users.json</a>
+                <a href="#dag-config" class="toc-link">DAG Configuration</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-lg-9">
+        <!-- Overview -->
+        <div class="card section-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-folder2-open"></i> Configuration File Overview</h5>
+            </div>
+            <div class="card-body">
+                <p>DishtaYantra uses several configuration files located in the <code>config/</code> directory:</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>File</th>
+                                <th>Purpose</th>
+                                <th>Format</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>application.properties</code></td>
+                                <td>Server, Flask, LMDB settings</td>
+                                <td>Properties (key=value)</td>
+                            </tr>
+                            <tr>
+                                <td><code>worker_config.json</code></td>
+                                <td>Worker pool, affinity, monitoring</td>
+                                <td>JSON</td>
+                            </tr>
+                            <tr>
+                                <td><code>users.json</code></td>
+                                <td>User accounts and roles</td>
+                                <td>JSON</td>
+                            </tr>
+                            <tr>
+                                <td><code>dags/*.json</code></td>
+                                <td>DAG definitions</td>
+                                <td>JSON</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- application.properties -->
+        <div id="application-properties" class="card section-card config-file-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-text"></i> application.properties
+                    <span class="badge bg-primary file-badge ms-2">Properties Format</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Main application configuration for server, Flask, and LMDB settings.</p>
+                <p><strong>Location:</strong> <code>config/application.properties</code></p>
+                
+                <pre class="code-block">
+<span class="comment"># MCP Server Configuration</span>
+<span class="prop-key">app.name</span>=DishtaYantra
+<span class="prop-key">app.version</span>=1.5.2
+
+<span class="prop-key">server.host</span>=0.0.0.0
+<span class="prop-key">server.port</span>=5002
+<span class="prop-key">server.debug</span>=False
+
+<span class="comment"># Flask Configuration</span>
+<span class="prop-key">flask.secret_key</span>=${FLASK_SECRET_KEY:default_secret_key}
+
+<span class="comment"># External Module Paths</span>
+<span class="prop-key">external.module.path.1</span>=/opt/custom_modules
+<span class="prop-key">external.module.path.2</span>=${HOME}/my_plugins
+
+<span class="comment"># User Registry Configuration</span>
+<span class="prop-key">user.registry.reload_interval</span>=600
+
+<span class="comment"># LMDB Zero-Copy Data Exchange</span>
+<span class="prop-key">lmdb.db.path</span>=${LMDB_DB_PATH:/tmp/dishtayantra_lmdb}
+<span class="prop-key">lmdb.map.size</span>=1073741824
+<span class="prop-key">lmdb.max.dbs</span>=100
+<span class="prop-key">lmdb.ttl.seconds</span>=300
+<span class="prop-key">lmdb.max.readers</span>=126
+<span class="prop-key">lmdb.cleanup.interval</span>=60
+                </pre>
+                
+                <h6 class="mt-4">Properties Reference</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>app.name</code></td>
+                                <td>DishtaYantra</td>
+                                <td>Application display name</td>
+                            </tr>
+                            <tr>
+                                <td><code>server.host</code></td>
+                                <td>0.0.0.0</td>
+                                <td>Server bind address</td>
+                            </tr>
+                            <tr>
+                                <td><code>server.port</code></td>
+                                <td>5002</td>
+                                <td>Server port number</td>
+                            </tr>
+                            <tr>
+                                <td><code>flask.secret_key</code></td>
+                                <td>-</td>
+                                <td>Flask session secret (change in production!)</td>
+                            </tr>
+                            <tr>
+                                <td><code>user.registry.reload_interval</code></td>
+                                <td>600</td>
+                                <td>Seconds between users.json reloads</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb.db.path</code></td>
+                                <td>/tmp/dishtayantra_lmdb</td>
+                                <td>LMDB database path for calculator data exchange</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb.map.size</code></td>
+                                <td>1073741824</td>
+                                <td>LMDB max size in bytes (1GB)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i> <strong>Environment Variables:</strong> Use <code>${VAR_NAME:default}</code> syntax for environment variable substitution.
+                </div>
+            </div>
+        </div>
+
+        <!-- worker_config.json -->
+        <div id="worker-config" class="card section-card worker-config-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-cpu"></i> worker_config.json
+                    <span class="badge file-badge ms-2" style="background: #0ea5e9;">v1.5.2</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Configuration for the multiprocessing worker pool, DAG affinity, and cross-worker communication.</p>
+                <p><strong>Location:</strong> <code>config/worker_config.json</code></p>
+                
+                <pre class="code-block">
+{
+    <span class="key">"worker_pool"</span>: {
+        <span class="key">"enabled"</span>: <span class="value">false</span>,  <span class="comment">// Set to true to enable</span>
+        <span class="key">"num_workers"</span>: <span class="value">4</span>,
+        <span class="key">"min_workers"</span>: <span class="value">2</span>,
+        <span class="key">"max_workers"</span>: <span class="value">32</span>,
+        <span class="key">"worker_startup_timeout_seconds"</span>: <span class="value">30</span>,
+        <span class="key">"worker_shutdown_timeout_seconds"</span>: <span class="value">10</span>,
+        <span class="key">"health_check_interval_seconds"</span>: <span class="value">5</span>,
+        <span class="key">"status_report_interval_seconds"</span>: <span class="value">2</span>,
+        <span class="key">"auto_restart_on_crash"</span>: <span class="value">true</span>,
+        <span class="key">"max_restart_attempts"</span>: <span class="value">3</span>,
+        <span class="key">"restart_backoff_seconds"</span>: <span class="value">5</span>
+    },
+    
+    <span class="key">"affinity"</span>: {
+        <span class="key">"default_strategy"</span>: <span class="string">"weight_based"</span>,
+        <span class="key">"rebalance_enabled"</span>: <span class="value">true</span>,
+        <span class="key">"rebalance_threshold"</span>: <span class="value">0.3</span>,
+        <span class="key">"rebalance_interval_seconds"</span>: <span class="value">60</span>,
+        <span class="key">"allow_dag_pinning"</span>: <span class="value">true</span>,
+        <span class="key">"allow_exclusive_workers"</span>: <span class="value">true</span>
+    },
+    
+    <span class="key">"communication"</span>: {
+        <span class="key">"control_queue_maxsize"</span>: <span class="value">1000</span>,
+        <span class="key">"status_queue_maxsize"</span>: <span class="value">5000</span>,
+        <span class="key">"use_lmdb_for_cross_worker"</span>: <span class="value">true</span>,
+        <span class="key">"lmdb_path"</span>: <span class="string">"data/worker_lmdb"</span>,
+        <span class="key">"lmdb_map_size_mb"</span>: <span class="value">1024</span>
+    },
+    
+    <span class="key">"monitoring"</span>: {
+        <span class="key">"collect_cpu_metrics"</span>: <span class="value">true</span>,
+        <span class="key">"collect_memory_metrics"</span>: <span class="value">true</span>,
+        <span class="key">"collect_dag_metrics"</span>: <span class="value">true</span>,
+        <span class="key">"metrics_history_size"</span>: <span class="value">1000</span>
+    },
+    
+    <span class="key">"defaults"</span>: {
+        <span class="key">"dag_cpu_weight"</span>: <span class="value">0.2</span>,
+        <span class="key">"dag_priority"</span>: <span class="value">5</span>
+    }
+}
+                </pre>
+                
+                <h6 class="mt-4">Worker Pool Section</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>enabled</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Enable/disable worker pool</td>
+                            </tr>
+                            <tr>
+                                <td><code>num_workers</code></td>
+                                <td>int/string</td>
+                                <td>4</td>
+                                <td>Number of workers. Use <code>"auto"</code> for CPU count.</td>
+                            </tr>
+                            <tr>
+                                <td><code>min_workers</code></td>
+                                <td>int</td>
+                                <td>2</td>
+                                <td>Minimum workers (used with "auto")</td>
+                            </tr>
+                            <tr>
+                                <td><code>max_workers</code></td>
+                                <td>int</td>
+                                <td>32</td>
+                                <td>Maximum workers (used with "auto")</td>
+                            </tr>
+                            <tr>
+                                <td><code>worker_startup_timeout_seconds</code></td>
+                                <td>int</td>
+                                <td>30</td>
+                                <td>Timeout waiting for worker to start</td>
+                            </tr>
+                            <tr>
+                                <td><code>worker_shutdown_timeout_seconds</code></td>
+                                <td>int</td>
+                                <td>10</td>
+                                <td>Timeout waiting for worker to stop</td>
+                            </tr>
+                            <tr>
+                                <td><code>health_check_interval_seconds</code></td>
+                                <td>int</td>
+                                <td>5</td>
+                                <td>Health check frequency</td>
+                            </tr>
+                            <tr>
+                                <td><code>status_report_interval_seconds</code></td>
+                                <td>int</td>
+                                <td>2</td>
+                                <td>How often workers report status</td>
+                            </tr>
+                            <tr>
+                                <td><code>auto_restart_on_crash</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Auto-restart crashed workers</td>
+                            </tr>
+                            <tr>
+                                <td><code>max_restart_attempts</code></td>
+                                <td>int</td>
+                                <td>3</td>
+                                <td>Max consecutive restart attempts</td>
+                            </tr>
+                            <tr>
+                                <td><code>restart_backoff_seconds</code></td>
+                                <td>int</td>
+                                <td>5</td>
+                                <td>Initial backoff before restart (exponential)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h6 class="mt-4">Affinity Section</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>default_strategy</code></td>
+                                <td>string</td>
+                                <td>"weight_based"</td>
+                                <td>DAG assignment strategy: round_robin, weight_based, least_loaded, random</td>
+                            </tr>
+                            <tr>
+                                <td><code>rebalance_enabled</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Enable automatic load rebalancing</td>
+                            </tr>
+                            <tr>
+                                <td><code>rebalance_threshold</code></td>
+                                <td>float</td>
+                                <td>0.3</td>
+                                <td>Load difference (0-1) to trigger rebalance</td>
+                            </tr>
+                            <tr>
+                                <td><code>rebalance_interval_seconds</code></td>
+                                <td>int</td>
+                                <td>60</td>
+                                <td>How often to check for rebalancing</td>
+                            </tr>
+                            <tr>
+                                <td><code>allow_dag_pinning</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Allow DAGs to pin to specific workers</td>
+                            </tr>
+                            <tr>
+                                <td><code>allow_exclusive_workers</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Allow DAGs to request exclusive workers</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h6 class="mt-4">Communication Section</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>control_queue_maxsize</code></td>
+                                <td>int</td>
+                                <td>1000</td>
+                                <td>Max control messages per worker queue</td>
+                            </tr>
+                            <tr>
+                                <td><code>status_queue_maxsize</code></td>
+                                <td>int</td>
+                                <td>5000</td>
+                                <td>Max status messages in shared queue</td>
+                            </tr>
+                            <tr>
+                                <td><code>use_lmdb_for_cross_worker</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Enable LMDB-based cross-worker pub/sub</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb_path</code></td>
+                                <td>string</td>
+                                <td>"data/worker_lmdb"</td>
+                                <td>LMDB database path for worker pub/sub</td>
+                            </tr>
+                            <tr>
+                                <td><code>lmdb_map_size_mb</code></td>
+                                <td>int</td>
+                                <td>1024</td>
+                                <td>LMDB max size in megabytes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h6 class="mt-4">Monitoring Section</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-config">
+                        <thead>
+                            <tr>
+                                <th>Option</th>
+                                <th>Type</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>collect_cpu_metrics</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Collect CPU usage per worker</td>
+                            </tr>
+                            <tr>
+                                <td><code>collect_memory_metrics</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Collect memory usage per worker</td>
+                            </tr>
+                            <tr>
+                                <td><code>collect_dag_metrics</code></td>
+                                <td>boolean</td>
+                                <td>true</td>
+                                <td>Collect per-DAG execution metrics</td>
+                            </tr>
+                            <tr>
+                                <td><code>metrics_history_size</code></td>
+                                <td>int</td>
+                                <td>1000</td>
+                                <td>Number of metric samples to retain</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- users.json -->
+        <div id="users-json" class="card section-card config-file-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-people"></i> users.json
+                    <span class="badge bg-secondary file-badge ms-2">JSON Format</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>User accounts, roles, and permissions.</p>
+                <p><strong>Location:</strong> <code>config/users.json</code></p>
+                
+                <pre class="code-block">
+{
+    <span class="key">"users"</span>: [
+        {
+            <span class="key">"username"</span>: <span class="string">"admin"</span>,
+            <span class="key">"password_hash"</span>: <span class="string">"..."</span>,
+            <span class="key">"role"</span>: <span class="string">"admin"</span>,
+            <span class="key">"email"</span>: <span class="string">"admin@example.com"</span>,
+            <span class="key">"active"</span>: <span class="value">true</span>
+        }
+    ]
+}
+                </pre>
+                
+                <h6 class="mt-4">User Roles</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Role</th>
+                                <th>Permissions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>admin</code></td>
+                                <td>Full access: manage users, DAGs, system settings</td>
+                            </tr>
+                            <tr>
+                                <td><code>operator</code></td>
+                                <td>Start/stop DAGs, view status, publish messages</td>
+                            </tr>
+                            <tr>
+                                <td><code>user</code></td>
+                                <td>View DAGs and status (read-only)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAG Configuration -->
+        <div id="dag-config" class="card section-card config-file-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> DAG Configuration Files
+                    <span class="badge bg-secondary file-badge ms-2">JSON Format</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>DAG definitions with nodes, connections, and worker affinity.</p>
+                <p><strong>Location:</strong> <code>config/dags/*.json</code></p>
+                
+                <pre class="code-block">
+{
+    <span class="key">"name"</span>: <span class="string">"my_dag"</span>,
+    <span class="key">"description"</span>: <span class="string">"Example DAG"</span>,
+    
+    <span class="comment">// Worker Affinity (v1.5.2)</span>
+    <span class="key">"worker_affinity"</span>: {
+        <span class="key">"pinned_worker"</span>: <span class="value">0</span>,        <span class="comment">// Pin to specific worker</span>
+        <span class="key">"exclusive"</span>: <span class="value">false</span>,        <span class="comment">// Request dedicated worker</span>
+        <span class="key">"preferred_workers"</span>: [<span class="value">0</span>, <span class="value">1</span>]  <span class="comment">// Preference list</span>
+    },
+    
+    <span class="key">"nodes"</span>: [
+        {
+            <span class="key">"name"</span>: <span class="string">"subscriber"</span>,
+            <span class="key">"type"</span>: <span class="string">"subscriber"</span>,
+            <span class="key">"config"</span>: { ... }
+        }
+    ],
+    
+    <span class="key">"edges"</span>: [
+        [<span class="string">"node1"</span>, <span class="string">"node2"</span>]
+    ]
+}
+                </pre>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-lightbulb"></i> See <a href="{{ url_for('help_dag_configuration') }}">DAG Configuration Guide</a> for complete documentation.
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{{ url_for('help') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Help
+            </a>
+            <a href="{{ url_for('help_worker_pool') }}" class="btn btn-outline-primary">
+                Worker Pool Guide <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

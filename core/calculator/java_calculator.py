@@ -1,6 +1,7 @@
 """
 Py4J Integration for DishtaYantra
 =================================
+Version: 1.6.0
 
 This module provides high-performance integration with Java-based calculators
 using Py4J. It supports:
@@ -9,6 +10,7 @@ using Py4J. It supports:
 - Automatic reconnection and fault tolerance
 - Same interface as Python DataCalculator
 - LMDB zero-copy data exchange for large payloads (v1.1.1)
+- Integration with JVMManager for centralized lifecycle management (v1.6.0)
 
 To beat Spark for real-time calculations, we use:
 1. Gateway pooling - multiple JVM connections for parallel execution
@@ -257,10 +259,32 @@ _pool_lock = threading.Lock()
 
 
 def get_gateway_pool(config: Dict[str, Any] = None) -> JavaGatewayPool:
-    """Get or create the global gateway pool."""
+    """
+    Get or create the global gateway pool.
+    
+    v1.6.0: Now integrates with JVMManager if available for centralized
+    gateway management. Falls back to legacy pool creation if JVMManager
+    is not initialized.
+    """
     global _global_gateway_pool
     
     with _pool_lock:
+        # First, try to use JVM Manager (v1.6.0)
+        try:
+            from core.jvm import get_jvm_manager, is_jvm_available
+            jvm_manager = get_jvm_manager()
+            if jvm_manager.is_initialized():
+                # Use JVM Manager's gateway pool
+                # Create a wrapper that uses JVM Manager's gateways
+                if _global_gateway_pool is None:
+                    _global_gateway_pool = _JVMManagedGatewayPool(jvm_manager)
+                return _global_gateway_pool
+        except ImportError:
+            pass  # JVM Manager not available, use legacy pool
+        except Exception as e:
+            logger.debug(f"JVM Manager not available, using legacy pool: {e}")
+        
+        # Legacy pool creation
         if _global_gateway_pool is None:
             pool_config = config or {}
             _global_gateway_pool = JavaGatewayPool(
@@ -271,6 +295,68 @@ def get_gateway_pool(config: Dict[str, Any] = None) -> JavaGatewayPool:
                 java_options=pool_config.get('java_options')
             )
         return _global_gateway_pool
+
+
+class _JVMManagedGatewayPool:
+    """
+    Wrapper around JVMManager to provide JavaGatewayPool interface.
+    v1.6.0: Allows seamless integration with existing JavaCalculator code.
+    """
+    
+    def __init__(self, jvm_manager):
+        self.jvm_manager = jvm_manager
+        self._stats = {
+            'total_requests': 0,
+            'successful_requests': 0,
+            'failed_requests': 0,
+            'reconnections': 0
+        }
+        self._stats_lock = threading.Lock()
+        self._initialized = True
+    
+    def initialize(self):
+        """Already initialized via JVMManager"""
+        pass
+    
+    def get_gateway(self) -> JavaGateway:
+        """Get a gateway from JVMManager"""
+        gateway = self.jvm_manager.get_gateway_from_pool("primary")
+        if gateway is None:
+            raise RuntimeError("No gateway available from JVMManager")
+        return gateway
+    
+    def execute_on_gateway(self, func, *args, **kwargs):
+        """Execute function using JVMManager's gateway"""
+        with self._stats_lock:
+            self._stats['total_requests'] += 1
+        
+        gateway = self.get_gateway()
+        try:
+            result = func(gateway, *args, **kwargs)
+            with self._stats_lock:
+                self._stats['successful_requests'] += 1
+            return result
+        except Exception as e:
+            with self._stats_lock:
+                self._stats['failed_requests'] += 1
+            raise
+    
+    def shutdown(self):
+        """Delegate to JVMManager"""
+        # Don't shutdown JVMManager here, it's managed centrally
+        pass
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get pool statistics"""
+        with self._stats_lock:
+            jvm_status = self.jvm_manager.get_status()
+            primary_status = jvm_status.get('gateways', {}).get('primary', {})
+            return {
+                **self._stats,
+                'pool_size': primary_status.get('active_connections', 0),
+                'active_connections': primary_status.get('active_connections', 0),
+                'jvm_managed': True
+            }
 
 
 def shutdown_gateway_pool():

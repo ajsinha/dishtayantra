@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Calculator: {{ calculator.name }} - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+    }
+    .detail-card .card-header {
+        background: linear-gradient(135deg, #f89820, #ea6227);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 1rem 1.25rem;
+    }
+    .detail-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .detail-table td:first-child {
+        font-weight: 500;
+        color: #64748b;
+        width: 30%;
+    }
+    .detail-table td:last-child {
+        font-weight: 600;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .java-class-display {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        word-break: break-all;
+    }
+    .gateway-badge {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    .calculator-badge {
+        background: linear-gradient(135deg, #f89820, #ea6227);
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/jvm">JVM Management</a></li>
+                <li class="breadcrumb-item"><a href="/jvm/calculators">Calculators</a></li>
+                <li class="breadcrumb-item active">{{ calculator.name }}</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">
+            <i class="bi bi-calculator text-warning"></i> 
+            <span class="calculator-badge ms-2">{{ calculator.name }}</span>
+        </h2>
+    </div>
+    <a href="/jvm/calculators" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Calculators
+    </a>
+</div>
+
+<div class="row">
+    <!-- Calculator Details -->
+    <div class="col-md-6">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Calculator Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table detail-table mb-0">
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ calculator.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Gateway</td>
+                        <td><span class="gateway-badge">{{ calculator.gateway }}</span></td>
+                    </tr>
+                    <tr>
+                        <td>Description</td>
+                        <td>{{ calculator.description or 'No description available' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-box"></i> Java Class</h5>
+            </div>
+            <div class="card-body">
+                <div class="java-class-display">{{ calculator.java_class }}</div>
+            </div>
+        </div>
+        
+        {% if calculator.default_config %}
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Default Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="code-block json">{{ calculator.default_config | tojson(indent=2) }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Usage Examples -->
+    <div class="col-md-6">
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-code-slash"></i> DAG Configuration Example</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Use this configuration in your DAG JSON file to invoke this calculator:</p>
+                <div class="code-block json" id="dag-example"></div>
+            </div>
+        </div>
+        
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-filetype-py"></i> Python Usage Example</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Use this code to invoke the calculator programmatically:</p>
+                <div class="code-block python" id="python-example"></div>
+            </div>
+        </div>
+        
+        <div class="card detail-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Related Resources</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <a href="/jvm/gateway/{{ calculator.gateway }}" class="text-decoration-none">
+                            <i class="bi bi-hdd-network text-primary"></i> View Gateway: {{ calculator.gateway }}
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="/help/py4j-integration" class="text-decoration-none">
+                            <i class="bi bi-book text-success"></i> Py4J Integration Guide
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/help/calculators" class="text-decoration-none">
+                            <i class="bi bi-calculator text-warning"></i> Calculator Documentation
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const name = '{{ calculator.name }}';
+    const javaClass = '{{ calculator.java_class }}';
+    
+    const dagExample = {
+        "id": "{{ calculator.name | lower }}_node",
+        "type": "calculator",
+        "calculator": {
+            "type": "java",
+            "name": name,
+            "config": {
+                "java_class": javaClass
+            }
+        }
+    };
+    
+    const pythonExample = `from core.calculator.java_calculator import JavaCalculator
+
+# Create calculator instance
+calc = JavaCalculator("${name}", {
+    "java_class": "${javaClass}"
+})
+
+# Execute calculation
+result = calc.calculate({"input_field": "value"})
+print(result)`;
+    
+    document.getElementById('dag-example').textContent = JSON.stringify(dagExample, null, 2);
+    document.getElementById('python-example').textContent = pythonExample;
+});
+</script>
+{% endblock %}
