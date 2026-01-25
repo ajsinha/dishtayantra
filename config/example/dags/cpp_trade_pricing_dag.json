@@ -1,0 +1,91 @@
+{
+    "_comment": "Example DAG using C++ TradePricingCalculator - v1.7.0",
+    "_description": "Demonstrates high-performance trade pricing with C++ calculators",
+    
+    "name": "cpp_trade_pricing_dag",
+    "description": "Trade pricing pipeline using C++ calculators for ultra-low latency",
+    "enabled": true,
+    "auto_start": false,
+    
+    "execution": {
+        "mode": "perpetual",
+        "schedule": null
+    },
+    
+    "nodes": [
+        {
+            "name": "trade_source",
+            "type": "SourceNode",
+            "description": "Receive trade data",
+            "source": {
+                "type": "inmemory",
+                "topic": "cpp_trades_input"
+            }
+        },
+        {
+            "name": "validate_trade",
+            "type": "CalculatorNode",
+            "description": "Validate trade data using C++ DataValidationCalculator",
+            "calculator": {
+                "type": "cpp",
+                "name": "DataValidationCalculator"
+            },
+            "config": {
+                "strict_mode": false,
+                "validate_types": true,
+                "required_fields": ["price", "quantity", "symbol"]
+            }
+        },
+        {
+            "name": "price_trade",
+            "type": "CalculatorNode",
+            "description": "Calculate trade pricing using C++ TradePricingCalculator",
+            "calculator": {
+                "type": "cpp",
+                "name": "TradePricingCalculator"
+            },
+            "config": {
+                "commission_rate": 0.001,
+                "tax_rate": 0.0,
+                "include_fees": true
+            }
+        },
+        {
+            "name": "calculate_risk",
+            "type": "CalculatorNode",
+            "description": "Calculate risk metrics using C++ RiskMetricsCalculator",
+            "calculator": {
+                "type": "cpp",
+                "name": "RiskMetricsCalculator"
+            },
+            "config": {
+                "var_confidence": 0.95,
+                "risk_free_rate": 0.02
+            }
+        },
+        {
+            "name": "results_sink",
+            "type": "SinkNode",
+            "description": "Store priced trades",
+            "destination": {
+                "type": "inmemory",
+                "topic": "cpp_priced_trades"
+            }
+        }
+    ],
+    
+    "edges": [
+        {"from": "trade_source", "to": "validate_trade"},
+        {"from": "validate_trade", "to": "price_trade"},
+        {"from": "price_trade", "to": "calculate_risk"},
+        {"from": "calculate_risk", "to": "results_sink"}
+    ],
+    
+    "_sample_input": {
+        "symbol": "AAPL",
+        "price": 150.25,
+        "quantity": 100,
+        "position_value": 15025.00,
+        "volatility": 0.25
+    }
+}

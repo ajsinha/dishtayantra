@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Research Paper Hero */
+    .research-hero {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+    }
+    .research-hero h1 {
+        color: white;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .research-hero p {
+        opacity: 0.9;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+    
+    /* Research Content Styling */
+    .research-content {
+        background: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        line-height: 1.8;
+    }
+    
+    .research-content h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+    
+    .research-content h1:first-child {
+        margin-top: 0;
+    }
+    
+    .research-content h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #334155;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .research-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #475569;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .research-content h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .research-content p {
+        margin-bottom: 1rem;
+        color: #374151;
+    }
+    
+    .research-content strong {
+        color: #1e293b;
+    }
+    
+    /* Code blocks */
+    .research-content pre {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1.25rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1.5rem 0;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .research-content code {
+        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+        font-size: 0.9em;
+    }
+    
+    .research-content p code,
+    .research-content li code {
+        background: #f1f5f9;
+        color: #6366f1;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.85em;
+    }
+    
+    /* Tables */
+    .research-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
+    }
+    
+    .research-content th {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+    }
+    
+    .research-content td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .research-content tr:hover {
+        background: #f8fafc;
+    }
+    
+    /* Lists */
+    .research-content ul,
+    .research-content ol {
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+    }
+    
+    .research-content li {
+        margin-bottom: 0.5rem;
+        color: #374151;
+    }
+    
+    /* Blockquotes */
+    .research-content blockquote {
+        border-left: 4px solid #6366f1;
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        margin: 1.5rem 0;
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: #475569;
+    }
+    
+    /* Horizontal rules */
+    .research-content hr {
+        border: none;
+        border-top: 2px solid #e2e8f0;
+        margin: 2rem 0;
+    }
+    
+    /* Links */
+    .research-content a {
+        color: #6366f1;
+        text-decoration: none;
+    }
+    
+    .research-content a:hover {
+        text-decoration: underline;
+    }
+    
+    /* ASCII diagrams */
+    .research-content pre code {
+        white-space: pre;
+        font-family: 'JetBrains Mono', 'Consolas', monospace;
+    }
+    
+    /* Print styles */
+    @media print {
+        .research-hero {
+            background: #6366f1 !important;
+            -webkit-print-color-adjust: exact;
+        }
+        .research-content {
+            box-shadow: none;
+        }
+    }
+    
+    /* Navigation buttons */
+    .nav-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Download section */
+    .download-section {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .download-section h5 {
+        color: #166534;
+        margin-bottom: 1rem;
+    }
+    
+    .download-section .btn {
+        margin: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="research-hero">
+    <i class="bi bi-file-earmark-text" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem;"></i>
+    <h1>{{ title }}</h1>
+    <p>A High-Performance Multi-Language Dataflow Framework with Zero-Copy Inter-Process Communication</p>
+    <p class="mt-2"><small><em>Patent Pending</em></small></p>
+</div>
+
+<!-- Navigation -->
+<div class="nav-buttons">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+    <a href="{{ url_for('help_architecture') }}" class="btn btn-outline-primary">
+        <i class="bi bi-diagram-3"></i> Architecture
+    </a>
+    <a href="{{ url_for('about') }}" class="btn btn-outline-info">
+        <i class="bi bi-info-circle"></i> About
+    </a>
+</div>
+
+<!-- Download Section -->
+<div class="download-section">
+    <h5><i class="bi bi-download"></i> Download Research Paper</h5>
+    <p class="text-muted small mb-2">Available in multiple formats for arXiv submission and reference</p>
+    <a href="{{ url_for('static', filename='research/dishtayantra_paper.pdf') }}" class="btn btn-success btn-sm" download>
+        <i class="bi bi-file-pdf"></i> PDF
+    </a>
+    <a href="{{ url_for('static', filename='research/dishtayantra_paper.tex') }}" class="btn btn-primary btn-sm" download>
+        <i class="bi bi-file-code"></i> LaTeX
+    </a>
+    <a href="{{ url_for('static', filename='research/dishtayantra_paper.md') }}" class="btn btn-secondary btn-sm" download>
+        <i class="bi bi-markdown"></i> Markdown
+    </a>
+</div>
+
+<!-- Research Content -->
+<div class="research-content">
+    {{ content }}
+</div>
+
+<!-- Back to top -->
+<div class="text-center mt-4 mb-4">
+    <a href="#" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-up"></i> Back to Top
+    </a>
+    <a href="{{ url_for('help') }}" class="btn btn-primary">
+        <i class="bi bi-book"></i> Help Documentation
+    </a>
+</div>
+{% endblock %}

@@ -141,6 +141,19 @@
 <h2><i class="bi bi-braces" style="color: #00599C;"></i> pybind11 C++ Integration <span class="badge bg-warning text-dark ms-2" style="font-size: 0.5em; vertical-align: middle;"><i class="bi bi-award"></i> Patent Pending</span></h2>
 <p class="lead">Achieve native performance with C++ calculators seamlessly integrated into DishtaYantra.</p>
 
+<!-- v1.7.0 CPP Manager Banner -->
+<div class="alert alert-info mb-4">
+    <h5><i class="bi bi-stars"></i> New in v1.7.0: CPP Manager</h5>
+    <p class="mb-2">C++ calculators are now managed centrally through the <strong>CPP Manager</strong>:</p>
+    <ul class="mb-2">
+        <li>Configuration-based module loading from <code>config/cpp_config.json</code></li>
+        <li>Automatic initialization on application startup</li>
+        <li>Web UI management at <a href="/cpp">/cpp</a></li>
+        <li>Hot reload and build support</li>
+    </ul>
+    <a href="/cpp" class="btn btn-sm btn-primary">Go to C++ Management <i class="bi bi-arrow-right"></i></a>
+</div>
+
 <!-- Table of Contents -->
 <div class="card mb-4">
     <div class="card-header">
@@ -706,76 +719,97 @@ clang++ -O3 -Wall -shared -std=c++17 \
         <h5 class="mb-0"><i class="bi bi-filetype-py"></i> Python Integration</h5>
     </div>
     <div class="card-body">
-        <h6>CppCalculator Wrapper Class</h6>
-        <p>DishtaYantra provides a wrapper for C++ calculators:</p>
         
-        <pre class="code-block python"># core/calculator/cpp_calculator.py
-import importlib
-import logging
-from typing import Dict, Any
+        <!-- v1.7.0: CPP Manager Usage (NEW) -->
+        <div class="tip-box mb-4">
+            <h6><i class="bi bi-stars"></i> v1.7.0: Recommended - Using CPP Manager</h6>
+            <p>The CPP Manager provides centralized calculator management with configuration from <code>cpp_config.json</code>:</p>
+        </div>
+        
+        <pre class="code-block python"># Using CPP Manager (RECOMMENDED - v1.7.0)
+from core.cpp import create_cpp_calculator, get_cpp_manager, is_cpp_available
 
-logger = logging.getLogger(__name__)
+# Check if C++ calculators are available
+if is_cpp_available():
+    # Create calculator by name (from cpp_config.json)
+    calc = create_cpp_calculator("MathCalculator", "my_calc", {
+        "operation": "mean"
+    })
+    
+    # Execute calculation
+    result = calc.calculate({"values": [1.0, 2.0, 3.0, 4.0, 5.0]})
+    print(f"Mean: {result['result']}")
+    
+    # Get manager for advanced operations
+    manager = get_cpp_manager()
+    
+    # List all calculators
+    for calc_def in manager.list_calculators():
+        print(f"  {calc_def['name']}: {calc_def['description']}")
+    
+    # List loaded modules
+    for module in manager.list_modules():
+        print(f"  Module: {module['name']} - {'Loaded' if module['loaded'] else 'Not Loaded'}")</pre>
 
-class CppCalculator:
-    """
-    Wrapper for C++ calculators compiled with pybind11.
-    
-    The C++ class must implement:
-    - Constructor: ClassName(std::string name, py::dict config)
-    - Method: py::dict calculate(py::dict data)
-    - Method: py::dict details()
-    """
-    
-    def __init__(self, name: str, config: Dict[str, Any]):
-        """
-        Initialize C++ calculator wrapper.
-        
-        Args:
-            name: Calculator name
-            config: Configuration dict, must include:
-                    - cpp_module: Name of the compiled module (e.g., 'dishtayantra_cpp')
-                    - cpp_class: Name of the C++ class (e.g., 'MathCalculator')
-        """
-        self.name = name
-        self.config = config
-        
-        cpp_module = config.get('cpp_module', 'dishtayantra_cpp')
-        cpp_class = config.get('cpp_class')
-        
-        if not cpp_class:
-            raise ValueError("cpp_class must be specified for C++ calculators")
-        
-        try:
-            # Import the compiled module
-            module = importlib.import_module(cpp_module)
-            calculator_class = getattr(module, cpp_class)
-            
-            # Create C++ calculator instance
-            self._cpp_instance = calculator_class(name, config)
-            
-            logger.info(f"CppCalculator '{name}' initialized: {cpp_module}.{cpp_class}")
-            
-        except ImportError as e:
-            raise RuntimeError(f"Failed to import C++ module '{cpp_module}': {e}")
-        except AttributeError as e:
-            raise RuntimeError(f"Class '{cpp_class}' not found in module '{cpp_module}': {e}")
-    
-    def calculate(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute calculation on the C++ side."""
-        return dict(self._cpp_instance.calculate(data))
-    
-    def details(self) -> Dict[str, Any]:
-        """Get calculator details."""
-        details = dict(self._cpp_instance.details())
-        details['wrapper'] = 'CppCalculator'
-        details['language'] = 'C++'
-        return details</pre>
+        <h6 class="mt-4">Available C++ Calculators (v1.7.0)</h6>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Calculator Name</th>
+                    <th>Description</th>
+                    <th>Key Config Options</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>PassthroughCalculator</code></td>
+                    <td>Returns input unchanged</td>
+                    <td>None</td>
+                </tr>
+                <tr>
+                    <td><code>MathCalculator</code></td>
+                    <td>Math operations</td>
+                    <td><code>operation</code>: sum, mean, variance, product, max, min, std</td>
+                </tr>
+                <tr>
+                    <td><code>StatisticsCalculator</code></td>
+                    <td>Statistical analysis</td>
+                    <td><code>compute_percentiles</code>, <code>percentile_values</code></td>
+                </tr>
+                <tr>
+                    <td><code>MatrixCalculator</code></td>
+                    <td>Matrix operations</td>
+                    <td><code>operation</code>: transpose, trace, determinant</td>
+                </tr>
+                <tr>
+                    <td><code>StringTransformCalculator</code></td>
+                    <td>String operations</td>
+                    <td><code>operation</code>: uppercase, lowercase, reverse, hash</td>
+                </tr>
+                <tr>
+                    <td><code>DataValidationCalculator</code></td>
+                    <td>Data validation</td>
+                    <td><code>required_fields</code>, <code>strict_mode</code></td>
+                </tr>
+                <tr>
+                    <td><code>TradePricingCalculator</code></td>
+                    <td>Trade pricing</td>
+                    <td><code>commission_rate</code>, <code>tax_rate</code>, <code>include_fees</code></td>
+                </tr>
+                <tr>
+                    <td><code>RiskMetricsCalculator</code></td>
+                    <td>Risk metrics</td>
+                    <td><code>var_confidence</code>, <code>risk_free_rate</code></td>
+                </tr>
+            </tbody>
+        </table>
 
-        <h6 class="mt-4">Using C++ Calculators in Python</h6>
-        <pre class="code-block python"># Direct usage
+        <h6 class="mt-4">Legacy: Direct CppCalculator Usage</h6>
+        <p class="text-muted">For backward compatibility, you can still use CppCalculator directly:</p>
+        
+        <pre class="code-block python"># Direct usage (legacy approach)
 from core.calculator.cpp_calculator import CppCalculator
 
-# Create calculator
 config = {
     'cpp_module': 'dishtayantra_cpp',
     'cpp_class': 'MathCalculator',
@@ -814,42 +848,69 @@ calc = CalculatorFactory.create('pricing_calc', config)</pre>
         <h5 class="mb-0"><i class="bi bi-filetype-json"></i> DAG Configuration</h5>
     </div>
     <div class="card-body">
-        <p>Configure a C++ calculator in your DAG JSON:</p>
         
+        <div class="tip-box mb-4">
+            <h6><i class="bi bi-stars"></i> v1.7.0: Simplified DAG Configuration</h6>
+            <p>Reference C++ calculators by name using the CPP Manager:</p>
+        </div>
+        
+        <h6>Using Calculator Names (Recommended - v1.7.0)</h6>
         <pre class="code-block json">{
-  "name": "high_performance_dag",
-  "start_time": "0900",
-  "duration": "8h",
+  "name": "cpp_math_pipeline",
   "nodes": [
     {
-      "id": "subscriber",
-      "type": "SubscriptionNode",
-      "subscribers": [
-        {"uri": "kafka://trades:raw_trades"}
-      ]
+      "name": "data_source",
+      "type": "SourceNode",
+      "source": {"type": "inmemory", "topic": "input"}
     },
     {
-      "id": "cpp_pricing",
-      "type": "CalculationNode",
-      "calculator": "cpp",
-      "cpp_module": "dishtayantra_cpp",
-      "cpp_class": "TradePricingCalculator",
-      "commission_rate": 0.001,
-      "tax_rate": 0.002,
-      "include_vat": false
+      "name": "math_calc",
+      "type": "CalculatorNode",
+      "calculator": {
+        "type": "cpp",
+        "name": "MathCalculator"
+      },
+      "config": {
+        "operation": "mean"
+      }
     },
     {
-      "id": "publisher",
-      "type": "PublicationNode",
-      "publishers": [
-        {"uri": "kafka://trades:priced_trades"}
-      ]
+      "name": "stats_calc",
+      "type": "CalculatorNode",
+      "calculator": {
+        "type": "cpp",
+        "name": "StatisticsCalculator"
+      },
+      "config": {
+        "compute_percentiles": true,
+        "percentile_values": [50, 90, 99]
+      }
+    },
+    {
+      "name": "results_sink",
+      "type": "SinkNode",
+      "destination": {"type": "inmemory", "topic": "output"}
     }
   ],
   "edges": [
-    {"from": "subscriber", "to": "cpp_pricing"},
-    {"from": "cpp_pricing", "to": "publisher"}
+    {"from": "data_source", "to": "math_calc"},
+    {"from": "math_calc", "to": "stats_calc"},
+    {"from": "stats_calc", "to": "results_sink"}
   ]
+}</pre>
+
+        <h6 class="mt-4">Legacy Configuration (Direct Class Specification)</h6>
+        <p class="text-muted">For backward compatibility, you can still specify cpp_class directly:</p>
+        
+        <pre class="code-block json">{
+  "name": "cpp_pricing",
+  "type": "CalculatorNode",
+  "calculator": "cpp",
+  "cpp_module": "dishtayantra_cpp",
+  "cpp_class": "TradePricingCalculator",
+  "commission_rate": 0.001,
+  "tax_rate": 0.002,
+  "include_fees": true
 }</pre>
 
         <h6 class="mt-4">Configuration Options</h6>
@@ -863,9 +924,14 @@ calc = CalculatorFactory.create('pricing_calc', config)</pre>
             </thead>
             <tbody>
                 <tr>
-                    <td><code>calculator</code></td>
+                    <td><code>calculator.type</code></td>
                     <td>Yes</td>
                     <td>Set to <code>"cpp"</code> for C++ calculators</td>
+                </tr>
+                <tr>
+                    <td><code>calculator.name</code></td>
+                    <td>Yes*</td>
+                    <td>Calculator name from cpp_config.json (v1.7.0)</td>
                 </tr>
                 <tr>
                     <td><code>cpp_module</code></td>
@@ -874,16 +940,17 @@ calc = CalculatorFactory.create('pricing_calc', config)</pre>
                 </tr>
                 <tr>
                     <td><code>cpp_class</code></td>
-                    <td>Yes</td>
-                    <td>C++ class name to instantiate</td>
+                    <td>Yes*</td>
+                    <td>C++ class name (legacy approach)</td>
                 </tr>
                 <tr>
-                    <td><em>any other</em></td>
+                    <td><code>config</code></td>
                     <td>No</td>
-                    <td>Passed to C++ constructor as config dict</td>
+                    <td>Additional config passed to calculator (overrides defaults)</td>
                 </tr>
             </tbody>
         </table>
+        <p class="text-muted small">* Either <code>calculator.name</code> or <code>cpp_class</code> is required</p>
     </div>
 </div>
 

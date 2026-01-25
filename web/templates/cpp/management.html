@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}C++ Calculator Management - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cpp-hero {
+        background: linear-gradient(135deg, #00599C 0%, #004482 50%, #003366 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+    .cpp-hero h2 {
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    .status-card {
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    .status-card:hover {
+        transform: translateY(-3px);
+    }
+    .module-card {
+        border-left: 4px solid #00599C;
+    }
+    .module-card.loaded {
+        border-left-color: #10b981;
+    }
+    .module-card.not-loaded {
+        border-left-color: #ef4444;
+    }
+    .stat-box {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1e3a5f;
+    }
+    .stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+    .calculator-badge {
+        background: linear-gradient(135deg, #00599C, #004482);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        margin: 0;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .code-block code {
+        font-family: inherit;
+        font-size: inherit;
+        background: transparent;
+        padding: 0;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="cpp-hero">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2><i class="bi bi-cpu"></i> C++ Calculator Management</h2>
+            <p class="mb-0 opacity-75">High-performance pybind11 C++ calculators with ~100ns call overhead</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-light text-dark fs-6">v1.7.0</span>
+        </div>
+    </div>
+</div>
+
+{% if not cpp_available %}
+<!-- Not Available State -->
+<div class="alert alert-warning">
+    <h5><i class="bi bi-exclamation-triangle"></i> C++ Modules Not Available</h5>
+    <p class="mb-2">No C++ modules are currently loaded. This could mean:</p>
+    <ul class="mb-2">
+        <li>The C++ module hasn't been compiled yet</li>
+        <li>pybind11 is not installed</li>
+        <li>The module file (.so/.pyd) is not in Python's path</li>
+    </ul>
+    <p class="mb-0">
+        <strong>To build:</strong> <code>cd cpp && mkdir build && cd build && cmake .. && make</code>
+    </p>
+</div>
+{% else %}
+
+<!-- Status Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="modules-loaded">{{ cpp_status.modules_loaded or 0 }}</div>
+            <div class="stat-label">Modules Loaded</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="calculators-defined">{{ cpp_status.calculators_defined or 0 }}</div>
+            <div class="stat-label">Calculators Defined</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="total-calculations">{{ cpp_status.stats.total_calculations or 0 }}</div>
+            <div class="stat-label">Total Calculations</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <div class="stat-value" id="cache-hits">{{ cpp_status.stats.cache_hits or 0 }}</div>
+            <div class="stat-label">Cache Hits</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modules Section -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-box-seam text-primary"></i> C++ Modules</h5>
+        <button class="btn btn-sm btn-outline-primary" onclick="refreshModules()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+    <div class="card-body">
+        {% if modules %}
+        <div class="row g-3">
+            {% for module in modules %}
+            <div class="col-md-6">
+                <div class="card module-card {{ 'loaded' if module.loaded else 'not-loaded' }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="/cpp/module/{{ module.name }}" class="text-decoration-none">
+                                        {{ module.name }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">{{ module.description or 'No description' }}</small>
+                            </div>
+                            <span class="badge {{ 'bg-success' if module.loaded else 'bg-danger' }}">
+                                {{ 'Loaded' if module.loaded else 'Not Loaded' }}
+                            </span>
+                        </div>
+                        
+                        {% if module.loaded %}
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-puzzle"></i> {{ module.available_classes | length }} classes available
+                        </div>
+                        {% endif %}
+                        
+                        <div class="btn-group btn-group-sm">
+                            {% if module.loaded %}
+                            <button class="btn btn-outline-warning" onclick="reloadModule('{{ module.name }}')">
+                                <i class="bi bi-arrow-repeat"></i> Reload
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="unloadModule('{{ module.name }}')">
+                                <i class="bi bi-x-circle"></i> Unload
+                            </button>
+                            {% else %}
+                            <button class="btn btn-outline-success" onclick="loadModule('{{ module.name }}')">
+                                <i class="bi bi-play-circle"></i> Load
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="buildModule('{{ module.name }}')">
+                                <i class="bi bi-hammer"></i> Build
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No modules configured. Check <code>config/cpp_config.json</code></p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Calculators Section -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-calculator text-warning"></i> Calculator Definitions</h5>
+        <a href="/cpp/calculators" class="btn btn-sm btn-outline-primary">
+            View All <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="calculators-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Module</th>
+                        <th>C++ Class</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calc in calculators %}
+                    <tr>
+                        <td>
+                            <a href="/cpp/calculator/{{ calc.name }}" class="text-decoration-none">
+                                <span class="calculator-badge">{{ calc.name }}</span>
+                            </a>
+                        </td>
+                        <td><code>{{ calc.module }}</code></td>
+                        <td><code>{{ calc.cpp_class }}</code></td>
+                        <td>
+                            {% if calc.available %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Available</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Not Available</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/cpp/calculator/{{ calc.name }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No calculators defined</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Preview -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">C++ configuration is defined in <code>config/cpp_config.json</code></p>
+        <pre class="code-block"><code class="language-json" id="config-preview">Loading configuration...</code></pre>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadConfig();
+});
+
+function loadConfig() {
+    fetch('/api/cpp/config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const codeElement = document.getElementById('config-preview');
+                codeElement.textContent = JSON.stringify(data.data, null, 2);
+                if (typeof Prism !== 'undefined') {
+                    Prism.highlightElement(codeElement);
+                }
+            }
+        })
+        .catch(err => {
+            document.getElementById('config-preview').textContent = 'Error loading configuration';
+        });
+}
+
+function refreshModules() {
+    location.reload();
+}
+
+function loadModule(name) {
+    fetch(`/api/cpp/modules/${name}/load`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function unloadModule(name) {
+    if (!confirm(`Are you sure you want to unload module "${name}"?`)) return;
+    
+    fetch(`/api/cpp/modules/${name}/unload`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function reloadModule(name) {
+    fetch(`/api/cpp/modules/${name}/reload`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function buildModule(name) {
+    showAlert('info', `Building module ${name}... This may take a while.`);
+    
+    fetch(`/api/cpp/modules/${name}/build`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('danger', 'Build failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>
+{% endblock %}

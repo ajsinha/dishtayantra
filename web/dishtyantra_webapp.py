@@ -194,6 +194,14 @@ class DishtaYantraWebApp:
         # v1.6.0: JVM management routes
         from routes import JVMRoutes
         self.jvm_routes = JVMRoutes(self.app)
+        
+        # v1.7.0: CPP management routes
+        from routes import CPPRoutes
+        self.cpp_routes = CPPRoutes(self.app)
+        
+        # v1.7.0: Rust management routes
+        from routes import RustRoutes
+        self.rust_routes = RustRoutes(self.app)
 
         logger.info("Route handlers initialized successfully")
 

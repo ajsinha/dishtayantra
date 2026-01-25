@@ -1,9 +1,9 @@
 [package]
 name = "dishtayantra_rust"
-version = "1.1.0"
+version = "1.7.0"
 edition = "2021"
-authors = ["DishtaYantra"]
-description = "High-performance Rust calculators for DishtaYantra"
+authors = ["Ashutosh Sinha"]
+description = "High-performance memory-safe Rust calculators for DishtaYantra v1.7.0"
 license = "Proprietary"
 
 [lib]
@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 pyo3 = { version = "0.20", features = ["extension-module"] }
 chrono = "0.4"
 rayon = "1.8"
+sha2 = "0.10"
 
 [profile.release]
 opt-level = 3

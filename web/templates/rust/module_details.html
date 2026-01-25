@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.name }} - Rust Module - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .module-header {
+        background: linear-gradient(135deg, #DEA584 0%, #B7410E 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+    .status-loaded { background-color: #10b981; }
+    .status-not_loaded { background-color: #6b7280; }
+    .status-loading { background-color: #f59e0b; }
+    .status-error { background-color: #ef4444; }
+    .status-building { background-color: #8b5cf6; }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/rust">Rust Management</a></li>
+        <li class="breadcrumb-item active">{{ module.name }}</li>
+    </ol>
+</nav>
+
+<div class="module-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1" style="color: white;">
+                <i class="bi bi-gear-wide-connected"></i> {{ module.name }}
+            </h2>
+            <p class="mb-0 opacity-75">{{ module.description }}</p>
+        </div>
+        <span class="badge status-badge status-{{ module.status }}">{{ module.status }}</span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Module Configuration -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th style="width: 180px;">Enabled</th>
+                        <td>
+                            {% if module.enabled %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Source Directory</th>
+                        <td><code>{{ module.build_config.source_dir or 'rust' }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Target Directory</th>
+                        <td><code>{{ module.build_config.target_dir or 'rust/target' }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Cargo Options</th>
+                        <td><code>{{ module.build_config.cargo_options | join(' ') or '--release' }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>LMDB Enabled</th>
+                        <td>
+                            {% if module.lmdb_config.enabled %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            ({{ module.lmdb_config.db_path }})
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Runtime Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Runtime Status</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th style="width: 180px;">Status</th>
+                        <td><span class="badge status-badge status-{{ module.status }}">{{ module.status }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Loaded</th>
+                        <td>
+                            {% if module.loaded %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if module.module_path %}
+                    <tr>
+                        <th>Module Path</th>
+                        <td><code>{{ module.module_path }}</code></td>
+                    </tr>
+                    {% endif %}
+                    {% if module.available_classes %}
+                    <tr>
+                        <th>Available Structs</th>
+                        <td>
+                            {% for cls in module.available_classes %}
+                            <span class="badge bg-info me-1">{{ cls }}</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+                
+                {% if module.error %}
+                <div class="alert alert-danger mt-3 mb-0">
+                    <strong>Error:</strong> {{ module.error }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Calculators from this module -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calculator"></i> Calculators</h5>
+            </div>
+            <div class="card-body">
+                {% if calculators %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Rust Struct</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for calc in calculators %}
+                            <tr>
+                                <td>{{ calc.name }}</td>
+                                <td><code>{{ calc.rust_class }}</code></td>
+                                <td>
+                                    {% if calc.available %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Unavailable</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/rust/calculator/{{ calc.name }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No calculators defined for this module.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if module.loaded %}
+                    <button class="btn btn-warning" onclick="reloadModule()">
+                        <i class="bi bi-arrow-clockwise"></i> Reload Module
+                    </button>
+                    <button class="btn btn-danger" onclick="unloadModule()">
+                        <i class="bi bi-stop-circle"></i> Unload Module
+                    </button>
+                    {% else %}
+                    <button class="btn btn-success" onclick="loadModule()">
+                        <i class="bi bi-play-circle"></i> Load Module
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-primary" onclick="buildModule()">
+                        <i class="bi bi-hammer"></i> Build Module
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Build Output -->
+        <div class="card" id="buildOutputCard" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-terminal"></i> Build Output</h5>
+            </div>
+            <div class="card-body">
+                <pre class="code-block" id="buildOutput" style="max-height: 300px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const moduleName = '{{ module.name }}';
+
+function loadModule() {
+    fetch(`/api/rust/modules/${moduleName}/load`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.success ? 'Module loaded!' : 'Error: ' + data.error);
+            if (data.success) location.reload();
+        });
+}
+
+function unloadModule() {
+    if (!confirm('Unload this module?')) return;
+    fetch(`/api/rust/modules/${moduleName}/unload`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+}
+
+function reloadModule() {
+    fetch(`/api/rust/modules/${moduleName}/reload`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.success ? 'Module reloaded!' : 'Error: ' + data.error);
+            if (data.success) location.reload();
+        });
+}
+
+function buildModule() {
+    document.getElementById('buildOutputCard').style.display = 'block';
+    document.getElementById('buildOutput').textContent = 'Building...';
+    
+    fetch(`/api/rust/modules/${moduleName}/build`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('buildOutput').textContent = data.output || data.error || 'No output';
+        });
+}
+</script>
+{% endblock %}

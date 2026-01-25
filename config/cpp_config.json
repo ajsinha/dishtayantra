@@ -1,0 +1,139 @@
+{
+    "_comment": "DishtaYantra C++ Calculator Configuration - v1.7.0",
+    "_description": "Configure C++ pybind11 modules and calculator definitions for high-performance native computation",
+    
+    "cpp_manager": {
+        "enabled": false,
+        "_enabled_note": "Set to true to enable automatic C++ module loading and calculator initialization",
+        "auto_load_on_startup": true,
+        "_auto_load_note": "If true, C++ modules are loaded when application.properties is loaded",
+        "health_check_interval_seconds": 60,
+        "config_check_interval_seconds": 600,
+        "_config_check_note": "Check for config file changes every 600 seconds (10 minutes)"
+    },
+    
+    "modules": [
+        {
+            "name": "dishtayantra_cpp",
+            "enabled": true,
+            "path": null,
+            "_path_note": "Path to the .so/.pyd file. If null, expects module in Python path",
+            "description": "Core DishtaYantra C++ calculators",
+            
+            "build": {
+                "source_dir": "cpp/src",
+                "build_dir": "cpp/build",
+                "cmake_options": [
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DPYTHON_EXECUTABLE:FILEPATH=$(which python3)"
+                ],
+                "_build_note": "Build settings for automatic compilation (requires CMake and pybind11)"
+            },
+            
+            "lmdb": {
+                "enabled": false,
+                "db_path": "data/cpp_lmdb",
+                "db_name": "cpp_exchange",
+                "map_size_mb": 256,
+                "min_payload_size": 10240,
+                "_lmdb_note": "LMDB zero-copy transport for large payloads (>10KB)"
+            }
+        }
+    ],
+    
+    "calculators": [
+        {
+            "name": "PassthroughCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "PassthroughCalculator",
+            "description": "Passes input data through unchanged - useful for testing and benchmarking",
+            "default_config": {}
+        },
+        {
+            "name": "MathCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "MathCalculator",
+            "description": "High-performance mathematical operations (sum, product, mean, variance)",
+            "default_config": {
+                "operation": "sum",
+                "precision": 6
+            }
+        },
+        {
+            "name": "StatisticsCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "StatisticsCalculator",
+            "description": "Statistical analysis (mean, std, min, max, percentiles)",
+            "default_config": {
+                "compute_percentiles": true,
+                "percentile_values": [25, 50, 75, 90, 95, 99]
+            }
+        },
+        {
+            "name": "MatrixCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "MatrixCalculator",
+            "description": "Matrix operations (multiply, transpose, inverse, determinant)",
+            "default_config": {
+                "operation": "multiply"
+            }
+        },
+        {
+            "name": "StringTransformCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "StringTransformCalculator",
+            "description": "High-performance string operations (transform, hash, encode)",
+            "default_config": {
+                "operation": "uppercase"
+            }
+        },
+        {
+            "name": "DataValidationCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "DataValidationCalculator",
+            "description": "Fast data validation with regex and type checking",
+            "default_config": {
+                "strict_mode": false,
+                "validate_types": true
+            }
+        },
+        {
+            "name": "TradePricingCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "TradePricingCalculator",
+            "description": "Trade pricing with commission and fee calculations",
+            "default_config": {
+                "commission_rate": 0.001,
+                "tax_rate": 0.0,
+                "include_fees": true
+            }
+        },
+        {
+            "name": "RiskMetricsCalculator",
+            "module": "dishtayantra_cpp",
+            "cpp_class": "RiskMetricsCalculator",
+            "description": "Financial risk metrics (VaR, Sharpe, Beta, Greeks)",
+            "default_config": {
+                "var_confidence": 0.95,
+                "risk_free_rate": 0.02
+            }
+        }
+    ],
+    
+    "performance": {
+        "enable_simd": true,
+        "_simd_note": "Enable SIMD optimizations where available (AVX, SSE)",
+        "thread_pool_size": 4,
+        "_thread_pool_note": "Number of threads for parallel C++ operations",
+        "cache_calculator_instances": true,
+        "_cache_note": "Cache calculator instances for reuse"
+    },
+    
+    "_documentation": {
+        "overview": "This configuration defines C++ pybind11 modules and calculators available to DishtaYantra DAGs",
+        "module_structure": "Each module is a compiled .so/.pyd file containing one or more calculator classes",
+        "calculator_interface": "C++ calculators must implement: constructor(name, config), calculate(data), details()",
+        "build_requirements": "CMake 3.14+, pybind11, C++17 compiler",
+        "help_page": "/help/pybind11-integration"
+    }
+}

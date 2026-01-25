@@ -1,0 +1,163 @@
+{
+    "_comment": "DishtaYantra Rust Calculator Configuration - v1.7.0",
+    "_description": "Configure Rust PyO3 modules and calculator definitions for high-performance native computation",
+    
+    "rust_manager": {
+        "enabled": false,
+        "_enabled_note": "Set to true to enable automatic Rust module loading and calculator initialization",
+        "auto_load_on_startup": true,
+        "_auto_load_note": "If true, Rust modules are loaded when application.properties is loaded",
+        "health_check_interval_seconds": 60,
+        "config_check_interval_seconds": 600,
+        "_config_check_note": "Check for config file changes every 600 seconds (10 minutes)"
+    },
+    
+    "modules": [
+        {
+            "name": "dishtayantra_rust",
+            "enabled": true,
+            "path": null,
+            "_path_note": "Path to the .so/.pyd file. If null, expects module in Python path",
+            "description": "Core DishtaYantra Rust calculators with memory safety guarantees",
+            
+            "build": {
+                "source_dir": "rust",
+                "target_dir": "rust/target",
+                "cargo_options": [
+                    "--release"
+                ],
+                "features": ["pyo3/extension-module"],
+                "_build_note": "Build settings for automatic compilation (requires Rust and maturin)"
+            },
+            
+            "lmdb": {
+                "enabled": false,
+                "db_path": "data/rust_lmdb",
+                "db_name": "rust_exchange",
+                "map_size_mb": 256,
+                "min_payload_size": 10240,
+                "_lmdb_note": "LMDB zero-copy transport for large payloads (>10KB)"
+            }
+        }
+    ],
+    
+    "calculators": [
+        {
+            "name": "RustPassthroughCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "PassthroughCalculator",
+            "description": "Passes input data through unchanged - useful for testing and benchmarking",
+            "default_config": {}
+        },
+        {
+            "name": "RustMathCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "MathCalculator",
+            "description": "High-performance mathematical operations with SIMD optimizations",
+            "default_config": {
+                "operation": "sum",
+                "precision": 6
+            }
+        },
+        {
+            "name": "RustStatisticsCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "StatisticsCalculator",
+            "description": "Statistical analysis with parallel processing",
+            "default_config": {
+                "compute_percentiles": true,
+                "percentile_values": [25, 50, 75, 90, 95, 99]
+            }
+        },
+        {
+            "name": "RustStringCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "StringCalculator",
+            "description": "Memory-safe string operations with zero-copy support",
+            "default_config": {
+                "operation": "uppercase"
+            }
+        },
+        {
+            "name": "RustHashCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "HashCalculator",
+            "description": "Cryptographic and non-cryptographic hash functions",
+            "default_config": {
+                "algorithm": "sha256"
+            }
+        },
+        {
+            "name": "RustJsonCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "JsonCalculator",
+            "description": "High-performance JSON parsing and transformation",
+            "default_config": {
+                "operation": "parse",
+                "strict": false
+            }
+        },
+        {
+            "name": "RustDataValidationCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "DataValidationCalculator",
+            "description": "Memory-safe data validation with regex support",
+            "default_config": {
+                "strict_mode": false,
+                "validate_types": true
+            }
+        },
+        {
+            "name": "RustTradePricingCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "TradePricingCalculator",
+            "description": "Thread-safe trade pricing with concurrent access",
+            "default_config": {
+                "commission_rate": 0.001,
+                "tax_rate": 0.0,
+                "include_fees": true
+            }
+        },
+        {
+            "name": "RustRiskMetricsCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "RiskMetricsCalculator",
+            "description": "Financial risk metrics with parallel Monte Carlo",
+            "default_config": {
+                "var_confidence": 0.95,
+                "risk_free_rate": 0.02,
+                "monte_carlo_iterations": 10000
+            }
+        },
+        {
+            "name": "RustTimeSeriesCalculator",
+            "module": "dishtayantra_rust",
+            "rust_class": "TimeSeriesCalculator",
+            "description": "Time series analysis with moving averages and trends",
+            "default_config": {
+                "window_size": 20,
+                "operation": "sma"
+            }
+        }
+    ],
+    
+    "performance": {
+        "enable_simd": true,
+        "_simd_note": "Enable SIMD optimizations where available (AVX, SSE, NEON)",
+        "rayon_threads": 0,
+        "_rayon_note": "Number of Rayon threads for parallel operations (0 = auto)",
+        "cache_calculator_instances": true,
+        "_cache_note": "Cache calculator instances for reuse",
+        "enable_release_gil": true,
+        "_gil_note": "Release Python GIL during computations for true parallelism"
+    },
+    
+    "_documentation": {
+        "overview": "This configuration defines Rust PyO3 modules and calculators available to DishtaYantra DAGs",
+        "module_structure": "Each module is a compiled .so/.pyd file containing one or more calculator classes",
+        "calculator_interface": "Rust calculators must implement: new(name, config), calculate(data), details()",
+        "build_requirements": "Rust 1.70+, maturin, PyO3",
+        "memory_safety": "Rust guarantees memory safety and thread safety at compile time",
+        "help_page": "/help/rust-integration"
+    }
+}

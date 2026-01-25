@@ -3,18 +3,25 @@ Rust PyO3 Calculator Integration for DishtaYantra
 =================================================
 
 This module provides integration with Rust calculators compiled using PyO3.
+
+v1.7.0: Added Rust Manager support for centralized calculator management.
+
 Rust calculators offer:
 - C/C++ level performance
 - Memory safety guaranteed at compile time
 - Thread safety enforced by the type system
 - Fearless concurrency with rayon
 - Easy deployment with maturin
-- LMDB memory-mapped zero-copy exchange for large payloads (v1.1.1)
+- LMDB memory-mapped zero-copy exchange for large payloads
 
-The Rust struct must implement:
-- #[new] fn new(name: String, config: &PyDict) -> Self
-- fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult<PyObject>
-- fn details(&self, py: Python) -> PyResult<PyObject>
+Usage:
+    # Via Rust Manager (RECOMMENDED - v1.7.0)
+    from core.rust import create_rust_calculator
+    calc = create_rust_calculator("RustMathCalculator", "my_calc", {"operation": "sum"})
+    
+    # Direct usage (legacy)
+    config = {'rust_module': 'dishtayantra_rust', 'rust_class': 'MathCalculator'}
+    calc = RustCalculator('my_calc', config)
 """
 
 import importlib
@@ -37,61 +44,22 @@ class RustCalculator:
     """
     Wrapper for Rust calculators compiled with PyO3.
     
-    The Rust calculator struct must implement the same interface as Python's
-    DataCalculator:
+    v1.7.0: Now supports two initialization modes:
     
-    ```rust
-    use pyo3::prelude::*;
-    use pyo3::types::PyDict;
+    1. Rust Manager mode (recommended):
+       Uses calculator_name from rust_config.json
+       ```python
+       calc = RustCalculator('my_calc', {'calculator_name': 'RustMathCalculator'})
+       ```
     
-    #[pyclass]
-    struct MyCalculator {
-        name: String,
-        // ... fields
-    }
-    
-    #[pymethods]
-    impl MyCalculator {
-        #[new]
-        fn new(name: String, config: &PyDict) -> PyResult<Self>;
-        
-        fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult<PyObject>;
-        
-        fn details(&self, py: Python) -> PyResult<PyObject>;
-    }
-    ```
-    
-    For LMDB-enabled calculators, the Rust side can access data via memory-mapped
-    files when receiving an '_lmdb_ref' in the input dict:
-    
-    ```rust
-    fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult<PyObject> {
-        if let Ok(lmdb_ref) = data.get_item("_lmdb_ref") {
-            if lmdb_ref.is_some() && lmdb_ref.unwrap().is_true()? {
-                // Read from LMDB using lmdb-rs crate
-                let db_path: String = data.get_item("_lmdb_db_path")?.extract()?;
-                let input_key: String = data.get_item("_lmdb_input_key")?.extract()?;
-                // Use lmdb-rs to read data
-            }
-        }
-        // ...
-    }
-    ```
-    
-    Example usage:
-    
-    ```python
-    config = {
-        'rust_module': 'dishtayantra_rust',
-        'rust_class': 'MathCalculator',
-        'operation': 'sum',
-        'arguments': ['a', 'b', 'c'],
-        'lmdb_enabled': True,
-        'lmdb_min_size': 10240  # Use LMDB for payloads > 10KB
-    }
-    calc = RustCalculator('my_calc', config)
-    result = calc.calculate({'a': 1.0, 'b': 2.0, 'c': 3.0})
-    ```
+    2. Direct mode (legacy):
+       Specifies rust_module and rust_class directly
+       ```python
+       calc = RustCalculator('my_calc', {
+           'rust_module': 'dishtayantra_rust',
+           'rust_class': 'MathCalculator'
+       })
+       ```
     """
     
     def __init__(self, name: str, config: Dict[str, Any]):
@@ -100,18 +68,84 @@ class RustCalculator:
         
         Args:
             name: Calculator name
-            config: Configuration dictionary, must include:
-                    - rust_module: Name of the compiled module (e.g., 'dishtayantra_rust')
-                    - rust_class: Name of the Rust struct (e.g., 'MathCalculator')
-                    Optional:
-                    - lmdb_enabled: Enable LMDB zero-copy transport
-                    - lmdb_db_path: LMDB database path
-                    - lmdb_min_size: Min payload size to use LMDB
-                    Additional config options are passed to the Rust constructor.
+            config: Configuration dictionary with either:
+                    - calculator_name: Reference to calculator in rust_config.json (v1.7.0)
+                    OR
+                    - rust_module: Name of the compiled module
+                    - rust_class: Name of the Rust struct
         """
         self.name = name
         self.config = config
+        self._rust_instance = None
         
+        # v1.7.0: Try Rust Manager first
+        calculator_name = config.get('calculator_name') or config.get('name')
+        
+        if calculator_name:
+            if self._init_via_manager(name, calculator_name, config):
+                return
+        
+        # Fallback to direct initialization
+        self._init_direct(name, config)
+    
+    def _init_via_manager(self, name: str, calculator_name: str, config: Dict[str, Any]) -> bool:
+        """
+        Initialize calculator via Rust Manager.
+        
+        Returns:
+            True if initialization succeeded via manager
+        """
+        try:
+            from core.rust import get_rust_manager
+            
+            rust_manager = get_rust_manager()
+            
+            if not rust_manager._initialized:
+                return False
+            
+            if calculator_name not in rust_manager.calculator_definitions:
+                return False
+            
+            # Get calculator class from manager
+            definition = rust_manager.calculator_definitions[calculator_name]
+            module_name = definition.module
+            
+            # Ensure module is loaded
+            if module_name not in rust_manager.loaded_modules:
+                if not rust_manager.load_module(module_name):
+                    return False
+            
+            module = rust_manager.loaded_modules[module_name]
+            
+            if not hasattr(module, definition.rust_class):
+                return False
+            
+            calculator_class = getattr(module, definition.rust_class)
+            
+            # Merge default config with provided config
+            final_config = {**definition.default_config}
+            for k, v in config.items():
+                if k not in ('calculator_name', 'name'):
+                    final_config[k] = v
+            
+            # Create instance
+            self._rust_instance = calculator_class(name, final_config)
+            self.config = final_config
+            
+            # Setup LMDB if enabled in module config
+            self._setup_lmdb(rust_manager.module_configs[module_name].lmdb_config)
+            
+            logger.info(f"RustCalculator '{name}' created via Rust Manager: {calculator_name}")
+            return True
+            
+        except ImportError:
+            return False
+        except Exception as e:
+            logger.debug(f"Rust Manager initialization failed, falling back to direct: {e}")
+            return False
+    
+    def _init_direct(self, name: str, config: Dict[str, Any]):
+        """Initialize calculator directly with rust_module and rust_class"""
         rust_module = config.get('rust_module', 'dishtayantra_rust')
         rust_class = config.get('rust_class')
         
@@ -124,32 +158,38 @@ class RustCalculator:
             calculator_class = getattr(module, rust_class)
             
             # Create Rust calculator instance
-            # Pass the full config dict - Rust can extract what it needs
             self._rust_instance = calculator_class(name, config)
             
-            logger.info(f"RustCalculator '{name}' initialized: {rust_module}.{rust_class}")
+            logger.info(f"RustCalculator '{name}' initialized (direct): {rust_module}.{rust_class}")
             
         except ImportError as e:
             raise RuntimeError(
                 f"Failed to import Rust module '{rust_module}': {e}\n"
                 f"Ensure the module is compiled with maturin:\n"
-                f"  cd your_rust_project\n"
-                f"  maturin develop --release"
+                f"  cd rust && maturin develop --release"
             )
         except AttributeError as e:
             raise RuntimeError(f"Struct '{rust_class}' not found in module '{rust_module}': {e}")
         except Exception as e:
             raise RuntimeError(f"Failed to initialize Rust calculator: {e}")
         
-        # LMDB support (v1.1.1)
+        # Setup LMDB from config
+        self._setup_lmdb(config)
+    
+    def _setup_lmdb(self, lmdb_config: Dict[str, Any]):
+        """Setup LMDB transport if enabled"""
         self._lmdb_exchange: Optional[LMDBDataExchange] = None
         self._lmdb_enabled = False
-        if LMDB_AVAILABLE and config.get('lmdb_enabled', False):
-            lmdb_config = LMDBCalculatorConfig.from_dict(config)
-            self._lmdb_exchange = LMDBDataExchange(lmdb_config, name)
-            self._lmdb_enabled = self._lmdb_exchange.initialize()
-            if self._lmdb_enabled:
-                logger.info(f"RustCalculator '{name}' LMDB transport enabled at {lmdb_config.db_path}")
+        
+        if LMDB_AVAILABLE and lmdb_config.get('enabled', False):
+            try:
+                cfg = LMDBCalculatorConfig.from_dict(lmdb_config)
+                self._lmdb_exchange = LMDBDataExchange(cfg, self.name)
+                self._lmdb_enabled = self._lmdb_exchange.initialize()
+                if self._lmdb_enabled:
+                    logger.info(f"RustCalculator '{self.name}' LMDB transport enabled at {cfg.db_path}")
+            except Exception as e:
+                logger.warning(f"Failed to setup LMDB for RustCalculator '{self.name}': {e}")
         
         # Statistics
         self._stats = {
@@ -162,15 +202,8 @@ class RustCalculator:
         """
         Execute calculation on the Rust side.
         
-        For large payloads (configurable, default 1KB+), uses LMDB memory-mapped
-        files for zero-copy data exchange, achieving maximum performance with
-        memory safety guarantees.
-        
-        Args:
-            data: Input data dictionary
-            
-        Returns:
-            Output data dictionary from Rust calculation
+        For large payloads (configurable), uses LMDB memory-mapped
+        files for zero-copy data exchange.
         """
         start_time = time.time_ns()
         txn_id = None
@@ -199,15 +232,12 @@ class RustCalculator:
                         '_txn_id': txn_id
                     }
                     
-                    # Call Rust with LMDB reference
                     result = dict(self._rust_instance.calculate(lmdb_ref))
                     self._stats['lmdb_exchanges'] += 1
                 else:
-                    # Fallback to direct pass
                     use_lmdb = False
                     result = dict(self._rust_instance.calculate(data))
             else:
-                # Direct call for small payloads
                 result = dict(self._rust_instance.calculate(data))
             
             # If LMDB was used, check for output in LMDB
@@ -215,7 +245,6 @@ class RustCalculator:
                 lmdb_result = self._lmdb_exchange.get_output(txn_id, wait=True)
                 if lmdb_result is not None:
                     result = lmdb_result
-                # Cleanup LMDB data
                 self._lmdb_exchange.cleanup(txn_id)
             
             # Update stats
@@ -226,7 +255,6 @@ class RustCalculator:
             return result
             
         except Exception as e:
-            # Cleanup on error
             if use_lmdb and txn_id and self._lmdb_exchange:
                 try:
                     self._lmdb_exchange.cleanup(txn_id)
@@ -236,18 +264,12 @@ class RustCalculator:
             raise
     
     def details(self) -> Dict[str, Any]:
-        """
-        Get calculator details.
-        
-        Returns:
-            Dictionary containing calculator metadata and statistics
-        """
+        """Get calculator details and statistics"""
         try:
             details = dict(self._rust_instance.details())
         except Exception:
             details = {}
         
-        # Add Python-side details
         avg_time_ns = (self._stats['total_time_ns'] / self._stats['calculations']
                        if self._stats['calculations'] > 0 else 0)
         
@@ -274,15 +296,7 @@ class RustCalculator:
 
 
 def is_rust_module_available(module_name: str = 'dishtayantra_rust') -> bool:
-    """
-    Check if a Rust module is available for import.
-    
-    Args:
-        module_name: Name of the compiled module
-        
-    Returns:
-        True if module can be imported, False otherwise
-    """
+    """Check if a Rust module is available for import."""
     try:
         importlib.import_module(module_name)
         return True
@@ -291,15 +305,7 @@ def is_rust_module_available(module_name: str = 'dishtayantra_rust') -> bool:
 
 
 def get_rust_module_info(module_name: str = 'dishtayantra_rust') -> Optional[Dict[str, Any]]:
-    """
-    Get information about a Rust module.
-    
-    Args:
-        module_name: Name of the compiled module
-        
-    Returns:
-        Dictionary with module info, or None if not available
-    """
+    """Get information about a Rust module."""
     try:
         module = importlib.import_module(module_name)
         return {
@@ -313,3 +319,19 @@ def get_rust_module_info(module_name: str = 'dishtayantra_rust') -> Optional[Dic
         }
     except ImportError:
         return None
+
+
+def list_available_rust_calculators() -> list:
+    """
+    List available Rust calculators from the Rust Manager.
+    
+    v1.7.0: Returns calculator definitions from rust_config.json
+    """
+    try:
+        from core.rust import get_rust_manager
+        manager = get_rust_manager()
+        if manager._initialized:
+            return manager.list_calculators()
+    except ImportError:
+        pass
+    return []

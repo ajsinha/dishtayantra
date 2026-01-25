@@ -154,10 +154,12 @@
             <li><a href="#overview">Overview & Architecture</a></li>
             <li><a href="#why-rust">Why Rust Calculators?</a></li>
             <li><a href="#setup">Setup Guide</a></li>
+            <li><a href="#rust-manager">Rust Manager (v1.7.0)</a></li>
             <li><a href="#rust-calculator">Writing Rust Calculators</a></li>
             <li><a href="#compilation">Building on Different Platforms</a></li>
             <li><a href="#python-integration">Python Integration</a></li>
             <li><a href="#configuration">DAG Configuration</a></li>
+            <li><a href="#lmdb">LMDB Zero-Copy Transport</a></li>
             <li><a href="#examples">Complete Examples</a></li>
             <li><a href="#best-practices">Best Practices</a></li>
             <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -320,6 +322,99 @@ maturin init --bindings pyo3
     </div>
 </div>
 
+<!-- Rust Manager v1.7.0 -->
+<div class="card mb-4" id="rust-manager">
+    <div class="card-header" style="background: linear-gradient(135deg, #B7410E, #DEA584); color: white;">
+        <h5 class="mb-0"><i class="bi bi-gear-wide-connected"></i> Rust Manager (v1.7.0) <span class="badge bg-light text-dark">NEW</span></h5>
+    </div>
+    <div class="card-body">
+        <p>The <strong>Rust Manager</strong> provides centralized management of Rust PyO3 modules and calculators with memory safety guarantees.</p>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6><i class="bi bi-check-circle text-success"></i> Features</h6>
+                <ul>
+                    <li>Config-based module loading from <code>rust_config.json</code></li>
+                    <li>Automatic initialization on startup</li>
+                    <li>Calculator instance caching</li>
+                    <li>Hot-reload when config changes</li>
+                    <li>LMDB zero-copy data exchange</li>
+                    <li>maturin build automation</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-shield-check text-success"></i> Memory Safety</h6>
+                <ul>
+                    <li>No null pointers or buffer overflows</li>
+                    <li>Thread safety via type system</li>
+                    <li>Fearless concurrency with Rayon</li>
+                    <li>GIL release for true parallelism</li>
+                    <li>Zero-cost abstractions</li>
+                </ul>
+            </div>
+        </div>
+
+        <h6>Configuration: <code>config/rust_config.json</code></h6>
+        <pre class="code-block json">{
+  "rust_manager": {
+    "enabled": true,
+    "auto_load_on_startup": true,
+    "health_check_interval_seconds": 60
+  },
+  "modules": [
+    {
+      "name": "dishtayantra_rust",
+      "enabled": true,
+      "description": "Core Rust calculators with memory safety",
+      "build": {
+        "source_dir": "rust",
+        "cargo_options": ["--release"]
+      },
+      "lmdb": {
+        "enabled": false,
+        "db_path": "data/rust_lmdb",
+        "min_payload_size": 10240
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "RustMathCalculator",
+      "module": "dishtayantra_rust",
+      "rust_class": "MathCalculator",
+      "description": "Math operations with SIMD",
+      "default_config": { "operation": "sum", "precision": 6 }
+    }
+  ],
+  "performance": {
+    "enable_simd": true,
+    "rayon_threads": 0,
+    "cache_calculator_instances": true,
+    "enable_release_gil": true
+  }
+}</pre>
+
+        <h6 class="mt-4">Web UI Management</h6>
+        <p>Access the Rust Management UI at <code>/rust</code> or via Admin → Rust Management:</p>
+        <ul>
+            <li><strong>Module Status</strong> - View loaded modules and their status</li>
+            <li><strong>Load/Unload</strong> - Manage module lifecycle</li>
+            <li><strong>Build</strong> - Compile with maturin directly from UI</li>
+            <li><strong>Calculator Testing</strong> - Test calculators with sample data</li>
+            <li><strong>Config Preview</strong> - View and reload configuration</li>
+        </ul>
+        
+        <div class="d-grid gap-2 d-md-flex">
+            <a href="/rust" class="btn btn-primary">
+                <i class="bi bi-gear-wide-connected"></i> Open Rust Management
+            </a>
+            <a href="/api/rust/status" class="btn btn-outline-secondary">
+                <i class="bi bi-code-slash"></i> API Status
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Writing Rust Calculators -->
 <div class="card mb-4" id="rust-calculator">
     <div class="card-header">
@@ -329,7 +424,7 @@ maturin init --bindings pyo3
         <h6>Cargo.toml Configuration</h6>
         <pre class="code-block toml">[package]
 name = "dishtayantra_rust"
-version = "1.1.0"
+version = "1.7.0"
 edition = "2021"
 
 [lib]
@@ -724,102 +819,90 @@ copy target\release\dishtayantra_rust.dll ^
         <h5 class="mb-0"><i class="bi bi-filetype-py"></i> Python Integration</h5>
     </div>
     <div class="card-body">
-        <h6>RustCalculator Wrapper Class</h6>
-        <pre class="code-block python"># core/calculator/rust_calculator.py
-import importlib
-import logging
-from typing import Dict, Any
+        <!-- v1.7.0 Rust Manager Section -->
+        <div class="info-box">
+            <strong><i class="bi bi-star-fill text-warning"></i> v1.7.0 Rust Manager (RECOMMENDED)</strong><br>
+            Use the centralized Rust Manager for config-based calculator management with automatic module loading, caching, and LMDB support.
+        </div>
 
-logger = logging.getLogger(__name__)
+        <h6>Using Rust Manager (v1.7.0)</h6>
+        <pre class="code-block python"># Recommended: Use Rust Manager for centralized management
+from core.rust import create_rust_calculator, is_rust_available
 
-class RustCalculator:
-    """
-    Wrapper for Rust calculators compiled with PyO3.
+# Check if Rust modules are available
+if is_rust_available():
+    # Create calculator by name from rust_config.json
+    calc = create_rust_calculator(
+        "RustMathCalculator",     # Calculator name from config
+        "my_calculator",          # Instance name
+        {"operation": "mean"}     # Config overrides (optional)
+    )
     
-    The Rust struct must implement:
-    - #[new] fn new(name: String, config: &PyDict) -> Self
-    - fn calculate(&mut self, py: Python, data: &PyDict) -> PyResult&lt;PyObject&gt;
-    - fn details(&self, py: Python) -> PyResult&lt;PyObject&gt;
-    """
-    
-    def __init__(self, name: str, config: Dict[str, Any]):
-        """
-        Initialize Rust calculator wrapper.
-        
-        Args:
-            name: Calculator name
-            config: Configuration dict, must include:
-                    - rust_module: Name of the compiled module (e.g., 'dishtayantra_rust')
-                    - rust_class: Name of the Rust struct (e.g., 'MathCalculator')
-        """
-        self.name = name
-        self.config = config
-        
-        rust_module = config.get('rust_module', 'dishtayantra_rust')
-        rust_class = config.get('rust_class')
-        
-        if not rust_class:
-            raise ValueError("rust_class must be specified for Rust calculators")
-        
-        try:
-            # Import the compiled module
-            module = importlib.import_module(rust_module)
-            calculator_class = getattr(module, rust_class)
-            
-            # Create Rust calculator instance
-            self._rust_instance = calculator_class(name, config)
-            
-            logger.info(f"RustCalculator '{name}' initialized: {rust_module}.{rust_class}")
-            
-        except ImportError as e:
-            raise RuntimeError(f"Failed to import Rust module '{rust_module}': {e}")
-        except AttributeError as e:
-            raise RuntimeError(f"Struct '{rust_class}' not found in module '{rust_module}': {e}")
-    
-    def calculate(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute calculation on the Rust side."""
-        return dict(self._rust_instance.calculate(data))
-    
-    def details(self) -> Dict[str, Any]:
-        """Get calculator details."""
-        details = dict(self._rust_instance.details())
-        details['wrapper'] = 'RustCalculator'
-        return details</pre>
+    # Use calculator
+    result = calc.calculate({"values": [1.0, 2.0, 3.0, 4.0, 5.0]})
+    print(result)  # {"values": [...], "result": 3.0, "operation": "mean"}</pre>
 
-        <h6 class="mt-4">Using Rust Calculators in Python</h6>
-        <pre class="code-block python"># Direct usage
+        <h6 class="mt-4">Available Calculators via Rust Manager</h6>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Calculator Name</th>
+                        <th>Rust Class</th>
+                        <th>Description</th>
+                        <th>Key Config</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>RustPassthroughCalculator</code></td><td>PassthroughCalculator</td><td>Returns input unchanged</td><td>-</td></tr>
+                    <tr><td><code>RustMathCalculator</code></td><td>MathCalculator</td><td>Math operations (sum, mean, variance)</td><td>operation, precision</td></tr>
+                    <tr><td><code>RustStatisticsCalculator</code></td><td>StatisticsCalculator</td><td>Statistical analysis with percentiles</td><td>compute_percentiles</td></tr>
+                    <tr><td><code>RustStringCalculator</code></td><td>StringCalculator</td><td>String operations</td><td>operation</td></tr>
+                    <tr><td><code>RustHashCalculator</code></td><td>HashCalculator</td><td>Hash functions (SHA256, FNV)</td><td>algorithm</td></tr>
+                    <tr><td><code>RustJsonCalculator</code></td><td>JsonCalculator</td><td>JSON parsing/transformation</td><td>operation, strict</td></tr>
+                    <tr><td><code>RustDataValidationCalculator</code></td><td>DataValidationCalculator</td><td>Data validation</td><td>required_fields, strict_mode</td></tr>
+                    <tr><td><code>RustTradePricingCalculator</code></td><td>TradePricingCalculator</td><td>Trade pricing</td><td>commission_rate, tax_rate</td></tr>
+                    <tr><td><code>RustRiskMetricsCalculator</code></td><td>RiskMetricsCalculator</td><td>VaR and risk metrics</td><td>var_confidence</td></tr>
+                    <tr><td><code>RustTimeSeriesCalculator</code></td><td>TimeSeriesCalculator</td><td>Moving averages</td><td>window_size, operation</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h6 class="mt-4">Direct RustCalculator Usage (Legacy)</h6>
+        <pre class="code-block python"># Legacy: Direct usage without Rust Manager
 from core.calculator.rust_calculator import RustCalculator
 
-# Create calculator
 config = {
     'rust_module': 'dishtayantra_rust',
     'rust_class': 'MathCalculator',
     'operation': 'mean',
-    'arguments': ['price1', 'price2', 'price3'],
-    'output_attribute': 'avg_price'
+    'precision': 6
 }
 calc = RustCalculator('price_avg', config)
 
 # Use calculator
-data = {'price1': 100.0, 'price2': 105.0, 'price3': 98.0}
-result = calc.calculate(data)
-print(result)  # {'price1': 100.0, 'price2': 105.0, 'price3': 98.0, 'avg_price': 101.0}
-
-# Get details
-print(calc.details())</pre>
+result = calc.calculate({"values": [100.0, 105.0, 98.0]})
+print(result)  # {"values": [...], "result": 101.0}</pre>
 
         <h6 class="mt-4">CalculatorFactory Integration</h6>
-        <pre class="code-block python"># The CalculatorFactory automatically handles Rust calculators
-from core.calculator.core_calculator import CalculatorFactory
-
-config = {
-    'calculator': 'rust',
-    'rust_module': 'dishtayantra_rust',
-    'rust_class': 'TradePricingCalculator',
-    'commission_rate': 0.002
+        <pre class="code-block python"># v1.7.0: Use calculator name from rust_config.json (RECOMMENDED)
+node_config = {
+    "calculator": {
+        "type": "rust",
+        "name": "RustTradePricingCalculator"  # Name from config
+    },
+    "config": {
+        "commission_rate": 0.002
+    }
 }
 
-calc = CalculatorFactory.create('pricing_calc', config)</pre>
+# Legacy: Direct class specification
+node_config = {
+    "calculator": "rust",
+    "rust_module": "dishtayantra_rust",
+    "rust_class": "TradePricingCalculator",
+    "commission_rate": 0.002
+}</pre>
     </div>
 </div>
 
@@ -829,42 +912,67 @@ calc = CalculatorFactory.create('pricing_calc', config)</pre>
         <h5 class="mb-0"><i class="bi bi-filetype-json"></i> DAG Configuration</h5>
     </div>
     <div class="card-body">
-        <p>Configure a Rust calculator in your DAG JSON:</p>
-        
+        <!-- v1.7.0 Recommended Approach -->
+        <div class="info-box">
+            <strong><i class="bi bi-star-fill text-warning"></i> v1.7.0 Recommended Approach</strong><br>
+            Use <code>calculator.type</code> and <code>calculator.name</code> to reference calculators from <code>rust_config.json</code>.
+        </div>
+
+        <h6>v1.7.0 Recommended DAG Configuration</h6>
         <pre class="code-block json">{
-  "name": "rust_powered_dag",
-  "start_time": "0900",
-  "duration": "8h",
+  "name": "rust_math_pipeline_dag",
+  "description": "Math pipeline using Rust calculators",
   "nodes": [
     {
-      "id": "subscriber",
-      "type": "SubscriptionNode",
-      "subscribers": [
-        {"uri": "kafka://trades:raw_trades"}
-      ]
+      "name": "data_source",
+      "type": "SourceNode",
+      "source": { "type": "inmemory", "topic": "rust_input" }
     },
     {
-      "id": "rust_pricing",
-      "type": "CalculationNode",
-      "calculator": "rust",
-      "rust_module": "dishtayantra_rust",
-      "rust_class": "TradePricingCalculator",
-      "commission_rate": 0.001,
-      "tax_rate": 0.0,
-      "include_vat": false
+      "name": "math_calc",
+      "type": "CalculatorNode",
+      "calculator": {
+        "type": "rust",
+        "name": "RustMathCalculator"
+      },
+      "config": {
+        "operation": "mean",
+        "precision": 8
+      }
     },
     {
-      "id": "publisher",
-      "type": "PublicationNode",
-      "publishers": [
-        {"uri": "kafka://trades:priced_trades"}
-      ]
+      "name": "stats_calc",
+      "type": "CalculatorNode",
+      "calculator": {
+        "type": "rust",
+        "name": "RustStatisticsCalculator"
+      },
+      "config": {
+        "compute_percentiles": true
+      }
+    },
+    {
+      "name": "results_sink",
+      "type": "SinkNode",
+      "destination": { "type": "inmemory", "topic": "rust_results" }
     }
   ],
   "edges": [
-    {"from": "subscriber", "to": "rust_pricing"},
-    {"from": "rust_pricing", "to": "publisher"}
+    {"from": "data_source", "to": "math_calc"},
+    {"from": "math_calc", "to": "stats_calc"},
+    {"from": "stats_calc", "to": "results_sink"}
   ]
+}</pre>
+
+        <h6 class="mt-4">Legacy DAG Configuration</h6>
+        <pre class="code-block json">{
+  "name": "rust_pricing_node",
+  "type": "CalculatorNode",
+  "calculator": "rust",
+  "rust_module": "dishtayantra_rust",
+  "rust_class": "TradePricingCalculator",
+  "commission_rate": 0.001,
+  "tax_rate": 0.0
 }</pre>
 
         <h6 class="mt-4">Configuration Options</h6>
@@ -877,28 +985,94 @@ calc = CalculatorFactory.create('pricing_calc', config)</pre>
                 </tr>
             </thead>
             <tbody>
+                <tr class="table-success">
+                    <td><code>calculator.type</code></td>
+                    <td>Yes (v1.7.0)</td>
+                    <td>Set to <code>"rust"</code> for Rust calculators</td>
+                </tr>
+                <tr class="table-success">
+                    <td><code>calculator.name</code></td>
+                    <td>Yes (v1.7.0)</td>
+                    <td>Calculator name from <code>rust_config.json</code></td>
+                </tr>
                 <tr>
                     <td><code>calculator</code></td>
-                    <td>Yes</td>
+                    <td>Yes (legacy)</td>
                     <td>Set to <code>"rust"</code> for Rust calculators</td>
                 </tr>
                 <tr>
-                    <td><code>rust_module</code></td>
-                    <td>No</td>
-                    <td>Module name (default: <code>dishtayantra_rust</code>)</td>
-                </tr>
-                <tr>
                     <td><code>rust_class</code></td>
-                    <td>Yes</td>
+                    <td>Yes (legacy)</td>
                     <td>Rust struct name to instantiate</td>
                 </tr>
                 <tr>
-                    <td><em>any other</em></td>
+                    <td><code>config.*</code></td>
                     <td>No</td>
-                    <td>Passed to Rust constructor as config dict</td>
+                    <td>Configuration passed to Rust constructor</td>
                 </tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- LMDB Zero-Copy Transport -->
+<div class="card mb-4" id="lmdb">
+    <div class="card-header" style="background: linear-gradient(135deg, #059669, #047857); color: white;">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> LMDB Zero-Copy Transport (v1.7.0)</h5>
+    </div>
+    <div class="card-body">
+        <p>For large payloads (&gt;10KB), enable LMDB memory-mapped data exchange for lightning-fast zero-copy transfer between Python and Rust.</p>
+        
+        <div class="performance-card">
+            <h5><i class="bi bi-speedometer2"></i> Performance Benefit</h5>
+            <div class="performance-metric">
+                <span>Small Payload (&lt;1KB)</span>
+                <span class="text-success">~50-100ns (direct)</span>
+            </div>
+            <div class="performance-metric">
+                <span>Large Payload (100KB) - Without LMDB</span>
+                <span class="text-warning">~500μs (serialization)</span>
+            </div>
+            <div class="performance-metric">
+                <span>Large Payload (100KB) - With LMDB</span>
+                <span class="text-success">~5μs (zero-copy) ⚡ 100x faster</span>
+            </div>
+        </div>
+
+        <h6>Enable LMDB in rust_config.json</h6>
+        <pre class="code-block json">{
+  "modules": [
+    {
+      "name": "dishtayantra_rust",
+      "enabled": true,
+      "lmdb": {
+        "enabled": true,
+        "db_path": "data/rust_lmdb",
+        "db_name": "rust_exchange",
+        "map_size_mb": 256,
+        "min_payload_size": 10240
+      }
+    }
+  ]
+}</pre>
+
+        <h6 class="mt-4">How LMDB Works</h6>
+        <ol>
+            <li><strong>Python Side:</strong> If payload &gt; <code>min_payload_size</code>, data is written to LMDB</li>
+            <li><strong>Reference Passing:</strong> Only LMDB key reference passed to Rust</li>
+            <li><strong>Rust Side:</strong> Memory-mapped read from LMDB (zero-copy)</li>
+            <li><strong>Result:</strong> Rust writes result to LMDB, Python reads via zero-copy</li>
+        </ol>
+
+        <div class="tip-box">
+            <strong><i class="bi bi-lightbulb"></i> Best Practice:</strong> Enable LMDB when processing:
+            <ul class="mb-0">
+                <li>Large JSON documents (&gt;10KB)</li>
+                <li>Batch data with many records</li>
+                <li>Binary or image data</li>
+                <li>High-throughput streaming pipelines</li>
+            </ul>
+        </div>
     </div>
 </div>
 

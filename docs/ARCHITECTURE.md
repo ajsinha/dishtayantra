@@ -451,6 +451,210 @@ Main Process                          Worker Process
 
 ---
 
+## CPP Manager Architecture
+
+### Overview (v1.7.0)
+
+The CPP Manager provides centralized management of C++ pybind11 modules and calculators for high-performance native computation.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CPP Manager (v1.7.0)                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Configuration: config/cpp_config.json                               │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  {                                                              │ │
+│  │    "cpp_manager": {                                             │ │
+│  │      "enabled": true,                                           │ │
+│  │      "auto_load_on_startup": true                               │ │
+│  │    },                                                           │ │
+│  │    "modules": [...],                                            │ │
+│  │    "calculators": [...]                                         │ │
+│  │  }                                                              │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  Module Management:                                                  │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  - Automatic module loading on startup                          │ │
+│  │  - Hot reload support                                           │ │
+│  │  - Build automation via CMake                                   │ │
+│  │  - Calculator instance caching                                  │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  Available Calculators:                                              │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  • PassthroughCalculator    • MatrixCalculator                 │ │
+│  │  • MathCalculator           • StringTransformCalculator        │ │
+│  │  • StatisticsCalculator     • DataValidationCalculator         │ │
+│  │  • TradePricingCalculator   • RiskMetricsCalculator            │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### C++ Module Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     C++ Module Integration                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Python Process                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │  CPP Manager                                                    │ │
+│  │  ┌──────────────────┐    ┌──────────────────────────────────┐  │ │
+│  │  │ module_configs   │    │ dishtayantra_cpp.so              │  │ │
+│  │  │ loaded_modules   │───▶│                                  │  │ │
+│  │  │ calculator_cache │    │ ┌────────────────────────────┐   │  │ │
+│  │  └──────────────────┘    │ │ Calculator Classes:        │   │  │ │
+│  │                          │ │ - MathCalculator           │   │  │ │
+│  │  Performance:            │ │ - StatisticsCalculator     │   │  │ │
+│  │  ~100ns call overhead    │ │ - TradePricingCalculator   │   │  │ │
+│  │  Zero-copy data transfer │ │ - RiskMetricsCalculator    │   │  │ │
+│  │                          │ └────────────────────────────┘   │  │ │
+│  │                          └──────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### CPP Manager API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/cpp/status` | GET | Get CPP Manager status |
+| `/api/cpp/modules` | GET | List all modules |
+| `/api/cpp/modules/{name}/load` | POST | Load a module |
+| `/api/cpp/modules/{name}/unload` | POST | Unload a module |
+| `/api/cpp/modules/{name}/reload` | POST | Reload a module |
+| `/api/cpp/modules/{name}/build` | POST | Build module via CMake |
+| `/api/cpp/calculators` | GET | List calculator definitions |
+| `/api/cpp/calculators/{name}/test` | POST | Test a calculator |
+| `/api/cpp/config` | GET | Get configuration |
+| `/api/cpp/reload-config` | POST | Reload configuration |
+
+### Worker Process Integration
+
+Similar to JVM Manager, CPP Manager works across main and worker processes:
+
+```
+┌──────────────────────────────────┐  ┌──────────────────────────────────┐
+│         Main Process             │  │        Worker Process            │
+│  ┌────────────────────────────┐  │  │  ┌────────────────────────────┐  │
+│  │  CPP Manager               │  │  │  │  CPP Manager               │  │
+│  │  (singleton)               │  │  │  │  (separate instance)       │  │
+│  │                            │  │  │  │                            │  │
+│  │  - Loads config            │  │  │  │  - Reads same config       │  │
+│  │  - Manages modules         │  │  │  │  - Independent modules     │  │
+│  │  - Caches calculators      │  │  │  │  - Own calculator cache    │  │
+│  └────────────────────────────┘  │  │  └────────────────────────────┘  │
+│            │                      │  │            │                     │
+│            ▼                      │  │            ▼                     │
+│  ┌────────────────────────────┐  │  │  ┌────────────────────────────┐  │
+│  │  dishtayantra_cpp.so       │  │  │  │  dishtayantra_cpp.so       │  │
+│  │  (loaded in-process)       │  │  │  │  (loaded in-process)       │  │
+│  └────────────────────────────┘  │  │  └────────────────────────────┘  │
+└──────────────────────────────────┘  └──────────────────────────────────┘
+```
+
+---
+
+## Rust Manager Architecture
+
+### Overview (v1.7.0)
+
+The Rust Manager provides centralized management of Rust PyO3 modules and calculators with memory safety guarantees at compile time.
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        Rust Manager (v1.7.0)                              │
+├──────────────────────────────────────────────────────────────────────────┤
+│  config/rust_config.json                                                  │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  {                                                                   │ │
+│  │    "rust_manager": { "enabled": true, "auto_load_on_startup": true },│ │
+│  │    "modules": [                                                      │ │
+│  │      { "name": "dishtayantra_rust", "enabled": true,                │ │
+│  │        "lmdb": { "enabled": false, "min_payload_size": 10240 } }    │ │
+│  │    ],                                                                │ │
+│  │    "calculators": [                                                  │ │
+│  │      { "name": "RustMathCalculator", "rust_class": "MathCalculator" }│ │
+│  │    ],                                                                │ │
+│  │    "performance": { "enable_simd": true, "rayon_threads": 0 }       │ │
+│  │  }                                                                   │ │
+│  └────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Rust Module Management
+
+- **Auto-load**: Modules loaded on application startup via `rust_config.json`
+- **Hot-reload**: Config changes detected and applied without restart
+- **maturin Build**: Built-in support for compiling with `maturin develop --release`
+- **Calculator Caching**: Instances cached for reuse
+- **LMDB Support**: Zero-copy data exchange for payloads > 10KB
+
+### Available Rust Calculators
+
+| Calculator | Description | Key Config |
+|------------|-------------|------------|
+| `RustPassthroughCalculator` | Returns input unchanged | - |
+| `RustMathCalculator` | Math operations (sum, mean, variance) | `operation`, `precision` |
+| `RustStatisticsCalculator` | Statistical analysis with percentiles | `compute_percentiles`, `percentile_values` |
+| `RustStringCalculator` | String operations | `operation` (uppercase, lowercase, etc.) |
+| `RustHashCalculator` | Hash functions | `algorithm` (sha256, xxhash) |
+| `RustJsonCalculator` | JSON parsing/transformation | `operation`, `strict` |
+| `RustDataValidationCalculator` | Data validation | `required_fields`, `strict_mode` |
+| `RustTradePricingCalculator` | Trade pricing | `commission_rate`, `tax_rate` |
+| `RustRiskMetricsCalculator` | VaR and risk metrics | `var_confidence`, `risk_free_rate` |
+| `RustTimeSeriesCalculator` | Moving averages | `window_size`, `operation` (sma, ema, wma) |
+
+### Rust Manager API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/rust/status` | GET | Get Rust Manager status |
+| `/api/rust/modules` | GET | List all configured modules |
+| `/api/rust/modules/<name>/load` | POST | Load a module |
+| `/api/rust/modules/<name>/unload` | POST | Unload a module |
+| `/api/rust/modules/<name>/reload` | POST | Reload a module |
+| `/api/rust/modules/<name>/build` | POST | Build with maturin |
+| `/api/rust/calculators` | GET | List all calculators |
+| `/api/rust/calculators/<name>/test` | POST | Test a calculator |
+
+### Worker Process Integration
+
+```
+┌──────────────────────────────────┐  ┌──────────────────────────────────┐
+│        Main Process               │  │      Worker Process               │
+│  ┌────────────────────────────┐  │  │  ┌────────────────────────────┐  │
+│  │  Rust Manager              │  │  │  │  Rust Manager              │  │
+│  │  (singleton)               │  │  │  │  (separate instance)       │  │
+│  │                            │  │  │  │                            │  │
+│  │  - Loads config            │  │  │  │  - Reads same config       │  │
+│  │  - Manages modules         │  │  │  │  - Independent modules     │  │
+│  │  - Caches calculators      │  │  │  │  - Own calculator cache    │  │
+│  └────────────────────────────┘  │  │  └────────────────────────────┘  │
+│            │                      │  │            │                     │
+│            ▼                      │  │            ▼                     │
+│  ┌────────────────────────────┐  │  │  ┌────────────────────────────┐  │
+│  │  dishtayantra_rust.so      │  │  │  │  dishtayantra_rust.so      │  │
+│  │  (loaded in-process)       │  │  │  │  (loaded in-process)       │  │
+│  └────────────────────────────┘  │  │  └────────────────────────────┘  │
+└──────────────────────────────────┘  └──────────────────────────────────┘
+```
+
+### Rust Memory Safety Benefits
+
+- **Compile-time guarantees**: No null pointers, buffer overflows, or data races
+- **Ownership system**: Memory automatically managed without garbage collection
+- **Thread safety**: Fearless concurrency with Send/Sync traits
+- **Zero-cost abstractions**: High-level APIs with C-level performance
+- **GIL release**: Rayon parallel processing releases Python GIL
+
+---
+
 ## Multi-Language Calculator Architecture
 
 ### Calculator Factory Pattern

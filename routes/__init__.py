@@ -2,7 +2,7 @@
 Routes Module - Contains all application route handlers
 ========================================================
 
-Version: 1.6.0
+Version: 1.7.0
 """
 from .auth_routes import AuthRoutes
 from .noauth_routes import NoAuthRoutes
@@ -14,6 +14,8 @@ from .dagdesigner_routes import DAGDesignerRoutes
 from .metrics_routes import MetricsRoutes
 from .worker_routes import WorkerRoutes
 from .jvm_routes import JVMRoutes
+from .cpp_routes import CPPRoutes
+from .rust_routes import RustRoutes
 
 __all__ = [
     'AuthRoutes',
@@ -25,5 +27,7 @@ __all__ = [
     'DAGDesignerRoutes',
     'MetricsRoutes',
     'WorkerRoutes',
-    'JVMRoutes'
+    'JVMRoutes',
+    'CPPRoutes',
+    'RustRoutes'
 ]

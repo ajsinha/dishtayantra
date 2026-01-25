@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Rust Calculators - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-calculator" style="color: #B7410E;"></i> Rust Calculators</h2>
+    <a href="/rust" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Management
+    </a>
+</div>
+
+<div class="row">
+    {% for calc in calculators %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ calc.name }}</h5>
+                    {% if calc.available %}
+                    <span class="badge bg-success">Available</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Unavailable</span>
+                    {% endif %}
+                </div>
+                <p class="text-muted small">{{ calc.description }}</p>
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <strong>Module:</strong> {{ calc.module }}<br>
+                        <strong>Struct:</strong> {{ calc.rust_class }}
+                    </small>
+                </div>
+                <a href="/rust/calculator/{{ calc.name }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No Rust calculators defined.
+            Configure calculators in <code>config/rust_config.json</code>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

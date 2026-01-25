@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}C++ Calculators - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculator-card {
+        border-left: 4px solid #00599C;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .calculator-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 89, 156, 0.15);
+    }
+    .calculator-badge {
+        background: linear-gradient(135deg, #00599C, #004482);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    .module-badge {
+        background: linear-gradient(135deg, #64748b, #475569);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+    }
+    .cpp-class {
+        font-family: 'Monaco', 'Menlo', monospace;
+        background: #f1f5f9;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/cpp">C++ Management</a></li>
+                <li class="breadcrumb-item active">Calculators</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">
+            <i class="bi bi-calculator text-primary"></i> C++ Calculators
+        </h2>
+    </div>
+    <a href="/cpp" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to C++ Management
+    </a>
+</div>
+
+<!-- Calculator Count -->
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>{{ calculators | length }}</strong> calculator(s) defined in <code>cpp_config.json</code>
+</div>
+
+<!-- Calculators Grid -->
+<div class="row g-4">
+    {% for calc in calculators %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card calculator-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="calculator-badge">{{ calc.name }}</span>
+                    {% if calc.available %}
+                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Available</span>
+                    {% else %}
+                    <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Not Available</span>
+                    {% endif %}
+                </div>
+                
+                <p class="text-muted small mb-3">{{ calc.description or 'No description available' }}</p>
+                
+                <div class="mb-2">
+                    <small class="text-muted">Module:</small>
+                    <span class="module-badge">{{ calc.module }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">C++ Class:</small>
+                    <span class="cpp-class">{{ calc.cpp_class }}</span>
+                </div>
+                
+                <a href="/cpp/calculator/{{ calc.name }}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-eye"></i> View Details & Usage
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5><i class="bi bi-exclamation-triangle"></i> No Calculators Defined</h5>
+            <p class="mb-0">Add calculator definitions to <code>config/cpp_config.json</code></p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -99,7 +99,7 @@
     <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
     <h1>DishtaYantra</h1>
     <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
-    <span class="version-badge">Version 1.6.0</span>
+    <span class="version-badge">Version 1.7.0</span>
 </div>
 
 <!-- Navigation Buttons -->
@@ -555,12 +555,205 @@
     </div>
 </div>
 
+<!-- What's New in 1.7.0 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card" style="border: 2px solid #00599C;">
+            <div class="card-header" style="background: linear-gradient(135deg, #00599C, #004482); color: white;">
+                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.0 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
+            </div>
+            <div class="card-body">
+                <!-- CPP Manager -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-cpu"></i> CPP Manager & pybind11 Integration Enhancement (1.7.0) <span class="badge" style="background: linear-gradient(135deg, #00599C, #004482);">MAJOR</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-gear-fill" style="color: #00599C;"></i> Config-Based C++ Module Management</h6>
+                        <ul>
+                            <li><strong>cpp_config.json</strong> - Centralized configuration for C++ modules</li>
+                            <li>Multiple module support with automatic loading</li>
+                            <li>Auto-initialization when application properties are loaded</li>
+                            <li>Calculator instance caching and pooling</li>
+                            <li>LMDB zero-copy data exchange support</li>
+                            <li><strong>Config monitoring</strong> - Hot reload when config changes</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-braces" style="color: #004482;"></i> High-Performance C++ Calculators</h6>
+                        <ul>
+                            <li><strong>~100ns call overhead</strong> (vs ~100-500μs for Java/Py4J)</li>
+                            <li>Direct memory sharing with Python (zero-copy)</li>
+                            <li>SIMD optimization opportunities</li>
+                            <li>CMake-based build system</li>
+                            <li>Web UI build and reload support</li>
+                            <li>Worker process awareness for distributed execution</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Pre-configured C++ Calculators -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-calculator"></i> Pre-configured C++ Calculators (1.7.0) <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <p>Define calculator configurations in cpp_config.json and reference them by name in DAGs:</p>
+                        <ul class="list-inline">
+                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">PassthroughCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">MathCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">StatisticsCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">MatrixCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">StringTransformCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">DataValidationCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #004482;">TradePricingCalculator</span></li>
+                            <li class="list-inline-item"><span class="badge" style="background: #004482;">RiskMetricsCalculator</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Web UI for CPP Management -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-window"></i> C++ Management Web UI (1.7.0) <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>/cpp</strong> - C++ Management dashboard</li>
+                            <li>Module status and health monitoring</li>
+                            <li>Load/unload/reload modules via UI</li>
+                            <li>Build modules with one click (CMake)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li>Calculator definitions and usage examples</li>
+                            <li>Configuration preview and editing</li>
+                            <li>Performance metrics display</li>
+                            <li>API endpoints for automation</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Example DAGs -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> C++ Calculator Example DAGs (1.7.0) <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Ready-to-use example DAGs in <code>config/example/dags/</code>:</p>
+                        <ul class="list-inline">
+                            <li class="list-inline-item"><span class="badge bg-secondary">cpp_math_pipeline_dag.json</span></li>
+                            <li class="list-inline-item"><span class="badge bg-secondary">cpp_trade_pricing_dag.json</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Rust Manager Section -->
+                <hr class="my-4">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-gear-wide-connected"></i> Rust Manager & PyO3 Integration Enhancement (1.7.0) <span class="badge" style="background: linear-gradient(135deg, #B7410E, #DEA584);">MAJOR</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Config-based Rust Module Management:</strong></p>
+                        <ul>
+                            <li><code>config/rust_config.json</code> - Central configuration</li>
+                            <li>Automatic module loading on startup</li>
+                            <li>Hot-reload when config changes</li>
+                            <li>LMDB zero-copy support for large payloads</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Memory Safety Guarantees:</strong></p>
+                        <ul>
+                            <li>Compile-time memory safety via Rust ownership</li>
+                            <li>Thread safety enforced by the type system</li>
+                            <li>Rayon parallel processing with GIL release</li>
+                            <li>~50ns call overhead for maximum performance</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-calculator"></i> Pre-configured Rust Calculators (1.7.0) <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>RustMathCalculator</strong> - Math operations with SIMD</li>
+                            <li><strong>RustStatisticsCalculator</strong> - Statistical analysis</li>
+                            <li><strong>RustStringCalculator</strong> - Memory-safe string ops</li>
+                            <li><strong>RustHashCalculator</strong> - SHA256, FNV hashing</li>
+                            <li><strong>RustJsonCalculator</strong> - Fast JSON parsing</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>RustDataValidationCalculator</strong> - Type-safe validation</li>
+                            <li><strong>RustTradePricingCalculator</strong> - Thread-safe pricing</li>
+                            <li><strong>RustRiskMetricsCalculator</strong> - VaR, Greeks</li>
+                            <li><strong>RustTimeSeriesCalculator</strong> - Moving averages</li>
+                            <li><strong>RustPassthroughCalculator</strong> - Testing/benchmarks</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-window"></i> Rust Management Web UI (1.7.0) <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <p>Access at <code>/rust</code> - Features include:</p>
+                        <ul class="list-inline">
+                            <li class="list-inline-item"><span class="badge bg-success">Module Load/Unload</span></li>
+                            <li class="list-inline-item"><span class="badge bg-warning text-dark">Hot Reload</span></li>
+                            <li class="list-inline-item"><span class="badge bg-primary">maturin Build</span></li>
+                            <li class="list-inline-item"><span class="badge bg-info">Calculator Testing</span></li>
+                            <li class="list-inline-item"><span class="badge bg-secondary">Config Preview</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> Rust Calculator Example DAGs (1.7.0) <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <p>Ready-to-use example DAGs:</p>
+                        <ul class="list-inline">
+                            <li class="list-inline-item"><span class="badge bg-secondary">rust_math_pipeline_dag.json</span></li>
+                            <li class="list-inline-item"><span class="badge bg-secondary">rust_timeseries_analysis_dag.json</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- What's New in 1.6.0 -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card" style="border: 2px solid #f89820;">
             <div class="card-header" style="background: linear-gradient(135deg, #f89820, #ea6227); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.6.0 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
+                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.6.0</h5>
             </div>
             <div class="card-body">
                 <!-- JVM Manager -->

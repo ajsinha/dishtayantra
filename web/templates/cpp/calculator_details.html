@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}{{ calculator.name }} - C++ Calculator - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculator-hero {
+        background: linear-gradient(135deg, #00599C 0%, #004482 50%, #003366 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+    .calculator-hero h2 {
+        color: white;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .code-block.json { border-left: 4px solid #10b981; }
+    .code-block.python { border-left: 4px solid #3776ab; }
+    .code-block.cpp { border-left: 4px solid #00599C; }
+    .cpp-class-display {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        word-break: break-all;
+    }
+    .module-badge {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    .calculator-badge {
+        background: linear-gradient(135deg, #00599C, #004482);
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/cpp">C++ Management</a></li>
+                <li class="breadcrumb-item"><a href="/cpp/calculators">Calculators</a></li>
+                <li class="breadcrumb-item active">{{ calculator.name }}</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">
+            <i class="bi bi-calculator text-primary"></i> 
+            <span class="calculator-badge">{{ calculator.name }}</span>
+        </h2>
+    </div>
+    <a href="/cpp/calculators" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Calculators
+    </a>
+</div>
+
+<!-- Calculator Info -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Calculator Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Name:</th>
+                        <td><strong>{{ calculator.name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Module:</th>
+                        <td>
+                            <a href="/cpp/module/{{ calculator.module }}">
+                                <span class="module-badge">{{ calculator.module }}</span>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td>
+                            {% if module_loaded %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Available</span>
+                            {% else %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Module Not Loaded</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">C++ Class:</th>
+                        <td><span class="cpp-class-display">{{ calculator.cpp_class }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Description:</th>
+                        <td>{{ calculator.description or 'No description' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Default Configuration -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Default Configuration</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Default configuration values for this calculator:</p>
+        <div class="code-block json">{{ calculator.default_config | tojson(indent=2) }}</div>
+    </div>
+</div>
+
+<!-- Usage Examples -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> DAG Configuration Example</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Use this calculator in a DAG node:</p>
+                <div class="code-block json" id="dag-example"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-code-slash"></i> Python Usage Example</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Use this calculator directly in Python:</p>
+                <div class="code-block python" id="python-example"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Related Resources -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Related Resources</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <a href="/cpp/module/{{ calculator.module }}" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-box-seam"></i> View Module: {{ calculator.module }}
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/help/pybind11-integration" class="btn btn-outline-info w-100 mb-2">
+                    <i class="bi bi-book"></i> pybind11 Integration Guide
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="/help/calculators" class="btn btn-outline-secondary w-100 mb-2">
+                    <i class="bi bi-calculator"></i> Calculator Documentation
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Generate DAG example
+    const dagExample = {
+        "name": "cpp_{{ calculator.name | lower }}_node",
+        "type": "CalculatorNode",
+        "calculator": {
+            "type": "cpp",
+            "name": "{{ calculator.name }}"
+        },
+        "config": {{ calculator.default_config | tojson }}
+    };
+    document.getElementById('dag-example').textContent = JSON.stringify(dagExample, null, 2);
+    
+    // Generate Python example
+    const pythonExample = `# Using CPP Manager (recommended)
+from core.cpp import create_cpp_calculator
+
+# Create calculator instance
+calc = create_cpp_calculator(
+    "{{ calculator.name }}",
+    "my_{{ calculator.name | lower }}",
+    ${JSON.stringify({{ calculator.default_config | tojson }}, null, 4).replace(/^/gm, '    ').trim()}
+)
+
+# Execute calculation
+result = calc.calculate({
+    "input_data": [1.0, 2.0, 3.0]
+})
+print(result)
+
+# Alternative: Direct instantiation
+from core.calculator import CppCalculator
+
+calc = CppCalculator("my_calc", {
+    "cpp_module": "{{ calculator.module }}",
+    "cpp_class": "{{ calculator.cpp_class }}",
+    **${JSON.stringify({{ calculator.default_config | tojson }})}
+})`;
+    document.getElementById('python-example').textContent = pythonExample;
+    
+    // Highlight code blocks
+    if (typeof Prism !== 'undefined') {
+        document.querySelectorAll('.code-block').forEach(block => {
+            const code = block.textContent;
+            const lang = block.classList.contains('json') ? 'json' : 
+                        block.classList.contains('python') ? 'python' : 'none';
+            if (lang !== 'none' && Prism.languages[lang]) {
+                block.innerHTML = Prism.highlight(code, Prism.languages[lang], lang);
+            }
+        });
+    }
+</script>
+{% endblock %}

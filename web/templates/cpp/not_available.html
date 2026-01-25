@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}C++ Integration Not Available - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> C++ Integration Not Available</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">The C++ calculator module is not currently loaded or available.</p>
+                    
+                    <h5 class="mt-4">Possible Reasons:</h5>
+                    <ul>
+                        <li>The <code>dishtayantra_cpp.so</code> module hasn't been built yet</li>
+                        <li>pybind11 is not installed</li>
+                        <li>The module file is not in Python's path</li>
+                        <li>CPP Manager is disabled in <code>config/cpp_config.json</code></li>
+                    </ul>
+                    
+                    <h5 class="mt-4">How to Build:</h5>
+                    <div class="bg-dark text-light p-3 rounded mb-3">
+                        <code>
+cd cpp<br>
+mkdir build && cd build<br>
+cmake ..<br>
+make
+                        </code>
+                    </div>
+                    
+                    <h5 class="mt-4">Prerequisites:</h5>
+                    <ul>
+                        <li>CMake 3.14 or later</li>
+                        <li>C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)</li>
+                        <li>pybind11: <code>pip install pybind11</code></li>
+                        <li>Python development headers</li>
+                    </ul>
+                    
+                    <h5 class="mt-4">Configuration:</h5>
+                    <p>Ensure <code>config/cpp_config.json</code> exists and contains:</p>
+                    <div class="bg-dark text-light p-3 rounded mb-3">
+                        <code>
+{<br>
+&nbsp;&nbsp;"cpp_manager": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"enabled": true,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"auto_load_on_startup": true<br>
+&nbsp;&nbsp;}<br>
+}
+                        </code>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="/help/pybind11-integration" class="btn btn-primary">
+                            <i class="bi bi-book"></i> pybind11 Integration Guide
+                        </a>
+                        <a href="/dashboard" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

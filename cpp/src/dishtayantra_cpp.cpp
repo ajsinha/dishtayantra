@@ -1,50 +1,39 @@
 /**
- * DishtaYantra Example C++ Calculators
- * ====================================
+ * DishtaYantra C++ Calculators
+ * ============================
  * 
- * Example calculators demonstrating pybind11 integration.
+ * High-performance calculators using pybind11 integration.
+ * 
+ * v1.7.0: CPP Manager Integration
+ *   - Calculators now defined in config/cpp_config.json
+ *   - Centralized module loading via CPP Manager
+ *   - Automatic initialization on application startup
+ *   - Web UI management at /cpp
  * 
  * v1.1.1: Added LMDB zero-copy data exchange support for large payloads
  * 
- * LMDB Zero-Copy Exchange:
- * When lmdb_enabled=true in DAG config, large payloads are exchanged via
- * memory-mapped LMDB files instead of Python dict serialization. The calculator
- * receives a reference dict with:
- *   - _lmdb_ref: true
- *   - _lmdb_input_key: Key to read input from LMDB
- *   - _lmdb_output_key: Key to write output to LMDB
- *   - _lmdb_db_path: Path to LMDB database
- *   - _lmdb_db_name: Named database to use
- *   - _lmdb_format: Data format (msgpack, json, numpy, arrow)
+ * Calculator Classes Available:
+ *   - PassthroughCalculator: Returns input unchanged (testing)
+ *   - MathCalculator: Mathematical operations (sum, mean, variance, etc.)
+ *   - StatisticsCalculator: Statistical analysis with percentiles
+ *   - MatrixCalculator: Matrix operations
+ *   - StringTransformCalculator: String operations
+ *   - DataValidationCalculator: Data validation
+ *   - TradePricingCalculator: Trade pricing with commissions
+ *   - RiskMetricsCalculator: Financial risk metrics (VaR, Greeks)
  * 
- * To enable LMDB in C++ calculators:
- *   1. Install liblmdb: apt-get install liblmdb-dev
- *   2. Compile with -DUSE_LMDB -llmdb
- *   3. Use LMDBHelper class for read/write operations
+ * Build instructions (CMake recommended):
+ *   cd cpp && mkdir build && cd build && cmake .. && make
  * 
- * Build instructions:
- * 
- * Linux/macOS (without LMDB):
+ * Manual build:
  *   g++ -O3 -Wall -shared -std=c++17 -fPIC \
  *       $(python3 -m pybind11 --includes) \
  *       dishtayantra_cpp.cpp \
  *       -o dishtayantra_cpp$(python3-config --extension-suffix)
  * 
- * Linux/macOS (with LMDB):
- *   g++ -O3 -Wall -shared -std=c++17 -fPIC -DUSE_LMDB \
- *       $(python3 -m pybind11 --includes) \
- *       dishtayantra_cpp.cpp \
- *       -o dishtayantra_cpp$(python3-config --extension-suffix) -llmdb
- * 
- * Windows (MSVC):
- *   cl /O2 /LD /EHsc /std:c++17 \
- *       /I<python-include> /I<pybind11-include> \
- *       dishtayantra_cpp.cpp \
- *       /link /LIBPATH:<python-libs> python3.lib \
- *       /OUT:dishtayantra_cpp.pyd
- * 
  * @author DishtaYantra
- * @version 1.1.1
+ * @version 1.7.0
+ * @copyright 2025 Ashutosh Sinha. All rights reserved.
  */
 
 #include "calculator.hpp"
@@ -52,191 +41,59 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
-
-// Optional LMDB support for zero-copy data exchange
-#ifdef USE_LMDB
-#include <lmdb.h>
+#include <functional>
 
 namespace dishtayantra {
 
-/**
- * LMDB Helper for zero-copy data exchange with Python DAG engine.
- * 
- * Usage:
- *   LMDBHelper lmdb;
- *   if (lmdb.open(db_path, db_name)) {
- *       auto data = lmdb.get(input_key);
- *       // Process data...
- *       lmdb.put(output_key, result_data);
- *   }
- */
-class LMDBHelper {
-public:
-    LMDBHelper() : env_(nullptr), dbi_(0), opened_(false) {}
-    
-    ~LMDBHelper() { close(); }
-    
-    bool open(const std::string& db_path, const std::string& db_name = "default") {
-        if (opened_) close();
-        
-        int rc = mdb_env_create(&env_);
-        if (rc != 0) return false;
-        
-        mdb_env_set_mapsize(env_, 1UL * 1024UL * 1024UL * 1024UL);  // 1GB
-        mdb_env_set_maxdbs(env_, 100);
-        
-        // Open in read-write mode
-        rc = mdb_env_open(env_, db_path.c_str(), 0, 0664);
-        if (rc != 0) { mdb_env_close(env_); return false; }
-        
-        MDB_txn* txn;
-        rc = mdb_txn_begin(env_, nullptr, 0, &txn);
-        if (rc != 0) { mdb_env_close(env_); return false; }
-        
-        rc = mdb_dbi_open(txn, db_name.c_str(), MDB_CREATE, &dbi_);
-        if (rc != 0) { mdb_txn_abort(txn); mdb_env_close(env_); return false; }
-        
-        mdb_txn_commit(txn);
-        opened_ = true;
-        return true;
-    }
-    
-    void close() {
-        if (opened_) {
-            mdb_dbi_close(env_, dbi_);
-            mdb_env_close(env_);
-            opened_ = false;
-        }
-    }
-    
-    bool is_open() const { return opened_; }
-    
-    /**
-     * Read data from LMDB by key.
-     * Returns empty vector if key not found.
-     */
-    std::vector<uint8_t> get(const std::string& key) {
-        if (!opened_) return {};
-        
-        MDB_txn* txn;
-        if (mdb_txn_begin(env_, nullptr, MDB_RDONLY, &txn) != 0) return {};
-        
-        MDB_val mdb_key, mdb_data;
-        mdb_key.mv_size = key.size();
-        mdb_key.mv_data = const_cast<char*>(key.data());
-        
-        int rc = mdb_get(txn, dbi_, &mdb_key, &mdb_data);
-        if (rc != 0) {
-            mdb_txn_abort(txn);
-            return {};
-        }
-        
-        std::vector<uint8_t> result(
-            static_cast<uint8_t*>(mdb_data.mv_data),
-            static_cast<uint8_t*>(mdb_data.mv_data) + mdb_data.mv_size
-        );
-        mdb_txn_abort(txn);
-        return result;
-    }
-    
-    /**
-     * Write data to LMDB.
-     * Returns true on success.
-     */
-    bool put(const std::string& key, const std::vector<uint8_t>& data) {
-        if (!opened_) return false;
-        
-        MDB_txn* txn;
-        if (mdb_txn_begin(env_, nullptr, 0, &txn) != 0) return false;
-        
-        MDB_val mdb_key, mdb_data;
-        mdb_key.mv_size = key.size();
-        mdb_key.mv_data = const_cast<char*>(key.data());
-        mdb_data.mv_size = data.size();
-        mdb_data.mv_data = const_cast<uint8_t*>(data.data());
-        
-        if (mdb_put(txn, dbi_, &mdb_key, &mdb_data, 0) != 0) {
-            mdb_txn_abort(txn);
-            return false;
-        }
-        
-        return mdb_txn_commit(txn) == 0;
-    }
-    
-    /**
-     * Get raw pointer to memory-mapped data (zero-copy read).
-     * WARNING: Pointer is only valid while LMDB environment is open.
-     */
-    std::pair<const uint8_t*, size_t> get_raw(const std::string& key) {
-        if (!opened_) return {nullptr, 0};
-        
-        MDB_txn* txn;
-        if (mdb_txn_begin(env_, nullptr, MDB_RDONLY, &txn) != 0) return {nullptr, 0};
-        
-        MDB_val mdb_key, mdb_data;
-        mdb_key.mv_size = key.size();
-        mdb_key.mv_data = const_cast<char*>(key.data());
-        
-        if (mdb_get(txn, dbi_, &mdb_key, &mdb_data) != 0) {
-            mdb_txn_abort(txn);
-            return {nullptr, 0};
-        }
-        
-        // Note: We don't abort the transaction, so data remains valid
-        // Caller must ensure to not use pointer after LMDB closes
-        return {static_cast<const uint8_t*>(mdb_data.mv_data), mdb_data.mv_size};
-    }
-    
-private:
-    MDB_env* env_;
-    MDB_dbi dbi_;
-    bool opened_;
-};
-
-} // namespace dishtayantra
-#endif // USE_LMDB
-
-namespace dishtayantra {
+// ============================================================================
+// PassthroughCalculator
+// ============================================================================
 
 /**
  * Passthrough calculator - returns input unchanged.
- * Useful for testing connectivity.
+ * Useful for testing connectivity and benchmarking.
  */
-class PassthruCalculator : public Calculator {
+class PassthroughCalculator : public Calculator {
 public:
     using Calculator::Calculator;
     
     py::dict calculate(const py::dict& data) override {
         update_stats();
-        return py::dict(data);  // Return a copy
+        return py::dict(data);
     }
     
 protected:
     std::string get_type_name() const override {
-        return "PassthruCalculator";
+        return "PassthroughCalculator";
     }
 };
 
+
+// ============================================================================
+// MathCalculator
+// ============================================================================
 
 /**
  * Mathematical operations calculator.
  * 
  * Configuration:
- * - operation: "add", "sum", "multiply", "mul", "max", "min", "mean", "avg", "std"
- * - arguments: List of field names to operate on
- * - output_attribute: Name of output field (default: "result")
+ * - operation: "sum", "mean", "variance", "product", "max", "min", "std"
+ * - precision: Number of decimal places (default: 6)
+ * - arguments: List of field names to operate on (optional)
  */
 class MathCalculator : public Calculator {
 private:
     std::string operation_;
     std::vector<std::string> arguments_;
     std::string output_attr_;
+    int precision_;
     
 public:
     MathCalculator(const std::string& name, const py::dict& config)
         : Calculator(name, config) {
-        operation_ = get_config<std::string>("operation", "add");
+        operation_ = get_config<std::string>("operation", "sum");
         output_attr_ = get_config<std::string>("output_attribute", "result");
+        precision_ = get_config<int>("precision", 6);
         
         if (config.contains("arguments")) {
             auto args = config["arguments"].cast<py::list>();
@@ -250,16 +107,21 @@ public:
         update_stats();
         
         py::dict result(data);
-        
-        // Collect numeric values
         std::vector<double> values;
-        for (const auto& arg : arguments_) {
-            if (data.contains(arg.c_str())) {
-                try {
-                    values.push_back(data[arg.c_str()].cast<double>());
-                } catch (...) {
-                    // Skip non-numeric values
+        
+        // Get values from arguments or 'values' field
+        if (!arguments_.empty()) {
+            for (const auto& arg : arguments_) {
+                if (data.contains(arg.c_str())) {
+                    try {
+                        values.push_back(data[arg.c_str()].cast<double>());
+                    } catch (...) {}
                 }
+            }
+        } else if (data.contains("values")) {
+            auto vals = data["values"].cast<py::list>();
+            for (auto& v : vals) {
+                values.push_back(v.cast<double>());
             }
         }
         
@@ -268,19 +130,26 @@ public:
             return result;
         }
         
-        double output = values[0];
+        double output = 0.0;
         
-        if (operation_ == "add" || operation_ == "sum") {
+        if (operation_ == "sum") {
             output = std::accumulate(values.begin(), values.end(), 0.0);
-        } else if (operation_ == "multiply" || operation_ == "mul") {
+        } else if (operation_ == "product") {
             output = std::accumulate(values.begin(), values.end(), 1.0,
                                      std::multiplies<double>());
         } else if (operation_ == "max") {
             output = *std::max_element(values.begin(), values.end());
         } else if (operation_ == "min") {
             output = *std::min_element(values.begin(), values.end());
-        } else if (operation_ == "mean" || operation_ == "avg") {
+        } else if (operation_ == "mean") {
             output = std::accumulate(values.begin(), values.end(), 0.0) / values.size();
+        } else if (operation_ == "variance") {
+            double mean = std::accumulate(values.begin(), values.end(), 0.0) / values.size();
+            double sq_sum = 0;
+            for (double v : values) {
+                sq_sum += (v - mean) * (v - mean);
+            }
+            output = sq_sum / values.size();
         } else if (operation_ == "std") {
             double mean = std::accumulate(values.begin(), values.end(), 0.0) / values.size();
             double sq_sum = 0;
@@ -291,14 +160,16 @@ public:
         }
         
         result[output_attr_.c_str()] = output;
+        result["operation"] = operation_;
+        result["input_count"] = static_cast<int>(values.size());
         return result;
     }
     
     py::dict details() override {
         py::dict d = Calculator::details();
         d["operation"] = operation_;
+        d["precision"] = precision_;
         d["output_attribute"] = output_attr_;
-        d["num_arguments"] = arguments_.size();
         return d;
     }
     
@@ -309,33 +180,131 @@ protected:
 };
 
 
+// ============================================================================
+// StatisticsCalculator
+// ============================================================================
+
 /**
- * Trade pricing calculator for financial applications.
+ * Statistics calculator - advanced statistical analysis.
  * 
  * Configuration:
- * - commission_rate: Commission rate (default: 0.001 = 0.1%)
- * - tax_rate: Tax rate (default: 0.0)
- * - include_vat: Whether to add VAT (default: false)
- * 
- * Required input fields:
- * - price: Trade price
- * - quantity: Trade quantity
- * 
- * Output fields:
- * - gross_value, commission, tax, vat, net_value, calculated_at
+ * - compute_percentiles: Whether to compute percentiles (default: true)
+ * - percentile_values: List of percentiles to compute (default: [25, 50, 75, 90, 95, 99])
  */
-class TradePricingCalculator : public Calculator {
+class StatisticsCalculator : public Calculator {
 private:
-    double commission_rate_;
-    double tax_rate_;
-    bool include_vat_;
+    bool compute_percentiles_;
+    std::vector<int> percentile_values_;
     
 public:
-    TradePricingCalculator(const std::string& name, const py::dict& config)
+    StatisticsCalculator(const std::string& name, const py::dict& config)
         : Calculator(name, config) {
-        commission_rate_ = get_config<double>("commission_rate", 0.001);
-        tax_rate_ = get_config<double>("tax_rate", 0.0);
-        include_vat_ = get_config<bool>("include_vat", false);
+        compute_percentiles_ = get_config<bool>("compute_percentiles", true);
+        
+        if (config.contains("percentile_values")) {
+            auto pvals = config["percentile_values"].cast<py::list>();
+            for (auto& p : pvals) {
+                percentile_values_.push_back(p.cast<int>());
+            }
+        } else {
+            percentile_values_ = {25, 50, 75, 90, 95, 99};
+        }
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        std::vector<double> values;
+        
+        if (data.contains("values")) {
+            auto vals = data["values"].cast<py::list>();
+            for (auto& v : vals) {
+                values.push_back(v.cast<double>());
+            }
+        }
+        
+        if (values.empty()) {
+            result["error"] = "No values provided";
+            return result;
+        }
+        
+        // Basic statistics
+        double sum = std::accumulate(values.begin(), values.end(), 0.0);
+        double mean = sum / values.size();
+        
+        double sq_sum = 0, min_val = values[0], max_val = values[0];
+        for (double v : values) {
+            sq_sum += (v - mean) * (v - mean);
+            min_val = std::min(min_val, v);
+            max_val = std::max(max_val, v);
+        }
+        double variance = sq_sum / values.size();
+        double std_dev = std::sqrt(variance);
+        
+        result["count"] = static_cast<int>(values.size());
+        result["sum"] = sum;
+        result["mean"] = mean;
+        result["min"] = min_val;
+        result["max"] = max_val;
+        result["variance"] = variance;
+        result["std_dev"] = std_dev;
+        result["range"] = max_val - min_val;
+        
+        // Percentiles
+        if (compute_percentiles_ && !values.empty()) {
+            std::vector<double> sorted = values;
+            std::sort(sorted.begin(), sorted.end());
+            
+            py::dict percentiles;
+            for (int p : percentile_values_) {
+                double index = (p / 100.0) * (sorted.size() - 1);
+                size_t lower = static_cast<size_t>(index);
+                size_t upper = std::min(lower + 1, sorted.size() - 1);
+                double frac = index - lower;
+                double value = sorted[lower] * (1 - frac) + sorted[upper] * frac;
+                percentiles[("p" + std::to_string(p)).c_str()] = value;
+            }
+            result["percentiles"] = percentiles;
+        }
+        
+        return result;
+    }
+    
+    py::dict details() override {
+        py::dict d = Calculator::details();
+        d["compute_percentiles"] = compute_percentiles_;
+        py::list pvals;
+        for (int p : percentile_values_) pvals.append(p);
+        d["percentile_values"] = pvals;
+        return d;
+    }
+    
+protected:
+    std::string get_type_name() const override {
+        return "StatisticsCalculator";
+    }
+};
+
+
+// ============================================================================
+// MatrixCalculator
+// ============================================================================
+
+/**
+ * Matrix operations calculator.
+ * 
+ * Configuration:
+ * - operation: "multiply", "transpose", "determinant", "trace"
+ */
+class MatrixCalculator : public Calculator {
+private:
+    std::string operation_;
+    
+public:
+    MatrixCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        operation_ = get_config<std::string>("operation", "multiply");
     }
     
     py::dict calculate(const py::dict& data) override {
@@ -343,22 +312,227 @@ public:
         
         py::dict result(data);
         
-        // Get trade values
-        double price = data["price"].cast<double>();
-        double quantity = data["quantity"].cast<double>();
+        if (operation_ == "transpose" && data.contains("matrix")) {
+            auto matrix = data["matrix"].cast<py::list>();
+            py::list transposed;
+            
+            if (matrix.size() > 0) {
+                auto first_row = matrix[0].cast<py::list>();
+                size_t cols = first_row.size();
+                size_t rows = matrix.size();
+                
+                for (size_t j = 0; j < cols; ++j) {
+                    py::list new_row;
+                    for (size_t i = 0; i < rows; ++i) {
+                        auto row = matrix[i].cast<py::list>();
+                        new_row.append(row[j]);
+                    }
+                    transposed.append(new_row);
+                }
+            }
+            result["result"] = transposed;
+        } else if (operation_ == "trace" && data.contains("matrix")) {
+            auto matrix = data["matrix"].cast<py::list>();
+            double trace = 0.0;
+            for (size_t i = 0; i < matrix.size(); ++i) {
+                auto row = matrix[i].cast<py::list>();
+                if (i < row.size()) {
+                    trace += row[i].cast<double>();
+                }
+            }
+            result["trace"] = trace;
+        } else if (operation_ == "determinant" && data.contains("matrix")) {
+            auto matrix = data["matrix"].cast<py::list>();
+            if (matrix.size() == 2) {
+                auto row0 = matrix[0].cast<py::list>();
+                auto row1 = matrix[1].cast<py::list>();
+                double det = row0[0].cast<double>() * row1[1].cast<double>() -
+                            row0[1].cast<double>() * row1[0].cast<double>();
+                result["determinant"] = det;
+            }
+        }
         
-        // Calculate
+        result["operation"] = operation_;
+        return result;
+    }
+    
+protected:
+    std::string get_type_name() const override {
+        return "MatrixCalculator";
+    }
+};
+
+
+// ============================================================================
+// StringTransformCalculator
+// ============================================================================
+
+/**
+ * String transformation calculator.
+ * 
+ * Configuration:
+ * - operation: "uppercase", "lowercase", "reverse", "length", "hash"
+ * - field: Input field name (default: "text")
+ */
+class StringTransformCalculator : public Calculator {
+private:
+    std::string operation_;
+    std::string field_;
+    
+public:
+    StringTransformCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        operation_ = get_config<std::string>("operation", "uppercase");
+        field_ = get_config<std::string>("field", "text");
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        
+        if (!data.contains(field_.c_str())) {
+            result["error"] = "Field not found: " + field_;
+            return result;
+        }
+        
+        std::string text = data[field_.c_str()].cast<std::string>();
+        
+        if (operation_ == "uppercase") {
+            std::transform(text.begin(), text.end(), text.begin(), ::toupper);
+            result["result"] = text;
+        } else if (operation_ == "lowercase") {
+            std::transform(text.begin(), text.end(), text.begin(), ::tolower);
+            result["result"] = text;
+        } else if (operation_ == "reverse") {
+            std::reverse(text.begin(), text.end());
+            result["result"] = text;
+        } else if (operation_ == "length") {
+            result["length"] = static_cast<int>(text.size());
+        } else if (operation_ == "hash") {
+            std::hash<std::string> hasher;
+            result["hash"] = static_cast<int64_t>(hasher(text));
+        }
+        
+        result["operation"] = operation_;
+        return result;
+    }
+    
+protected:
+    std::string get_type_name() const override {
+        return "StringTransformCalculator";
+    }
+};
+
+
+// ============================================================================
+// DataValidationCalculator
+// ============================================================================
+
+/**
+ * Data validation calculator.
+ * 
+ * Configuration:
+ * - strict_mode: Fail on first error (default: false)
+ * - validate_types: Check data types (default: true)
+ * - required_fields: List of required field names
+ */
+class DataValidationCalculator : public Calculator {
+private:
+    bool strict_mode_;
+    bool validate_types_;
+    std::vector<std::string> required_fields_;
+    
+public:
+    DataValidationCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        strict_mode_ = get_config<bool>("strict_mode", false);
+        validate_types_ = get_config<bool>("validate_types", true);
+        
+        if (config.contains("required_fields")) {
+            auto fields = config["required_fields"].cast<py::list>();
+            for (auto& f : fields) {
+                required_fields_.push_back(f.cast<std::string>());
+            }
+        }
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        py::list errors;
+        py::list warnings;
+        bool is_valid = true;
+        
+        for (const auto& field : required_fields_) {
+            if (!data.contains(field.c_str())) {
+                errors.append("Missing required field: " + field);
+                is_valid = false;
+                if (strict_mode_) break;
+            }
+        }
+        
+        result["is_valid"] = is_valid;
+        result["errors"] = errors;
+        result["warnings"] = warnings;
+        result["error_count"] = static_cast<int>(errors.size());
+        result["field_count"] = static_cast<int>(py::len(data));
+        
+        return result;
+    }
+    
+protected:
+    std::string get_type_name() const override {
+        return "DataValidationCalculator";
+    }
+};
+
+
+// ============================================================================
+// TradePricingCalculator
+// ============================================================================
+
+/**
+ * Trade pricing calculator for financial applications.
+ * 
+ * Configuration:
+ * - commission_rate: Commission rate (default: 0.001 = 0.1%)
+ * - tax_rate: Tax rate (default: 0.0)
+ * - include_fees: Whether to include fees (default: true)
+ */
+class TradePricingCalculator : public Calculator {
+private:
+    double commission_rate_;
+    double tax_rate_;
+    bool include_fees_;
+    
+public:
+    TradePricingCalculator(const std::string& name, const py::dict& config)
+        : Calculator(name, config) {
+        commission_rate_ = get_config<double>("commission_rate", 0.001);
+        tax_rate_ = get_config<double>("tax_rate", 0.0);
+        include_fees_ = get_config<bool>("include_fees", true);
+    }
+    
+    py::dict calculate(const py::dict& data) override {
+        update_stats();
+        
+        py::dict result(data);
+        
+        double price = data.contains("price") ? data["price"].cast<double>() : 0.0;
+        double quantity = data.contains("quantity") ? data["quantity"].cast<double>() : 0.0;
+        
         double gross_value = price * quantity;
         double commission = gross_value * commission_rate_;
         double tax = tax_rate_ > 0 ? gross_value * tax_rate_ : 0.0;
-        double vat = include_vat_ ? (gross_value + commission) * 0.20 : 0.0;
-        double net_value = gross_value + commission + tax + vat;
+        double fees = include_fees_ ? gross_value * 0.0001 : 0.0;  // 0.01% fee
+        double net_value = gross_value + commission + tax + fees;
         
-        // Set results
         result["gross_value"] = gross_value;
         result["commission"] = commission;
         result["tax"] = tax;
-        result["vat"] = vat;
+        result["fees"] = fees;
         result["net_value"] = net_value;
         result["calculated_at"] = std::time(nullptr);
         
@@ -369,7 +543,7 @@ public:
         py::dict d = Calculator::details();
         d["commission_rate"] = commission_rate_;
         d["tax_rate"] = tax_rate_;
-        d["include_vat"] = include_vat_;
+        d["include_fees"] = include_fees_;
         return d;
     }
     
@@ -380,30 +554,27 @@ protected:
 };
 
 
+// ============================================================================
+// RiskMetricsCalculator
+// ============================================================================
+
 /**
- * Risk calculator with VaR computation.
+ * Risk metrics calculator with VaR computation.
  * 
  * Configuration:
- * - confidence_level: VaR confidence level (default: 0.95)
- * - lookback_period: Days for calculation (default: 252)
- * 
- * Required input fields:
- * - position_value: Position value
- * - volatility: Annualized volatility
- * 
- * Optional input fields:
- * - delta, gamma, underlying_price (for Greeks-based risk)
+ * - var_confidence: VaR confidence level (default: 0.95)
+ * - risk_free_rate: Risk-free rate (default: 0.02)
  */
-class RiskCalculator : public Calculator {
+class RiskMetricsCalculator : public Calculator {
 private:
-    double confidence_level_;
-    int lookback_period_;
+    double var_confidence_;
+    double risk_free_rate_;
     
 public:
-    RiskCalculator(const std::string& name, const py::dict& config)
+    RiskMetricsCalculator(const std::string& name, const py::dict& config)
         : Calculator(name, config) {
-        confidence_level_ = get_config<double>("confidence_level", 0.95);
-        lookback_period_ = get_config<int>("lookback_period", 252);
+        var_confidence_ = get_config<double>("var_confidence", 0.95);
+        risk_free_rate_ = get_config<double>("risk_free_rate", 0.02);
     }
     
     py::dict calculate(const py::dict& data) override {
@@ -411,27 +582,25 @@ public:
         
         py::dict result(data);
         
-        double position_value = data["position_value"].cast<double>();
-        double volatility = data["volatility"].cast<double>();
+        double position_value = data.contains("position_value") ? 
+                               data["position_value"].cast<double>() : 0.0;
+        double volatility = data.contains("volatility") ? 
+                           data["volatility"].cast<double>() : 0.0;
         
         // Z-score for confidence level
-        double z_score = get_z_score(confidence_level_);
+        double z_score = get_z_score(var_confidence_);
         
         // Daily VaR
-        double daily_var = position_value * volatility * z_score / std::sqrt(lookback_period_);
+        double daily_var = position_value * volatility * z_score / std::sqrt(252.0);
         result["daily_var"] = daily_var;
-        
-        // 10-day VaR
         result["var_10d"] = daily_var * std::sqrt(10);
-        
-        // Annual VaR
         result["annual_var"] = daily_var * std::sqrt(252);
         
         // Greeks-based risk if available
         if (data.contains("delta") && data.contains("underlying_price")) {
             double delta = data["delta"].cast<double>();
             double underlying = data["underlying_price"].cast<double>();
-            double price_move = underlying * 0.01;  // 1% move
+            double price_move = underlying * 0.01;
             
             double delta_risk = delta * price_move;
             result["delta_risk"] = delta_risk;
@@ -444,14 +613,17 @@ public:
             }
         }
         
+        result["var_confidence"] = var_confidence_;
+        result["risk_free_rate"] = risk_free_rate_;
         result["calculated_at"] = std::time(nullptr);
+        
         return result;
     }
     
     py::dict details() override {
         py::dict d = Calculator::details();
-        d["confidence_level"] = confidence_level_;
-        d["lookback_period"] = lookback_period_;
+        d["var_confidence"] = var_confidence_;
+        d["risk_free_rate"] = risk_free_rate_;
         return d;
     }
     
@@ -465,9 +637,10 @@ private:
     
 protected:
     std::string get_type_name() const override {
-        return "RiskCalculator";
+        return "RiskMetricsCalculator";
     }
 };
+
 
 } // namespace dishtayantra
 
@@ -477,21 +650,21 @@ protected:
 // ============================================================================
 
 PYBIND11_MODULE(dishtayantra_cpp, m) {
-    m.doc() = "DishtaYantra C++ Calculators - High-performance native calculators";
+    m.doc() = "DishtaYantra C++ Calculators v1.7.0 - High-performance native calculators";
     
     using namespace dishtayantra;
     
-    // Base Calculator class (for type checking)
+    // Base Calculator class
     py::class_<Calculator>(m, "Calculator")
         .def("calculate", &Calculator::calculate)
         .def("details", &Calculator::details);
     
-    // PassthruCalculator
-    py::class_<PassthruCalculator, Calculator>(m, "PassthruCalculator")
+    // PassthroughCalculator
+    py::class_<PassthroughCalculator, Calculator>(m, "PassthroughCalculator")
         .def(py::init<const std::string&, const py::dict&>(),
              py::arg("name"), py::arg("config"))
-        .def("calculate", &PassthruCalculator::calculate)
-        .def("details", &PassthruCalculator::details);
+        .def("calculate", &PassthroughCalculator::calculate)
+        .def("details", &PassthroughCalculator::details);
     
     // MathCalculator
     py::class_<MathCalculator, Calculator>(m, "MathCalculator")
@@ -500,6 +673,34 @@ PYBIND11_MODULE(dishtayantra_cpp, m) {
         .def("calculate", &MathCalculator::calculate)
         .def("details", &MathCalculator::details);
     
+    // StatisticsCalculator
+    py::class_<StatisticsCalculator, Calculator>(m, "StatisticsCalculator")
+        .def(py::init<const std::string&, const py::dict&>(),
+             py::arg("name"), py::arg("config"))
+        .def("calculate", &StatisticsCalculator::calculate)
+        .def("details", &StatisticsCalculator::details);
+    
+    // MatrixCalculator
+    py::class_<MatrixCalculator, Calculator>(m, "MatrixCalculator")
+        .def(py::init<const std::string&, const py::dict&>(),
+             py::arg("name"), py::arg("config"))
+        .def("calculate", &MatrixCalculator::calculate)
+        .def("details", &MatrixCalculator::details);
+    
+    // StringTransformCalculator
+    py::class_<StringTransformCalculator, Calculator>(m, "StringTransformCalculator")
+        .def(py::init<const std::string&, const py::dict&>(),
+             py::arg("name"), py::arg("config"))
+        .def("calculate", &StringTransformCalculator::calculate)
+        .def("details", &StringTransformCalculator::details);
+    
+    // DataValidationCalculator
+    py::class_<DataValidationCalculator, Calculator>(m, "DataValidationCalculator")
+        .def(py::init<const std::string&, const py::dict&>(),
+             py::arg("name"), py::arg("config"))
+        .def("calculate", &DataValidationCalculator::calculate)
+        .def("details", &DataValidationCalculator::details);
+    
     // TradePricingCalculator
     py::class_<TradePricingCalculator, Calculator>(m, "TradePricingCalculator")
         .def(py::init<const std::string&, const py::dict&>(),
@@ -507,10 +708,25 @@ PYBIND11_MODULE(dishtayantra_cpp, m) {
         .def("calculate", &TradePricingCalculator::calculate)
         .def("details", &TradePricingCalculator::details);
     
-    // RiskCalculator
-    py::class_<RiskCalculator, Calculator>(m, "RiskCalculator")
+    // RiskMetricsCalculator
+    py::class_<RiskMetricsCalculator, Calculator>(m, "RiskMetricsCalculator")
         .def(py::init<const std::string&, const py::dict&>(),
              py::arg("name"), py::arg("config"))
-        .def("calculate", &RiskCalculator::calculate)
-        .def("details", &RiskCalculator::details);
+        .def("calculate", &RiskMetricsCalculator::calculate)
+        .def("details", &RiskMetricsCalculator::details);
+    
+    // Module-level functions
+    m.def("get_version", []() { return "1.7.0"; });
+    m.def("list_calculators", []() {
+        return py::make_tuple(
+            "PassthroughCalculator",
+            "MathCalculator",
+            "StatisticsCalculator",
+            "MatrixCalculator",
+            "StringTransformCalculator",
+            "DataValidationCalculator",
+            "TradePricingCalculator",
+            "RiskMetricsCalculator"
+        );
+    });
 }

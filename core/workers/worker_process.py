@@ -1,10 +1,11 @@
 """
 DAG Worker Process
-Version: 1.6.0
+Version: 1.7.0
 
 Worker process that owns and executes multiple DAGs.
 Runs as a separate process for true CPU parallelism.
 
+v1.7.0: Added CPP Manager integration for C++ calculator support.
 v1.6.0: Added JVM Manager integration for Java calculator support.
 
 Copyright © 2025 Ashutosh Sinha. All rights reserved.
@@ -205,6 +206,12 @@ class DAGWorkerProcess(Process):
         # v1.6.0: Initialize JVM Manager for Java calculator support
         self._init_jvm_manager()
         
+        # v1.7.0: Initialize CPP Manager for C++ calculator support
+        self._init_cpp_manager()
+        
+        # v1.7.0: Initialize Rust Manager for Rust calculator support
+        self._init_rust_manager()
+        
         # Initialize LMDB connection for cross-worker communication if configured
         if self.config.get('use_lmdb_for_cross_worker', False):
             self._init_lmdb_connection()
@@ -235,6 +242,58 @@ class DAGWorkerProcess(Process):
             self.logger.debug("JVM Manager not available (Py4J not installed)")
         except Exception as e:
             self.logger.warning(f"Could not initialize JVM Manager: {e}")
+    
+    def _init_cpp_manager(self):
+        """Initialize CPP Manager for C++ pybind11 calculators (v1.7.0)"""
+        try:
+            from core.cpp import get_cpp_manager, is_cpp_available
+            
+            cpp_manager = get_cpp_manager()
+            
+            # Check if already initialized
+            if not cpp_manager._initialized:
+                cpp_config_path = self.config.get('cpp_config_path', 'config/cpp_config.json')
+                if os.path.exists(cpp_config_path):
+                    # Initialize with config - modules will load automatically
+                    cpp_manager.initialize(cpp_config_path)
+            
+            if is_cpp_available():
+                status = cpp_manager.get_status()
+                modules_loaded = status.get('modules_loaded', 0)
+                self.logger.info(f"CPP Manager initialized - {modules_loaded} module(s) loaded")
+            else:
+                self.logger.info("CPP Manager initialized but no modules loaded")
+                
+        except ImportError:
+            self.logger.debug("CPP Manager not available")
+        except Exception as e:
+            self.logger.warning(f"Could not initialize CPP Manager: {e}")
+    
+    def _init_rust_manager(self):
+        """Initialize Rust Manager for PyO3 Rust calculators (v1.7.0)"""
+        try:
+            from core.rust import get_rust_manager, is_rust_available
+            
+            rust_manager = get_rust_manager()
+            
+            # Check if already initialized
+            if not rust_manager._initialized:
+                rust_config_path = self.config.get('rust_config_path', 'config/rust_config.json')
+                if os.path.exists(rust_config_path):
+                    # Initialize with config - modules will load automatically
+                    rust_manager.initialize(rust_config_path)
+            
+            if is_rust_available():
+                status = rust_manager.get_status()
+                modules_loaded = status.get('modules_loaded', 0)
+                self.logger.info(f"Rust Manager initialized - {modules_loaded} module(s) loaded")
+            else:
+                self.logger.info("Rust Manager initialized but no modules loaded")
+                
+        except ImportError:
+            self.logger.debug("Rust Manager not available")
+        except Exception as e:
+            self.logger.warning(f"Could not initialize Rust Manager: {e}")
     
     def _init_lmdb_connection(self):
         """Initialize LMDB connection for cross-worker data sharing"""

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Rust Integration Not Available - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Rust Integration Not Available</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">The Rust calculator module is not currently loaded or available.</p>
+                    
+                    <h5 class="mt-4">Possible Reasons:</h5>
+                    <ul>
+                        <li>The <code>dishtayantra_rust.so</code> module hasn't been built yet</li>
+                        <li>PyO3 is not installed</li>
+                        <li>The module file is not in Python's path</li>
+                        <li>Rust Manager is disabled in <code>config/rust_config.json</code></li>
+                    </ul>
+                    
+                    <h5 class="mt-4">How to Build:</h5>
+                    <div class="bg-dark text-light p-3 rounded mb-3">
+                        <code>
+# Install maturin (build tool for PyO3)<br>
+pip install maturin<br><br>
+# Build the Rust module<br>
+cd rust<br>
+maturin develop --release
+                        </code>
+                    </div>
+                    
+                    <h5 class="mt-4">Prerequisites:</h5>
+                    <ul>
+                        <li>Rust 1.70 or later: <code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh</code></li>
+                        <li>maturin: <code>pip install maturin</code></li>
+                        <li>PyO3 (added to Cargo.toml)</li>
+                    </ul>
+                    
+                    <h5 class="mt-4">Configuration:</h5>
+                    <p>Ensure <code>config/rust_config.json</code> exists and contains:</p>
+                    <div class="bg-dark text-light p-3 rounded mb-3">
+                        <code>
+{<br>
+&nbsp;&nbsp;"rust_manager": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"enabled": true,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"auto_load_on_startup": true<br>
+&nbsp;&nbsp;}<br>
+}
+                        </code>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="/help/rust-integration" class="btn btn-primary">
+                            <i class="bi bi-book"></i> Rust Integration Guide
+                        </a>
+                        <a href="/dashboard" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

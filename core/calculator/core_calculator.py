@@ -148,16 +148,40 @@ class CalculatorFactory:
     
     @classmethod
     def _create_cpp_calculator(cls, name: str, config: Dict[str, Any]) -> DataCalculatorLike:
-        """Create a C++ calculator via pybind11."""
+        """
+        Create a C++ calculator via pybind11.
+        
+        v1.7.0: Now supports CPP Manager for centralized calculator management.
+        Can use either:
+        - calculator_name: Reference a pre-configured calculator from cpp_config.json
+        - cpp_class + cpp_module: Direct class specification
+        """
         try:
+            # Check for CPP Manager calculator reference first
+            calculator_name = config.get('calculator_name') or config.get('name')
+            
+            if calculator_name:
+                # Try to use CPP Manager
+                try:
+                    from core.cpp import get_cpp_manager, is_cpp_available
+                    cpp_manager = get_cpp_manager()
+                    
+                    if cpp_manager._initialized and calculator_name in cpp_manager.calculator_definitions:
+                        logger.info(f"Creating C++ calculator '{name}' via CPP Manager: {calculator_name}")
+                        calc = cpp_manager.create_calculator(calculator_name, name, config)
+                        return calc
+                except ImportError:
+                    pass
+            
+            # Fallback to direct CppCalculator creation
             from core.calculator.cpp_calculator import CppCalculator
             
             cpp_class = config.get('cpp_class')
-            if not cpp_class:
-                raise ValueError("cpp_class must be specified for C++ calculators")
+            if not cpp_class and not calculator_name:
+                raise ValueError("cpp_class or calculator_name must be specified for C++ calculators")
             
             cpp_module = config.get('cpp_module', 'dishtayantra_cpp')
-            logger.info(f"Creating C++ calculator '{name}' for class {cpp_module}.{cpp_class}")
+            logger.info(f"Creating C++ calculator '{name}' for class {cpp_module}.{cpp_class or calculator_name}")
             return CppCalculator(name, config)
             
         except ImportError as e:

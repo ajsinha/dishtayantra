@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}{{ module.name }} - C++ Module - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .module-hero {
+        background: linear-gradient(135deg, #00599C 0%, #004482 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+    .module-hero h2 {
+        color: white;
+    }
+    .status-badge-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .class-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .class-badge {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border: 1px solid #e2e8f0;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.85rem;
+    }
+    .path-display {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        word-break: break-all;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/cpp">C++ Management</a></li>
+                <li class="breadcrumb-item active">{{ module.name }}</li>
+            </ol>
+        </nav>
+        <h2 class="mb-0">
+            <i class="bi bi-box-seam text-primary"></i> {{ module.name }}
+            {% if status.loaded %}
+            <span class="badge bg-success status-badge-lg"><i class="bi bi-check-circle"></i> Loaded</span>
+            {% else %}
+            <span class="badge bg-danger status-badge-lg"><i class="bi bi-x-circle"></i> Not Loaded</span>
+            {% endif %}
+        </h2>
+    </div>
+    <div>
+        {% if status.loaded %}
+        <button class="btn btn-warning" onclick="reloadModule('{{ module.name }}')">
+            <i class="bi bi-arrow-repeat"></i> Reload
+        </button>
+        <button class="btn btn-danger" onclick="unloadModule('{{ module.name }}')">
+            <i class="bi bi-x-circle"></i> Unload
+        </button>
+        {% else %}
+        <button class="btn btn-success" onclick="loadModule('{{ module.name }}')">
+            <i class="bi bi-play-circle"></i> Load Module
+        </button>
+        <button class="btn btn-primary" onclick="buildModule('{{ module.name }}')">
+            <i class="bi bi-hammer"></i> Build
+        </button>
+        {% endif %}
+        <a href="/cpp" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- Module Configuration -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Module Configuration</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Name:</th>
+                        <td><strong>{{ module.name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Enabled:</th>
+                        <td>
+                            {% if module.enabled %}
+                            <span class="badge bg-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Description:</th>
+                        <td>{{ module.description or 'No description' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Source Dir:</th>
+                        <td><code>{{ module.source_dir }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Build Dir:</th>
+                        <td><code>{{ module.build_dir }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>LMDB:</th>
+                        <td>
+                            {% if module.lmdb_enabled %}
+                            <span class="badge bg-info">Enabled</span>
+                            <small class="text-muted">{{ module.lmdb_db_path }}</small>
+                            {% else %}
+                            <span class="badge bg-secondary">Disabled</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Runtime Status -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-activity"></i> Runtime Status</h5>
+    </div>
+    <div class="card-body">
+        {% if status.loaded %}
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Status:</th>
+                        <td><span class="badge bg-success">Loaded</span></td>
+                    </tr>
+                    <tr>
+                        <th>Load Time:</th>
+                        <td>{{ status.load_time or 'N/A' }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <th style="width: 150px;">Module Path:</th>
+                        <td><span class="path-display">{{ status.path or 'N/A' }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        {% if status.available_classes %}
+        <h6 class="mt-3 mb-2">Available Classes ({{ status.available_classes | length }})</h6>
+        <div class="class-list">
+            {% for cls in status.available_classes %}
+            <span class="class-badge">{{ cls }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-warning mb-0">
+            <h5><i class="bi bi-exclamation-triangle"></i> Module Not Loaded</h5>
+            {% if status.last_error %}
+            <p class="mb-2"><strong>Last Error:</strong></p>
+            <pre class="bg-dark text-light p-2 rounded">{{ status.last_error }}</pre>
+            {% endif %}
+            <p class="mb-0">Click "Load Module" or "Build" to make this module available.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Calculators from this Module -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-calculator"></i> Calculators ({{ calculators | length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if calculators %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>C++ Class</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calc in calculators %}
+                    <tr>
+                        <td>
+                            <a href="/cpp/calculator/{{ calc.name }}" class="text-decoration-none">
+                                <strong>{{ calc.name }}</strong>
+                            </a>
+                        </td>
+                        <td><code>{{ calc.cpp_class }}</code></td>
+                        <td class="text-muted small">{{ calc.description | truncate(50) }}</td>
+                        <td>
+                            <a href="/cpp/calculator/{{ calc.name }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No calculators defined for this module.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadModule(name) {
+    fetch(`/api/cpp/modules/${name}/load`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function unloadModule(name) {
+    if (!confirm(`Unload module "${name}"? Cached calculators will be cleared.`)) return;
+    
+    fetch(`/api/cpp/modules/${name}/unload`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function reloadModule(name) {
+    fetch(`/api/cpp/modules/${name}/reload`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', 'Failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function buildModule(name) {
+    showAlert('info', `Building module ${name}... This may take a while.`);
+    
+    fetch(`/api/cpp/modules/${name}/build`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showAlert('danger', 'Build failed: ' + (data.error || data.message));
+            }
+        })
+        .catch(err => showAlert('danger', 'Error: ' + err.message));
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>
+{% endblock %}

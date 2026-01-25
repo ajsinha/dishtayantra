@@ -172,6 +172,9 @@ class NoAuthRoutes:
         # v1.5.2: User Guides (Markdown) routes
         self.app.add_url_rule('/help/userguides', 'help_userguides', self.help_userguides)
         self.app.add_url_rule('/help/userguides/<path:filename>', 'help_userguide_view', self.help_userguide_view)
+        
+        # v1.7.0: Research Paper route
+        self.app.add_url_rule('/help/research', 'help_research', self.help_research)
     
     def about(self):
         """About page"""
@@ -296,6 +299,36 @@ class NoAuthRoutes:
             )
         except Exception as e:
             logger.error(f"Error rendering markdown file {filename}: {e}")
+            abort(500)
+    
+    def help_research(self):
+        """
+        Render the research paper markdown file.
+        v1.7.0: Just-in-time rendering with syntax highlighting.
+        """
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
+        filepath = os.path.join(docs_path, 'research', 'dishtayantra_paper.md')
+        
+        if not os.path.exists(filepath):
+            abort(404)
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                markdown_content = f.read()
+            
+            # Convert markdown to HTML
+            html_content = render_markdown_to_html(markdown_content)
+            
+            # Title from the paper
+            title = "DishtaYantra Research Paper"
+            
+            return render_template(
+                'help/research.html',
+                title=title,
+                content=Markup(html_content)
+            )
+        except Exception as e:
+            logger.error(f"Error rendering research paper: {e}")
             abort(500)
     
     def help_getting_started(self):

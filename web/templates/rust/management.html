@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Rust Management - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rust-hero {
+        background: linear-gradient(135deg, #DEA584 0%, #B7410E 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    .rust-hero h2 {
+        color: white;
+    }
+    .module-card {
+        border-radius: 10px;
+        transition: transform 0.2s ease;
+    }
+    .module-card:hover {
+        transform: translateY(-3px);
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+    }
+    .status-loaded {
+        background-color: #10b981;
+        color: white;
+    }
+    .status-not_loaded {
+        background-color: #6b7280;
+        color: white;
+    }
+    .status-loading {
+        background-color: #f59e0b;
+        color: white;
+    }
+    .status-error {
+        background-color: #ef4444;
+        color: white;
+    }
+    .status-building {
+        background-color: #8b5cf6;
+        color: white;
+    }
+    .config-preview {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.8rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 10px;
+        padding: 1.25rem;
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #B7410E;
+    }
+    .stat-label {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="rust-hero">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2><i class="bi bi-gear-wide-connected"></i> Rust Management</h2>
+            <p class="mb-0 opacity-75">PyO3 Module & Calculator Management • Memory-safe native performance</p>
+        </div>
+        <div>
+            <a href="/help/rust-integration" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-book"></i> Documentation
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ status.modules_loaded }}</div>
+            <div class="stat-label">Modules Loaded</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ status.calculators_defined }}</div>
+            <div class="stat-label">Calculators Defined</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ status.stats.calculators_created }}</div>
+            <div class="stat-label">Total Calculations</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ status.stats.cache_hits }}</div>
+            <div class="stat-label">Cache Hits</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modules Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box-seam" style="color: #B7410E;"></i> Rust Modules</h5>
+    </div>
+    <div class="card-body">
+        {% if modules %}
+        <div class="row">
+            {% for module in modules %}
+            <div class="col-md-6 mb-3">
+                <div class="card module-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">
+                                <i class="bi bi-gear-wide-connected" style="color: #B7410E;"></i>
+                                {{ module.name }}
+                            </h6>
+                            <span class="badge status-badge status-{{ module.status }}">
+                                {{ module.status }}
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-2">{{ module.description }}</p>
+                        
+                        {% if module.error %}
+                        <div class="alert alert-danger py-1 px-2 small mb-2">
+                            {{ module.error }}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="btn-group btn-group-sm">
+                            {% if module.loaded %}
+                            <button class="btn btn-outline-danger" onclick="unloadModule('{{ module.name }}')">
+                                <i class="bi bi-stop-circle"></i> Unload
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="reloadModule('{{ module.name }}')">
+                                <i class="bi bi-arrow-clockwise"></i> Reload
+                            </button>
+                            {% else %}
+                            <button class="btn btn-outline-success" onclick="loadModule('{{ module.name }}')">
+                                <i class="bi bi-play-circle"></i> Load
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-outline-primary" onclick="buildModule('{{ module.name }}')">
+                                <i class="bi bi-hammer"></i> Build
+                            </button>
+                            <a href="/rust/module/{{ module.name }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-info-circle"></i> Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> No Rust modules configured.
+            Configure modules in <code>config/rust_config.json</code>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Calculators Section -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-calculator" style="color: #B7410E;"></i> Rust Calculators</h5>
+        <a href="/rust/calculators" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body">
+        {% if calculators %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Module</th>
+                        <th>Rust Struct</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for calc in calculators %}
+                    <tr>
+                        <td>
+                            <a href="/rust/calculator/{{ calc.name }}">{{ calc.name }}</a>
+                        </td>
+                        <td><code>{{ calc.module }}</code></td>
+                        <td><code>{{ calc.rust_class }}</code></td>
+                        <td>
+                            {% if calc.available %}
+                            <span class="badge bg-success">Available</span>
+                            {% elif calc.module_loaded %}
+                            <span class="badge bg-warning">Class Not Found</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Module Not Loaded</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/rust/calculator/{{ calc.name }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> No calculators defined.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Configuration Preview -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-file-code"></i> Configuration</h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="reloadConfig()">
+            <i class="bi bi-arrow-clockwise"></i> Reload
+        </button>
+    </div>
+    <div class="card-body">
+        <pre class="config-preview"><code class="language-json">{{ config | tojson(indent=2) }}</code></pre>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadModule(name) {
+    fetch(`/api/rust/modules/${name}/load`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', `Module '${name}' loaded successfully`);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('danger', `Failed to load module: ${data.error}`);
+            }
+        })
+        .catch(err => showAlert('danger', `Error: ${err}`));
+}
+
+function unloadModule(name) {
+    if (!confirm(`Unload module '${name}'? Active calculators will be terminated.`)) return;
+    
+    fetch(`/api/rust/modules/${name}/unload`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            showAlert(data.success ? 'success' : 'warning', data.message);
+            setTimeout(() => location.reload(), 1000);
+        })
+        .catch(err => showAlert('danger', `Error: ${err}`));
+}
+
+function reloadModule(name) {
+    fetch(`/api/rust/modules/${name}/reload`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', `Module '${name}' reloaded successfully`);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('danger', `Failed to reload: ${data.error}`);
+            }
+        })
+        .catch(err => showAlert('danger', `Error: ${err}`));
+}
+
+function buildModule(name) {
+    showAlert('info', `Building module '${name}'... This may take a moment.`);
+    
+    fetch(`/api/rust/modules/${name}/build`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', 'Build completed successfully');
+            } else {
+                showAlert('danger', `Build failed: ${data.output || data.error}`);
+            }
+            setTimeout(() => location.reload(), 2000);
+        })
+        .catch(err => showAlert('danger', `Error: ${err}`));
+}
+
+function reloadConfig() {
+    fetch('/api/rust/reload-config', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            showAlert(data.success ? 'success' : 'danger', data.message || data.error);
+            if (data.success) setTimeout(() => location.reload(), 1000);
+        })
+        .catch(err => showAlert('danger', `Error: ${err}`));
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>
+{% endblock %}

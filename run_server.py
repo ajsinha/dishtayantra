@@ -119,6 +119,134 @@ def _initialize_jvm_manager(props):
         return None
 
 
+def _initialize_cpp_manager(props):
+    """
+    Initialize the CPP Manager for pybind11 C++ calculator support.
+    
+    v1.7.0: CPP Manager provides centralized management of C++ modules
+    and calculator instances compiled with pybind11.
+    
+    Args:
+        props: PropertiesConfigurator instance
+        
+    Returns:
+        CPPManager instance or None if disabled/failed
+    """
+    cpp_config_path = 'config/cpp_config.json'
+    
+    if not os.path.exists(cpp_config_path):
+        logger.info("CPP configuration not found, C++ calculators will not be available")
+        return None
+    
+    try:
+        with open(cpp_config_path, 'r') as f:
+            cpp_config = json.load(f)
+        
+        cpp_manager_config = cpp_config.get('cpp_manager', {})
+        
+        if not cpp_manager_config.get('enabled', True):
+            logger.info("CPP Manager is disabled in configuration")
+            return None
+        
+        if not cpp_manager_config.get('auto_load_on_startup', True):
+            logger.info("CPP Manager auto-load is disabled")
+            return None
+        
+        # Import here to avoid circular imports
+        from core.cpp import CPPManager, get_cpp_manager
+        
+        print("\n✓ Initializing CPP Manager...")
+        logger.info("Initializing CPP Manager for pybind11 C++ calculators...")
+        
+        cpp_manager = get_cpp_manager()
+        
+        if cpp_manager.initialize(cpp_config_path):
+            status = cpp_manager.get_status()
+            modules_loaded = status.get('modules_loaded', 0)
+            calculators_defined = status.get('calculators_defined', 0)
+            
+            print(f"  • CPP Manager initialized ({modules_loaded} module(s), {calculators_defined} calculator(s))")
+            logger.info(f"CPP Manager initialized: {modules_loaded} modules, {calculators_defined} calculators")
+            return cpp_manager
+        else:
+            print("  ⚠ CPP Manager initialized but no modules loaded")
+            logger.warning("CPP Manager initialized but no modules loaded")
+            return cpp_manager
+    
+    except ImportError as e:
+        logger.warning(f"CPP Manager not available: {e}")
+        print(f"  ⚠ Note: CPP Manager not available")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to initialize CPP Manager: {e}")
+        print(f"  ⚠ Warning: CPP Manager failed to initialize: {e}")
+        return None
+
+
+def _initialize_rust_manager(props):
+    """
+    Initialize the Rust Manager for PyO3 Rust calculator support.
+    
+    v1.7.0: Rust Manager provides centralized management of Rust modules
+    and calculator instances compiled with PyO3/maturin.
+    
+    Args:
+        props: PropertiesConfigurator instance
+        
+    Returns:
+        RustManager instance or None if disabled/failed
+    """
+    rust_config_path = 'config/rust_config.json'
+    
+    if not os.path.exists(rust_config_path):
+        logger.info("Rust configuration not found, Rust calculators will not be available")
+        return None
+    
+    try:
+        with open(rust_config_path, 'r') as f:
+            rust_config = json.load(f)
+        
+        rust_manager_config = rust_config.get('rust_manager', {})
+        
+        if not rust_manager_config.get('enabled', True):
+            logger.info("Rust Manager is disabled in configuration")
+            return None
+        
+        if not rust_manager_config.get('auto_load_on_startup', True):
+            logger.info("Rust Manager auto-load is disabled")
+            return None
+        
+        # Import here to avoid circular imports
+        from core.rust import RustManager, get_rust_manager
+        
+        print("\n✓ Initializing Rust Manager...")
+        logger.info("Initializing Rust Manager for PyO3 Rust calculators...")
+        
+        rust_manager = get_rust_manager()
+        
+        if rust_manager.initialize(rust_config_path):
+            status = rust_manager.get_status()
+            modules_loaded = status.get('modules_loaded', 0)
+            calculators_defined = status.get('calculators_defined', 0)
+            
+            print(f"  • Rust Manager initialized ({modules_loaded} module(s), {calculators_defined} calculator(s))")
+            logger.info(f"Rust Manager initialized: {modules_loaded} modules, {calculators_defined} calculators")
+            return rust_manager
+        else:
+            print("  ⚠ Rust Manager initialized but no modules loaded")
+            logger.warning("Rust Manager initialized but no modules loaded")
+            return rust_manager
+    
+    except ImportError as e:
+        logger.warning(f"Rust Manager not available: {e}")
+        print(f"  ⚠ Note: Rust Manager not available")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to initialize Rust Manager: {e}")
+        print(f"  ⚠ Warning: Rust Manager failed to initialize: {e}")
+        return None
+
+
 def _initialize_worker_pool(props):
     """
     Initialize the worker pool early, before any other components.
@@ -237,6 +365,12 @@ def main():
 
         # v1.6.0: Initialize JVM Manager for Java calculator support
         jvm_manager = _initialize_jvm_manager(props)
+
+        # v1.7.0: Initialize CPP Manager for C++ calculator support
+        cpp_manager = _initialize_cpp_manager(props)
+
+        # v1.7.0: Initialize Rust Manager for Rust calculator support
+        rust_manager = _initialize_rust_manager(props)
 
         # v1.5.2: Initialize worker pool EARLY (before webapp and dag_server)
         # This ensures workers are ready before any DAGs try to start

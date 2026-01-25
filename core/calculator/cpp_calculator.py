@@ -1,6 +1,6 @@
 """
 pybind11 C++ Calculator Integration for DishtaYantra
-====================================================
+Version: 1.7.0
 
 This module provides integration with C++ calculators compiled using pybind11.
 C++ calculators offer:
@@ -8,12 +8,16 @@ C++ calculators offer:
 - Direct memory sharing (zero-copy possible)
 - SIMD optimization opportunities
 - Single .so/.pyd deployment
-- LMDB memory-mapped zero-copy exchange for large payloads (v1.1.1)
+- LMDB memory-mapped zero-copy exchange for large payloads
 
 The C++ class must implement:
 - Constructor: ClassName(std::string name, py::dict config)
 - Method: py::dict calculate(py::dict data)
 - Method: py::dict details()
+
+v1.7.0: Now uses CPP Manager for centralized module and calculator management.
+
+Copyright © 2025 Ashutosh Sinha. All rights reserved.
 """
 
 import importlib
@@ -31,13 +35,38 @@ except ImportError:
     LMDB_AVAILABLE = False
     logger.debug("LMDB module not available for C++ calculator")
 
+# CPP Manager support
+try:
+    from core.cpp import get_cpp_manager, is_cpp_available
+    CPP_MANAGER_AVAILABLE = True
+except ImportError:
+    CPP_MANAGER_AVAILABLE = False
+    logger.debug("CPP Manager not available")
+
 
 class CppCalculator:
     """
     Wrapper for C++ calculators compiled with pybind11.
     
-    The C++ calculator class must implement the same interface as Python's
-    DataCalculator:
+    In v1.7.0, calculators can be created in two ways:
+    
+    1. Using CPP Manager (recommended):
+        ```python
+        from core.cpp import create_cpp_calculator
+        calc = create_cpp_calculator("MathCalculator", "my_calc", {"operation": "sum"})
+        ```
+    
+    2. Direct instantiation (legacy):
+        ```python
+        config = {
+            'cpp_module': 'dishtayantra_cpp',
+            'cpp_class': 'MathCalculator',
+            'operation': 'sum'
+        }
+        calc = CppCalculator('my_calc', config)
+        ```
+    
+    The C++ calculator class must implement:
     
     ```cpp
     #include <pybind11/pybind11.h>
@@ -54,34 +83,7 @@ class CppCalculator:
     ```
     
     For LMDB-enabled calculators, the C++ side can access data via memory-mapped
-    files when receiving an '_lmdb_ref' in the input dict:
-    
-    ```cpp
-    py::dict calculate(const py::dict& data) {
-        if (data.contains("_lmdb_ref") && data["_lmdb_ref"].cast<bool>()) {
-            // Read from LMDB using the provided path and key
-            std::string db_path = data["_lmdb_db_path"].cast<std::string>();
-            std::string input_key = data["_lmdb_input_key"].cast<std::string>();
-            // Use liblmdb to read data
-        }
-        // ...
-    }
-    ```
-    
-    Example usage:
-    
-    ```python
-    config = {
-        'cpp_module': 'dishtayantra_cpp',
-        'cpp_class': 'MathCalculator',
-        'operation': 'sum',
-        'arguments': ['a', 'b', 'c'],
-        'lmdb_enabled': True,
-        'lmdb_min_size': 10240  # Use LMDB for payloads > 10KB
-    }
-    calc = CppCalculator('my_calc', config)
-    result = calc.calculate({'a': 1.0, 'b': 2.0, 'c': 3.0})
-    ```
+    files when receiving an '_lmdb_ref' in the input dict.
     """
     
     def __init__(self, name: str, config: Dict[str, Any]):
@@ -93,46 +95,81 @@ class CppCalculator:
             config: Configuration dictionary, must include:
                     - cpp_module: Name of the compiled module (e.g., 'dishtayantra_cpp')
                     - cpp_class: Name of the C++ class (e.g., 'MathCalculator')
+                    OR
+                    - calculator_name: Name of a calculator defined in cpp_config.json
+                    
                     Optional:
                     - lmdb_enabled: Enable LMDB zero-copy transport
                     - lmdb_db_path: LMDB database path
                     - lmdb_min_size: Min payload size to use LMDB
-                    Additional config options are passed to the C++ constructor.
         """
         self.name = name
         self.config = config
+        self._cpp_instance = None
         
-        cpp_module = config.get('cpp_module', 'dishtayantra_cpp')
-        cpp_class = config.get('cpp_class')
+        # Check if using CPP Manager
+        calculator_name = config.get('calculator_name')
         
-        if not cpp_class:
-            raise ValueError("cpp_class must be specified for C++ calculators")
+        if calculator_name and CPP_MANAGER_AVAILABLE:
+            # Use CPP Manager to create calculator
+            try:
+                manager = get_cpp_manager()
+                if not manager._initialized:
+                    manager.initialize()
+                
+                # Get the calculator instance from manager
+                self._cpp_instance = manager.create_calculator(
+                    calculator_name,
+                    name,
+                    config
+                )
+                
+                # Store module info
+                definition = manager.calculator_definitions.get(calculator_name)
+                if definition:
+                    self._cpp_module = definition.module
+                    self._cpp_class = definition.cpp_class
+                
+                logger.info(f"CppCalculator '{name}' created via CPP Manager: {calculator_name}")
+                
+            except Exception as e:
+                logger.warning(f"Failed to use CPP Manager for {calculator_name}: {e}")
+                # Fall through to direct initialization
+                calculator_name = None
         
-        try:
-            # Import the compiled module
-            module = importlib.import_module(cpp_module)
-            calculator_class = getattr(module, cpp_class)
+        if not calculator_name or self._cpp_instance is None:
+            # Direct initialization (legacy mode)
+            cpp_module = config.get('cpp_module', 'dishtayantra_cpp')
+            cpp_class = config.get('cpp_class')
             
-            # Create C++ calculator instance
-            # Pass the full config dict - C++ can extract what it needs
-            self._cpp_instance = calculator_class(name, config)
+            if not cpp_class:
+                raise ValueError("cpp_class must be specified for C++ calculators")
             
-            logger.info(f"CppCalculator '{name}' initialized: {cpp_module}.{cpp_class}")
+            self._cpp_module = cpp_module
+            self._cpp_class = cpp_class
             
-        except ImportError as e:
-            raise RuntimeError(
-                f"Failed to import C++ module '{cpp_module}': {e}\n"
-                f"Ensure the module is compiled and in Python's path.\n"
-                f"Compile with: g++ -O3 -shared -std=c++17 -fPIC "
-                f"$(python3 -m pybind11 --includes) your_module.cpp "
-                f"-o {cpp_module}$(python3-config --extension-suffix)"
-            )
-        except AttributeError as e:
-            raise RuntimeError(f"Class '{cpp_class}' not found in module '{cpp_module}': {e}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize C++ calculator: {e}")
+            try:
+                # Import the compiled module
+                module = importlib.import_module(cpp_module)
+                calculator_class = getattr(module, cpp_class)
+                
+                # Create C++ calculator instance
+                self._cpp_instance = calculator_class(name, config)
+                
+                logger.info(f"CppCalculator '{name}' initialized (direct): {cpp_module}.{cpp_class}")
+                
+            except ImportError as e:
+                raise RuntimeError(
+                    f"Failed to import C++ module '{cpp_module}': {e}\n"
+                    f"Ensure the module is compiled and in Python's path.\n"
+                    f"Build with: cd cpp && mkdir build && cd build && cmake .. && make"
+                )
+            except AttributeError as e:
+                raise RuntimeError(f"Class '{cpp_class}' not found in module '{cpp_module}': {e}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to initialize C++ calculator: {e}")
         
-        # LMDB support (v1.1.1)
+        # LMDB support
         self._lmdb_exchange: Optional[LMDBDataExchange] = None
         self._lmdb_enabled = False
         if LMDB_AVAILABLE and config.get('lmdb_enabled', False):
@@ -154,8 +191,7 @@ class CppCalculator:
         Execute calculation on the C++ side.
         
         For large payloads (configurable, default 1KB+), uses LMDB memory-mapped
-        files for zero-copy data exchange, achieving maximum performance for
-        large data transfers.
+        files for zero-copy data exchange.
         
         Args:
             data: Input data dictionary
@@ -247,8 +283,8 @@ class CppCalculator:
             'name': self.name,
             'language': 'C++',
             'binding': 'pybind11',
-            'cpp_module': self.config.get('cpp_module', 'dishtayantra_cpp'),
-            'cpp_class': self.config.get('cpp_class'),
+            'cpp_module': getattr(self, '_cpp_module', 'unknown'),
+            'cpp_class': getattr(self, '_cpp_class', 'unknown'),
             'lmdb_enabled': self._lmdb_enabled,
             'stats': {
                 'calculations': self._stats['calculations'],
@@ -274,6 +310,13 @@ def is_cpp_module_available(module_name: str = 'dishtayantra_cpp') -> bool:
     Returns:
         True if module can be imported, False otherwise
     """
+    # First check via CPP Manager
+    if CPP_MANAGER_AVAILABLE:
+        manager = get_cpp_manager()
+        if manager._initialized and module_name in manager.loaded_modules:
+            return True
+    
+    # Direct import check
     try:
         importlib.import_module(module_name)
         return True
@@ -291,6 +334,20 @@ def get_cpp_module_info(module_name: str = 'dishtayantra_cpp') -> Optional[Dict[
     Returns:
         Dictionary with module info, or None if not available
     """
+    # First try CPP Manager
+    if CPP_MANAGER_AVAILABLE:
+        manager = get_cpp_manager()
+        if manager._initialized:
+            status = manager.module_status.get(module_name)
+            if status and status.loaded:
+                return {
+                    'name': module_name,
+                    'file': status.path,
+                    'available_classes': status.available_classes,
+                    'load_time': status.load_time.isoformat() if status.load_time else None
+                }
+    
+    # Direct import
     try:
         module = importlib.import_module(module_name)
         return {
@@ -304,3 +361,17 @@ def get_cpp_module_info(module_name: str = 'dishtayantra_cpp') -> Optional[Dict[
         }
     except ImportError:
         return None
+
+
+def list_available_cpp_calculators() -> list:
+    """
+    List all available C++ calculators from CPP Manager.
+    
+    Returns:
+        List of calculator definitions
+    """
+    if CPP_MANAGER_AVAILABLE:
+        manager = get_cpp_manager()
+        if manager._initialized:
+            return manager.list_calculators()
+    return []

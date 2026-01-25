@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}{{ calculator.name }} - Rust Calculator - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+    }
+    .code-block.rust {
+        border-left: 4px solid #B7410E;
+    }
+    .code-block.python {
+        border-left: 4px solid #3776ab;
+    }
+    .code-block.json {
+        border-left: 4px solid #10b981;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/rust">Rust Management</a></li>
+        <li class="breadcrumb-item"><a href="/rust/calculators">Calculators</a></li>
+        <li class="breadcrumb-item active">{{ calculator.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-calculator" style="color: #B7410E;"></i> {{ calculator.name }}
+        {% if calculator.available %}
+        <span class="badge bg-success ms-2" style="font-size: 0.5em; vertical-align: middle;">Available</span>
+        {% else %}
+        <span class="badge bg-secondary ms-2" style="font-size: 0.5em; vertical-align: middle;">Unavailable</span>
+        {% endif %}
+    </h2>
+    <a href="/rust/module/{{ calculator.module }}" class="btn btn-outline-secondary">
+        <i class="bi bi-box-seam"></i> View Module
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Calculator Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Calculator Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th style="width: 150px;">Description</th>
+                        <td>{{ calculator.description }}</td>
+                    </tr>
+                    <tr>
+                        <th>Module</th>
+                        <td><code>{{ calculator.module }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Rust Struct</th>
+                        <td><code>{{ calculator.rust_class }}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Module Loaded</th>
+                        <td>
+                            {% if calculator.module_loaded %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Yes</span>
+                            {% else %}
+                            <span class="text-muted"><i class="bi bi-x-circle"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Instances Cached</th>
+                        <td>{{ calculator.instances_cached }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Default Configuration -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> Default Configuration</h5>
+            </div>
+            <div class="card-body">
+                {% if calculator.default_config %}
+                <pre class="code-block json"><code>{{ calculator.default_config | tojson(indent=2) }}</code></pre>
+                {% else %}
+                <p class="text-muted mb-0">No default configuration</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- DAG Configuration Example -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> DAG Configuration Example</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Use this node configuration in your DAG JSON:</p>
+                <pre class="code-block json"><code>{{ example_dag }}</code></pre>
+            </div>
+        </div>
+        
+        <!-- Python Usage -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-filetype-py"></i> Python Usage</h5>
+            </div>
+            <div class="card-body">
+                <h6>Using Rust Manager (Recommended)</h6>
+                <pre class="code-block python"><code>from core.rust import create_rust_calculator
+
+# Create calculator by name
+calc = create_rust_calculator("{{ calculator.name }}", "my_instance", {
+    # Override default config here
+})
+
+# Execute calculation
+result = calc.calculate({"values": [1.0, 2.0, 3.0, 4.0, 5.0]})
+print(result)</code></pre>
+
+                <h6 class="mt-3">Direct Usage (Legacy)</h6>
+                <pre class="code-block python"><code>from core.calculator.rust_calculator import RustCalculator
+
+config = {
+    'rust_module': '{{ calculator.module }}',
+    'rust_class': '{{ calculator.rust_class }}',
+    {% for key, value in calculator.default_config.items() %}
+    '{{ key }}': {{ value | tojson }},
+    {% endfor %}
+}
+calc = RustCalculator('my_calc', config)
+result = calc.calculate({"values": [1.0, 2.0, 3.0]})</code></pre>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Test Calculator -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-play-circle"></i> Test Calculator</h5>
+            </div>
+            <div class="card-body">
+                {% if calculator.available %}
+                <div class="mb-3">
+                    <label class="form-label">Test Input (JSON)</label>
+                    <textarea id="testInput" class="form-control" rows="4">{"values": [1.0, 2.0, 3.0, 4.0, 5.0]}</textarea>
+                </div>
+                <button class="btn btn-primary w-100" onclick="testCalculator()">
+                    <i class="bi bi-play-fill"></i> Run Test
+                </button>
+                <div id="testResult" class="mt-3" style="display: none;">
+                    <h6>Result:</h6>
+                    <pre class="code-block json" style="max-height: 200px;"><code id="testOutput"></code></pre>
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> 
+                    Calculator not available. Load the module first.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Related Resources -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> Related Resources</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="/rust/module/{{ calculator.module }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-box-seam"></i> Module: {{ calculator.module }}
+                </a>
+                <a href="/help/rust-integration" class="list-group-item list-group-item-action">
+                    <i class="bi bi-book"></i> Rust Integration Guide
+                </a>
+                <a href="/api/rust/calculators/{{ calculator.name }}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-code-slash"></i> API Endpoint
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function testCalculator() {
+    const input = document.getElementById('testInput').value;
+    let testData;
+    
+    try {
+        testData = JSON.parse(input);
+    } catch (e) {
+        alert('Invalid JSON: ' + e.message);
+        return;
+    }
+    
+    fetch('/api/rust/calculators/{{ calculator.name }}/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(testData)
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('testResult').style.display = 'block';
+        document.getElementById('testOutput').textContent = JSON.stringify(data, null, 2);
+    })
+    .catch(err => {
+        alert('Error: ' + err);
+    });
+}
+</script>
+{% endblock %}
