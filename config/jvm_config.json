@@ -5,7 +5,7 @@
     "jvm_manager": {
         "enabled": false,
         "_enabled_note": "Set to true to enable automatic JVM management and Py4J gateway initialization",
-        "auto_start_on_load": true,
+        "auto_start_on_load": false,
         "_auto_start_note": "If true, JVMs are started automatically when application.properties is loaded",
         "shutdown_timeout_seconds": 30,
         "health_check_interval_seconds": 30,

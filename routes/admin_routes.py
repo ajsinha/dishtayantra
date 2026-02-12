@@ -11,9 +11,12 @@ import sys
 import platform
 import threading
 import logging
+import time
+import json
+import queue
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import render_template, jsonify, session, redirect, url_for, flash, request, send_file
+from flask import render_template, jsonify, session, redirect, url_for, flash, request, send_file, Response
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +89,11 @@ class AdminRoutes:
                              admin_required(self.system_logs_api))
         self.app.add_url_rule('/admin/logs/download', 'download_logs', 
                              admin_required(self.download_logs))
+        # Live logs routes
+        self.app.add_url_rule('/admin/logs/live', 'live_logs', 
+                             admin_required(self.live_logs))
+        self.app.add_url_rule('/admin/logs/live/stream', 'live_logs_stream', 
+                             admin_required(self.live_logs_stream))
     
     def _get_system_metrics(self):
         """Gather system metrics."""
@@ -525,3 +533,127 @@ class AdminRoutes:
         else:
             flash('Log file not found.', 'error')
             return redirect(url_for('system_logs'))
+    
+    def live_logs(self):
+        """Render the live logs page."""
+        return render_template('admin/live_logs.html')
+    
+    def live_logs_stream(self):
+        """Server-Sent Events endpoint for live log streaming."""
+        
+        def generate_log_events():
+            """Generator that yields log events."""
+            log_files = [
+                'logs/dagserver.log',
+                'logs/application.log',
+                'logs/error.log'
+            ]
+            
+            # Track file positions
+            file_positions = {}
+            for log_file in log_files:
+                if os.path.exists(log_file):
+                    file_positions[log_file] = os.path.getsize(log_file)
+                else:
+                    file_positions[log_file] = 0
+            
+            # Send initial heartbeat
+            yield f"data: {json.dumps({'type': 'heartbeat', 'timestamp': datetime.now().isoformat()})}\n\n"
+            
+            while True:
+                try:
+                    new_entries = []
+                    
+                    for log_file in log_files:
+                        if not os.path.exists(log_file):
+                            continue
+                        
+                        current_size = os.path.getsize(log_file)
+                        
+                        # Check if file was truncated/rotated
+                        if current_size < file_positions[log_file]:
+                            file_positions[log_file] = 0
+                        
+                        # Read new content
+                        if current_size > file_positions[log_file]:
+                            try:
+                                with open(log_file, 'r', encoding='utf-8', errors='replace') as f:
+                                    f.seek(file_positions[log_file])
+                                    new_content = f.read()
+                                    file_positions[log_file] = current_size
+                                    
+                                    # Parse new lines
+                                    for line in new_content.strip().split('\n'):
+                                        if line.strip():
+                                            entry = self._parse_log_line(line, log_file)
+                                            if entry:
+                                                new_entries.append(entry)
+                            except Exception as e:
+                                logger.error(f"Error reading log file {log_file}: {e}")
+                    
+                    # Send new entries
+                    for entry in new_entries:
+                        yield f"data: {json.dumps(entry)}\n\n"
+                    
+                    # Send heartbeat every 30 seconds if no activity
+                    if not new_entries:
+                        # Small sleep to prevent CPU spinning
+                        time.sleep(0.5)
+                    
+                except GeneratorExit:
+                    # Client disconnected
+                    break
+                except Exception as e:
+                    logger.error(f"Error in log stream: {e}")
+                    time.sleep(1)
+        
+        return Response(
+            generate_log_events(),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no'  # Disable nginx buffering
+            }
+        )
+    
+    def _parse_log_line(self, line, source_file):
+        """Parse a single log line into structured format."""
+        try:
+            # Try to parse standard log format: timestamp - level - message
+            # Common format: 2024-01-15 10:30:45,123 - INFO - message
+            parts = line.split(' - ', 2)
+            
+            if len(parts) >= 3:
+                timestamp = parts[0].strip()
+                level = parts[1].strip().upper()
+                message = parts[2].strip()
+            elif len(parts) == 2:
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                level = parts[0].strip().upper() if parts[0].strip().upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] else 'INFO'
+                message = parts[1].strip() if parts[0].strip().upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] else line
+            else:
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                level = 'INFO'
+                message = line.strip()
+            
+            # Validate level
+            if level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+                level = 'INFO'
+            
+            # Determine source from file
+            source_name = os.path.basename(source_file).replace('.log', '')
+            
+            return {
+                'timestamp': timestamp,
+                'level': level,
+                'message': message,
+                'source': source_name
+            }
+        except Exception:
+            return {
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'level': 'INFO',
+                'message': line.strip(),
+                'source': 'unknown'
+            }

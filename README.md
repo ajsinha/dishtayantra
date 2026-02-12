@@ -4,81 +4,46 @@
 
 > *"The performance of C++, the safety of Rust, the ecosystem of Python, and the simplicity of execution."*
 
-A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, and **LMDB zero-copy data exchange**.
+A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-1.5.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.5.2
+## What's New in Version 1.7.2
 
-### Worker Pool & Multiprocessing (MAJOR)
-- **Multiprocessing Worker Pool**: True CPU parallelism by bypassing Python's GIL
-- **DAG Worker Affinity**: Pin DAGs to specific workers for cache locality
-- **Configurable Workers**: Default 4 workers, configurable via `config/worker_config.json`
-- **Load Balancing**: Weight-based, round-robin, least-loaded, or random strategies
-- **Health Monitoring**: Heartbeat-based worker health tracking
-- **Auto-Restart**: Crashed workers automatically restart with exponential backoff
-- **DAG Restoration**: DAGs automatically reloaded after worker restart
-- **Web UI**: Real-time monitoring, manual restart, DAG migration
+### Live Logs Streaming (NEW)
+- **Real-Time Log Viewer**: Server-Sent Events (SSE) for live log streaming
+- **Auto-Reconnect**: Automatic reconnection on connection drops
+- **Level & Source Filtering**: Filter by DEBUG, INFO, WARNING, ERROR, CRITICAL and source
+- **Search**: Real-time search through log messages
+- **Pause/Resume**: Control the stream without losing connection
+- **Statistics Bar**: Total count, errors, warnings, log rate, buffer size
+- **Connection Status**: Visual indicators for connection state
 
-### LMDB Cross-Process Pub/Sub (NEW)
-- **Cross-Worker Communication**: `lmdb://channel_name` URI scheme
-- **Memory-Mapped**: Zero-copy reads across processes
-- **Multiple Readers**: Many workers can read simultaneously
-- **ACID Compliant**: Data integrity guaranteed
-- **LMDBDataPublisher/LMDBDataSubscriber**: Standard pub/sub interface
+### Research Documentation (NEW)
+- **Comprehensive Research Paper**: 22-page technical paper with architecture diagrams
+- **Multiple Formats**: Available in PDF, LaTeX, and Markdown
+- **Web Integration**: Research section in help system with runtime rendering
+- **Download Support**: Direct download links for all formats
 
-### DataSubscriber Non-Dictionary Message Packaging (NEW)
-- **Automatic Packaging**: Non-dictionary messages (strings, lists, bytes) automatically wrapped into standardized dict format
-- **Consistent Calculator Input**: All calculators receive dictionary format regardless of source
-- **Message Metadata**: Automatically tracks subscriber name, source, and receive timestamp
-- **Type Preservation**: Original data type stored in `_original_type` field for proper parsing
-- **Configurable**: Enable/disable per subscriber with `auto_package_non_dict` option
-- **Backward Compatible**: Dictionary messages pass through unchanged
+### Version 1.7.0/1.7.1 Features
 
-### Extended In-Memory URI Support (NEW)
-- **New URI Formats**: `inmemory://name`, `memory://name`, `mem://name` (simple format)
-- **Flexible Configuration**: Use any format for in-memory pubsub sources/destinations
+#### CPP Manager & pybind11 Integration (MAJOR)
+- **Centralized C++ Management**: Web UI for C++ module administration
+- **Pre-configured Calculators**: MathCalculator, StatisticsCalculator, TradePricingCalculator, RiskMetricsCalculator
+- **Hot Module Loading**: Load/unload C++ modules without restart
+- **Calculator Discovery**: Automatic discovery of available calculators
+- **Health Monitoring**: Real-time status of C++ modules
 
-### Enhanced Publish Message UI (NEW)
-- **Raw Message Support**: Publish non-JSON messages (CSV, text) directly from web UI
-- **Format Selector**: Toggle between JSON and Raw Text modes
-- **Visual Feedback**: Clear indication of message type being published
-
-### Subgraph Feature (Graph-as-a-Node)
-- **Modular Composition**: Encapsulate complex pipelines as single nodes in parent graph
-- **Light Up / Light Down**: Dynamically activate or suspend subgraphs at runtime
-- **Node Borrowing**: Subgraph nodes borrow calculators from parent - no duplication
-- **Hierarchical Nesting**: Support for up to 3 levels of nested subgraphs
-- **Hybrid Loading**: Define inline or load from external JSON files
-- **Supervisor Control**: Bulk operations to manage all subgraphs at once
-- **Dirty Propagation Control**: Block dirty signals when subgraph is suspended
-
-### LMDB Zero-Copy Data Exchange (v1.1.2 - Patent Pending)
-- **Memory-Mapped Transport**: 100-1000x faster than serialization for large payloads
-- **Zero-Copy I/O**: Native calculators access data directly via memory-mapped files
-- **Multi-Language Support**: Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)
-- **Automatic Threshold Detection**: Seamlessly switches based on payload size
-- **Configurable**: Path and settings via application.properties
-
-### Admin & System Monitoring (v1.1.1)
-- **System Monitoring Dashboard**: Real-time CPU, memory, disk, and network monitoring
-- **Admin Dropdown Menu**: Consolidated admin features in navigation bar
-- **System Logs Viewer**: View, filter, search, and download application logs
-- **Service Health Checks**: Monitor DAG server and integration status
-
-### Multi-Language Calculator Support (v1.1.0)
-- **Java (Py4J)**: 10-100x faster, JVM ecosystem access, gateway pooling
-- **C++ (pybind11)**: 50-100x faster, ~100ns overhead, SIMD optimization, zero-copy
-- **Rust (PyO3)**: C++ equivalent performance, memory safety, thread safety with rayon
-- **REST API**: HTTP POST endpoints with API Key, Basic, Bearer authentication
-
-### Python 3.13+ Free-Threading Support
-- Optional GIL-free execution for true parallelism
-- Automatic detection and configuration
+#### Rust Manager & PyO3 Integration (MAJOR)
+- **Centralized Rust Management**: Web UI for Rust module administration
+- **Pre-configured Calculators**: MathCalculator, StatisticsCalculator, TradePricingCalculator
+- **Hot Module Loading**: Dynamic Rust module management
+- **LMDB Integration**: Zero-copy transport for Rust calculators
+- **Thread-Safe Execution**: Leverages Rust's memory safety guarantees
 
 ---
 
@@ -86,7 +51,7 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 
 ### Core Capabilities
 - **Multi-threaded DAG Execution**: Efficient parallel processing with topologically sorted node execution
-- **Worker Pool**: Multiprocessing with DAG affinity for true CPU parallelism
+- **Worker Pool**: Multiprocessing with DAG affinity for true CPU parallelism (bypasses GIL)
 - **Subgraph Support**: Modular graph-as-a-node pattern with dynamic light up/down control
 - **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory, LMDB
 - **Various Data Sources**: File, SQL databases, Aerospike, Redis, REST, gRPC, custom implementations
@@ -97,6 +62,7 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 - **AutoClone**: Automatic DAG duplication with configurable intervals
 
 ### Multi-Language Calculators
+
 | Language | Technology | Performance | Use Case |
 |----------|------------|-------------|----------|
 | Python | Built-in | Baseline | Rapid development, prototyping |
@@ -105,19 +71,30 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 | Rust | PyO3 | 50-100x faster | Memory safety, thread safety |
 | REST | HTTP/JSON | Network dependent | Microservices, third-party APIs |
 
-### Admin Features (v1.1.1)
-- System monitoring with real-time metrics
-- Process and resource tracking
-- Log viewer with filtering and search
-- Calculator integration status
-- Service health checks
+### LMDB Zero-Copy Data Exchange
+- **Memory-Mapped Transport**: 100-1000x faster than serialization for large payloads
+- **Zero-Copy I/O**: Native calculators access data directly via memory-mapped files
+- **Multi-Language Support**: Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)
+- **Automatic Threshold Detection**: Seamlessly switches based on payload size
+- **Configurable**: Path and settings via application.properties
+
+### Admin Features
+- **System Monitoring Dashboard**: Real-time CPU, memory, disk, and network monitoring
+- **Live Logs**: Real-time log streaming with SSE
+- **System Logs Viewer**: View, filter, search, and download application logs
+- **Worker Pool Management**: Monitor and control worker processes
+- **JVM Management**: Java gateway status and control
+- **C++ Management**: pybind11 module administration
+- **Rust Management**: PyO3 module administration
+- **Service Health Checks**: Monitor DAG server and integration status
 
 ### Documentation & Help
-- 12-page comprehensive help system
-- Interactive DAG Designer
-- 40+ term glossary
-- Sample DAG configurations
-- API reference documentation
+- **20+ page help system** with comprehensive guides
+- **Interactive DAG Designer** for visual workflow creation
+- **50+ term glossary** for reference
+- **Sample DAG configurations** with examples
+- **API reference documentation**
+- **Research paper** with architecture details
 
 ---
 
@@ -140,7 +117,7 @@ dishtayantra/
 │   │   ├── kafka_datapubsub.py     # Kafka pub/sub
 │   │   ├── rabbitmq_datapubsub.py  # RabbitMQ pub/sub
 │   │   ├── redis_datapubsub.py     # Redis pub/sub
-│   │   ├── inmemory_redisclone.py  # In-memory Redis clone
+│   │   ├── lmdb_datapubsub.py      # LMDB pub/sub (cross-process)
 │   │   └── ...                     # Other pub/sub implementations
 │   ├── dag/
 │   │   ├── graph_elements.py       # Node and Edge classes
@@ -148,31 +125,39 @@ dishtayantra/
 │   │   ├── compute_graph.py        # ComputeGraph class
 │   │   ├── dag_server.py           # DAGComputeServer
 │   │   └── time_window_utils.py    # Time window handling
-│   └── db/
-│       ├── db_connection_pool.py   # Database connection pooling
-│       └── db_connection_pool_manager.py
+│   └── worker/
+│       └── worker_pool.py          # Multiprocessing worker pool
 ├── routes/
 │   ├── auth_routes.py              # Authentication
 │   ├── dashboard_routes.py         # Dashboard
 │   ├── dag_routes.py               # DAG operations
-│   ├── admin_routes.py             # System monitoring (NEW)
-│   └── ...
+│   ├── admin_routes.py             # System monitoring & live logs
+│   ├── worker_routes.py            # Worker pool management
+│   ├── jvm_routes.py               # JVM/Java management
+│   ├── cpp_routes.py               # C++ management
+│   ├── rust_routes.py              # Rust management
+│   └── noauth_routes.py            # Public routes (help, about)
 ├── web/
 │   ├── dishtyantra_webapp.py       # Flask application
+│   ├── static/
+│   │   └── research/               # Research paper files (PDF, LaTeX, MD)
 │   └── templates/
-│       ├── base.html               # Base template with admin dropdown
+│       ├── base.html               # Base template with navigation
 │       ├── dashboard.html          # Main dashboard
-│       ├── dag_designer.html       # Visual DAG designer
 │       ├── admin/
-│       │   ├── system_monitoring.html  # System metrics (NEW)
-│       │   └── system_logs.html        # Log viewer (NEW)
+│       │   ├── system_monitoring.html
+│       │   ├── system_logs.html
+│       │   ├── live_logs.html      # Live log streaming (NEW)
+│       │   └── workers.html
+│       ├── dag/
+│       │   └── designer.html       # Visual DAG designer
+│       ├── jvm/                    # JVM management pages
+│       ├── cpp/                    # C++ management pages
+│       ├── rust/                   # Rust management pages
 │       └── help/
 │           ├── index.html          # Help center
-│           ├── py4j_integration.html
-│           ├── pybind11_integration.html
-│           ├── rust_integration.html
-│           ├── rest_integration.html
-│           └── ...
+│           ├── research.html       # Research paper viewer
+│           └── ...                 # 20+ help pages
 ├── java/                           # Java calculator sources
 │   └── src/com/dishtayantra/
 ├── cpp/                            # C++ calculator sources
@@ -181,11 +166,18 @@ dishtayantra/
 │   └── src/
 ├── config/
 │   ├── users.json                  # User credentials
+│   ├── worker_config.json          # Worker pool configuration
+│   ├── cpp_config.json             # C++ module configuration
+│   ├── rust_config.json            # Rust module configuration
 │   └── dags/                       # DAG configurations
 ├── docs/
+│   ├── research/                   # Research paper (PDF, LaTeX, MD)
 │   ├── requirements/               # Requirements documents
 │   └── userguides/                 # User guides
+├── logs/                           # Application logs
 ├── requirements.txt
+├── QUICKSTART.md
+├── QUICKSTART_v1.7.0.md
 └── README.md
 ```
 
@@ -210,305 +202,117 @@ pip install -r requirements.txt
 # Create directories
 python setup_directories.py
 
-# Start server
+# Start the server
 python run_server.py
 ```
 
-### Optional: Multi-Language Calculator Setup
+### Access the Web UI
+Open http://localhost:5000 in your browser.
 
-#### Java (Py4J)
-```bash
-# Install Py4J
-pip install py4j
-
-# Compile Java classes
-cd java
-javac -cp .:py4j.jar src/com/dishtayantra/**/*.java
-
-# Start Java gateway
-java -cp .:py4j.jar:src com.dishtayantra.gateway.DishtaYantraGateway
-```
-
-#### C++ (pybind11)
-```bash
-# Install pybind11
-pip install pybind11
-
-# Build C++ module
-cd cpp
-mkdir build && cd build
-cmake ..
-make
-cp dishtayantra_cpp*.so ../../
-```
-
-#### Rust (PyO3)
-```bash
-# Install maturin
-pip install maturin
-
-# Build Rust module
-cd rust
-maturin develop --release
-```
+**Default Credentials:**
+- Username: `admin`
+- Password: `admin123`
 
 ---
 
-## Configuration
+## Quick Start
 
-### Users Configuration
+### 1. Create a Simple DAG
 
-Edit `config/users.json`:
 ```json
 {
-  "admin": {
-    "password": "admin123",
-    "roles": ["admin", "user"],
-    "full_name": "System Administrator"
-  },
-  "operator": {
-    "password": "operator123",
-    "roles": ["user"],
-    "full_name": "DAG Operator"
-  }
+    "name": "simple_pipeline",
+    "start_time": "0000",
+    "duration": "24h",
+    "nodes": [
+        {
+            "name": "source",
+            "type": "SubscriptionNode",
+            "subscribers": [{"uri": "kafka://localhost:9092/input_topic"}]
+        },
+        {
+            "name": "processor",
+            "type": "CalculationNode",
+            "calculator": {"type": "python", "name": "SimpleCalculator"}
+        },
+        {
+            "name": "sink",
+            "type": "PublicationNode",
+            "publishers": [{"uri": "kafka://localhost:9092/output_topic"}]
+        }
+    ],
+    "edges": [
+        {"from": "source", "to": "processor"},
+        {"from": "processor", "to": "sink"}
+    ]
 }
 ```
 
-### DAG Configuration
-
-Create JSON files in `config/dags/` directory:
+### 2. Using C++ Calculator (High Performance)
 
 ```json
 {
-  "name": "my_pipeline",
-  "start_time": "0900",
-  "duration": 480,
-  "subscribers": [
-    {
-      "name": "input_sub",
-      "config": { "source": "kafka://topic/input" }
+    "name": "processor",
+    "type": "CalculationNode",
+    "calculator": {
+        "type": "cpp",
+        "name": "MathCalculator"
     }
-  ],
-  "publishers": [
-    {
-      "name": "output_pub",
-      "config": { "destination": "redis://output_key" }
+}
+```
+
+### 3. Using Rust Calculator (Memory Safe)
+
+```json
+{
+    "name": "processor",
+    "type": "CalculationNode",
+    "calculator": {
+        "type": "rust",
+        "name": "StatisticsCalculator"
     }
-  ],
-  "calculators": [
-    {
-      "name": "java_calc",
-      "type": "com.example.MyCalculator",
-      "config": { "calculator": "java" }
+}
+```
+
+### 4. Using LMDB Zero-Copy for Large Payloads
+
+```json
+{
+    "name": "processor",
+    "type": "CalculationNode",
+    "calculator": {
+        "type": "cpp",
+        "name": "TradePricingCalculator",
+        "lmdb_exchange": {
+            "enabled": true,
+            "mode": "both"
+        }
     }
-  ],
-  "nodes": [
-    { "name": "input", "type": "SubscriptionNode", "subscriber": "input_sub" },
-    { "name": "process", "type": "CalculationNode", "calculator": "java_calc" },
-    { "name": "output", "type": "PublicationNode", "publisher": "output_pub" }
-  ],
-  "edges": [
-    { "from": "input", "to": "process" },
-    { "from": "process", "to": "output" }
-  ]
-}
-```
-
-### Calculator Configuration Examples
-
-#### Java Calculator
-```json
-{
-  "name": "risk_calc",
-  "type": "com.company.RiskCalculator",
-  "config": {
-    "calculator": "java",
-    "gateway_port": 25333,
-    "pool_size": 4
-  }
-}
-```
-
-#### C++ Calculator
-```json
-{
-  "name": "simd_calc",
-  "type": "SimdVectorCalculator",
-  "config": {
-    "calculator": "cpp",
-    "use_simd": true
-  }
-}
-```
-
-#### Rust Calculator
-```json
-{
-  "name": "safe_calc",
-  "type": "ThreadSafeCalculator",
-  "config": {
-    "calculator": "rust",
-    "thread_count": 8
-  }
-}
-```
-
-#### REST Calculator
-```json
-{
-  "name": "api_calc",
-  "config": {
-    "calculator": "rest",
-    "endpoint": "https://api.example.com/calculate",
-    "auth_type": "api_key",
-    "api_key": "${API_KEY}",
-    "timeout": 10,
-    "retries": 3
-  }
 }
 ```
 
 ---
 
-## Running the Application
-
-### Start Server
-```bash
-python run_server.py
-```
-
-### Environment Variables
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DAG_CONFIG_FOLDER` | Path to DAG configurations | `./config/dags` |
-| `ZOOKEEPER_HOSTS` | Zookeeper connection string | `localhost:2181` |
-| `USERS_FILE` | Path to users file | `./config/users.json` |
-| `SECRET_KEY` | Flask session secret | (generated) |
-| `FLASK_PORT` | Web server port | `5000` |
-
-### Access Web Interface
-Navigate to `http://localhost:5000` and login with credentials from `users.json`.
-
----
-
-## Web Interface Guide
-
-### Dashboard
-- View all DAGs with status indicators
-- Start/Stop/Suspend/Resume DAGs
-- Clone DAGs with new time windows
-- Archive/Delete DAGs
-- Real-time status updates
-
-### DAG Designer
-- Visual drag-and-drop DAG creation
-- Node palette with all node types
-- Edge connection interface
-- JSON configuration export
-
-### Admin Features (Admin Role Required)
-Access via **Admin** dropdown in navigation bar:
-
-#### System Monitoring
-- **CPU**: Usage percentage, core count, load average
-- **Memory**: Usage, total, available
-- **Disk**: Usage, partitions, free space
-- **Network**: Bytes sent/received, connections, errors
-- **DAG Server**: Running/stopped/error DAG counts
-- **Process Info**: PID, memory, threads, open files
-- **Calculator Status**: Java, C++, Rust, REST availability
-- **Health Checks**: Service status indicators
-- **Auto-refresh**: 5-second automatic updates
-
-#### System Logs
-- View application logs (dagserver.log, application.log, error.log)
-- Filter by log level (Info, Warning, Error)
-- Search log content
-- Download logs
-
-#### User Management
-- Create/Edit/Delete users
-- Assign roles (admin, user)
-- Password management
-
-### Help Center
-Comprehensive documentation including:
-- Getting Started guide
-- DAG Configuration reference
-- Calculator types and configuration
-- Pub/Sub setup guides
-- Multi-language integration guides
-- API reference
-- Glossary (40+ terms)
-
----
-
-## Components Reference
-
-### Publishers and Subscribers
-
-| Protocol | URI Format | Example |
-|----------|------------|---------|
-| In-Memory | `mem://queue/name` | `mem://queue/input` |
-| In-Memory Topic | `mem://topic/name` | `mem://topic/broadcast` |
-| Kafka | `kafka://topic/name` | `kafka://topic/events` |
-| Redis | `redis://key` | `redis://output_data` |
-| Redis Channel | `redischannel://name` | `redischannel://updates` |
-| RabbitMQ | `rabbitmq://queue/name` | `rabbitmq://queue/tasks` |
-| ActiveMQ | `activemq://queue/name` | `activemq://queue/jobs` |
-| File | `file:///path` | `file:///data/output.json` |
-| SQL | `sql://source` | `sql://trades_db` |
-| REST | `rest://endpoint` | `rest://api/data` |
-| Aerospike | `aerospike://ns/set` | `aerospike://test/users` |
-
-### Built-in Calculators
-
-| Calculator | Description |
-|------------|-------------|
-| `NullCalculator` | Returns deep copy of input |
-| `PassthruCalculator` | Returns input unchanged |
-| `AttributeFilterCalculator` | Keeps specified attributes |
-| `AttributeFilterAwayCalculator` | Removes specified attributes |
-| `ApplyDefaultsCalculator` | Applies default values |
-| `AdditionCalculator` | Adds numeric attributes |
-| `MultiplicationCalculator` | Multiplies numeric attributes |
-| `AttributeNameChangeCalculator` | Renames attributes |
-| `RandomCalculator` | Generates random values |
-
-### Transformers
-
-| Transformer | Description |
-|-------------|-------------|
-| `NullDataTransformer` | Returns deep copy |
-| `PassthruDataTransformer` | Returns unchanged |
-| `AttributeFilterDataTransformer` | Keeps attributes |
-| `AttributeFilterAwayDataTransformer` | Removes attributes |
-| `ApplyDefaultsDataTransformer` | Applies defaults |
-
-### Node Types
-
-| Node Type | Description |
-|-----------|-------------|
-| `SubscriptionNode` | Ingests data from subscriber |
-| `PublicationNode` | Publishes to publisher(s) |
-| `CalculationNode` | Performs calculations |
-| `TransformationNode` | Transforms data |
-| `MetronomeNode` | Periodic execution |
-| `SinkNode` | Consumes without output |
-
----
-
-## Performance Characteristics
+## Performance
 
 ### Calculator Performance Comparison
 
-| Type | Overhead | Throughput | Best For |
-|------|----------|------------|----------|
-| Python | Baseline | ~10K ops/s | Prototyping, simple logic |
-| Java (Py4J) | 100-500μs | ~50K ops/s | JVM libraries, enterprise |
-| C++ (pybind11) | ~100ns | ~1M ops/s | Ultra-low latency, SIMD |
-| Rust (PyO3) | ~100ns | ~1M ops/s | Safety-critical, parallel |
-| REST | 10-1000ms | ~100 ops/s | External services, APIs |
+| Calculator Type | Latency | Throughput | Best For |
+|-----------------|---------|------------|----------|
+| Python | ~100μs | ~10K/s | Prototyping |
+| Java (Py4J) | ~1ms | ~1K/s | JVM libraries |
+| C++ (pybind11) | ~100ns | ~1M/s | Ultra-low latency |
+| Rust (PyO3) | ~100ns | ~1M/s | Safe high performance |
+| REST | 10-1000ms | ~100/s | External services |
+
+### LMDB Zero-Copy Performance
+
+| Payload Size | JSON Serialization | LMDB Zero-Copy | Improvement |
+|--------------|-------------------|----------------|-------------|
+| 1 KB | 50 μs | 5 μs | 10x |
+| 100 KB | 5 ms | 50 μs | 100x |
+| 1 MB | 50 ms | 200 μs | 250x |
+| 10 MB | 500 ms | 2 ms | 250x |
 
 ### System Requirements
 
@@ -518,26 +322,6 @@ Comprehensive documentation including:
 | RAM | 2 GB | 8+ GB |
 | Disk | 1 GB | 10+ GB |
 | Python | 3.8 | 3.13+ (free-threading) |
-
----
-
-## High Availability
-
-The system uses Zookeeper for leader election:
-
-1. **Primary Instance**: Actively runs DAGs, processes messages
-2. **Standby Instance**: Monitors primary, ready for failover
-
-When primary fails, standby automatically:
-- Becomes primary
-- Resumes all suspended DAGs
-- Continues processing
-
-```bash
-# Start with HA
-export ZOOKEEPER_HOSTS=zk1:2181,zk2:2181,zk3:2181
-python run_server.py
-```
 
 ---
 
@@ -574,7 +358,13 @@ status = server.get_server_status()
 | DELETE | `/dag/<n>` | Delete DAG |
 | GET | `/admin/monitoring` | System monitoring |
 | GET | `/admin/logs` | System logs |
+| GET | `/admin/logs/live` | Live log streaming |
+| GET | `/admin/workers` | Worker pool management |
+| GET | `/jvm/management` | JVM/Java management |
+| GET | `/cpp/management` | C++ management |
+| GET | `/rust/management` | Rust management |
 | GET | `/help` | Help center |
+| GET | `/help/research` | Research paper |
 
 ---
 
@@ -587,14 +377,64 @@ status = server.get_server_status()
 | DAG won't start | Check if PRIMARY, verify JSON syntax |
 | Messages not flowing | Verify subscriber connections, check queue depths |
 | High memory | Reduce max_depth, check for accumulation |
-| Java calc fails | Ensure gateway is running, check port |
-| C++/Rust not found | Verify module compilation, check Python path |
+| Java calc fails | Ensure gateway is running, check port 25333 |
+| C++ module not found | Verify compilation, check `cpp_config.json` |
+| Rust module not found | Run `maturin develop`, check `rust_config.json` |
 | REST timeout | Increase timeout, verify endpoint |
+| Live logs disconnected | Check SSE support, refresh page |
 
 ### Log Locations
 - Application: `logs/dagserver.log`
 - Errors: `logs/error.log`
 - Web access: Flask console output
+
+---
+
+## Changelog
+
+### Version 1.7.2 (Current)
+- Live Logs streaming with Server-Sent Events (SSE)
+- Real-time log viewer with filtering and search
+- Auto-reconnect and connection status indicators
+- Research documentation web integration
+- Version synchronization across all documentation
+
+### Version 1.7.1
+- Research paper expansion to 22 pages
+- Comprehensive legal disclaimer
+- ASCII architecture diagrams
+- Workload descriptions (W1, W2)
+- PDF and LaTeX generation
+
+### Version 1.7.0
+- CPP Manager for C++ module administration
+- Rust Manager for Rust module administration
+- Pre-configured calculators for C++ and Rust
+- Web UI for language integration management
+- Hot module loading support
+
+### Version 1.6.0
+- Worker Pool with multiprocessing
+- DAG affinity scheduling
+- LMDB cross-process pub/sub
+- Health monitoring and auto-restart
+
+### Version 1.5.x
+- Subgraph feature (graph-as-a-node)
+- Light up/down dynamic control
+- Extended in-memory URI support
+
+### Version 1.1.x
+- LMDB zero-copy data exchange
+- System monitoring dashboard
+- Multi-language calculator support
+- Python 3.13+ free-threading
+
+### Version 1.0.0
+- Initial release
+- Multi-broker support
+- Flask web UI
+- Zookeeper HA
 
 ---
 
@@ -611,50 +451,6 @@ status = server.get_server_status()
 
 ---
 
-## Changelog
-
-### Version 1.5.0 (Current)
-- Subgraph feature (graph-as-a-node pattern)
-- Light up / light down dynamic control
-- Supervisor bulk operations
-- Node borrowing from parent graph
-- Hybrid loading (inline + external file)
-- Dirty propagation control when suspended
-- REST API for subgraph control
-
-### Version 1.1.2
-- LMDB zero-copy data exchange (Patent Pending)
-- Memory-mapped transport for native calculators
-- 100-1000x faster for large payloads
-- Multi-language LMDB support (Java, C++, Rust)
-
-### Version 1.1.1
-- System Monitoring dashboard with real-time metrics
-- Admin dropdown menu in navigation
-- System logs viewer with filtering
-- Service health checks
-- Calculator integration status display
-- Auto-refresh monitoring
-
-### Version 1.1.0
-- Java calculator integration (Py4J)
-- C++ calculator integration (pybind11)
-- Rust calculator integration (PyO3)
-- REST API calculator integration
-- Python 3.13+ free-threading support
-- Comprehensive help documentation
-- DAG Designer improvements
-
-### Version 1.0.0
-- Initial release
-- Multi-broker support
-- Flask web UI
-- Zookeeper HA
-- Time-windowed execution
-- DAG cloning
-
----
-
 ## Contact & Support
 
 - **Author**: Ashutosh Sinha
@@ -664,38 +460,6 @@ status = server.get_server_status()
 ---
 
 ## Legal Information
-
-### Patent Notice
-
-**PATENT PENDING**: The following technologies implemented in DishtaYantra are the subject of one or more pending patent applications:
-
-#### 1. LMDB Zero-Copy Data Exchange System
-- Automatic payload size detection for LMDB routing decisions
-- Unified reference protocol for heterogeneous language calculator integration
-- Transaction-based zero-copy data exchange between Python and native code (Java, C++, Rust)
-- Memory-mapped file transport with automatic TTL-based cleanup
-- Format-agnostic serialization layer for cross-language data exchange
-
-#### 2. Multi-Language Calculator Framework
-- Hot-swappable calculator integration architecture
-- Unified calculator interface across Python, Java, C++, and Rust
-- Gateway pooling system for Java/JVM integration (Py4J)
-- Native binding abstraction layer for C++ (pybind11) and Rust (PyO3)
-- Automatic language detection and routing
-- Zero-copy data passing between language boundaries
-
-#### 3. DAG Execution Engine
-- Real-time topological sort with dynamic node insertion
-- Time-windowed execution scheduling
-- AutoClone feature for automatic DAG replication
-- Multi-broker message routing architecture
-
-#### 4. Free-Threading Support System
-- Automatic GIL-free execution detection for Python 3.13+
-- Thread-safe calculator invocation framework
-- Parallel DAG node execution without GIL constraints
-
-Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement.
 
 ### Copyright Notice
 
@@ -717,4 +481,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v1.5.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.2** | © 2025-2030 Ashutosh Sinha

@@ -1,272 +1,217 @@
-%% DishtaYantra: A High-Performance Multi-Language Dataflow Framework
-%% with Zero-Copy Inter-Process Communication
-%% arXiv submission version
-%% 
-%% Author: Ashutosh Sinha
-%% Copyright © 2025 Ashutosh Sinha. All rights reserved.
-
 \documentclass[11pt,a4paper]{article}
 
-% Essential packages
+% Packages
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb,amsfonts}
+\usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage{hyperref}
-\usepackage{algorithm}
-\usepackage{algorithmic}
+\usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{xcolor}
 \usepackage{listings}
-\usepackage{tikz}
-\usepackage{pgfplots}
-\usepackage{subcaption}
-\usepackage{fancyhdr}
-\usepackage{geometry}
-\usepackage{cite}
-\usepackage{url}
+\usepackage{fancyvrb}
 \usepackage{float}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{parskip}
 
-% Page geometry
-\geometry{
-    a4paper,
-    left=25mm,
-    right=25mm,
-    top=25mm,
-    bottom=25mm
-}
-
-% TikZ libraries
-\usetikzlibrary{shapes,arrows,positioning,calc,fit,backgrounds,shapes.geometric}
-\pgfplotsset{compat=1.17}
-
-% Hyperref configuration
+% Hyperlink setup
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue!70!black,
-    citecolor=green!50!black,
-    urlcolor=blue!70!black,
-    pdftitle={DishtaYantra: A High-Performance Multi-Language Dataflow Framework},
-    pdfauthor={Ashutosh Sinha}
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue
 }
 
-% Code listing style
-\definecolor{codegreen}{rgb}{0,0.6,0}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{codepurple}{rgb}{0.58,0,0.82}
-\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
-
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{blue},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,
+% Code listing setup
+\lstset{
+    basicstyle=\ttfamily\small,
     breaklines=true,
-    captionpos=b,
-    keepspaces=true,
-    numbers=left,
-    numbersep=5pt,
-    showspaces=false,
-    showstringspaces=false,
-    showtabs=false,
-    tabsize=2,
     frame=single,
-    framerule=0.5pt,
-    rulecolor=\color{gray!50}
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{orange},
+    showstringspaces=false
 }
-\lstset{style=mystyle}
 
-% Custom commands
-\newcommand{\dishtayantra}{\textsc{DishtaYantra}}
-\newcommand{\lmdb}{\textsc{LMDB}}
-\newcommand{\dagterm}{\textsc{DAG}}
+% Title formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
 
-% Title and author information
-\title{
-    \vspace{-1cm}
-    \LARGE\textbf{DishtaYantra: A High-Performance Multi-Language\\Dataflow Framework with Zero-Copy\\Inter-Process Communication}\\[0.5cm]
-    \large\textit{Patent Pending}
-}
+\title{\textbf{DishtaYantra: A High-Performance Multi-Language Dataflow Framework with Zero-Copy Inter-Process Communication}}
 
 \author{
-    \textbf{Ashutosh Sinha}\\
+    Ashutosh Sinha\\
     Independent Researcher\\
-    \texttt{ajsinha@gmail.com}
+    \texttt{ajsinha@gmail.com}\\[1em]
+    Repository: \url{https://github.com/ajsinha/dishtayantra}
 }
 
-\date{January 2025}
+\date{}
 
 \begin{document}
 
 \maketitle
 
-% Abstract
 \begin{abstract}
-\noindent
-Real-time data processing systems face fundamental challenges in achieving low-latency computation while supporting heterogeneous computational workloads across multiple programming languages. We present \dishtayantra{}, a novel high-performance Directed Acyclic Graph (DAG) compute framework that addresses these challenges through three key innovations: (1) a patent-pending \lmdb{}-based zero-copy data exchange mechanism achieving 100-1000$\times$ performance improvements over traditional serialization for inter-language communication, (2) a unified multi-language calculator framework supporting Python, Java (Py4J), C++ (pybind11), Rust (PyO3), and REST endpoints with sub-microsecond invocation overhead, and (3) a multiprocessing worker pool architecture with DAG affinity scheduling that bypasses Python's Global Interpreter Lock (GIL) for true CPU parallelism. Our experimental evaluation demonstrates that \dishtayantra{} achieves median latencies of 5$\mu$s for large payload transfers (compared to 500$\mu$s with JSON serialization), processes over 100,000 messages per second per worker, and maintains linear scalability up to 32 concurrent workers.
+Real-time data processing systems face fundamental challenges in achieving low-latency computation while supporting heterogeneous computational workloads across multiple programming languages. We present \textbf{DishtaYantra}, a novel high-performance Directed Acyclic Graph (DAG) compute framework that addresses these challenges through three key innovations: (1) an LMDB-based zero-copy data exchange mechanism achieving 100-1000$\times$ performance improvements over traditional serialization for inter-language communication, (2) a unified multi-language calculator framework supporting Python, Java (Py4J), C++ (pybind11), Rust (PyO3), and REST endpoints with sub-microsecond invocation overhead, and (3) a multiprocessing worker pool architecture with DAG affinity scheduling that bypasses Python's Global Interpreter Lock (GIL) for true CPU parallelism. Our experimental evaluation on consumer hardware (AMD Ryzen, 64GB RAM, Ubuntu 24.04) demonstrates that DishtaYantra achieves median latencies of 5$\mu$s for large payload transfers (compared to 500$\mu$s with JSON serialization), processes over 100,000 messages per second per worker, and maintains 90\% parallel efficiency up to 12 concurrent workers.
 
-\vspace{0.5em}
-\noindent\textbf{Keywords:} Dataflow processing, DAG execution, Zero-copy communication, Multi-language integration, LMDB, Real-time systems, High-performance computing
+\textbf{Keywords:} Dataflow processing, DAG execution, Zero-copy communication, Multi-language integration, LMDB, Real-time systems, High-performance computing
 \end{abstract}
 
-%============================================================================
 \section{Introduction}
-\label{sec:introduction}
-%============================================================================
 
-The proliferation of real-time data processing applications in financial services, IoT analytics, and machine learning pipelines has created unprecedented demand for high-performance dataflow frameworks~\cite{akidau2015millwheel, carbone2015flink}. Modern enterprises require systems capable of processing millions of events per second with sub-millisecond latencies while supporting computational logic implemented in diverse programming languages optimized for specific tasks~\cite{zaharia2016spark}.
+The proliferation of real-time data processing applications in financial services, IoT analytics, and machine learning pipelines has created unprecedented demand for high-performance dataflow frameworks \cite{akidau2013millwheel, carbone2015flink}. Modern enterprises require systems capable of processing millions of events per second with sub-millisecond latencies while supporting computational logic implemented in diverse programming languages optimized for specific tasks \cite{zaharia2016spark}.
 
-Existing dataflow frameworks face three fundamental limitations. First, \textit{serialization overhead} in inter-process and inter-language communication introduces latencies of 1-50ms for large payloads, making them unsuitable for microsecond-sensitive applications~\cite{murray2013naiad}. Second, \textit{language heterogeneity} forces developers to choose between optimal algorithms (e.g., numerical computing in C++/Rust) and framework integration (typically Python/Java), resulting in suboptimal performance or complex polyglot architectures~\cite{kleppmann2017designing}. Third, \textit{GIL limitations} in Python-based frameworks prevent true CPU parallelism, constraining throughput regardless of available hardware resources~\cite{beazley2010understanding}.
-
-We present \dishtayantra{}\footnote{Sanskrit for ``Computing Instrument'' -- reflecting the framework's role as a precision tool for data processing.}, a novel dataflow framework that addresses these limitations through three key innovations:
+Existing dataflow frameworks face three fundamental limitations:
 
 \begin{enumerate}
-    \item \textbf{Zero-Copy Data Exchange:} A patent-pending \lmdb{}-based transport mechanism that achieves 100-1000$\times$ performance improvements by eliminating serialization overhead through memory-mapped file I/O shared across process boundaries.
+    \item \textbf{Serialization overhead} in inter-process and inter-language communication introduces latencies of 1-50ms for large payloads, making them unsuitable for microsecond-sensitive applications \cite{murray2013naiad}.
+    
+    \item \textbf{Language heterogeneity} forces developers to choose between optimal algorithms (e.g., numerical computing in C++/Rust) and framework integration (typically Python/Java), resulting in suboptimal performance or complex polyglot architectures \cite{kleppmann2017designing}.
+    
+    \item \textbf{GIL limitations} in Python-based frameworks prevent true CPU parallelism, constraining throughput regardless of available hardware resources \cite{beazley2010gil}.
+\end{enumerate}
+
+We present \textbf{DishtaYantra}\footnote{Sanskrit for ``Computing Instrument'' -- reflecting the framework's role as a precision tool for data processing.}, a novel dataflow framework that addresses these limitations through three key innovations:
+
+\begin{enumerate}
+    \item \textbf{Zero-Copy Data Exchange:} An LMDB-based transport mechanism that achieves 100-1000$\times$ performance improvements by eliminating serialization overhead through memory-mapped file I/O shared across process boundaries.
     
     \item \textbf{Unified Multi-Language Support:} A calculator factory pattern supporting Python, Java (via Py4J), C++ (via pybind11), Rust (via PyO3), and external REST services with sub-100ns invocation overhead for native languages.
     
     \item \textbf{GIL-Free Parallelism:} A multiprocessing worker pool with intelligent DAG affinity scheduling that enables true CPU parallelism by distributing workloads across independent Python interpreters.
 \end{enumerate}
 
-\noindent\textbf{Contributions.} This paper makes the following contributions:
+\subsection{Contributions}
+
+This paper makes the following contributions:
 
 \begin{itemize}
-    \item We introduce \dishtayantra{}, an open-source\footnote{Available at: \url{https://github.com/ajsinha/dishtayantra}} high-performance DAG compute framework supporting five programming languages with unified configuration and management (\S\ref{sec:architecture}).
-    
-    \item We present a novel \lmdb{}-based zero-copy data exchange protocol that reduces inter-process communication latency by two orders of magnitude compared to conventional serialization (\S\ref{sec:lmdb}).
-    
-    \item We describe a worker pool architecture with DAG affinity scheduling that achieves linear scalability and fault tolerance through automatic health monitoring and recovery (\S\ref{sec:workers}).
-    
-    \item We provide comprehensive experimental evaluation demonstrating \dishtayantra{}'s performance characteristics (\S\ref{sec:evaluation}).
+    \item \textbf{DishtaYantra Framework:} An open-source high-performance DAG compute framework supporting five programming languages with unified configuration (\S3)
+    \item \textbf{LMDB Zero-Copy Protocol:} A novel data exchange mechanism reducing latency by 100-1000$\times$ compared to JSON serialization (\S6)
+    \item \textbf{Worker Pool Architecture:} DAG affinity scheduling with fault tolerance and automatic recovery (\S7)
+    \item \textbf{Comprehensive Evaluation:} Performance characterization on consumer hardware (\S9)
 \end{itemize}
 
-%============================================================================
 \section{Background and Motivation}
-\label{sec:background}
-%============================================================================
 
 \subsection{Dataflow Processing Paradigm}
 
-Dataflow processing systems model computation as directed acyclic graphs (DAGs) where nodes represent computational operations and edges represent data dependencies~\cite{johnston2004advances}. This paradigm offers several advantages: explicit parallelism through independent node execution, natural expression of data pipelines, and clear separation of computation from orchestration.
+Dataflow processing systems model computation as directed acyclic graphs (DAGs) where nodes represent computational operations and edges represent data dependencies \cite{johnston2004advances}. This paradigm offers several advantages over imperative programming models:
+
+\begin{itemize}
+    \item \textbf{Explicit Parallelism:} Independent nodes can execute concurrently without explicit synchronization
+    \item \textbf{Natural Pipeline Expression:} Data transformations are composed declaratively
+    \item \textbf{Clear Separation of Concerns:} Computation logic is decoupled from orchestration
+    \item \textbf{Fault Isolation:} Node failures can be isolated and recovered independently
+\end{itemize}
 
 \subsection{The Serialization Bottleneck}
 
-Inter-process communication in distributed systems traditionally relies on serialization formats such as JSON, Protocol Buffers, or Apache Avro~\cite{kleppmann2017designing}. For a 1MB payload, serialization and deserialization can consume 50-100ms of wall-clock time, dominating the total latency budget.
+Inter-process communication traditionally relies on serialization formats such as JSON, Protocol Buffers, or Apache Avro \cite{kleppmann2017designing}. While these formats provide language interoperability, they introduce significant overhead:
+
+\begin{table}[H]
+\centering
+\caption{Serialization overhead by payload size}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Operation} & \textbf{1KB} & \textbf{100KB} & \textbf{1MB} \\
+\midrule
+JSON Serialize & 15 $\mu$s & 1.5 ms & 15 ms \\
+JSON Deserialize & 20 $\mu$s & 2.0 ms & 20 ms \\
+Network Transfer & 5 $\mu$s & 50 $\mu$s & 500 $\mu$s \\
+\textbf{Total Overhead} & \textbf{40 $\mu$s} & \textbf{3.5 ms} & \textbf{35 ms} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For a 1MB payload, serialization and deserialization can consume 30-50ms of wall-clock time, dominating the total latency budget in microsecond-sensitive applications.
 
 \subsection{Python GIL Constraints}
 
-Python's Global Interpreter Lock (GIL) prevents concurrent execution of Python bytecode, limiting single-process throughput regardless of available CPU cores~\cite{beazley2010understanding}. \dishtayantra{} addresses this through its multiprocessing worker pool architecture.
+Python's Global Interpreter Lock (GIL) is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecode simultaneously \cite{beazley2010gil}. This design choice simplifies memory management but creates a fundamental throughput limitation: only one thread can execute Python bytecode at any given time, regardless of available CPU cores.
 
-%============================================================================
+DishtaYantra addresses this through multiprocessing, where each worker runs in a separate Python interpreter with its own GIL.
+
+\subsection{Language Heterogeneity Challenge}
+
+Modern data processing pipelines often require components written in different languages:
+
+\begin{itemize}
+    \item \textbf{Python:} Machine learning models (TensorFlow, PyTorch), data science (Pandas, NumPy)
+    \item \textbf{Java:} Enterprise systems, Kafka integration, existing business logic
+    \item \textbf{C++:} High-performance numerical computing, low-level optimizations, SIMD
+    \item \textbf{Rust:} Memory-safe systems programming, concurrent algorithms
+    \item \textbf{External Services:} REST APIs, microservices, legacy systems
+\end{itemize}
+
+Existing frameworks typically support only one or two languages, forcing developers into suboptimal architectural choices.
+
 \section{System Architecture}
-\label{sec:architecture}
-%============================================================================
 
-\dishtayantra{} is architected as a layered system with clear separation of concerns between presentation, orchestration, computation, and infrastructure layers. Figure~\ref{fig:architecture} presents the high-level system architecture.
+DishtaYantra is architected as a layered system with clear separation of concerns between presentation, orchestration, computation, and infrastructure layers.
 
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[
-    node distance=0.3cm,
-    layer/.style={rectangle, draw, minimum width=12cm, minimum height=1.2cm, align=center, font=\small},
-]
+\subsection{High-Level Architecture}
 
-% Presentation Layer
-\node[layer, fill=blue!15] (presentation) {
-    \textbf{Presentation Layer}\\
-    Web UI \quad REST API \quad Admin Dashboard \quad Prometheus Metrics
-};
+The system consists of six architectural layers:
 
-% Application Layer
-\node[layer, fill=green!15, below=of presentation] (application) {
-    \textbf{Application Layer}\\
-    Flask Routes \quad Authentication \quad Session Management \quad Worker Pool UI
-};
-
-% Orchestration Layer
-\node[layer, fill=orange!15, below=of application] (orchestration) {
-    \textbf{Orchestration Layer}\\
-    Worker Pool Manager \quad DAG Affinity Manager \quad Health Monitor \quad Auto-Recovery
-};
-
-% Computation Layer
-\node[layer, fill=red!15, below=of orchestration] (computation) {
-    \textbf{Computation Layer}\\
-    DAG Compute Server \quad ComputeGraph Engine \quad Node Executor \quad Time Windows
-};
-
-% Integration Layer
-\node[layer, fill=purple!15, below=of computation] (integration) {
-    \textbf{Integration Layer}\\
-    Python \quad Java (Py4J) \quad C++ (pybind11) \quad Rust (PyO3) \quad REST
-};
-
-% Infrastructure Layer
-\node[layer, fill=gray!15, below=of integration] (infrastructure) {
-    \textbf{Infrastructure Layer}\\
-    LMDB Transport \quad Kafka \quad RabbitMQ \quad Redis \quad Internal Cache
-};
-
-\end{tikzpicture}
-\caption{\dishtayantra{} layered system architecture.}
-\label{fig:architecture}
-\end{figure}
+\begin{enumerate}
+    \item \textbf{Presentation Layer:} Web UI Dashboard, REST API, Admin Dashboard, Prometheus metrics
+    \item \textbf{Application Layer:} Flask application with routing, authentication, and session management
+    \item \textbf{Orchestration Layer:} Worker Pool Manager, DAG Affinity Manager, Health Monitor, Auto-Recovery
+    \item \textbf{Computation Layer:} ComputeGraph Engine, Node Executor, Time Windows, Subgraph Support
+    \item \textbf{Integration Layer:} Multi-language Calculator Framework (Python, Java, C++, Rust, REST)
+    \item \textbf{Infrastructure Layer:} LMDB Zero-Copy Transport, Pub/Sub backends (Kafka, RabbitMQ, Redis, etc.)
+\end{enumerate}
 
 \subsection{Core Abstractions}
 
-\dishtayantra{} is built around several fundamental abstractions that provide a clean separation of concerns and enable flexible pipeline construction.
+\subsubsection{ComputeGraph}
 
-\subsubsection{Graph and Subgraph Abstractions}
-
-\textbf{ComputeGraph:} The primary container representing a complete DAG with nodes, edges, and execution metadata. Each ComputeGraph encapsulates:
-\begin{itemize}
-    \item \textit{Topology:} The directed acyclic structure of nodes and edges
-    \item \textit{Runtime State:} Current execution status (running, stopped, suspended, error)
-    \item \textit{Scheduling Configuration:} Time windows, start times, and duration
-    \item \textit{Component Registry:} References to all calculators, transformers, and pub/sub handlers
-\end{itemize}
-
-\textbf{Subgraph:} A reusable, encapsulated sub-DAG that can be embedded within larger graphs. Subgraphs enable:
-\begin{itemize}
-    \item \textit{Modularity:} Complex pipelines can be decomposed into reusable components
-    \item \textit{Namespace Isolation:} Internal nodes are hidden from the parent graph
-    \item \textit{Configuration Inheritance:} Subgraphs inherit parent configuration with override capability
-\end{itemize}
-
-\subsubsection{Node Abstraction}
-
-Nodes are the fundamental units of computation. \dishtayantra{} provides six node types:
+The primary container representing a complete DAG with the following attributes:
 
 \begin{itemize}
-    \item \textbf{SubscriptionNode}: Ingests data from external sources (Kafka, Redis, etc.)
-    \item \textbf{PublicationNode}: Emits results to external sinks
-    \item \textbf{CalculationNode}: Applies computational transformations via calculators
-    \item \textbf{TransformNode}: Performs data structure transformations
-    \item \textbf{MetronomeNode}: Generates periodic trigger events at configurable intervals
-    \item \textbf{SubgraphNode}: Encapsulates and invokes reusable sub-DAGs
+    \item \texttt{name}: Unique identifier
+    \item \texttt{nodes}: Dictionary of all nodes in the graph
+    \item \texttt{edges}: List of data flow connections
+    \item \texttt{status}: STOPPED, RUNNING, SUSPENDED, or ERROR
+    \item \texttt{start\_time}: Scheduled start time (e.g., ``0800'')
+    \item \texttt{duration}: Run duration (e.g., ``12h'')
+    \item \texttt{auto\_clone}: Whether to clone for next day automatically
 \end{itemize}
 
-Each node maintains an input queue, output buffer, and execution state, enabling asynchronous processing and backpressure management.
+\subsubsection{Node Types}
 
-\subsubsection{Edge Abstraction}
+DishtaYantra provides six specialized node types:
 
-Edges define data flow relationships between nodes with the following properties:
+\begin{table}[H]
+\centering
+\caption{Node types and their purposes}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Node Type} & \textbf{Purpose} & \textbf{Key Configuration} \\
+\midrule
+SubscriptionNode & Ingest data from external sources & \texttt{subscribers: [\{uri: ...\}]} \\
+PublicationNode & Emit results to external sinks & \texttt{publishers: [\{uri: ...\}]} \\
+CalculationNode & Apply computational transformations & \texttt{calculator: \{type, name\}} \\
+TransformNode & Data structure transformations & \texttt{transformer: \{mappings\}} \\
+MetronomeNode & Generate periodic trigger events & \texttt{interval\_ms, payload} \\
+SubgraphNode & Embed reusable sub-DAGs & \texttt{subgraph\_path} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\begin{itemize}
-    \item \textit{Source and Target:} References to upstream and downstream nodes
-    \item \textit{Data Routing:} Optional filtering and transformation during transfer
-    \item \textit{Buffering:} Configurable queue depth for flow control
-\end{itemize}
+\subsubsection{Calculator Interface}
 
-\subsubsection{Calculator Abstraction}
+All calculators implement a common interface:
 
-Calculators are stateless or stateful computation units implementing the \texttt{DataCalculator} interface:
-
-\begin{lstlisting}[language=Python, caption=Calculator Interface]
+\begin{lstlisting}[language=Python]
 class DataCalculator(ABC):
     @abstractmethod
     def calculate(self, data: dict) -> dict:
@@ -279,423 +224,288 @@ class DataCalculator(ABC):
         pass
 \end{lstlisting}
 
-Calculators can be implemented in any supported language (Python, Java, C++, Rust, REST) and are instantiated via the CalculatorFactory based on node configuration.
-
-\subsubsection{Transformer Abstraction}
-
-Transformers perform structural data transformations without computational logic:
-
-\begin{itemize}
-    \item \textit{Field Mapping:} Rename, add, or remove fields
-    \item \textit{Type Conversion:} Convert between data types
-    \item \textit{Aggregation:} Combine multiple inputs into structured outputs
-    \item \textit{Filtering:} Conditional data routing based on field values
-\end{itemize}
-
 \subsection{Pub/Sub Framework}
 
-\dishtayantra{} provides a unified publish/subscribe abstraction supporting multiple message brokers through the \texttt{DataPublisher} and \texttt{DataSubscriber} interfaces.
+DishtaYantra provides a unified publish/subscribe abstraction with URI format: \texttt{protocol://host:port/topic?params}
 
-\subsubsection{Supported Backends}
-
-\begin{table}[h]
+\begin{table}[H]
 \centering
-\caption{Supported Pub/Sub Backends}
-\begin{tabular}{lll}
+\caption{Supported pub/sub backends}
+\begin{tabular}{@{}llll@{}}
 \toprule
-\textbf{Backend} & \textbf{Protocol} & \textbf{Use Case} \\
+\textbf{Protocol} & \textbf{Backend} & \textbf{Use Case} & \textbf{Latency} \\
 \midrule
-Apache Kafka & kafka:// & High-throughput streaming \\
-RabbitMQ & rabbitmq:// & Enterprise messaging \\
-Redis & redis:// & Low-latency caching \\
-ActiveMQ & activemq:// & JMS compatibility \\
-TIBCO EMS & tibco:// & Enterprise integration \\
-IBM MQ & ibmmq:// & Mainframe connectivity \\
-LMDB & lmdb:// & Cross-process IPC \\
-In-Memory & inmemory:// & Testing and local DAGs \\
-File & file:// & Batch processing \\
-REST & rest:// & HTTP webhooks \\
+\texttt{kafka://} & Apache Kafka & High-throughput streaming & $\sim$5ms \\
+\texttt{rabbitmq://} & RabbitMQ & Enterprise messaging & $\sim$1ms \\
+\texttt{redis://} & Redis Pub/Sub & Low-latency caching & $\sim$100$\mu$s \\
+\texttt{activemq://} & ActiveMQ & JMS compatibility & $\sim$2ms \\
+\texttt{tibco://} & TIBCO EMS & Enterprise integration & $\sim$1ms \\
+\texttt{ibmmq://} & IBM MQ & Mainframe connectivity & $\sim$5ms \\
+\texttt{lmdb://} & LMDB & Cross-process IPC & $\sim$5$\mu$s \\
+\texttt{inmemory://} & In-Memory & Testing/Development & $\sim$1$\mu$s \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\subsubsection{URI-Based Configuration}
-
-Publishers and subscribers are configured using URIs:
-
-\begin{lstlisting}[language=json, caption=Pub/Sub URI Configuration]
-{
-    "subscribers": [
-        {"uri": "kafka://broker:9092/trades"}
-    ],
-    "publishers": [
-        {"uri": "redis://localhost:6379/processed"},
-        {"uri": "lmdb://data/output/results"}
-    ]
-}
-\end{lstlisting}
 
 \subsection{Backpressure Management}
 
-\dishtayantra{} implements comprehensive backpressure management to prevent memory exhaustion and ensure stable throughput under varying load conditions.
-
-\subsubsection{Queue-Based Flow Control}
-
-Each node maintains bounded input queues with configurable depth:
-
-\begin{lstlisting}[language=json, caption=Backpressure Configuration]
-{
-    "node": {
-        "queue_size": 1000,
-        "overflow_policy": "block",  // or "drop", "log"
-        "warning_threshold": 0.8
-    }
-}
-\end{lstlisting}
-
-\subsubsection{Backpressure Strategies}
+DishtaYantra implements comprehensive backpressure to prevent memory exhaustion:
 
 \begin{itemize}
-    \item \textbf{Blocking:} Upstream nodes block when downstream queues are full (default)
-    \item \textbf{Dropping:} Excess messages are discarded with logging
-    \item \textbf{Sampling:} Statistical sampling under high load
-    \item \textbf{Throttling:} Rate limiting at source nodes
+    \item \textbf{BLOCK:} Upstream blocks when queue full (default)
+    \item \textbf{DROP:} Excess messages discarded with logging
+    \item \textbf{SAMPLE:} Statistical sampling under high load
+    \item \textbf{THROTTLE:} Rate limiting at source nodes
 \end{itemize}
-
-\subsubsection{Metrics-Based Adaptation}
-
-The system monitors queue depths and processing latencies, automatically adjusting throughput:
-
-\begin{equation}
-\text{throttle\_factor} = \min\left(1.0, \frac{\text{target\_latency}}{\text{observed\_latency}}\right)
-\end{equation}
 
 \subsection{Internal Cache for Crash Recovery}
 
-\dishtayantra{} maintains an internal cache to enable recovery from crashes without data loss.
-
-\subsubsection{State Checkpointing}
-
-The cache stores:
-\begin{itemize}
-    \item \textit{In-flight Messages:} Data currently being processed
-    \item \textit{Node State:} Calculator state for stateful computations
-    \item \textit{Processing Offsets:} Position markers for replay capability
-\end{itemize}
-
-\subsubsection{Recovery Mechanism}
-
-Upon restart, the system:
-\begin{enumerate}
-    \item Loads the last checkpoint from the cache
-    \item Replays in-flight messages from the recovery point
-    \item Resumes normal processing with at-least-once semantics
-\end{enumerate}
-
-\subsubsection{Cache Backend Options}
+DishtaYantra maintains an internal cache enabling recovery without data loss. Cache contents include:
 
 \begin{itemize}
-    \item \textbf{LMDB:} Memory-mapped, crash-proof (default)
-    \item \textbf{Redis:} Distributed caching for multi-node deployments
-    \item \textbf{In-Memory:} Fast but volatile (for development)
+    \item In-flight messages currently being processed
+    \item Node state for stateful computations
+    \item Processing offsets for replay
+    \item Checkpoint timestamps for last successful commit
 \end{itemize}
 
-%============================================================================
-\section{DAG Definition and Configuration}
-\label{sec:dag_definition}
-%============================================================================
+Recovery follows at-least-once semantics: load checkpoint, identify in-flight messages, replay from recovery point, and resume normal processing.
 
-\dishtayantra{} DAGs are defined using JSON configuration files, enabling declarative pipeline specification without code changes.
+\section{DAG Definition and Execution}
 
-\subsection{DAG Configuration Structure}
+\subsection{JSON Configuration Format}
 
-A complete DAG configuration includes:
+DishtaYantra DAGs are defined declaratively using JSON:
 
-\begin{lstlisting}[language=json, caption=Complete DAG Configuration Example]
+\begin{lstlisting}[language=json]
 {
-    "name": "trade_pricing_pipeline",
-    "description": "Real-time trade pricing with risk calculation",
-    "start_time": "0800",
-    "duration": "12h",
-    "auto_clone": false,
-    
-    "nodes": [
-        {
-            "name": "trade_subscriber",
-            "type": "SubscriptionNode",
-            "subscribers": [
-                {"uri": "kafka://broker:9092/raw_trades"}
-            ]
-        },
-        {
-            "name": "price_calculator",
-            "type": "CalculationNode",
-            "calculator": {
-                "type": "rust",
-                "name": "RustTradePricingCalculator"
-            },
-            "config": {
-                "commission_rate": 0.001,
-                "tax_rate": 0.0
-            }
-        },
-        {
-            "name": "risk_calculator",
-            "type": "CalculationNode",
-            "calculator": {
-                "type": "cpp",
-                "name": "CppRiskMetricsCalculator"
-            },
-            "config": {
-                "var_confidence": 0.99
-            }
-        },
-        {
-            "name": "result_publisher",
-            "type": "PublicationNode",
-            "publishers": [
-                {"uri": "kafka://broker:9092/priced_trades"},
-                {"uri": "redis://cache:6379/latest_prices"}
-            ]
-        }
-    ],
-    
-    "edges": [
-        {"from": "trade_subscriber", "to": "price_calculator"},
-        {"from": "price_calculator", "to": "risk_calculator"},
-        {"from": "risk_calculator", "to": "result_publisher"}
-    ]
+  "name": "trade_pricing_pipeline",
+  "description": "Real-time trade pricing with risk calculation",
+  "start_time": "0800",
+  "duration": "12h",
+  "nodes": [
+    {"name": "trade_subscriber", "type": "SubscriptionNode",
+     "subscribers": [{"uri": "kafka://broker:9092/raw_trades"}]},
+    {"name": "price_calculator", "type": "CalculationNode",
+     "calculator": {"type": "rust", "name": "RustTradePricingCalculator"}},
+    {"name": "risk_calculator", "type": "CalculationNode",
+     "calculator": {"type": "cpp", "name": "CppRiskMetricsCalculator"}},
+    {"name": "result_publisher", "type": "PublicationNode",
+     "publishers": [{"uri": "kafka://broker:9092/priced_trades"},
+                    {"uri": "redis://cache:6379/latest_prices"}]}
+  ],
+  "edges": [
+    {"from": "trade_subscriber", "to": "price_calculator"},
+    {"from": "price_calculator", "to": "risk_calculator"},
+    {"from": "risk_calculator", "to": "result_publisher"}
+  ]
 }
 \end{lstlisting}
 
-\subsection{Visual DAG Representation}
+\subsection{DAG Execution Algorithm}
 
-Figure~\ref{fig:dag_example} illustrates the trade pricing pipeline defined above.
+The execution engine uses Kahn's algorithm for topological sorting:
 
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}[
-    node distance=2.5cm,
-    every node/.style={font=\small},
-    subnode/.style={rectangle, draw, rounded corners, minimum width=2.8cm, minimum height=1cm, align=center},
-    calcnode/.style={rectangle, draw, rounded corners, minimum width=2.8cm, minimum height=1cm, align=center, fill=orange!20},
-    pubnode/.style={rectangle, draw, rounded corners, minimum width=2.8cm, minimum height=1cm, align=center, fill=green!20},
-    arrow/.style={->, >=stealth, thick}
-]
+\begin{enumerate}
+    \item Compute topological order of nodes
+    \item Initialize input queues for each node
+    \item While graph is RUNNING:
+    \begin{enumerate}
+        \item For each node in execution order:
+        \item If node has new input or is marked dirty:
+        \item Collect inputs and process
+        \item Propagate output to downstream nodes
+        \item Mark downstream nodes as dirty
+    \end{enumerate}
+    \item Sleep for poll interval
+\end{enumerate}
 
-% Nodes
-\node[subnode, fill=blue!20] (sub) {
-    \textbf{trade\_subscriber}\\
-    \footnotesize SubscriptionNode\\
-    \footnotesize kafka://raw\_trades
-};
-
-\node[calcnode, right=of sub] (price) {
-    \textbf{price\_calculator}\\
-    \footnotesize CalculationNode\\
-    \footnotesize Rust: TradePricing
-};
-
-\node[calcnode, right=of price] (risk) {
-    \textbf{risk\_calculator}\\
-    \footnotesize CalculationNode\\
-    \footnotesize C++: RiskMetrics
-};
-
-\node[pubnode, right=of risk] (pub) {
-    \textbf{result\_publisher}\\
-    \footnotesize PublicationNode\\
-    \footnotesize kafka + redis
-};
-
-% External sources
-\node[above=0.8cm of sub, align=center] (kafka_in) {\footnotesize Kafka\\[-0.1cm]\footnotesize raw\_trades};
-\node[above=0.8cm of pub, align=center] (kafka_out) {\footnotesize Kafka\\[-0.1cm]\footnotesize priced\_trades};
-\node[below=0.8cm of pub, align=center] (redis_out) {\footnotesize Redis\\[-0.1cm]\footnotesize latest\_prices};
-
-% Edges
-\draw[arrow] (sub) -- node[above, font=\footnotesize] {trade data} (price);
-\draw[arrow] (price) -- node[above, font=\footnotesize] {priced trade} (risk);
-\draw[arrow] (risk) -- node[above, font=\footnotesize] {risk metrics} (pub);
-
-% External connections
-\draw[arrow, dashed, gray] (kafka_in) -- (sub);
-\draw[arrow, dashed, gray] (pub) -- (kafka_out);
-\draw[arrow, dashed, gray] (pub) -- (redis_out);
-
-% DAG boundary
-\begin{scope}[on background layer]
-\node[draw, dashed, rounded corners, fit=(sub)(price)(risk)(pub), inner sep=0.5cm, label={[font=\footnotesize]above:trade\_pricing\_pipeline DAG}] {};
-\end{scope}
-
-\end{tikzpicture}
-\caption{Visual representation of the trade pricing pipeline DAG showing data flow from Kafka source through Rust pricing and C++ risk calculators to multiple output destinations.}
-\label{fig:dag_example}
-\end{figure}
-
-\subsection{Node Type Reference}
-
-Table~\ref{tab:node_types} summarizes the available node types and their configuration options.
-
-\begin{table}[t]
-\centering
-\caption{Node Types and Configuration}
-\label{tab:node_types}
-\begin{tabular}{lp{6cm}}
-\toprule
-\textbf{Node Type} & \textbf{Key Configuration} \\
-\midrule
-SubscriptionNode & \texttt{subscribers}: List of URIs \\
-PublicationNode & \texttt{publishers}: List of URIs \\
-CalculationNode & \texttt{calculator.type}, \texttt{calculator.name}, \texttt{config} \\
-TransformNode & \texttt{transformer}, \texttt{field\_mappings} \\
-MetronomeNode & \texttt{interval\_ms}, \texttt{payload} \\
-SubgraphNode & \texttt{subgraph\_path}, \texttt{config\_overrides} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-%============================================================================
 \section{Multi-Language Calculator Framework}
-\label{sec:calculators}
-%============================================================================
 
-\dishtayantra{} provides first-class support for calculators implemented in five languages through a unified factory pattern.
+\subsection{Calculator Factory Architecture}
 
-\subsection{Calculator Factory Pattern}
+The CalculatorFactory uses a type-based dispatch pattern:
 
-The CalculatorFactory examines node configuration to instantiate the appropriate calculator type:
+\begin{itemize}
+    \item \texttt{type: "java"} $\rightarrow$ JavaCalculator (Py4J bridge, $\sim$1ms overhead)
+    \item \texttt{type: "cpp"} $\rightarrow$ CppCalculator (pybind11, $\sim$100ns overhead)
+    \item \texttt{type: "rust"} $\rightarrow$ RustCalculator (PyO3, $\sim$100ns overhead)
+    \item \texttt{type: "rest"} $\rightarrow$ RestCalculator (HTTP, network-dependent)
+    \item \texttt{type: "python"} or default $\rightarrow$ Built-in Python calculator
+\end{itemize}
 
-\begin{lstlisting}[language=Python, caption=Calculator Factory Decision Logic]
-class CalculatorFactory:
-    @staticmethod
-    def create(name: str, config: dict) -> DataCalculator:
-        calc_type = config.get("calculator", {}).get("type", "")
-        
-        if calc_type == "java":
-            return JavaCalculator(name, config)
-        elif calc_type == "cpp":
-            return CppCalculator(name, config)
-        elif calc_type == "rust":
-            return RustCalculator(name, config)
-        elif calc_type == "rest":
-            return RestCalculator(name, config)
-        else:
-            return BuiltinCalculator(name, config)
-\end{lstlisting}
+\subsection{Java Integration (Py4J)}
 
-\subsection{Language-Specific Integrations}
+Java calculators communicate via Py4J TCP bridge (port 25333). A connection pool manages gateway connections. Performance is approximately 1ms per call due to TCP overhead.
 
-\textbf{C++ Integration (pybind11):} C++ calculators are compiled as Python extension modules using pybind11~\cite{pybind11}, enabling direct memory access with approximately 100ns invocation overhead.
+\subsection{C++ Integration (pybind11)}
 
-\textbf{Rust Integration (PyO3):} Rust calculators leverage PyO3~\cite{pyo3} for memory-safe native code with compile-time thread safety guarantees and GIL release for true parallelism.
+C++ calculators are compiled as Python extension modules (\texttt{.so} files) using pybind11 \cite{pybind11}. This provides direct memory access with approximately 100ns call overhead.
 
-\textbf{Java Integration (Py4J):} Java calculators execute in a separate JVM process connected via Py4J's TCP-based gateway protocol~\cite{py4j}.
+\subsection{Rust Integration (PyO3)}
 
-%============================================================================
+Rust calculators use PyO3 \cite{pyo3} for Python bindings, offering memory safety, thread safety, and zero-cost abstractions with similar performance to C++.
+
+\subsection{REST Integration}
+
+REST calculators enable integration with external microservices via HTTP POST requests. Supports multiple authentication methods: API key, basic, bearer, and custom headers.
+
 \section{LMDB Zero-Copy Data Exchange}
-\label{sec:lmdb}
-%============================================================================
-
-The cornerstone innovation of \dishtayantra{} is the patent-pending LMDB-based zero-copy data exchange mechanism.
 
 \subsection{Design Principles}
 
-Traditional inter-process communication requires serialization at the sender and deserialization at the receiver. Our approach eliminates serialization by leveraging memory-mapped files accessible to all participating processes.
+Traditional inter-process communication requires serialization at the sender and deserialization at the receiver. DishtaYantra's LMDB-based approach eliminates this overhead by leveraging memory-mapped files.
 
-\textbf{Key insight:} LMDB~\cite{lmdb} provides a lightning-fast, memory-mapped key-value store with ACID guarantees. By writing data once to LMDB and passing only the key reference to native calculators, we achieve zero-copy reads across process and language boundaries.
+\textbf{Key insight:} LMDB \cite{chu2011lmdb} provides a lightning-fast, memory-mapped key-value store with ACID guarantees. By writing data once to LMDB and passing only the key reference to native calculators, we achieve zero-copy reads across process and language boundaries.
 
-\subsection{Performance Analysis}
+\subsection{Exchange Protocol}
 
-Table~\ref{tab:lmdb_performance} presents detailed latency measurements across payload sizes.
+\begin{enumerate}
+    \item \textbf{Step 1:} Python DAG engine writes input data to LMDB with a unique key
+    \item \textbf{Step 2:} Native calculator (Java/C++/Rust) reads directly from memory-mapped file using the key
+    \item \textbf{Step 3:} Calculator writes output back to LMDB; Python reads result
+\end{enumerate}
 
-\begin{table}[t]
+\subsection{Exchange Modes}
+
+\begin{table}[H]
 \centering
-\caption{LMDB Zero-Copy Performance}
-\label{tab:lmdb_performance}
-\begin{tabular}{lrr}
+\caption{LMDB exchange modes}
+\begin{tabular}{@{}llll@{}}
 \toprule
-\textbf{Payload Size} & \textbf{LMDB Latency} & \textbf{vs JSON Speedup} \\
+\textbf{Mode} & \textbf{Input} & \textbf{Output} & \textbf{Use Case} \\
 \midrule
-1 KB & 5 $\mu$s & 10$\times$ \\
-10 KB & 10 $\mu$s & 50$\times$ \\
-100 KB & 50 $\mu$s & 100$\times$ \\
-1 MB & 200 $\mu$s & 250$\times$ \\
-10 MB & 2 ms & 250$\times$ \\
+\texttt{input} & LMDB & Direct & Large inputs, small outputs \\
+\texttt{output} & Direct & LMDB & Small inputs, large outputs \\
+\texttt{both} & LMDB & LMDB & Large data in both directions \\
+\texttt{reference} & Key only & Key only & Calculator manages all I/O \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-%============================================================================
-\section{Worker Pool Architecture}
-\label{sec:workers}
-%============================================================================
+\subsection{Performance Results}
 
-\dishtayantra{}'s worker pool architecture enables true CPU parallelism by distributing DAG execution across multiple Python interpreter processes.
+\begin{table}[H]
+\centering
+\caption{LMDB zero-copy vs JSON serialization}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Payload Size} & \textbf{JSON} & \textbf{LMDB Zero-Copy} & \textbf{Speedup} \\
+\midrule
+1 KB & 50 $\mu$s & 5 $\mu$s & 10$\times$ \\
+10 KB & 500 $\mu$s & 10 $\mu$s & 50$\times$ \\
+100 KB & 5 ms & 50 $\mu$s & 100$\times$ \\
+1 MB & 50 ms & 200 $\mu$s & 250$\times$ \\
+10 MB & 500 ms & 2 ms & 250$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Worker Pool Architecture}
+
+\subsection{Overview}
+
+DishtaYantra's worker pool enables true CPU parallelism by running DAGs in separate Python interpreter processes, each with its own GIL.
+
+The main process contains:
+\begin{itemize}
+    \item WorkerPoolManager for process lifecycle management
+    \item DAG Affinity Manager for intelligent scheduling
+    \item Health Monitor for failure detection
+    \item Auto-Recovery for crashed worker restart
+\end{itemize}
+
+Workers communicate via LMDB pub/sub for cross-worker IPC.
 
 \subsection{DAG Affinity Scheduling}
 
-\dishtayantra{} supports four scheduling strategies:
-
-\begin{itemize}
-    \item \textbf{weight\_based} (default): Assigns DAGs to the worker with lowest estimated load
-    \item \textbf{round\_robin}: Distributes DAGs evenly across workers
-    \item \textbf{least\_loaded}: Uses real-time CPU metrics for assignment
-    \item \textbf{pinned}: Explicit DAG-to-worker binding for isolation
-\end{itemize}
+\begin{table}[H]
+\centering
+\caption{DAG affinity scheduling strategies}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Strategy} & \textbf{Description} & \textbf{Best For} \\
+\midrule
+\texttt{weight\_based} & Assigns to lowest-load worker & General use \\
+\texttt{round\_robin} & Even distribution & Uniform workloads \\
+\texttt{least\_loaded} & Real-time CPU metrics & Dynamic workloads \\
+\texttt{pinned} & Fixed worker assignment & Isolation \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Fault Tolerance}
 
-Worker health is monitored through periodic heartbeats with automatic recovery:
-\begin{itemize}
-    \item Heartbeat Interval: 2 seconds
-    \item Unhealthy Threshold: 3 missed heartbeats
-    \item Recovery: Exponential backoff restart
-\end{itemize}
+The health monitor runs every 2 seconds. If a worker misses 3 consecutive heartbeats:
+\begin{enumerate}
+    \item Worker marked as UNHEALTHY
+    \item DAGs migrated to healthy workers
+    \item Restart attempted with exponential backoff (5s, 10s, ..., max 60s)
+\end{enumerate}
 
-%============================================================================
 \section{Related Work}
-\label{sec:related}
-%============================================================================
 
-\textbf{Apache Flink}~\cite{carbone2015flink} provides exactly-once stream processing with sophisticated windowing but introduces overhead for Python workloads.
+\subsection{Stream Processing Frameworks}
 
-\textbf{Apache Spark}~\cite{zaharia2016spark} pioneered in-memory distributed computing with the RDD abstraction.
+\textbf{Apache Flink} \cite{carbone2015flink} provides exactly-once stream processing with sophisticated windowing semantics. However, Flink's Python API (PyFlink) introduces significant overhead due to cross-language serialization.
 
-\textbf{Naiad}~\cite{murray2013naiad} introduced timely dataflow for iterative computations.
+\textbf{Apache Spark} \cite{zaharia2016spark} pioneered in-memory distributed computing with the RDD abstraction. Spark Streaming processes data in micro-batches, introducing minimum latencies of 100ms-1s.
 
-\textbf{Apache Arrow}~\cite{arrow} provides a columnar memory format for zero-copy data sharing. \dishtayantra{} extends this paradigm to arbitrary data structures via LMDB.
+\textbf{Naiad} \cite{murray2013naiad} introduced timely dataflow for iterative computations with low-latency incremental updates.
 
-%============================================================================
+\subsection{Zero-Copy Technologies}
+
+\textbf{Apache Arrow} \cite{arrow2016} provides a columnar memory format enabling zero-copy data sharing. DishtaYantra extends this concept to arbitrary data structures via LMDB's memory-mapped B-tree.
+
+\subsection{Workflow Orchestration}
+
+\textbf{Prefect} \cite{prefect2018} and \textbf{Dagster} \cite{dagster2019} are modern Python-native workflow orchestration tools, but lack DishtaYantra's focus on microsecond-latency processing.
+
 \section{Experimental Evaluation}
-\label{sec:evaluation}
-%============================================================================
 
 \subsection{Experimental Setup}
 
-\textbf{Hardware:} AMD Ryzen 9 5900X (12-core, 24-thread) @ 3.7GHz, 64GB DDR4 RAM, NVMe SSD
-
-\textbf{Software:} Ubuntu 24.04 LTS, Python 3.12, OpenJDK 21, GCC 13.2, Rust 1.75
-
-\textbf{Workloads:}
+\textbf{Hardware:}
 \begin{itemize}
-    \item W1: Simple passthrough (latency baseline)
-    \item W2: Mathematical aggregation (compute-bound)
-    \item W3: Trade pricing pipeline (financial domain)
-    \item W4: Risk metrics calculation (multi-language)
+    \item CPU: AMD Ryzen 9 5900X (12-core, 24-thread) @ 3.7GHz
+    \item RAM: 64GB DDR4-3200
+    \item Storage: NVMe SSD (Samsung 980 PRO)
 \end{itemize}
+
+\textbf{Software:}
+\begin{itemize}
+    \item OS: Ubuntu 24.04 LTS
+    \item Python: 3.12.1
+    \item Java: OpenJDK 21
+    \item C++ Compiler: GCC 13.2
+    \item Rust: 1.75.0
+\end{itemize}
+
+\subsection{Workload Descriptions}
+
+We evaluate DishtaYantra using two representative workloads:
+
+\begin{table}[H]
+\centering
+\caption{Workload characteristics}
+\begin{tabular}{@{}lp{10cm}@{}}
+\toprule
+\textbf{Workload} & \textbf{Description} \\
+\midrule
+W1: Passthrough & Data passes through DAG without computation. Measures framework overhead, I/O latency, serialization cost. Represents best-case latency and throughput. \\
+W2: Math Aggregation & Statistical calculations (mean, stddev, min, max, percentiles) on numerical arrays. CPU-bound workload testing calculator efficiency. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Latency Results}
 
-Table~\ref{tab:latency} presents end-to-end latency measurements for \dishtayantra{}.
-
-\begin{table}[t]
+\begin{table}[H]
 \centering
-\caption{DishtaYantra End-to-End Latency}
-\label{tab:latency}
-\begin{tabular}{lrrrr}
+\caption{End-to-end latency percentiles for W1 (Passthrough) workload}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-\textbf{Payload} & \textbf{P50} & \textbf{P95} & \textbf{P99} & \textbf{Max} \\
+\textbf{Payload Size} & \textbf{P50} & \textbf{P95} & \textbf{P99} & \textbf{Max} \\
 \midrule
 1 KB & 45 $\mu$s & 78 $\mu$s & 120 $\mu$s & 250 $\mu$s \\
 10 KB & 65 $\mu$s & 110 $\mu$s & 180 $\mu$s & 350 $\mu$s \\
@@ -707,146 +517,168 @@ Table~\ref{tab:latency} presents end-to-end latency measurements for \dishtayant
 
 \subsection{Throughput Results}
 
-Table~\ref{tab:throughput} reports maximum sustainable throughput for each workload.
-
-\begin{table}[t]
+\begin{table}[H]
 \centering
-\caption{DishtaYantra Maximum Throughput (messages/second)}
-\label{tab:throughput}
-\begin{tabular}{lrrrr}
+\caption{Maximum sustainable throughput (messages/second) by worker count}
+\begin{tabular}{@{}lrr@{}}
 \toprule
-\textbf{Workers} & \textbf{W1} & \textbf{W2} & \textbf{W3} & \textbf{W4} \\
+\textbf{Workers} & \textbf{W1 (Passthrough)} & \textbf{W2 (Math Aggregation)} \\
 \midrule
-1 & 180,000 & 95,000 & 52,000 & 35,000 \\
-4 & 680,000 & 360,000 & 195,000 & 130,000 \\
-8 & 1,320,000 & 700,000 & 380,000 & 255,000 \\
-12 & 1,950,000 & 1,030,000 & 560,000 & 375,000 \\
+1 & 180,000 msg/s & 95,000 msg/s \\
+2 & 350,000 msg/s & 185,000 msg/s \\
+4 & 680,000 msg/s & 360,000 msg/s \\
+6 & 1,000,000 msg/s & 530,000 msg/s \\
+8 & 1,320,000 msg/s & 700,000 msg/s \\
+10 & 1,620,000 msg/s & 860,000 msg/s \\
+12 & 1,950,000 msg/s & 1,030,000 msg/s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Scalability Analysis}
 
-Figure~\ref{fig:scalability} demonstrates near-linear scalability up to 12 workers on the test hardware.
+DishtaYantra achieves near-linear scaling up to 12 workers with 90\% parallel efficiency. The slight sub-linear behavior is attributed to LMDB contention under extreme load.
 
-\begin{figure}[t]
+\subsection{LMDB Zero-Copy Impact}
+
+\begin{table}[H]
 \centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.85\linewidth,
-    height=5cm,
-    xlabel={Number of Workers},
-    ylabel={Throughput (msg/s $\times$ 1000)},
-    grid=major,
-    legend pos=south east,
-    legend style={font=\footnotesize},
-]
-\addplot[color=blue, mark=o, thick] coordinates {
-    (1, 52) (2, 100) (4, 195) (6, 285) (8, 380) (10, 470) (12, 560)
-};
-\addlegendentry{DishtaYantra (W3)}
+\caption{Impact of LMDB zero-copy on cross-language communication}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Scenario} & \textbf{Without LMDB} & \textbf{With LMDB} & \textbf{Improvement} \\
+\midrule
+100KB to C++ & 5.2 ms & 52 $\mu$s & 100$\times$ \\
+1MB to Rust & 48 ms & 195 $\mu$s & 246$\times$ \\
+10MB to Java & 520 ms & 2.1 ms & 248$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\addplot[color=gray, dashed, thick] coordinates {
-    (1, 52) (2, 104) (4, 208) (6, 312) (8, 416) (10, 520) (12, 624)
-};
-\addlegendentry{Ideal Linear}
+\section{Discussion}
 
-\end{axis}
-\end{tikzpicture}
-\caption{Throughput scalability for trade pricing workload. DishtaYantra achieves 90\% parallel efficiency at 12 workers.}
-\label{fig:scalability}
-\end{figure}
+\subsection{Design Trade-offs}
 
-%============================================================================
+\textbf{Memory vs. Latency:} LMDB's memory-mapped design trades memory usage for latency. The default 1GB map size accommodates most workloads.
+
+\textbf{Process Isolation vs. Communication Overhead:} The multiprocessing architecture eliminates GIL contention but introduces IPC overhead. LMDB pub/sub minimizes this cost.
+
+\textbf{Flexibility vs. Complexity:} Supporting five languages increases implementation complexity but enables optimal algorithm selection.
+
+\subsection{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Single-Node Focus:} Current implementation targets single-node deployments
+    \item \textbf{JVM Startup Time:} Java calculators require JVM initialization ($\sim$2-5 seconds)
+    \item \textbf{Memory Footprint:} Each worker process maintains independent memory
+\end{enumerate}
+
+\subsection{Future Work}
+
+\begin{enumerate}
+    \item \textbf{Distributed Mode:} Multi-node deployment with automatic DAG partitioning
+    \item \textbf{GPU Calculators:} CUDA/ROCm integration for ML inference
+    \item \textbf{Checkpoint/Recovery:} Exactly-once semantics with distributed checkpointing
+    \item \textbf{WebAssembly Calculators:} Sandboxed calculator execution via WASM
+\end{enumerate}
+
 \section{Conclusion}
-\label{sec:conclusion}
-%============================================================================
 
-We presented \dishtayantra{}, a high-performance multi-language dataflow framework addressing critical limitations in existing systems. Through innovative LMDB-based zero-copy data exchange, unified multi-language calculator support, and GIL-free worker parallelism, \dishtayantra{} achieves:
+We presented \textbf{DishtaYantra}, a high-performance multi-language dataflow framework that addresses critical limitations in existing systems. Through LMDB-based zero-copy data exchange, unified multi-language calculator support, and GIL-free worker parallelism, DishtaYantra achieves:
 
 \begin{itemize}
-    \item \textbf{10-250$\times$ latency improvements} over traditional serialization
+    \item \textbf{100-250$\times$ latency improvements} over traditional JSON serialization for large payloads
     \item \textbf{Sub-millisecond P99 latency} for payloads up to 100KB
-    \item \textbf{90\% parallel efficiency} at 12 workers
-    \item \textbf{Comprehensive pub/sub support} for 10+ message brokers
-    \item \textbf{Built-in crash recovery} via internal caching
+    \item \textbf{90\% parallel efficiency} at 12 workers on consumer hardware
+    \item \textbf{Unified support} for Python, Java, C++, Rust, and REST calculators
+    \item \textbf{Comprehensive pub/sub} integration with 10+ message brokers
 \end{itemize}
 
-The patent-pending LMDB transport mechanism represents a novel contribution to the dataflow processing literature, enabling zero-copy data exchange across language and process boundaries.
+DishtaYantra is open-source and available at \url{https://github.com/ajsinha/dishtayantra}.
 
-%============================================================================
-% Acknowledgments
-%============================================================================
 \section*{Acknowledgments}
 
-The author thanks the early adopters and contributors to the \dishtayantra{} project for their valuable feedback.
+The author thanks the open-source communities behind LMDB, pybind11, PyO3, and Py4J for their foundational work enabling this research.
 
-%============================================================================
-% References
-%============================================================================
-\bibliographystyle{plain}
-\begin{thebibliography}{99}
+\begin{thebibliography}{14}
 
-\bibitem{akidau2015millwheel}
-T. Akidau et al.
-\newblock MillWheel: Fault-tolerant stream processing at internet scale.
-\newblock \textit{VLDB Endowment}, 6(11):1033--1044, 2013.
+\bibitem{akidau2013millwheel}
+T. Akidau et al., ``MillWheel: Fault-tolerant stream processing at internet scale,'' \textit{VLDB Endowment}, 2013.
 
 \bibitem{carbone2015flink}
-P. Carbone et al.
-\newblock Apache Flink: Stream and batch processing in a single engine.
-\newblock \textit{IEEE Data Engineering Bulletin}, 38(4), 2015.
+P. Carbone et al., ``Apache Flink: Stream and batch processing in a single engine,'' \textit{IEEE Data Engineering Bulletin}, 2015.
 
 \bibitem{zaharia2016spark}
-M. Zaharia et al.
-\newblock Apache Spark: A unified engine for big data processing.
-\newblock \textit{Communications of the ACM}, 59(11):56--65, 2016.
+M. Zaharia et al., ``Apache Spark: A unified engine for big data processing,'' \textit{Communications of the ACM}, 2016.
 
 \bibitem{murray2013naiad}
-D. G. Murray et al.
-\newblock Naiad: A timely dataflow system.
-\newblock \textit{SOSP}, pages 439--455, 2013.
+D. G. Murray et al., ``Naiad: A timely dataflow system,'' \textit{SOSP}, 2013.
 
 \bibitem{kleppmann2017designing}
-M. Kleppmann.
-\newblock \textit{Designing Data-Intensive Applications}.
-\newblock O'Reilly Media, 2017.
+M. Kleppmann, \textit{Designing Data-Intensive Applications}, O'Reilly Media, 2017.
 
-\bibitem{beazley2010understanding}
-D. Beazley.
-\newblock Understanding the Python GIL.
-\newblock \textit{PyCon}, 2010.
+\bibitem{beazley2010gil}
+D. Beazley, ``Understanding the Python GIL,'' \textit{PyCon}, 2010.
 
 \bibitem{johnston2004advances}
-W. M. Johnston et al.
-\newblock Advances in dataflow programming languages.
-\newblock \textit{ACM Computing Surveys}, 36(1):1--34, 2004.
+W. M. Johnston et al., ``Advances in dataflow programming languages,'' \textit{ACM Computing Surveys}, 2004.
 
-\bibitem{lmdb}
-H. Chu.
-\newblock LMDB: Lightning Memory-Mapped Database.
-\newblock \url{https://www.symas.com/lmdb}, 2011.
+\bibitem{chu2011lmdb}
+H. Chu, ``LMDB: Lightning Memory-Mapped Database,'' \url{https://www.symas.com/lmdb}, 2011.
 
 \bibitem{pybind11}
-W. Jakob et al.
-\newblock pybind11 -- Seamless operability between C++11 and Python.
-\newblock \url{https://github.com/pybind/pybind11}, 2016.
+W. Jakob et al., ``pybind11,'' \url{https://github.com/pybind/pybind11}, 2016.
 
 \bibitem{pyo3}
-PyO3 Contributors.
-\newblock PyO3: Rust bindings for Python.
-\newblock \url{https://pyo3.rs/}, 2017.
+PyO3 Contributors, ``PyO3: Rust bindings for Python,'' \url{https://pyo3.rs/}, 2017.
 
 \bibitem{py4j}
-B. Dagenais.
-\newblock Py4J: A bridge between Python and Java.
-\newblock \url{https://www.py4j.org/}, 2009.
+B. Dagenais, ``Py4J,'' \url{https://www.py4j.org/}, 2009.
 
-\bibitem{arrow}
-Apache Software Foundation.
-\newblock Apache Arrow.
-\newblock \url{https://arrow.apache.org/}, 2016.
+\bibitem{arrow2016}
+Apache Software Foundation, ``Apache Arrow,'' \url{https://arrow.apache.org/}, 2016.
+
+\bibitem{prefect2018}
+Prefect Technologies, ``Prefect,'' \url{https://www.prefect.io/}, 2018.
+
+\bibitem{dagster2019}
+Elementl, ``Dagster,'' \url{https://dagster.io/}, 2019.
 
 \end{thebibliography}
+
+\section*{Disclaimer and Legal Notice}
+
+\textbf{DISCLAIMER OF WARRANTIES}
+
+THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+\textbf{LIMITATION OF LIABILITY}
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE AUTHOR, CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+\textbf{USAGE RESPONSIBILITY}
+
+Users of DishtaYantra are solely responsible for: ensuring compliance with all applicable laws and regulations; validating the software's suitability for their specific use case; implementing appropriate security measures for production deployments; backing up data and maintaining disaster recovery procedures; and testing thoroughly in non-production environments before deployment.
+
+\textbf{NO PROFESSIONAL ADVICE}
+
+This software and documentation do not constitute professional advice of any kind. Users should consult with qualified professionals for legal, financial, security, or other specialized guidance.
+
+\textbf{THIRD-PARTY COMPONENTS}
+
+DishtaYantra incorporates third-party open-source components, each subject to their respective licenses. Users are responsible for compliance with all applicable third-party licenses.
+
+\textbf{INDEMNIFICATION}
+
+By using this software, you agree to indemnify and hold harmless the author and contributors from any claims, damages, or expenses arising from your use of the software.
+
+\vspace{2em}
+\hrule
+\vspace{1em}
+\noindent\textcopyright{} 2025 Ashutosh Sinha. All rights reserved.
+
+\noindent Contact: \texttt{ajsinha@gmail.com}
+
+\noindent Repository: \url{https://github.com/ajsinha/dishtayantra}
 
 \end{document}

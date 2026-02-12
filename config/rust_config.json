@@ -5,7 +5,7 @@
     "rust_manager": {
         "enabled": false,
         "_enabled_note": "Set to true to enable automatic Rust module loading and calculator initialization",
-        "auto_load_on_startup": true,
+        "auto_load_on_startup": false,
         "_auto_load_note": "If true, Rust modules are loaded when application.properties is loaded",
         "health_check_interval_seconds": 60,
         "config_check_interval_seconds": 600,

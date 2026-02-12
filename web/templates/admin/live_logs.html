@@ -1,0 +1,702 @@
+{% extends "base.html" %}
+
+{% block title %}Live Logs - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .live-log-container {
+        background: #0d1117;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        height: calc(100vh - 200px);
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .live-log-header {
+        background: linear-gradient(135deg, #238636, #2ea043);
+        color: white;
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    
+    .live-log-header h5 {
+        margin: 0;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        background: rgba(0,0,0,0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background: #ff4444;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+    
+    .live-dot.connected {
+        background: #00ff88;
+    }
+    
+    .live-dot.paused {
+        background: #ffaa00;
+        animation: none;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    
+    .log-viewer {
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        padding: 0;
+        flex: 1;
+        overflow-y: auto;
+        color: #c9d1d9;
+        scroll-behavior: smooth;
+    }
+    
+    .log-line {
+        padding: 4px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        display: flex;
+        align-items: flex-start;
+        transition: background 0.2s;
+    }
+    
+    .log-line:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    
+    .log-line.new-entry {
+        animation: highlight 2s ease-out;
+    }
+    
+    @keyframes highlight {
+        0% { background: rgba(46, 160, 67, 0.3); }
+        100% { background: transparent; }
+    }
+    
+    .log-line-number {
+        color: #484f58;
+        min-width: 50px;
+        text-align: right;
+        margin-right: 16px;
+        user-select: none;
+        font-size: 0.75rem;
+    }
+    
+    .log-timestamp {
+        color: #8b949e;
+        margin-right: 12px;
+        white-space: nowrap;
+        min-width: 180px;
+    }
+    
+    .log-level {
+        display: inline-block;
+        min-width: 70px;
+        margin-right: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    
+    .log-level.DEBUG { 
+        color: #8b949e; 
+        background: rgba(139, 148, 158, 0.15);
+    }
+    .log-level.INFO { 
+        color: #58a6ff; 
+        background: rgba(88, 166, 255, 0.15);
+    }
+    .log-level.WARNING { 
+        color: #d29922; 
+        background: rgba(210, 153, 34, 0.15);
+    }
+    .log-level.ERROR { 
+        color: #f85149; 
+        background: rgba(248, 81, 73, 0.15);
+    }
+    .log-level.CRITICAL { 
+        color: #ff7b72; 
+        background: rgba(255, 123, 114, 0.3);
+        animation: critical-pulse 1s infinite;
+    }
+    
+    @keyframes critical-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .log-source {
+        color: #a371f7;
+        margin-right: 12px;
+        min-width: 150px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .log-message {
+        color: #c9d1d9;
+        flex: 1;
+        word-break: break-word;
+    }
+    
+    .log-controls {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    
+    .control-btn {
+        padding: 0.4rem 0.9rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.1);
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .control-btn:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .control-btn.active {
+        background: rgba(255,255,255,0.25);
+        border-color: rgba(255,255,255,0.4);
+    }
+    
+    .control-btn.danger {
+        border-color: #f85149;
+    }
+    
+    .control-btn.danger:hover {
+        background: rgba(248, 81, 73, 0.3);
+    }
+    
+    .filter-select {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px;
+        padding: 0.4rem 0.9rem;
+        color: white;
+        font-size: 0.85rem;
+    }
+    
+    .filter-select option {
+        background: #0d1117;
+        color: white;
+    }
+    
+    .search-input {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px;
+        padding: 0.4rem 0.9rem;
+        color: white;
+        font-size: 0.85rem;
+        width: 200px;
+    }
+    
+    .search-input::placeholder {
+        color: rgba(255,255,255,0.5);
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #238636;
+        background: rgba(255,255,255,0.15);
+    }
+    
+    .log-stats-bar {
+        background: #161b22;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        flex-shrink: 0;
+    }
+    
+    .log-stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #8b949e;
+        font-size: 0.8rem;
+    }
+    
+    .log-stat-value {
+        font-weight: 600;
+        color: white;
+    }
+    
+    .log-stat-value.errors {
+        color: #f85149;
+    }
+    
+    .log-stat-value.warnings {
+        color: #d29922;
+    }
+    
+    .empty-logs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #8b949e;
+    }
+    
+    .empty-logs i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+    
+    .connection-status {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #161b22;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 1000;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.3s;
+    }
+    
+    .connection-status.connected {
+        border-color: #238636;
+    }
+    
+    .connection-status.disconnected {
+        border-color: #f85149;
+    }
+    
+    .connection-status.reconnecting {
+        border-color: #d29922;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-broadcast"></i> Live Logs</h2>
+    <a href="{{ url_for('system_logs') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-file-text"></i> View Static Logs
+    </a>
+</div>
+
+<!-- Live Log Viewer -->
+<div class="live-log-container">
+    <div class="live-log-header">
+        <h5>
+            <i class="bi bi-terminal"></i> Log Stream
+            <span class="live-indicator">
+                <span class="live-dot" id="liveDot"></span>
+                <span id="liveStatus">Connecting...</span>
+            </span>
+        </h5>
+        <div class="log-controls">
+            <select class="filter-select" id="logLevelFilter">
+                <option value="all">All Levels</option>
+                <option value="DEBUG">Debug</option>
+                <option value="INFO">Info</option>
+                <option value="WARNING">Warning</option>
+                <option value="ERROR">Error</option>
+                <option value="CRITICAL">Critical</option>
+            </select>
+            
+            <select class="filter-select" id="logSourceFilter">
+                <option value="all">All Sources</option>
+                <option value="dagserver">DAG Server</option>
+                <option value="worker">Workers</option>
+                <option value="calculator">Calculators</option>
+                <option value="pubsub">Pub/Sub</option>
+            </select>
+            
+            <input type="text" class="search-input" id="logSearch" placeholder="Search logs...">
+            
+            <button class="control-btn" id="pauseBtn" title="Pause/Resume">
+                <i class="bi bi-pause-fill" id="pauseIcon"></i>
+                <span id="pauseText">Pause</span>
+            </button>
+            
+            <button class="control-btn" id="scrollBtn" title="Auto-scroll" onclick="toggleAutoScroll()">
+                <i class="bi bi-arrow-down-circle"></i>
+                Auto-scroll
+            </button>
+            
+            <button class="control-btn danger" id="clearBtn" title="Clear logs">
+                <i class="bi bi-trash"></i>
+                Clear
+            </button>
+        </div>
+    </div>
+    
+    <div class="log-viewer" id="logViewer">
+        <div class="empty-logs" id="emptyState">
+            <i class="bi bi-hourglass-split"></i>
+            <p>Waiting for log entries...</p>
+        </div>
+    </div>
+    
+    <div class="log-stats-bar">
+        <div class="d-flex gap-4">
+            <div class="log-stat">
+                <span>Total:</span>
+                <span class="log-stat-value" id="totalCount">0</span>
+            </div>
+            <div class="log-stat">
+                <span>Errors:</span>
+                <span class="log-stat-value errors" id="errorCount">0</span>
+            </div>
+            <div class="log-stat">
+                <span>Warnings:</span>
+                <span class="log-stat-value warnings" id="warningCount">0</span>
+            </div>
+            <div class="log-stat">
+                <span>Rate:</span>
+                <span class="log-stat-value" id="logRate">0</span>
+                <span>/sec</span>
+            </div>
+        </div>
+        <div class="log-stat">
+            <span>Buffer:</span>
+            <span class="log-stat-value" id="bufferCount">0</span>
+            <span>/ 5000 max</span>
+        </div>
+    </div>
+</div>
+
+<!-- Connection Status Toast -->
+<div class="connection-status" id="connectionStatus" style="display: none;">
+    <i class="bi bi-wifi" id="connectionIcon"></i>
+    <span id="connectionText">Connected</span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuration
+const MAX_LOG_LINES = 5000;
+const RECONNECT_INTERVAL = 3000;
+
+// State
+let eventSource = null;
+let isPaused = false;
+let autoScroll = true;
+let lineNumber = 0;
+let totalCount = 0;
+let errorCount = 0;
+let warningCount = 0;
+let logRateCounter = 0;
+let reconnectAttempts = 0;
+
+// Elements
+const logViewer = document.getElementById('logViewer');
+const emptyState = document.getElementById('emptyState');
+const liveDot = document.getElementById('liveDot');
+const liveStatus = document.getElementById('liveStatus');
+const pauseBtn = document.getElementById('pauseBtn');
+const pauseIcon = document.getElementById('pauseIcon');
+const pauseText = document.getElementById('pauseText');
+const connectionStatus = document.getElementById('connectionStatus');
+const connectionIcon = document.getElementById('connectionIcon');
+const connectionText = document.getElementById('connectionText');
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    connectToLogStream();
+    setupEventListeners();
+    startLogRateCalculator();
+});
+
+function connectToLogStream() {
+    if (eventSource) {
+        eventSource.close();
+    }
+    
+    updateConnectionStatus('connecting');
+    
+    eventSource = new EventSource('{{ url_for("live_logs_stream") }}');
+    
+    eventSource.onopen = function() {
+        reconnectAttempts = 0;
+        updateConnectionStatus('connected');
+        liveDot.classList.add('connected');
+        liveStatus.textContent = 'Live';
+    };
+    
+    eventSource.onmessage = function(event) {
+        if (isPaused) return;
+        
+        try {
+            const logEntry = JSON.parse(event.data);
+            addLogEntry(logEntry);
+        } catch (e) {
+            console.error('Failed to parse log entry:', e);
+        }
+    };
+    
+    eventSource.onerror = function(error) {
+        updateConnectionStatus('disconnected');
+        liveDot.classList.remove('connected');
+        liveStatus.textContent = 'Disconnected';
+        
+        // Auto-reconnect
+        setTimeout(() => {
+            reconnectAttempts++;
+            updateConnectionStatus('reconnecting');
+            liveStatus.textContent = `Reconnecting (${reconnectAttempts})...`;
+            connectToLogStream();
+        }, RECONNECT_INTERVAL);
+    };
+}
+
+function addLogEntry(entry) {
+    // Hide empty state
+    if (emptyState) {
+        emptyState.style.display = 'none';
+    }
+    
+    // Apply filters
+    if (!matchesFilters(entry)) return;
+    
+    lineNumber++;
+    totalCount++;
+    logRateCounter++;
+    
+    if (entry.level === 'ERROR' || entry.level === 'CRITICAL') {
+        errorCount++;
+    } else if (entry.level === 'WARNING') {
+        warningCount++;
+    }
+    
+    // Create log line
+    const logLine = document.createElement('div');
+    logLine.className = 'log-line new-entry';
+    logLine.dataset.level = entry.level;
+    logLine.dataset.source = entry.source || '';
+    
+    logLine.innerHTML = `
+        <span class="log-line-number">${lineNumber}</span>
+        <span class="log-timestamp">${entry.timestamp}</span>
+        <span class="log-level ${entry.level}">${entry.level}</span>
+        <span class="log-source">${entry.source || 'system'}</span>
+        <span class="log-message">${escapeHtml(entry.message)}</span>
+    `;
+    
+    logViewer.appendChild(logLine);
+    
+    // Remove highlight class after animation
+    setTimeout(() => logLine.classList.remove('new-entry'), 2000);
+    
+    // Limit buffer size
+    while (logViewer.children.length > MAX_LOG_LINES) {
+        logViewer.removeChild(logViewer.firstChild);
+    }
+    
+    // Auto-scroll
+    if (autoScroll) {
+        logViewer.scrollTop = logViewer.scrollHeight;
+    }
+    
+    // Update stats
+    updateStats();
+}
+
+function matchesFilters(entry) {
+    const levelFilter = document.getElementById('logLevelFilter').value;
+    const sourceFilter = document.getElementById('logSourceFilter').value;
+    const searchTerm = document.getElementById('logSearch').value.toLowerCase();
+    
+    // Level filter
+    if (levelFilter !== 'all' && entry.level !== levelFilter) {
+        return false;
+    }
+    
+    // Source filter
+    if (sourceFilter !== 'all') {
+        const source = (entry.source || '').toLowerCase();
+        if (!source.includes(sourceFilter)) {
+            return false;
+        }
+    }
+    
+    // Search filter
+    if (searchTerm && !entry.message.toLowerCase().includes(searchTerm)) {
+        return false;
+    }
+    
+    return true;
+}
+
+function setupEventListeners() {
+    // Pause button
+    pauseBtn.addEventListener('click', function() {
+        isPaused = !isPaused;
+        
+        if (isPaused) {
+            pauseIcon.className = 'bi bi-play-fill';
+            pauseText.textContent = 'Resume';
+            liveDot.classList.add('paused');
+            liveStatus.textContent = 'Paused';
+        } else {
+            pauseIcon.className = 'bi bi-pause-fill';
+            pauseText.textContent = 'Pause';
+            liveDot.classList.remove('paused');
+            liveDot.classList.add('connected');
+            liveStatus.textContent = 'Live';
+        }
+    });
+    
+    // Clear button
+    document.getElementById('clearBtn').addEventListener('click', function() {
+        logViewer.innerHTML = `
+            <div class="empty-logs" id="emptyState">
+                <i class="bi bi-hourglass-split"></i>
+                <p>Waiting for log entries...</p>
+            </div>
+        `;
+        lineNumber = 0;
+        totalCount = 0;
+        errorCount = 0;
+        warningCount = 0;
+        updateStats();
+    });
+    
+    // Filter changes - re-filter existing logs
+    ['logLevelFilter', 'logSourceFilter', 'logSearch'].forEach(id => {
+        document.getElementById(id).addEventListener('change', applyFiltersToExisting);
+        document.getElementById(id).addEventListener('input', applyFiltersToExisting);
+    });
+}
+
+function applyFiltersToExisting() {
+    const levelFilter = document.getElementById('logLevelFilter').value;
+    const sourceFilter = document.getElementById('logSourceFilter').value;
+    const searchTerm = document.getElementById('logSearch').value.toLowerCase();
+    
+    document.querySelectorAll('.log-line').forEach(line => {
+        const level = line.dataset.level;
+        const source = (line.dataset.source || '').toLowerCase();
+        const message = line.querySelector('.log-message')?.textContent.toLowerCase() || '';
+        
+        let visible = true;
+        
+        if (levelFilter !== 'all' && level !== levelFilter) {
+            visible = false;
+        }
+        
+        if (sourceFilter !== 'all' && !source.includes(sourceFilter)) {
+            visible = false;
+        }
+        
+        if (searchTerm && !message.includes(searchTerm)) {
+            visible = false;
+        }
+        
+        line.style.display = visible ? '' : 'none';
+    });
+}
+
+function toggleAutoScroll() {
+    autoScroll = !autoScroll;
+    document.getElementById('scrollBtn').classList.toggle('active', autoScroll);
+    
+    if (autoScroll) {
+        logViewer.scrollTop = logViewer.scrollHeight;
+    }
+}
+
+function updateStats() {
+    document.getElementById('totalCount').textContent = totalCount.toLocaleString();
+    document.getElementById('errorCount').textContent = errorCount.toLocaleString();
+    document.getElementById('warningCount').textContent = warningCount.toLocaleString();
+    document.getElementById('bufferCount').textContent = logViewer.querySelectorAll('.log-line').length.toLocaleString();
+}
+
+function startLogRateCalculator() {
+    setInterval(() => {
+        document.getElementById('logRate').textContent = logRateCounter;
+        logRateCounter = 0;
+    }, 1000);
+}
+
+function updateConnectionStatus(status) {
+    connectionStatus.style.display = 'flex';
+    connectionStatus.className = 'connection-status ' + status;
+    
+    switch (status) {
+        case 'connected':
+            connectionIcon.className = 'bi bi-wifi';
+            connectionText.textContent = 'Connected';
+            setTimeout(() => connectionStatus.style.display = 'none', 3000);
+            break;
+        case 'disconnected':
+            connectionIcon.className = 'bi bi-wifi-off';
+            connectionText.textContent = 'Disconnected';
+            break;
+        case 'reconnecting':
+            connectionIcon.className = 'bi bi-arrow-repeat';
+            connectionText.textContent = 'Reconnecting...';
+            break;
+        case 'connecting':
+            connectionIcon.className = 'bi bi-hourglass-split';
+            connectionText.textContent = 'Connecting...';
+            break;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Cleanup on page leave
+window.addEventListener('beforeunload', function() {
+    if (eventSource) {
+        eventSource.close();
+    }
+});
+</script>
+{% endblock %}
