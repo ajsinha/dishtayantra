@@ -1,9 +1,10 @@
 import json
 import logging
 import time
+import traceback
 from datetime import datetime
 import stomp
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber, DataAwarePayload
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, DataAwarePayload, smart_deserialize
 import queue
 logger = logging.getLogger(__name__)
 
@@ -69,16 +70,40 @@ class ActiveMQListener(stomp.ConnectionListener):
 
     def on_message(self, frame):
         try:
-            data = json.loads(frame.body)
+            # v1.7.2: Use smart deserializer for non-JSON message handling
+            data = smart_deserialize(frame.body, f"activemq:{self.subscriber.name}")
+            
+            # v1.7.2 Policy: Log every message received
+            self._log_message(data)
+            
             self.subscriber._internal_queue.put(data, timeout=1)
             with self.subscriber._lock:
                 self.subscriber._last_receive = datetime.now().isoformat()
                 self.subscriber._receive_count += 1
         except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error processing ActiveMQ message: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+
+    def _log_message(self, data):
+        """v1.7.2 Policy: Log every message received"""
+        try:
+            if isinstance(data, dict):
+                preview = json.dumps(data)[:500]
+            else:
+                preview = str(data)[:500]
+            
+            logger.info(f"MESSAGE RECEIVED [activemq:{self.subscriber.name}]:")
+            logger.info(f"  Source: {self.subscriber.source}")
+            logger.info(f"  Type: {type(data).__name__}")
+            logger.info(f"  Count: {self.subscriber._receive_count + 1}")
+            logger.info(f"  Preview: {preview}")
+        except Exception as e:
+            logger.warning(f"Could not log message: {e}")
 
     def on_error(self, frame):
         logger.error(f"ActiveMQ error: {frame.body}")
+        logger.error(f"Full stack trace:\n{traceback.format_exc()}")
 
 
 class ActiveMQDataSubscriber(DataSubscriber):

@@ -1142,6 +1142,71 @@ DishtaYantra          │ External Service
                             </div>
                         </div>
                     </div>
+
+                    <!-- Smart Deserialize - NEW in v1.7.5 -->
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-magic me-2"></i>Smart Message Deserialization <span class="badge bg-success ms-2">v1.7.5</span></h6>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <p>All subscribers automatically handle <strong>both JSON and non-JSON messages</strong> using the <code>smart_deserialize()</code> function. DAG calculators always receive dict format regardless of source message format.</p>
+                        </div>
+                    </div>
+                    <div class="bg-dark text-light p-3 rounded mb-3" style="font-family: monospace; font-size: 0.75rem;">
+<pre class="mb-0" style="color: #00ff00;">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        Smart Deserialize Flow                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  External Source                smart_deserialize()              Calculator │
+│  ┌───────────┐                  ┌─────────────────┐              ┌────────┐ │
+│  │ Kafka     │ ─────────────────│ JSON dict?      │──────────────│        │ │
+│  │ ActiveMQ  │   raw bytes/str  │   Yes → pass    │  always dict │ Python │ │
+│  │ RabbitMQ  │                  │   No → package  │              │  Java  │ │
+│  │ TIBCO     │                  └─────────────────┘              │  C++   │ │
+│  │ IBM MQ    │                                                    │  Rust  │ │
+│  │ Redis     │  Message Transformation:                           │        │ │
+│  │ gRPC      │  ┌──────────────────────────────────────────────┐ │        │ │
+│  └───────────┘  │ {"key":"val"} → {"key":"val"}                │ └────────┘ │
+│                  │ "hello"       → {"_raw_data":"hello",...}    │            │
+│                  │ [1,2,3]       → {"_raw_data":[1,2,3],...}    │            │
+│                  │ 42            → {"_raw_data":42,...}          │            │
+│                  │ binary        → {"_raw_data":"hex...",...}    │            │
+│                  └──────────────────────────────────────────────┘            │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white py-2">
+                                    <strong><i class="bi bi-check-circle"></i> Auto-Packaged Fields</strong>
+                                </div>
+                                <div class="card-body p-2">
+                                    <ul class="mb-0 small">
+                                        <li><code>_raw_data</code> - Original message content</li>
+                                        <li><code>_raw_type</code> - Type: string, list, int, bytes</li>
+                                        <li><code>_auto_packaged</code> - Always <code>true</code></li>
+                                        <li><code>_original_format</code> - e.g., "plain_text"</li>
+                                        <li><code>_error</code> - Error message if any</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white py-2">
+                                    <strong><i class="bi bi-journal-check"></i> Enhanced Logging (v1.7.5)</strong>
+                                </div>
+                                <div class="card-body p-2">
+                                    <ul class="mb-0 small">
+                                        <li>Every message logged on publish/receive</li>
+                                        <li>Full stack traces for all exceptions</li>
+                                        <li>Source, type, count, preview in logs</li>
+                                        <li>Consistent format across all brokers</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

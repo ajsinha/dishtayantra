@@ -1,9 +1,10 @@
 import json
 import logging
 import time
+import traceback
 from datetime import datetime
 import redis
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 import queue
 logger = logging.getLogger(__name__)
 
@@ -127,11 +128,14 @@ class RedisChannelDataSubscriber(DataSubscriber):
             message = self.pubsub.get_message(timeout=0.1)
 
             if message and message['type'] == 'message':
-                return json.loads(message['data'])
+                # v1.7.2: Use smart deserializer for non-JSON message handling
+                return smart_deserialize(message['data'], f"redis:{self.name}")
 
             return None
         except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from Redis channel: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             time.sleep(0.5)
             return None
 

@@ -7,8 +7,9 @@ Supports both queue and topic messaging patterns.
 import json
 import logging
 import time
+import traceback
 from datetime import datetime
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 
 try:
     import pymqi
@@ -318,8 +319,8 @@ class WebSphereMQDataSubscriber(DataSubscriber):
             try:
                 message = self.queue_obj.get(None, md, gmo)
 
-                # Deserialize JSON data
-                data = json.loads(message.decode('utf-8'))
+                # v1.7.2: Use smart deserializer for non-JSON message handling
+                data = smart_deserialize(message, f"websphere:{self.name}")
                 logger.debug(f"Received message from WebSphere MQ {self.dest_type}/{self.dest_name}")
                 return data
 
@@ -335,15 +336,19 @@ class WebSphereMQDataSubscriber(DataSubscriber):
                             pymqi.CMQC.MQRC_Q_MGR_QUIESCING,
                             pymqi.CMQC.MQRC_CONNECTION_QUIESCING):
                 logger.error(f"WebSphere MQ connection error: {e.comp}, {e.reason}")
+                logger.error(f"Full stack trace:\n{traceback.format_exc()}")
                 self.qmgr = None
                 self.queue_obj = None
                 time.sleep(1)
             else:
                 logger.error(f"WebSphere MQ error: {e.comp}, {e.reason}")
+                logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             return None
 
         except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from WebSphere MQ: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             return None
 
     def stop(self):

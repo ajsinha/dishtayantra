@@ -15,7 +15,7 @@ try:
     i = 0
     while i < 10:
         message = '{"message": "hello"}'
-
+        #message = f"hello{i}"
         # 2. Send the message
         # .get(timeout=10) makes this synchronous for simpler debugging
         metadata = producer.send(topic_name, value=message).get(timeout=10)

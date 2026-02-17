@@ -7,8 +7,9 @@ Supports both queue and topic messaging patterns.
 import json
 import logging
 import time
+import traceback
 from datetime import datetime
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 import queue
 try:
     import tibcoems
@@ -256,8 +257,8 @@ class TibcoEMSDataSubscriber(DataSubscriber):
                 # Check if it's a text message
                 if isinstance(message, tibcoems.TextMessage):
                     text = message.getText()
-                    # Deserialize JSON data
-                    data = json.loads(text)
+                    # v1.7.2: Use smart deserializer for non-JSON message handling
+                    data = smart_deserialize(text, f"tibcoems:{self.name}")
                     logger.debug(f"Received message from TIBCO EMS {self.dest_type}/{self.dest_name}")
                     return data
                 else:
@@ -269,6 +270,7 @@ class TibcoEMSDataSubscriber(DataSubscriber):
 
         except tibcoems.EMSException as e:
             logger.error(f"TIBCO EMS error: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             self.connection = None
             self.session = None
             self.consumer = None
@@ -276,7 +278,9 @@ class TibcoEMSDataSubscriber(DataSubscriber):
             return None
 
         except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from TIBCO EMS: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             return None
 
     def stop(self):

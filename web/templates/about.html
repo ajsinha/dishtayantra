@@ -99,7 +99,7 @@
     <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
     <h1>DishtaYantra</h1>
     <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
-    <span class="version-badge">Version 1.7.2</span>
+    <span class="version-badge">Version 1.7.5</span>
 </div>
 
 <!-- Navigation Buttons -->
@@ -555,18 +555,96 @@
     </div>
 </div>
 
-<!-- What's New in 1.7.2 -->
+<!-- What's New in 1.7.5 -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card" style="border: 2px solid #238636;">
             <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.2 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
+                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.5 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
             </div>
             <div class="card-body">
+                <!-- Smart Deserializer -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-success"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-success">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-braces-asterisk" style="color: #238636;"></i> Universal Smart Deserializer</h6>
+                        <ul>
+                            <li><strong>Auto-package non-JSON messages</strong> into dict format</li>
+                            <li>Works across ALL pubsub implementations</li>
+                            <li>Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, WebSphere MQ</li>
+                            <li>Redis Pub/Sub, gRPC streaming</li>
+                            <li>No configuration needed - works automatically</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-arrow-left-right" style="color: #2ea043;"></i> Message Transformation</h6>
+                        <ul>
+                            <li><code>{"key": "value"}</code> → passes through unchanged</li>
+                            <li><code>hello world</code> → <code>{"_raw_data": "hello world", "_auto_packaged": true}</code></li>
+                            <li><code>[1, 2, 3]</code> → <code>{"_raw_data": [1,2,3], "_raw_type": "list"}</code></li>
+                            <li>Binary data → hex-encoded with error info</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Logging Policy -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-success"><i class="bi bi-journal-check"></i> Enhanced Logging Policy <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-inbox" style="color: #238636;"></i> Message Tracking</h6>
+                        <ul>
+                            <li><strong>Every message logged</strong> on publish and receive</li>
+                            <li>Source, type, count, and preview in logs</li>
+                            <li>Consistent format across all brokers</li>
+                            <li>Configurable log levels</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-bug" style="color: #dc3545;"></i> Exception Handling</h6>
+                        <ul>
+                            <li><strong>Full stack traces</strong> for all exceptions</li>
+                            <li>Easier debugging and troubleshooting</li>
+                            <li>Connection error details</li>
+                            <li>Deserialization failure diagnostics</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Kafka Improvements -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-success"><i class="bi bi-hdd-network"></i> Kafka Consumer Improvements <span class="badge bg-warning text-dark">ENHANCED</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Poll-based retrieval</strong> instead of iterator</li>
+                            <li>More reliable with external producers</li>
+                            <li>Default <code>auto.offset.reset=earliest</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Both kafka-python and confluent-kafka</strong> updated</li>
+                            <li>Partition and offset logging</li>
+                            <li>Graceful error recovery</li>
+                        </ul>
+                    </div>
+                </div>
+                
                 <!-- Live Logs -->
                 <div class="row mb-3">
                     <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-broadcast"></i> Live Logs Streaming <span class="badge bg-success">NEW</span></h6>
+                        <h6 class="text-success"><i class="bi bi-broadcast"></i> Live Logs Streaming</h6>
                     </div>
                 </div>
                 <div class="row mb-4">
@@ -588,31 +666,6 @@
                             <li><strong>Clear buffer</strong> to reset display</li>
                             <li><strong>Statistics bar</strong> with counts and log rate</li>
                             <li><strong>Connection status</strong> visual indicators</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Research Documentation -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-journal-text"></i> Research Documentation <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>22-page research paper</strong> with technical details</li>
-                            <li>Comprehensive ASCII architecture diagrams</li>
-                            <li>Performance benchmarks and evaluation</li>
-                            <li>Literature survey and related work</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>Multiple formats</strong>: PDF, LaTeX, Markdown</li>
-                            <li>Web integration with runtime rendering</li>
-                            <li>Direct download links</li>
-                            <li>Legal disclaimer and usage terms</li>
                         </ul>
                     </div>
                 </div>

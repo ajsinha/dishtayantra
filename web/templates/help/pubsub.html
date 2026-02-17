@@ -68,6 +68,68 @@
     </div>
 </div>
 
+<!-- Smart Deserialize - NEW in v1.7.5 -->
+<div class="card mb-4" style="border: 2px solid #238636;">
+    <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
+        <h5 class="mb-0"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-light text-dark ms-2">NEW in v1.7.5</span></h5>
+    </div>
+    <div class="card-body">
+        <p>All subscribers automatically handle <strong>both JSON and non-JSON messages</strong>. No configuration required.</p>
+        
+        <h6><i class="bi bi-arrow-right-circle" style="color: #238636;"></i> How It Works</h6>
+        <p>The <code>smart_deserialize</code> function processes incoming messages:</p>
+        <ul>
+            <li><strong>JSON dict</strong>: Passes through unchanged → <code>{"key": "value"}</code></li>
+            <li><strong>JSON array/primitive</strong>: Wrapped in dict → <code>{"_raw_data": [1,2,3], "_raw_type": "list", "_auto_packaged": true}</code></li>
+            <li><strong>Plain text</strong>: Packaged with metadata → <code>{"_raw_data": "hello", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}</code></li>
+            <li><strong>Binary/Error</strong>: Hex-encoded with error info → <code>{"_raw_data": "...", "_error": "..."}</code></li>
+        </ul>
+
+        <h6><i class="bi bi-hdd-network" style="color: #2ea043;"></i> Supported Brokers</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <ul>
+                    <li><span class="protocol-badge protocol-kafka">kafka://</span> Apache Kafka</li>
+                    <li><span class="protocol-badge protocol-activemq">activemq://</span> ActiveMQ</li>
+                    <li><span class="protocol-badge protocol-rabbit">rabbitmq://</span> RabbitMQ</li>
+                    <li><span class="protocol-badge protocol-tibco">tibcoems://</span> TIBCO EMS</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul>
+                    <li><span class="protocol-badge protocol-websphere">websphere://</span> IBM MQ</li>
+                    <li><span class="protocol-badge protocol-redis">redischannel://</span> Redis Pub/Sub</li>
+                    <li><span class="protocol-badge protocol-grpc">grpc://</span> gRPC Streaming</li>
+                </ul>
+            </div>
+        </div>
+
+        <h6><i class="bi bi-code-square" style="color: #4a90c2;"></i> Example: Handling Auto-Packaged Messages</h6>
+        <pre class="code-block">class MyCalculator(AbstractCalculator):
+    def calculate(self, input_data):
+        # Check if message was auto-packaged
+        if input_data.get('_auto_packaged'):
+            # Extract original data
+            raw_data = input_data.get('_raw_data')
+            raw_type = input_data.get('_raw_type')
+            
+            if raw_type == 'string':
+                # Process plain text message
+                return {'processed': raw_data.upper()}
+            elif raw_type == 'list':
+                # Process array
+                return {'sum': sum(raw_data)}
+        else:
+            # Normal JSON dict - process as usual
+            return {'result': input_data.get('value') * 2}</pre>
+
+        <div class="alert alert-info mt-3">
+            <i class="bi bi-lightbulb"></i> <strong>Tip:</strong> Command-line producers now work without JSON formatting:
+            <pre class="mb-0 mt-2" style="background: #1e293b; color: #e2e8f0; padding: 8px; border-radius: 4px;">echo "hello world" | kafka-console-producer --topic my_topic --bootstrap-server localhost:9092</pre>
+        </div>
+    </div>
+</div>
+
 <!-- In-Memory -->
 <div class="card mb-4">
     <div class="card-header">

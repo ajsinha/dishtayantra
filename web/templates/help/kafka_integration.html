@@ -373,6 +373,49 @@ subscriber.stop()</pre>
         <div class="tip-box">
             <strong><i class="bi bi-lightbulb"></i> Pro Tip:</strong> Use <code>kafka_library: 'confluent-kafka'</code> for production workloads to achieve 10x better performance!
         </div>
+
+        <!-- Smart Deserialize - NEW in v1.7.5 -->
+        <div class="card mt-4" style="border: 2px solid #238636;">
+            <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
+                <h6 class="mb-0"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-light text-dark ms-2">NEW in v1.7.5</span></h6>
+            </div>
+            <div class="card-body">
+                <p>Kafka subscribers automatically handle <strong>both JSON and non-JSON messages</strong>. No configuration needed!</p>
+                
+                <h6><i class="bi bi-terminal" style="color: #238636;"></i> Command Line Support</h6>
+                <p>Plain text messages now work directly:</p>
+                <pre class="code-block bash"># Plain text - auto-packaged into dict
+echo "hello world" | kafka-console-producer --topic my_topic --bootstrap-server localhost:9092
+
+# JSON - passes through unchanged  
+echo '{"symbol": "AAPL"}' | kafka-console-producer --topic my_topic --bootstrap-server localhost:9092</pre>
+
+                <h6 class="mt-3"><i class="bi bi-arrow-left-right" style="color: #2ea043;"></i> Message Transformation</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr><th>Input</th><th>Output</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><code>{"key": "val"}</code></td><td><code>{"key": "val"}</code></td></tr>
+                                <tr><td><code>hello</code></td><td><code>{"_raw_data": "hello", "_auto_packaged": true}</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle"></i> <strong>v1.7.5 Defaults:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li><code>auto.offset.reset=earliest</code></li>
+                                <li>Poll-based message retrieval</li>
+                                <li>Full stack trace logging</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

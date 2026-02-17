@@ -6,15 +6,31 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.7.5-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.7.2
+## What's New in Version 1.7.5
 
-### Live Logs Streaming (NEW)
+### Smart Message Deserialization (NEW)
+- **Universal Smart Deserializer**: Auto-packages non-JSON messages into dict format
+- **Works Across All Brokers**: Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, WebSphere MQ, Redis, gRPC
+- **No Configuration Required**: Automatic handling of plain text, JSON, arrays, and binary data
+- **Consistent Output**: DAG calculators always receive dict format regardless of source message format
+
+### Enhanced Logging Policy (NEW)
+- **Message Tracking**: Every publish and receive is logged with source, type, and preview
+- **Full Stack Traces**: All exceptions now include complete stack traces for easier debugging
+- **Consistent Format**: Same logging pattern across all pubsub implementations
+
+### Kafka Consumer Improvements (ENHANCED)
+- **Poll-based Retrieval**: More reliable message consumption with external producers
+- **Default `auto.offset.reset=earliest`**: New consumer groups read all messages from beginning
+- **Both Libraries Updated**: kafka-python and confluent-kafka implementations enhanced
+
+### Live Logs Streaming
 - **Real-Time Log Viewer**: Server-Sent Events (SSE) for live log streaming
 - **Auto-Reconnect**: Automatic reconnection on connection drops
 - **Level & Source Filtering**: Filter by DEBUG, INFO, WARNING, ERROR, CRITICAL and source
@@ -23,7 +39,7 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 - **Statistics Bar**: Total count, errors, warnings, log rate, buffer size
 - **Connection Status**: Visual indicators for connection state
 
-### Research Documentation (NEW)
+### Research Documentation
 - **Comprehensive Research Paper**: 22-page technical paper with architecture diagrams
 - **Multiple Formats**: Available in PDF, LaTeX, and Markdown
 - **Web Integration**: Research section in help system with runtime rendering
@@ -392,7 +408,11 @@ status = server.get_server_status()
 
 ## Changelog
 
-### Version 1.7.2 (Current)
+### Version 1.7.5 (Current)
+- **Smart Message Deserialization**: Auto-packages non-JSON messages into dict format
+- **Universal Broker Support**: Works across Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, IBM MQ, Redis, gRPC
+- **Enhanced Logging Policy**: Every message logged on publish/receive with full stack traces
+- **Kafka Improvements**: Poll-based retrieval, default `auto.offset.reset=earliest`
 - Live Logs streaming with Server-Sent Events (SSE)
 - Real-time log viewer with filtering and search
 - Auto-reconnect and connection status indicators
@@ -481,4 +501,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v1.7.2** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.5** | © 2025-2030 Ashutosh Sinha

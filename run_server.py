@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 DishtaYantra Compute Server - Main Entry Point
-Version: 1.7.2
+Version: 1.7.5
 
 IMPORTANT: This script must be run with `python run_server.py` 
 The multiprocessing worker pool requires the __main__ guard.
@@ -23,7 +23,7 @@ from datetime import datetime
 warnings.filterwarnings("ignore", message=".*GIL.*lmdb.*", category=RuntimeWarning)
 
 # Version information
-VERSION = "1.7.2"
+VERSION = "1.7.5"
 BUILD_DATE = "2025-02-12"
 
 # CRITICAL: Set start method at module level before any other multiprocessing usage

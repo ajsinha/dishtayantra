@@ -7,8 +7,9 @@ Supports both queue and topic messaging patterns similar to ActiveMQ.
 import json
 import logging
 import time
+import traceback
 from datetime import datetime
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 import queue
 try:
     import pika
@@ -302,8 +303,8 @@ class RabbitMQDataSubscriber(DataSubscriber):
             )
 
             if method_frame:
-                # Deserialize JSON data
-                data = json.loads(body.decode('utf-8'))
+                # v1.7.2: Use smart deserializer for non-JSON message handling
+                data = smart_deserialize(body, f"rabbitmq:{self.name}")
                 logger.debug(f"Received message from RabbitMQ {self.dest_type}/{self.dest_name}")
                 return data
             else:
@@ -312,13 +313,16 @@ class RabbitMQDataSubscriber(DataSubscriber):
 
         except (AMQPConnectionError, AMQPChannelError) as e:
             logger.error(f"RabbitMQ connection error: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             self.connection = None
             self.channel = None
             time.sleep(1)
             return None
 
         except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from RabbitMQ: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             return None
 
     def stop(self):

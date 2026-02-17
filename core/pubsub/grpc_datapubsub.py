@@ -34,9 +34,10 @@ message Message {
 
 import json
 import logging
+import traceback
 import grpc
 from datetime import datetime
-from core.pubsub.datapubsub import DataPublisher, DataSubscriber
+from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 import queue
 # Import generated gRPC stubs (these would be generated from the proto file)
 # For this implementation, we'll assume they exist
@@ -201,8 +202,8 @@ class GRPCDataSubscriber(DataSubscriber):
             try:
                 message = next(self.stream)
 
-                # Deserialize JSON data
-                data = json.loads(message.data.decode('utf-8'))
+                # v1.7.2: Use smart deserializer for non-JSON message handling
+                data = smart_deserialize(message.data, f"grpc:{self.name}")
                 logger.debug(f"Received message from gRPC topic {self.topic}")
                 return data
 
@@ -213,11 +214,14 @@ class GRPCDataSubscriber(DataSubscriber):
 
             except grpc.RpcError as e:
                 logger.error(f"gRPC stream error: {e.code()}")
+                logger.error(f"Full stack trace:\n{traceback.format_exc()}")
                 self.stream = None
                 return None
 
         except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from gRPC topic {self.topic}: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             self.stream = None
             return None
 

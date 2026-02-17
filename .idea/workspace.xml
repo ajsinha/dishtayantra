@@ -5,11 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8f8c7aa2-a860-4c37-bdf8-77d0d51f0f56" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/tests/sample_python_publisher.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/dags/ash_dag_with_auto_clone.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/dags/ash_dag_with_auto_clone.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICKSTART.md" beforeDir="false" afterPath="$PROJECT_DIR$/QUICKSTART.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/activemq_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/activemq_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/grpc_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/grpc_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/rabbitmq_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/rabbitmq_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/redis_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/redis_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/tibcoems_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/tibcoems_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/websphere_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/websphere_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/dagserver.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/sample_python_publisher.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/sample_python_publisher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/cpp/management.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cpp/management.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/architecture.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/architecture.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/pubsub.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pubsub.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,7 +66,7 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "ai.playground.ignore.import.keys.banner.in.settings": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/ashutosh/PycharmProjects/dishtayantra/core/pubsub",
+    "last_opened_file_path": "/home/ashutosh/PycharmProjects/dishtayantra/tests",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -63,6 +78,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests" />
       <recent name="$PROJECT_DIR$/core/pubsub" />
     </key>
   </component>

@@ -1,4 +1,4 @@
-# DishtaYantra v1.7.2 - Quick Start Guide
+# DishtaYantra v1.7.5 - Quick Start Guide
 
 ## 🚀 Getting Started
 
@@ -31,7 +31,31 @@ Default credentials:
 
 ---
 
-## 🆕 New in v1.7.2: Live Logs & Research Documentation
+## 🆕 New in v1.7.5: Smart Deserialization & Enhanced Logging
+
+### Smart Message Deserialization
+
+All message brokers now automatically handle **both JSON and non-JSON messages**:
+
+```bash
+# Plain text now works - no JSON required!
+echo "hello world" | kafka-console-producer --topic my_topic --bootstrap-server localhost:9092
+```
+
+**Transformation Examples:**
+| Input Message | Output (to Calculator) |
+|---------------|------------------------|
+| `{"key": "value"}` | `{"key": "value"}` |
+| `hello world` | `{"_raw_data": "hello world", "_auto_packaged": true}` |
+| `[1, 2, 3]` | `{"_raw_data": [1,2,3], "_raw_type": "list", "_auto_packaged": true}` |
+
+**Supported Brokers:** Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, IBM MQ, Redis, gRPC
+
+### Enhanced Logging Policy
+
+- **Every message logged** on publish and receive
+- **Full stack traces** for all exceptions
+- Consistent logging format across all brokers
 
 ### Live Logs Streaming
 
@@ -203,5 +227,5 @@ For large payloads (100KB+), enable LMDB zero-copy:
 
 ---
 
-**DishtaYantra v1.7.2**
+**DishtaYantra v1.7.5**
 **Copyright © 2025-2030 Ashutosh Sinha. All Rights Reserved.**

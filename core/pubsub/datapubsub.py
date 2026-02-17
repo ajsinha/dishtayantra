@@ -6,11 +6,86 @@ import time
 import logging
 import traceback
 from datetime import datetime
-from typing import Any,Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable, Union
 
 from core import instantiate_from_full_name
 
 logger = logging.getLogger(__name__)
+
+
+def smart_deserialize(raw_data: Union[bytes, str, None], source_name: str = "unknown") -> dict:
+    """
+    v1.7.2: Universal smart deserializer for all pubsub implementations.
+    
+    Handles both JSON and non-JSON messages, ensuring downstream DAG components
+    always receive a dict. This mimics auto_package_non_dict=true behavior.
+    
+    Args:
+        raw_data: Raw message data (bytes, str, or None)
+        source_name: Name of the source for logging purposes
+        
+    Returns:
+        dict: Either parsed JSON dict or auto-packaged dict
+        
+    Examples:
+        >>> smart_deserialize(b'{"key": "value"}', "kafka")
+        {'key': 'value'}
+        
+        >>> smart_deserialize(b'hello world', "activemq")
+        {'_raw_data': 'hello world', '_raw_type': 'string', '_auto_packaged': True, '_original_format': 'plain_text'}
+    """
+    if raw_data is None:
+        return {"_raw_data": None, "_raw_type": "null", "_auto_packaged": True}
+    
+    try:
+        # Handle bytes
+        if isinstance(raw_data, bytes):
+            decoded = raw_data.decode('utf-8')
+        else:
+            decoded = str(raw_data)
+        
+        # Try to parse as JSON
+        parsed = json.loads(decoded)
+        
+        # If it's already a dict, return as-is
+        if isinstance(parsed, dict):
+            return parsed
+        
+        # If it's a list or primitive, wrap it
+        return {
+            "_raw_data": parsed,
+            "_raw_type": type(parsed).__name__,
+            "_auto_packaged": True
+        }
+        
+    except json.JSONDecodeError:
+        # Not valid JSON - wrap raw string in dict
+        if isinstance(raw_data, bytes):
+            decoded = raw_data.decode('utf-8', errors='replace')
+        else:
+            decoded = str(raw_data)
+        
+        logger.info(f"[{source_name}] Auto-packaging non-JSON message: {decoded[:100]}...")
+        return {
+            "_raw_data": decoded,
+            "_raw_type": "string",
+            "_auto_packaged": True,
+            "_original_format": "plain_text"
+        }
+    except Exception as e:
+        # Fallback for any other errors
+        logger.warning(f"[{source_name}] Error deserializing message, packaging as raw: {e}")
+        if isinstance(raw_data, bytes):
+            raw_str = raw_data.hex()
+        else:
+            raw_str = str(raw_data)
+        return {
+            "_raw_data": raw_str,
+            "_raw_type": "bytes" if isinstance(raw_data, bytes) else type(raw_data).__name__,
+            "_auto_packaged": True,
+            "_error": str(e)
+        }
+
 
 class PriorityExtractorLike(Protocol):
     def resolve(self, data: Any) -> int:
