@@ -316,33 +316,44 @@ class DAGRoutes:
                 return jsonify({'error': f'Subscriber {subscriber_name} not found in DAG configuration'}), 404
 
             # Check if subscriber type supports publishing
-            supported_prefixes = ['mem://', 'inmemory://', 'memory://', 'kafka://', 'redischannel://', 'activemq://']
+            supported_prefixes = ['mem://', 'inmemory://', 'memory://', 'kafka://', 'redischannel://', 'activemq://', 'rabbitmq://', 'tibcoems://']
             if not any(prefix in source for prefix in supported_prefixes):
                 return jsonify({'error': 'Subscriber type does not support publishing'}), 400
 
-            # Create a temporary publisher to the same source
+            # v1.7.2: Create a real publisher to the ACTUAL external system (Kafka, ActiveMQ, etc.)
+            # This ensures the message goes through the full pubsub path:
+            #   UI → Publisher → External Broker → Subscriber → DAG
+            # NOT bypassing the external system.
             from core.pubsub.pubsubfactory import create_publisher
             subscriber_config['destination'] = source
 
-            temp_publisher = create_publisher(f'temp_pub_{subscriber_name}', subscriber_config)
+            logger.info("")
+            logger.info("=" * 70)
+            logger.info("  UI MESSAGE PUBLISH - INITIATING")
+            logger.info(f"  Creating REAL publisher to external system: {source}")
+            logger.info("  Flow: UI → Publisher → External Broker → Subscriber → DAG")
+            logger.info("=" * 70)
+
+            temp_publisher = create_publisher(f'ui_pub_{subscriber_name}', subscriber_config)
             temp_publisher.publish(message_data)
             temp_publisher.stop()
 
             msg_type = 'raw' if is_raw else 'JSON'
             
-            # v1.5.2: Distinct log message for UI publish success
+            # v1.7.2: Distinct log message for UI publish success
             logger.info("")
             logger.info("=" * 70)
             logger.info("  UI MESSAGE PUBLISH - SUCCESS")
             logger.info(f"  DAG: {dag_name}")
             logger.info(f"  Subscriber: {subscriber_name}")
-            logger.info(f"  Destination: {source}")
+            logger.info(f"  External Destination: {source}")
             logger.info(f"  Message Type: {msg_type}")
             if isinstance(message_data, str):
                 preview = message_data[:100] + '...' if len(message_data) > 100 else message_data
                 logger.info(f"  Message Preview: {preview}")
             else:
                 logger.info(f"  Message Keys: {list(message_data.keys()) if isinstance(message_data, dict) else 'N/A'}")
+            logger.info("  Message sent to EXTERNAL broker - DAG subscriber will receive it")
             logger.info("=" * 70)
             
             return jsonify({'success': True, 'message': f'{msg_type} message published successfully'})

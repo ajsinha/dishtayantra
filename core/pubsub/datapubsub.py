@@ -4,6 +4,7 @@ import threading
 import queue
 import time
 import logging
+import traceback
 from datetime import datetime
 from typing import Any,Protocol, runtime_checkable
 
@@ -287,39 +288,76 @@ class DataPublisher(AbstractDataPubSub):
         Priority is extracted from data if it's a dictionary with the configured priority key.
         The priority key defaults to '_dag_priority' but can be configured via config['dag_priority'].
         Priority defaults to 5 if not specified.
+        
+        v1.7.2 Policy: Every publish is logged, every exception prints full stack trace.
         """
-        if self.publish_interval > 0:
-            # Defensive check: verify queue type hasn't changed
-            self._check_and_update_queue_type()
+        try:
+            # v1.7.2 Policy: Log every publish attempt
+            self._log_publish_attempt(data)
+            
+            if self.publish_interval > 0:
+                # Defensive check: verify queue type hasn't changed
+                self._check_and_update_queue_type()
 
-            # Check if queue is full (respect max_depth)
-            if self._publish_queue.qsize() >= self._max_queue_depth:
-                logger.warning(f"Publish queue full for {self.name}, blocking until space available")
-                # Block until space is available
-                while self._publish_queue.qsize() >= self._max_queue_depth and not self._stop_event.is_set():
-                    time.sleep(0.1)
+                # Check if queue is full (respect max_depth)
+                if self._publish_queue.qsize() >= self._max_queue_depth:
+                    logger.warning(f"Publish queue full for {self.name}, blocking until space available")
+                    # Block until space is available
+                    while self._publish_queue.qsize() >= self._max_queue_depth and not self._stop_event.is_set():
+                        time.sleep(0.1)
 
-            if self._is_priority_queue:
-                # Priority queue behavior: extract priority and sequence
-                priority = self.priority_extractor.resolve(data)
+                if self._is_priority_queue:
+                    # Priority queue behavior: extract priority and sequence
+                    priority = self.priority_extractor.resolve(data)
 
-                # Use sequence counter to maintain insertion order within same priority
-                # Lower values processed first, so we want FIFO within same priority
-                with self._lock:
-                    sequence = self._sequence_counter
-                    self._sequence_counter += 1
+                    # Use sequence counter to maintain insertion order within same priority
+                    # Lower values processed first, so we want FIFO within same priority
+                    with self._lock:
+                        sequence = self._sequence_counter
+                        self._sequence_counter += 1
 
-                # Add to priority queue: (priority, sequence, data)
-                # Python's PriorityQueue uses tuples for comparison
-                self._publish_queue.put((priority, sequence, data))
+                    # Add to priority queue: (priority, sequence, data)
+                    # Python's PriorityQueue uses tuples for comparison
+                    self._publish_queue.put((priority, sequence, data))
+                else:
+                    # Regular queue behavior: classic FIFO
+                    self._publish_queue.put(data)
+
+                if self.batch_size and self._publish_queue.qsize() >= self.batch_size:
+                    self._flush_queue()
             else:
-                # Regular queue behavior: classic FIFO
-                self._publish_queue.put(data)
+                self._do_publish(data)
+        except Exception as e:
+            # v1.7.2 Policy: Full stack trace for all exceptions
+            logger.error(f"Error publishing to {self.name}: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            raise
 
-            if self.batch_size and self._publish_queue.qsize() >= self.batch_size:
-                self._flush_queue()
-        else:
-            self._do_publish(data)
+    def _log_publish_attempt(self, data):
+        """
+        v1.7.2 Policy: Log every publish attempt by any publisher.
+        
+        This provides consistent visibility across all pubsub implementations.
+        """
+        try:
+            # Get a preview of the message (truncate large messages)
+            if isinstance(data, dict):
+                preview = json.dumps(data)[:500]
+            elif isinstance(data, (str, bytes)):
+                preview = str(data)[:500]
+            else:
+                preview = repr(data)[:500]
+            
+            with self._lock:
+                count = self._publish_count + 1
+            
+            logger.info(f"PUBLISH [{self.name}]:")
+            logger.info(f"  Destination: {self.destination}")
+            logger.info(f"  Type: {type(data).__name__}")
+            logger.info(f"  Count: {count}")
+            logger.info(f"  Preview: {preview}")
+        except Exception as e:
+            logger.warning(f"Could not log publish for {self.name}: {e}")
 
     @abstractmethod
     def _do_publish(self, data):
@@ -548,6 +586,8 @@ class DataSubscriber(AbstractDataPubSub):
         
         Enhanced in v1.5.2 to automatically package non-dictionary messages
         for consistent downstream processing.
+        
+        v1.7.2 Policy: Every message received is logged, every exception prints full stack trace.
         """
         while not self._stop_event.is_set():
             self._suspend_event.wait()  # Block if suspended
@@ -561,6 +601,9 @@ class DataSubscriber(AbstractDataPubSub):
 
                 data = self._do_subscribe()
                 if data is not None:
+                    # v1.7.2 Policy: Log every message received
+                    self._log_message_received(data)
+                    
                     # v1.5.2: Auto-package non-dictionary messages
                     if self.auto_package_non_dict:
                         data = self._package_message(data)
@@ -585,10 +628,37 @@ class DataSubscriber(AbstractDataPubSub):
                     time.sleep(0.1)
             except queue.Full:
                 logger.warning(f"Internal queue full for subscriber {self.name}")
+                logger.warning(f"Full stack trace:\n{traceback.format_exc()}")
                 time.sleep(0.5)
             except Exception as e:
+                # v1.7.2 Policy: Full stack trace for all exceptions
                 logger.error(f"Error in subscription loop for {self.name}: {str(e)}")
+                logger.error(f"Full stack trace:\n{traceback.format_exc()}")
                 time.sleep(1)
+
+    def _log_message_received(self, data):
+        """
+        v1.7.2 Policy: Log every message received by any subscriber.
+        
+        This provides consistent visibility across all pubsub implementations
+        (Kafka, ActiveMQ, RabbitMQ, TIBCO, Redis, etc.)
+        """
+        try:
+            # Get a preview of the message (truncate large messages)
+            if isinstance(data, dict):
+                preview = json.dumps(data)[:500]
+            elif isinstance(data, (str, bytes)):
+                preview = str(data)[:500]
+            else:
+                preview = repr(data)[:500]
+            
+            logger.info(f"MESSAGE RECEIVED [{self.name}]:")
+            logger.info(f"  Source: {self.source}")
+            logger.info(f"  Type: {type(data).__name__}")
+            logger.info(f"  Count: {self._receive_count + 1}")
+            logger.info(f"  Preview: {preview}")
+        except Exception as e:
+            logger.warning(f"Could not log message for {self.name}: {e}")
 
     @abstractmethod
     def _do_subscribe(self):

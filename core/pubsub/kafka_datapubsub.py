@@ -21,6 +21,7 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 import json
 import logging
 import queue
+import traceback
 from datetime import datetime
 from typing import Any, Dict, Optional, Callable, List
 from abc import ABC, abstractmethod
@@ -176,13 +177,19 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
         config = config or {}
         consumer_config = config.get('consumer_config', {})
         
-        # Default deserializer
+        # v1.7.2: Smart deserializer that auto-packages non-JSON messages
+        # This mimics auto_package_non_dict behavior at the Kafka consumer level
         if 'value_deserializer' not in consumer_config:
-            consumer_config['value_deserializer'] = lambda m: json.loads(m.decode('utf-8'))
+            consumer_config['value_deserializer'] = self._smart_deserializer
         
         # Set consumer timeout for non-blocking iteration
         if 'consumer_timeout_ms' not in consumer_config:
             consumer_config['consumer_timeout_ms'] = 100
+        
+        # v1.7.2: Set auto.offset.reset to 'earliest' by default to ensure
+        # new consumer groups receive all messages from the beginning
+        if 'auto_offset_reset' not in consumer_config:
+            consumer_config['auto_offset_reset'] = 'earliest'
         
         self._consumer = KafkaPythonConsumer(
             *topics,
@@ -191,7 +198,60 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
             **consumer_config
         )
         self._topics = topics
-        logger.info(f"kafka-python consumer initialized: {topics}")
+        self._poll_timeout_ms = consumer_config.get('consumer_timeout_ms', 100)
+        logger.info(f"kafka-python consumer initialized: {topics} (group_id={group_id}, auto_offset_reset={consumer_config.get('auto_offset_reset', 'earliest')})")
+    
+    @staticmethod
+    def _smart_deserializer(raw_bytes: bytes) -> Any:
+        """
+        v1.7.2: Smart deserializer that handles both JSON and non-JSON messages.
+        
+        - If message is valid JSON dict/list/value → returns parsed JSON
+        - If message is not valid JSON → auto-packages into dict format
+        
+        This ensures downstream DAG components always receive a dict,
+        mimicking the behavior of auto_package_non_dict=true.
+        """
+        if raw_bytes is None:
+            return {"_raw_data": None, "_raw_type": "null", "_auto_packaged": True}
+        
+        try:
+            # Decode bytes to string
+            decoded = raw_bytes.decode('utf-8')
+            
+            # Try to parse as JSON
+            parsed = json.loads(decoded)
+            
+            # If it's already a dict, return as-is
+            if isinstance(parsed, dict):
+                return parsed
+            
+            # If it's a list or primitive, wrap it
+            return {
+                "_raw_data": parsed,
+                "_raw_type": type(parsed).__name__,
+                "_auto_packaged": True
+            }
+            
+        except json.JSONDecodeError:
+            # Not valid JSON - wrap raw string in dict
+            decoded = raw_bytes.decode('utf-8', errors='replace')
+            logger.info(f"Auto-packaging non-JSON message: {decoded[:100]}...")
+            return {
+                "_raw_data": decoded,
+                "_raw_type": "string",
+                "_auto_packaged": True,
+                "_original_format": "plain_text"
+            }
+        except Exception as e:
+            # Fallback for any other errors
+            logger.warning(f"Error deserializing message, packaging as bytes: {e}")
+            return {
+                "_raw_data": raw_bytes.hex() if raw_bytes else None,
+                "_raw_type": "bytes",
+                "_auto_packaged": True,
+                "_error": str(e)
+            }
     
     def poll(self, timeout_ms: int = 0) -> Optional[Dict[str, Any]]:
         """Poll for messages."""
@@ -212,9 +272,28 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
         return iter(self._consumer)
     
     def get_single_message(self) -> Optional[Any]:
-        """Get a single message (for compatibility)."""
-        for message in self._consumer:
-            return message.value
+        """
+        Get a single message using poll().
+        
+        v1.7.2: Changed from iterator-based to poll-based retrieval for
+        more reliable message consumption, especially with external producers.
+        
+        Note: Message logging is handled by base DataSubscriber class.
+        """
+        # Use poll() instead of iterator for more reliable message retrieval
+        records = self._consumer.poll(timeout_ms=self._poll_timeout_ms)
+        
+        if records:
+            # records is a dict: {TopicPartition: [ConsumerRecord, ...]}
+            for topic_partition, messages in records.items():
+                if messages:
+                    # Return the first message value
+                    msg = messages[0]
+                    # Log Kafka-specific details (topic/partition/offset)
+                    logger.debug(f"Kafka poll returned message from {topic_partition.topic} "
+                                f"partition {topic_partition.partition} offset {msg.offset}")
+                    return msg.value
+        
         return None
 
 
@@ -335,11 +414,63 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
         self._consumer = ConfluentConsumer(consumer_config)
         self._consumer.subscribe(topics)
         self._topics = topics
-        self._value_deserializer = config.get('value_deserializer',
-                                              lambda m: json.loads(m.decode('utf-8')))
+        # v1.7.2: Use smart deserializer that auto-packages non-JSON messages
+        self._value_deserializer = config.get('value_deserializer', self._smart_deserializer)
         self._running = True
         
         logger.info(f"confluent-kafka consumer initialized: {topics}")
+    
+    @staticmethod
+    def _smart_deserializer(raw_bytes: bytes) -> Any:
+        """
+        v1.7.2: Smart deserializer that handles both JSON and non-JSON messages.
+        
+        - If message is valid JSON dict/list/value → returns parsed JSON
+        - If message is not valid JSON → auto-packages into dict format
+        
+        This ensures downstream DAG components always receive a dict,
+        mimicking the behavior of auto_package_non_dict=true.
+        """
+        if raw_bytes is None:
+            return {"_raw_data": None, "_raw_type": "null", "_auto_packaged": True}
+        
+        try:
+            # Decode bytes to string
+            decoded = raw_bytes.decode('utf-8')
+            
+            # Try to parse as JSON
+            parsed = json.loads(decoded)
+            
+            # If it's already a dict, return as-is
+            if isinstance(parsed, dict):
+                return parsed
+            
+            # If it's a list or primitive, wrap it
+            return {
+                "_raw_data": parsed,
+                "_raw_type": type(parsed).__name__,
+                "_auto_packaged": True
+            }
+            
+        except json.JSONDecodeError:
+            # Not valid JSON - wrap raw string in dict
+            decoded = raw_bytes.decode('utf-8', errors='replace')
+            logger.info(f"Auto-packaging non-JSON message: {decoded[:100]}...")
+            return {
+                "_raw_data": decoded,
+                "_raw_type": "string",
+                "_auto_packaged": True,
+                "_original_format": "plain_text"
+            }
+        except Exception as e:
+            # Fallback for any other errors
+            logger.warning(f"Error deserializing message, packaging as bytes: {e}")
+            return {
+                "_raw_data": raw_bytes.hex() if raw_bytes else None,
+                "_raw_type": "bytes",
+                "_auto_packaged": True,
+                "_error": str(e)
+            }
     
     def poll(self, timeout_ms: int = 0) -> Optional[Dict[str, Any]]:
         """Poll for messages."""
@@ -357,7 +488,7 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
                 logger.error(f"Consumer error: {error}")
                 return None
         
-        # Return deserialized value
+        # Return deserialized value using smart deserializer
         try:
             return {
                 'value': self._value_deserializer(msg.value()),
@@ -369,7 +500,22 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
             }
         except Exception as e:
             logger.error(f"Error deserializing message: {e}")
-            return None
+            logger.error(f"Raw message value: {msg.value()[:200] if msg.value() else 'None'}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            # v1.7.2: Return packaged error instead of None
+            return {
+                'value': {
+                    "_raw_data": msg.value().hex() if msg.value() else None,
+                    "_raw_type": "bytes",
+                    "_auto_packaged": True,
+                    "_error": str(e)
+                },
+                'key': None,
+                'topic': msg.topic(),
+                'partition': msg.partition(),
+                'offset': msg.offset(),
+                'timestamp': msg.timestamp()
+            }
     
     def subscribe(self, topics: List[str]):
         """Subscribe to topics."""
