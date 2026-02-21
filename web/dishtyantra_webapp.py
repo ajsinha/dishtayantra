@@ -2,7 +2,7 @@
 Flask application entry point
 Refactored to use Singleton pattern with modular route handlers
 
-Version: 1.6.0 - Added JVM/Py4J management support
+Version: 1.7.6 - Added Kafka connection retry, properties-based template injection
 """
 import logging
 import os
@@ -105,9 +105,21 @@ class DishtaYantraWebApp:
 
     def _setup_app_context(self):
         """Setup Flask app context processors"""
+        # v1.7.6: Load all app properties for template injection
+        app_props = {
+            'app_name': self.app_name,
+            'app_version': self.props.get('app.version', '1.7.6') if self.props else '1.7.6',
+            'author_name': self.props.get('app.author.name', 'Ashutosh Sinha') if self.props else 'Ashutosh Sinha',
+            'author_email': self.props.get('app.author.email', 'ajsinha@gmail.com') if self.props else 'ajsinha@gmail.com',
+            'copyright_years': self.props.get('app.copyright.years', '2025-2030') if self.props else '2025-2030',
+            'copyright_holder': self.props.get('app.copyright.holder', 'Ashutosh Sinha') if self.props else 'Ashutosh Sinha',
+            'github_repo': self.props.get('app.github.repo', 'https://github.com/ajsinha/dishtayantra') if self.props else 'https://github.com/ajsinha/dishtayantra',
+            'trademark_notice': self.props.get('app.trademark.notice', 'DishtaYantra™ is a trademark of Ashutosh Sinha') if self.props else 'DishtaYantra™ is a trademark of Ashutosh Sinha',
+        }
+        
         @self.app.context_processor
-        def inject_app_name():
-            return {'app_name': self.app_name}
+        def inject_app_properties():
+            return app_props
 
     def _initialize_directories(self):
         """Create necessary directories if they don't exist"""

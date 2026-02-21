@@ -55,7 +55,7 @@
     .lang-java { border-color: #f89820; }
     .lang-cpp { border-color: #00599C; }
     .lang-rust { border-color: #CE422B; }
-    .patent-badge {
+    /* unused */
         background: linear-gradient(135deg, #fbbf24, #f59e0b);
         color: #1e293b;
         padding: 0.5rem 1rem;
@@ -81,7 +81,7 @@
             <h1><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange</h1>
             <p class="lead mb-0">Lightning-fast data transfer between Python DAG Engine and native calculators using memory-mapped LMDB files.</p>
             <div class="feature-badge">
-                <i class="bi bi-award"></i> Patent-Pending Innovation • v1.1.2+
+                <i class="bi bi-rocket"></i> High Performance • v1.1.2+
             </div>
         </div>
         <div class="col-lg-4 text-center">
@@ -417,12 +417,12 @@ if data.get_item("_lmdb_ref")?.is_true()? {
     </div>
 </div>
 
-<!-- Patent Information -->
+<!-- Technology Highlights -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning">
-                <h5 class="mb-0 text-dark"><i class="bi bi-award"></i> Patent-Pending Innovation</h5>
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> High-Performance Innovation</h5>
             </div>
             <div class="card-body">
                 <p>The LMDB-based zero-copy data exchange architecture in DishtaYantra represents a <strong>novel approach</strong> to heterogeneous language calculator integration. Key innovations include:</p>
@@ -442,7 +442,6 @@ if data.get_item("_lmdb_ref")?.is_true()? {
                         </ul>
                     </div>
                 </div>
-                <p class="mb-0"><span class="patent-badge"><i class="bi bi-shield-check"></i> Patent Pending</span></p>
             </div>
         </div>
     </div>
@@ -451,16 +450,11 @@ if data.get_item("_lmdb_ref")?.is_true()? {
 <!-- Legal Notice -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-warning">
+        <div class="card border-secondary">
             <div class="card-body">
-                <h6 class="text-warning mb-3"><i class="bi bi-exclamation-triangle"></i> Legal Notice</h6>
-                <p class="small mb-2">
-                    <strong>PATENT PENDING:</strong> The LMDB Zero-Copy Data Exchange technology is the subject of one or more pending patent applications. 
-                    Protected innovations include automatic payload size detection, unified reference protocol, transaction-based zero-copy exchange, 
-                    and memory-mapped file transport with automatic cleanup.
-                </p>
+                <h6 class="text-secondary mb-3"><i class="bi bi-shield-check"></i> Legal Notice</h6>
                 <p class="small mb-0 text-muted">
-                    <strong>© 2025-2030 Ashutosh Sinha.</strong> All rights reserved. Unauthorized use or implementation is strictly prohibited.
+                    <strong>© {{ copyright_years }} {{ copyright_holder }}.</strong> All rights reserved. Unauthorized use or implementation is strictly prohibited.
                 </p>
             </div>
         </div>

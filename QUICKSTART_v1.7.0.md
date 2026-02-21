@@ -333,5 +333,5 @@ cat logs/dagserver.log | grep -i jvm
 
 ---
 
-**Patent Pending - DishtaYantra Framework**
+
 **Copyright © 2025-2030 Ashutosh Sinha. All Rights Reserved.**

@@ -1,4 +1,4 @@
-# DishtaYantra v1.7.5 - Quick Start Guide
+# DishtaYantra v1.7.6 - Quick Start Guide
 
 ## 🚀 Getting Started
 
@@ -6,7 +6,7 @@
 
 ```bash
 # For zip
-unzip dishtayantra_v1_7_2_live_logs.zip
+unzip dishtayantra_v1_7_6_complete.zip
 
 cd dishtayantra_enhanced
 ```
@@ -31,7 +31,35 @@ Default credentials:
 
 ---
 
-## 🆕 New in v1.7.5: Smart Deserialization & Enhanced Logging
+## 🆕 New in v1.7.6: Kafka Resilience & Smart Deserialization
+
+### Kafka Connection Resilience
+
+Kafka connections now automatically retry on failure:
+
+```properties
+# config/application.properties
+kafka.connection.max_retries=5
+kafka.connection.retry_delay=3
+kafka.connection.auto_reconnect=true
+```
+
+**Features:**
+- Automatic retry on startup failures
+- Configurable retry attempts and delay
+- Automatic reconnection on broken connections
+- Works with both kafka-python and confluent-kafka
+
+### Template Properties Configuration
+
+Author, copyright, and GitHub info now come from `application.properties`:
+
+```properties
+app.author.name=Ashutosh Sinha
+app.author.email=ajsinha@gmail.com
+app.copyright.years=2025-2030
+app.github.repo=https://github.com/ajsinha/dishtayantra
+```
 
 ### Smart Message Deserialization
 
@@ -227,5 +255,5 @@ For large payloads (100KB+), enable LMDB zero-copy:
 
 ---
 
-**DishtaYantra v1.7.5**
+**DishtaYantra v1.7.6**
 **Copyright © 2025-2030 Ashutosh Sinha. All Rights Reserved.**

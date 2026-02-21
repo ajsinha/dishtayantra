@@ -1,6 +1,8 @@
 """
 gRPC DataPublisher and DataSubscriber implementation
 
+v1.7.6: Enhanced connection retry and auto-recovery support.
+
 This implementation assumes a gRPC service defined as:
 
 syntax = "proto3";
@@ -34,13 +36,14 @@ message Message {
 
 import json
 import logging
+import time
 import traceback
 import grpc
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 import queue
+
 # Import generated gRPC stubs (these would be generated from the proto file)
-# For this implementation, we'll assume they exist
 try:
     from core.pubsub.grpc_generated import pubsub_pb2, pubsub_pb2_grpc
 except ImportError:
@@ -53,7 +56,7 @@ logger = logging.getLogger(__name__)
 
 
 class GRPCDataPublisher(DataPublisher):
-    """Publisher for gRPC streams"""
+    """Publisher for gRPC streams with v1.7.6 connection resilience."""
 
     def __init__(self, name, destination, config):
         super().__init__(name, destination, config)
@@ -65,33 +68,113 @@ class GRPCDataPublisher(DataPublisher):
         # gRPC connection settings
         self.host_port = config.get('host_port', host_port)
         self.use_ssl = config.get('use_ssl', False)
-        self.max_retries = config.get('max_retries', 3)
-
-        # Create gRPC channel
-        if self.use_ssl:
-            credentials = grpc.ssl_channel_credentials()
-            self.channel = grpc.secure_channel(self.host_port, credentials)
-        else:
-            self.channel = grpc.insecure_channel(self.host_port)
-
-        # Create stub
-        if pubsub_pb2_grpc:
-            self.stub = pubsub_pb2_grpc.PubSubServiceStub(self.channel)
-        else:
-            self.stub = None
+        
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        self._connected = False
 
         # Set gRPC options
         self.timeout = config.get('timeout', 30)
 
+        self.channel = None
+        self.stub = None
+
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
+
         logger.info(f"gRPC publisher created for topic {self.topic} at {self.host_port}")
 
+    def _create_channel(self):
+        """Create gRPC channel"""
+        if self.use_ssl:
+            credentials = grpc.ssl_channel_credentials()
+            return grpc.secure_channel(self.host_port, credentials)
+        else:
+            return grpc.insecure_channel(self.host_port)
+
+    def _connect_with_retry(self):
+        """v1.7.6: Establish gRPC connection with retry logic."""
+        last_error = None
+
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"gRPC publisher connection attempt {attempt}/{self._max_retries} to {self.host_port}")
+
+                self.channel = self._create_channel()
+
+                if pubsub_pb2_grpc:
+                    self.stub = pubsub_pb2_grpc.PubSubServiceStub(self.channel)
+                else:
+                    self.stub = None
+
+                # Test connection by waiting for channel to be ready
+                grpc.channel_ready_future(self.channel).result(timeout=5)
+
+                self._connected = True
+                logger.info(f"gRPC publisher connected successfully (attempt={attempt})")
+                return
+
+            except Exception as e:
+                last_error = e
+                logger.warning(f"gRPC publisher connection attempt {attempt}/{self._max_retries} failed: {e}")
+
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    time.sleep(self._retry_delay)
+
+        logger.error(f"Failed to connect gRPC publisher after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to gRPC server {self.host_port}: {last_error}")
+
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect if connection is broken."""
+        if not self._auto_reconnect:
+            return
+
+        try:
+            if self._connected and self.channel:
+                # Check channel state
+                state = self.channel._channel.check_connectivity_state(True)
+                if state in [grpc.ChannelConnectivity.READY, grpc.ChannelConnectivity.IDLE]:
+                    return  # Connection is healthy
+        except:
+            pass
+
+        self._connected = False
+        logger.info("gRPC publisher connection lost, attempting reconnection...")
+
+        try:
+            self._close_connections()
+            self._connect_with_retry()
+        except Exception as e:
+            logger.error(f"gRPC publisher reconnection failed: {e}")
+            raise
+
+    def _close_connections(self):
+        """Safely close existing connections."""
+        try:
+            if self.channel:
+                self.channel.close()
+        except:
+            pass
+        self.channel = None
+        self.stub = None
+
     def _do_publish(self, data):
-        """Publish to gRPC service"""
-        if not self.stub or not pubsub_pb2:
+        """Publish to gRPC service with auto-reconnection."""
+        if not pubsub_pb2:
             logger.error(f"gRPC stubs not available for publisher {self.name}")
             return
 
         try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+
+            if not self.stub:
+                logger.error(f"gRPC stub not available for publisher {self.name}")
+                return
+
             # Serialize data to JSON bytes
             json_data = json.dumps(data).encode('utf-8')
 
@@ -102,7 +185,7 @@ class GRPCDataPublisher(DataPublisher):
             )
 
             # Send with retry logic
-            for attempt in range(self.max_retries):
+            for attempt in range(self._max_retries):
                 try:
                     response = self.stub.Publish(request, timeout=self.timeout)
 
@@ -117,23 +200,33 @@ class GRPCDataPublisher(DataPublisher):
 
                 except grpc.RpcError as e:
                     logger.warning(f"gRPC error on attempt {attempt + 1}: {e.code()}")
-                    if attempt == self.max_retries - 1:
+                    self._connected = False
+                    
+                    if attempt < self._max_retries - 1:
+                        if self._auto_reconnect:
+                            try:
+                                self._reconnect_if_needed()
+                            except:
+                                pass
+                    else:
                         raise
 
         except Exception as e:
             logger.error(f"Error publishing to gRPC topic {self.topic}: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
             raise
 
     def stop(self):
         """Stop the publisher"""
         super().stop()
-        if self.channel:
-            self.channel.close()
-            logger.info(f"gRPC channel closed for publisher {self.name}")
+        self._close_connections()
+        self._connected = False
+        logger.info(f"gRPC channel closed for publisher {self.name}")
 
 
 class GRPCDataSubscriber(DataSubscriber):
-    """Subscriber for gRPC streams"""
+    """Subscriber for gRPC streams with v1.7.6 connection resilience."""
 
     def __init__(self, name, source, config, given_queue: queue.Queue = None):
         super().__init__(name, source, config, given_queue)
@@ -147,32 +240,114 @@ class GRPCDataSubscriber(DataSubscriber):
         self.use_ssl = config.get('use_ssl', False)
         self.subscriber_id = config.get('subscriber_id', f'{name}_sub')
 
-        # Create gRPC channel
-        if self.use_ssl:
-            credentials = grpc.ssl_channel_credentials()
-            self.channel = grpc.secure_channel(self.host_port, credentials)
-        else:
-            self.channel = grpc.insecure_channel(self.host_port)
-
-        # Create stub
-        if pubsub_pb2_grpc:
-            self.stub = pubsub_pb2_grpc.PubSubServiceStub(self.channel)
-        else:
-            self.stub = None
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        self._connected = False
+        self._stopping = False
 
         # Stream handling
+        self.channel = None
+        self.stub = None
         self.stream = None
         self.reconnect_delay = config.get('reconnect_delay', 5)
 
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
+
         logger.info(f"gRPC subscriber created for topic {self.topic} at {self.host_port}")
 
+    def _create_channel(self):
+        """Create gRPC channel"""
+        if self.use_ssl:
+            credentials = grpc.ssl_channel_credentials()
+            return grpc.secure_channel(self.host_port, credentials)
+        else:
+            return grpc.insecure_channel(self.host_port)
+
+    def _connect_with_retry(self):
+        """v1.7.6: Establish gRPC connection with retry logic."""
+        last_error = None
+
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"gRPC subscriber connection attempt {attempt}/{self._max_retries} to {self.host_port}")
+
+                self.channel = self._create_channel()
+
+                if pubsub_pb2_grpc:
+                    self.stub = pubsub_pb2_grpc.PubSubServiceStub(self.channel)
+                else:
+                    self.stub = None
+
+                # Test connection
+                grpc.channel_ready_future(self.channel).result(timeout=5)
+
+                self._connected = True
+                logger.info(f"gRPC subscriber connected successfully (attempt={attempt})")
+                return
+
+            except Exception as e:
+                last_error = e
+                logger.warning(f"gRPC subscriber connection attempt {attempt}/{self._max_retries} failed: {e}")
+
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    time.sleep(self._retry_delay)
+
+        logger.error(f"Failed to connect gRPC subscriber after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to gRPC server {self.host_port}: {last_error}")
+
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect if connection is broken."""
+        if not self._auto_reconnect or self._stopping:
+            return
+
+        if self._connected and self.channel and self.stub:
+            try:
+                state = self.channel._channel.check_connectivity_state(True)
+                if state in [grpc.ChannelConnectivity.READY, grpc.ChannelConnectivity.IDLE]:
+                    return
+            except:
+                pass
+
+        self._connected = False
+        self.stream = None
+        logger.info("gRPC subscriber connection lost, attempting reconnection...")
+
+        try:
+            self._close_connections()
+            self._connect_with_retry()
+        except Exception as e:
+            logger.error(f"gRPC subscriber reconnection failed: {e}")
+
+    def _close_connections(self):
+        """Safely close existing connections."""
+        try:
+            if self.stream:
+                self.stream.cancel()
+        except:
+            pass
+        try:
+            if self.channel:
+                self.channel.close()
+        except:
+            pass
+        self.stream = None
+        self.channel = None
+        self.stub = None
+
     def _connect_stream(self):
-        """Connect to gRPC stream"""
+        """Connect to gRPC stream with auto-reconnection."""
         if not self.stub or not pubsub_pb2:
             logger.error(f"gRPC stubs not available for subscriber {self.name}")
             return None
 
         try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+
             request = pubsub_pb2.SubscribeRequest(
                 topic=self.topic,
                 subscriber_id=self.subscriber_id
@@ -184,14 +359,19 @@ class GRPCDataSubscriber(DataSubscriber):
 
         except grpc.RpcError as e:
             logger.error(f"Failed to connect to gRPC stream: {e.code()}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
             return None
 
     def _do_subscribe(self):
-        """Subscribe from gRPC stream"""
-        if not self.stub or not pubsub_pb2:
+        """Subscribe from gRPC stream with auto-reconnection."""
+        if not pubsub_pb2:
             return None
 
         try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+
             # Connect to stream if not already connected
             if self.stream is None:
                 self.stream = self._connect_stream()
@@ -210,12 +390,26 @@ class GRPCDataSubscriber(DataSubscriber):
             except StopIteration:
                 logger.warning(f"gRPC stream ended for topic {self.topic}")
                 self.stream = None
+                self._connected = False
+                
+                if self._auto_reconnect and not self._stopping:
+                    try:
+                        self._reconnect_if_needed()
+                    except:
+                        pass
                 return None
 
             except grpc.RpcError as e:
                 logger.error(f"gRPC stream error: {e.code()}")
                 logger.error(f"Full stack trace:\n{traceback.format_exc()}")
                 self.stream = None
+                self._connected = False
+                
+                if self._auto_reconnect and not self._stopping:
+                    try:
+                        self._reconnect_if_needed()
+                    except:
+                        pass
                 return None
 
         except Exception as e:
@@ -223,20 +417,13 @@ class GRPCDataSubscriber(DataSubscriber):
             logger.error(f"Error subscribing from gRPC topic {self.topic}: {str(e)}")
             logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             self.stream = None
+            self._connected = False
             return None
 
     def stop(self):
         """Stop the subscriber"""
+        self._stopping = True
         super().stop()
-
-        # Cancel the stream
-        if self.stream:
-            try:
-                self.stream.cancel()
-            except Exception as e:
-                logger.warning(f"Error cancelling stream: {str(e)}")
-
-        # Close the channel
-        if self.channel:
-            self.channel.close()
-            logger.info(f"gRPC channel closed for subscriber {self.name}")
+        self._close_connections()
+        self._connected = False
+        logger.info(f"gRPC channel closed for subscriber {self.name}")

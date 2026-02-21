@@ -99,7 +99,7 @@
     <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
     <h1>DishtaYantra</h1>
     <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
-    <span class="version-badge">Version 1.7.5</span>
+    <span class="version-badge">Version 1.7.6</span>
 </div>
 
 <!-- Navigation Buttons -->
@@ -433,7 +433,7 @@
                                 </div>
                                 <h6 class="mb-0" style="color: #ffffff !important;">LMDB Zero-Copy <span class="badge" style="background: #06b6d4; color: #ffffff;">NEW</span></h6>
                             </div>
-                            <p class="small mb-2" style="color: rgba(226, 232, 240, 0.75) !important;">Memory-mapped data exchange with native calculators. <strong style="color: #06b6d4;">100-1000x faster</strong> than serialization for large payloads. Patent-pending.</p>
+                            <p class="small mb-2" style="color: rgba(226, 232, 240, 0.75) !important;">Memory-mapped data exchange with native calculators. <strong style="color: #06b6d4;">100-1000x faster</strong> than serialization for large payloads.</p>
                             <div class="small">
                                 <span class="badge" style="background: #06b6d4; color: #ffffff;">Zero-copy I/O</span>
                                 <span class="badge" style="background: #374151; color: #e2e8f0;">Java/C++/Rust</span>
@@ -555,18 +555,57 @@
     </div>
 </div>
 
-<!-- What's New in 1.7.5 -->
+<!-- What's New in 1.7.6 -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card" style="border: 2px solid #238636;">
             <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.5 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
+                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.6 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
             </div>
             <div class="card-body">
+                <!-- Kafka Connection Resilience -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-success"><i class="bi bi-arrow-repeat"></i> Kafka Connection Resilience <span class="badge bg-success">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-shield-check" style="color: #238636;"></i> Retry on Startup</h6>
+                        <ul>
+                            <li><strong>Configurable retry attempts</strong> (default: 5)</li>
+                            <li>Delay between retries (default: 3 seconds)</li>
+                            <li>Works with kafka-python and confluent-kafka</li>
+                            <li>No more startup failures due to transient Kafka issues</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightning-charge" style="color: #2ea043;"></i> Automatic Recovery</h6>
+                        <ul>
+                            <li><strong>Auto-reconnect</strong> on broken connections</li>
+                            <li>Transparent to DAG processing</li>
+                            <li>Health monitoring built-in</li>
+                            <li>Configurable via <code>application.properties</code></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Template Properties -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h6 class="text-success"><i class="bi bi-gear"></i> Centralized Configuration <span class="badge bg-info">NEW</span></h6>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <p>Author email, copyright, and GitHub repo are now configured in <code>application.properties</code> and automatically injected into all HTML templates.</p>
+                    </div>
+                </div>
+
                 <!-- Smart Deserializer -->
                 <div class="row mb-3">
                     <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-success">NEW</span></h6>
+                        <h6 class="text-success"><i class="bi bi-magic"></i> Smart Message Deserialization</h6>
                     </div>
                 </div>
                 <div class="row mb-4">
@@ -594,7 +633,7 @@
                 <!-- Enhanced Logging Policy -->
                 <div class="row mb-3">
                     <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-journal-check"></i> Enhanced Logging Policy <span class="badge bg-info">NEW</span></h6>
+                        <h6 class="text-success"><i class="bi bi-journal-check"></i> Enhanced Logging Policy</h6>
                     </div>
                 </div>
                 <div class="row mb-4">
@@ -1225,7 +1264,7 @@
                 <!-- From 1.1.2 -->
                 <div class="row mb-3">
                     <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange (1.1.2) <span class="badge" style="background: #06b6d4;">Patent Pending</span></h6>
+                        <h6 class="text-primary"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange (1.1.2) <span class="badge" style="background: #06b6d4;">High Performance</span></h6>
                     </div>
                 </div>
                 <div class="row mb-4">
@@ -1466,13 +1505,13 @@
             <div class="author-avatar">
                 <i class="bi bi-person"></i>
             </div>
-            <h4>Ashutosh Sinha</h4>
+            <h4>{{ author_name }}</h4>
             <p class="text-muted mb-3">Creator & Lead Developer</p>
             <div>
-                <a href="mailto:ajsinha@gmail.com" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-envelope"></i> ajsinha@gmail.com
+                <a href="mailto:{{ author_email }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-envelope"></i> {{ author_email }}
                 </a>
-                <a href="https://github.com/ajsinha/dishtayantra" target="_blank" class="btn btn-outline-dark btn-sm">
+                <a href="{{ github_repo }}" target="_blank" class="btn btn-outline-dark btn-sm">
                     <i class="bi bi-github"></i> GitHub
                 </a>
             </div>
@@ -1480,15 +1519,15 @@
     </div>
 </div>
 
-<!-- Patent & Legal Information -->
+<!-- Legal Information -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="bi bi-shield-exclamation"></i> Patent & Legal Information</h5>
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> Legal Information</h5>
             </div>
             <div class="card-body">
-                <h6 class="text-warning mb-3"><i class="bi bi-award"></i> Patent Pending Technologies</h6>
+                <h6 class="text-secondary mb-3"><i class="bi bi-lightning-charge"></i> Core Technologies</h6>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="card bg-light mb-3">
@@ -1543,12 +1582,12 @@
                 <hr>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> Legal Notice</h6>
-                        <p class="small mb-0">Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement.</p>
-                    </div>
-                    <div class="col-md-6">
                         <h6 class="text-info"><i class="bi bi-c-circle"></i> Trademarks</h6>
                         <p class="small mb-0">DishtaYantra™ is a trademark of Ashutosh Sinha. All other trademarks are property of their respective owners.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-secondary"><i class="bi bi-shield-check"></i> Copyright</h6>
+                        <p class="small mb-0">© {{ copyright_years }} {{ copyright_holder }}. All rights reserved.</p>
                     </div>
                 </div>
                 <hr>
@@ -1566,9 +1605,8 @@
                 <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> License & Copyright</h5>
             </div>
             <div class="card-body text-center">
-                <p class="mb-2"><strong>Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.</strong></p>
-                <p class="mb-2"><span class="badge bg-warning text-dark"><i class="bi bi-award"></i> Patent Pending</span></p>
-                <p class="text-muted mb-0">DishtaYantra is proprietary software. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.</p>
+                <p class="mb-2"><strong>Copyright © {{ copyright_years }} {{ copyright_holder }}. All rights reserved.</strong></p>
+                <p class="text-muted mb-0">{{ app_name }} is proprietary software. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.</p>
             </div>
         </div>
     </div>

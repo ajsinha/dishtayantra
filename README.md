@@ -6,26 +6,37 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-1.7.5-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-1.7.6-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.7.5
+## What's New in Version 1.7.6
 
-### Smart Message Deserialization (NEW)
+### Kafka Connection Resilience (NEW)
+- **Connection Retry with Backoff**: Configurable retry attempts (default: 5) with delay between attempts
+- **Automatic Reconnection**: Broken connections are detected and recovered automatically
+- **Both Libraries Enhanced**: kafka-python and confluent-kafka wrappers with full retry/recovery support
+- **Configurable via Properties**: `kafka.connection.max_retries`, `kafka.connection.retry_delay`, `kafka.connection.auto_reconnect`
+
+### Template Properties Injection (NEW)
+- **Centralized Configuration**: Author email, copyright, GitHub repo now in `application.properties`
+- **Dynamic Templates**: All HTML pages pull values from configuration
+- **Easy Customization**: Change branding in one place, reflected everywhere
+
+### Smart Message Deserialization
 - **Universal Smart Deserializer**: Auto-packages non-JSON messages into dict format
 - **Works Across All Brokers**: Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, WebSphere MQ, Redis, gRPC
 - **No Configuration Required**: Automatic handling of plain text, JSON, arrays, and binary data
 - **Consistent Output**: DAG calculators always receive dict format regardless of source message format
 
-### Enhanced Logging Policy (NEW)
+### Enhanced Logging Policy
 - **Message Tracking**: Every publish and receive is logged with source, type, and preview
 - **Full Stack Traces**: All exceptions now include complete stack traces for easier debugging
 - **Consistent Format**: Same logging pattern across all pubsub implementations
 
-### Kafka Consumer Improvements (ENHANCED)
+### Kafka Consumer Improvements
 - **Poll-based Retrieval**: More reliable message consumption with external producers
 - **Default `auto.offset.reset=earliest`**: New consumer groups read all messages from beginning
 - **Both Libraries Updated**: kafka-python and confluent-kafka implementations enhanced
@@ -408,7 +419,9 @@ status = server.get_server_status()
 
 ## Changelog
 
-### Version 1.7.5 (Current)
+### Version 1.7.6 (Current)
+- **Kafka Connection Resilience**: Retry with configurable attempts and automatic reconnection
+- **Template Properties Injection**: Author, copyright, GitHub from application.properties
 - **Smart Message Deserialization**: Auto-packages non-JSON messages into dict format
 - **Universal Broker Support**: Works across Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, IBM MQ, Redis, gRPC
 - **Enhanced Logging Policy**: Every message logged on publish/receive with full stack traces
@@ -501,4 +514,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v1.7.5** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha

@@ -1,12 +1,12 @@
 # LMDB Zero-Copy Calculator Examples
 
-**PATENT PENDING**: The LMDB Zero-Copy Data Exchange technology and Multi-Language Calculator Framework are subject to pending patent applications.
+This directory contains examples for the LMDB Zero-Copy Data Exchange technology and Multi-Language Calculator Framework.
 
 This directory contains example calculators demonstrating LMDB zero-copy data exchange across multiple programming languages.
 
 ## Overview
 
-DishtaYantra v1.1.2 introduces **LMDB-based zero-copy data exchange** for native calculators. This patent-pending innovation enables 100-1000x faster data transfer for large payloads compared to traditional serialization.
+DishtaYantra v1.1.2 introduces **LMDB-based zero-copy data exchange** for native calculators. This high-performance innovation enables 100-1000x faster data transfer for large payloads compared to traditional serialization.
 
 ## Performance
 
@@ -201,26 +201,6 @@ Each example includes:
 
 ## Legal Information
 
-### Patent Pending Technologies
-
-The following technologies demonstrated in these examples are subject to pending patent applications:
-
-**1. LMDB Zero-Copy Data Exchange System**
-- Automatic payload size detection for LMDB routing decisions
-- Unified reference protocol for heterogeneous language integration
-- Transaction-based zero-copy data exchange
-- Memory-mapped file transport with TTL-based cleanup
-
-**2. Multi-Language Calculator Framework**
-- Hot-swappable calculator integration architecture
-- Unified interface across Python, Java, C++, and Rust
-- Gateway pooling for JVM integration (Py4J)
-- Native binding abstraction layer (pybind11/PyO3)
-
-### Legal Notice
-
-Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement.
-
 ### Copyright Notice
 
 Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.
@@ -231,4 +211,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.1.2** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha

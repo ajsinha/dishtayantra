@@ -2,6 +2,7 @@
 WebSphere MQ (IBM MQ) DataPublisher and DataSubscriber implementation
 
 Supports both queue and topic messaging patterns.
+v1.7.6: Enhanced connection retry and auto-recovery support.
 """
 
 import json
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebSphereMQDataPublisher(DataPublisher):
-    """Publisher for WebSphere MQ (IBM MQ) queues and topics"""
+    """Publisher for WebSphere MQ (IBM MQ) with v1.7.6 connection resilience."""
 
     def __init__(self, name, destination, config):
         super().__init__(name, destination, config)
@@ -53,80 +54,150 @@ class WebSphereMQDataPublisher(DataPublisher):
         # Message options
         self.persistence = config.get('persistence', pymqi.CMQC.MQPER_PERSISTENT)
 
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        self._connected = False
+
         # Connect to WebSphere MQ
         self.qmgr = None
         self.queue_obj = None
         self.topic_obj = None
-        self._connect()
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
 
         logger.info(f"WebSphere MQ publisher connected to {self.queue_manager}, "
                     f"dest_type={self.dest_type}, dest_name={self.dest_name}")
 
-    def _connect(self):
+    def _do_connect(self):
         """Establish connection to WebSphere MQ"""
+        # Build connection options
+        cd = pymqi.CD()
+        cd.ChannelName = self.channel
+        cd.ConnectionName = self.conn_info
+        cd.ChannelType = pymqi.CMQC.MQCHT_CLNTCONN
+        cd.TransportType = pymqi.CMQC.MQXPT_TCP
+
+        # SSL configuration
+        if self.use_ssl and self.ssl_cipher_spec:
+            sco = pymqi.SCO()
+            sco.KeyRepository = self.ssl_key_repository
+            cd.SSLCipherSpec = self.ssl_cipher_spec
+        else:
+            sco = None
+
+        # Connection options
+        opts = pymqi.CMQC.MQCNO_HANDLE_SHARE_BLOCK
+
+        # Authentication
+        if self.username and self.password:
+            opts |= pymqi.CMQC.MQCNO_NONE
+            user = self.username
+            password = self.password
+        else:
+            user = ''
+            password = ''
+
+        # Connect to queue manager
+        self.qmgr = pymqi.QueueManager(None)
+        self.qmgr.connect_with_options(
+            self.queue_manager,
+            user=user,
+            password=password,
+            cd=cd,
+            sco=sco,
+            opts=opts
+        )
+
+        # Open destination
+        if self.dest_type == 'queue':
+            self.queue_obj = pymqi.Queue(self.qmgr, self.dest_name,
+                                         pymqi.CMQC.MQOO_OUTPUT)
+        else:  # topic
+            od = pymqi.OD()
+            od.ObjectType = pymqi.CMQC.MQOT_TOPIC
+            od.ObjectString = self.dest_name
+            self.topic_obj = pymqi.Topic(self.qmgr, topic_string=self.dest_name)
+
+        self._connected = True
+
+    def _connect_with_retry(self):
+        """v1.7.6: Establish connection to WebSphere MQ with retry logic"""
+        last_error = None
+
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"WebSphere MQ publisher connection attempt {attempt}/{self._max_retries} to {self.conn_info}")
+                self._do_connect()
+                logger.info(f"WebSphere MQ publisher connected successfully (attempt={attempt})")
+                return
+            except pymqi.MQMIError as e:
+                last_error = e
+                logger.warning(f"WebSphere MQ publisher connection attempt {attempt}/{self._max_retries} failed: {e.comp}, {e.reason}")
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    time.sleep(self._retry_delay)
+            except Exception as e:
+                last_error = e
+                logger.warning(f"WebSphere MQ publisher connection attempt {attempt}/{self._max_retries} failed: {e}")
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    time.sleep(self._retry_delay)
+
+        logger.error(f"Failed to connect WebSphere MQ publisher after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to WebSphere MQ {self.conn_info}: {last_error}")
+
+    def _connect(self):
+        """Alias for _connect_with_retry"""
+        self._connect_with_retry()
+
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect if connection is broken"""
+        if not self._auto_reconnect:
+            return
+            
+        if self._connected and self.qmgr:
+            return
+        
+        self._connected = False
+        logger.info("WebSphere MQ publisher connection lost, attempting reconnection...")
+        
         try:
-            # Build connection options
-            cd = pymqi.CD()
-            cd.ChannelName = self.channel
-            cd.ConnectionName = self.conn_info
-            cd.ChannelType = pymqi.CMQC.MQCHT_CLNTCONN
-            cd.TransportType = pymqi.CMQC.MQXPT_TCP
-
-            # SSL configuration
-            if self.use_ssl and self.ssl_cipher_spec:
-                sco = pymqi.SCO()
-                sco.KeyRepository = self.ssl_key_repository
-                cd.SSLCipherSpec = self.ssl_cipher_spec
-            else:
-                sco = None
-
-            # Connection options
-            opts = pymqi.CMQC.MQCNO_HANDLE_SHARE_BLOCK
-
-            # Authentication
-            if self.username and self.password:
-                opts |= pymqi.CMQC.MQCNO_NONE
-                user = self.username
-                password = self.password
-            else:
-                user = ''
-                password = ''
-
-            # Connect to queue manager
-            self.qmgr = pymqi.QueueManager(None)
-            self.qmgr.connect_with_options(
-                self.queue_manager,
-                user=user,
-                password=password,
-                cd=cd,
-                sco=sco,
-                opts=opts
-            )
-
-            # Open destination
-            if self.dest_type == 'queue':
-                self.queue_obj = pymqi.Queue(self.qmgr, self.dest_name,
-                                             pymqi.CMQC.MQOO_OUTPUT)
-            else:  # topic
-                # For topics, we need to create a topic string and open for publish
-                od = pymqi.OD()
-                od.ObjectType = pymqi.CMQC.MQOT_TOPIC
-                od.ObjectString = self.dest_name
-
-                self.topic_obj = pymqi.Topic(self.qmgr, topic_string=self.dest_name)
-
-            logger.info(f"Connected to WebSphere MQ at {self.conn_info}")
-
-        except pymqi.MQMIError as e:
-            logger.error(f"Failed to connect to WebSphere MQ: {e.comp}, {e.reason}")
-            raise
+            self._close_connections()
+            self._connect_with_retry()
         except Exception as e:
-            logger.error(f"Failed to connect to WebSphere MQ: {str(e)}")
+            logger.error(f"WebSphere MQ publisher reconnection failed: {e}")
             raise
+
+    def _close_connections(self):
+        """Safely close existing connections"""
+        try:
+            if self.queue_obj:
+                self.queue_obj.close()
+        except:
+            pass
+        try:
+            if self.topic_obj:
+                self.topic_obj.close()
+        except:
+            pass
+        try:
+            if self.qmgr:
+                self.qmgr.disconnect()
+        except:
+            pass
+        self.queue_obj = None
+        self.topic_obj = None
+        self.qmgr = None
 
     def _do_publish(self, data):
-        """Publish to WebSphere MQ queue or topic"""
+        """Publish to WebSphere MQ queue or topic with auto-reconnection"""
         try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+
             # Serialize data to JSON
             json_data = json.dumps(data)
 
@@ -153,33 +224,44 @@ class WebSphereMQDataPublisher(DataPublisher):
 
         except pymqi.MQMIError as e:
             logger.error(f"Error publishing to WebSphere MQ: {e.comp}, {e.reason}")
-            # Try to reconnect
-            try:
-                self._connect()
-            except:
-                pass
-            raise
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
+            
+            if self._auto_reconnect:
+                try:
+                    self._reconnect_if_needed()
+                    # Retry
+                    json_data = json.dumps(data)
+                    md = pymqi.MD()
+                    md.Format = pymqi.CMQC.MQFMT_STRING
+                    md.Persistence = self.persistence
+                    pmo = pymqi.PMO()
+                    pmo.Options = pymqi.CMQC.MQPMO_NO_SYNCPOINT
+                    if self.dest_type == 'queue':
+                        self.queue_obj.put(json_data.encode('utf-8'), md, pmo)
+                    else:
+                        self.topic_obj.put(json_data.encode('utf-8'), md, pmo)
+                    logger.info("Retry publish succeeded after reconnection")
+                except Exception as retry_error:
+                    logger.error(f"Retry publish failed: {retry_error}")
+                    raise
+            else:
+                raise
         except Exception as e:
             logger.error(f"Error publishing to WebSphere MQ: {str(e)}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             raise
 
     def stop(self):
         """Stop the publisher"""
         super().stop()
-        try:
-            if self.queue_obj:
-                self.queue_obj.close()
-            if self.topic_obj:
-                self.topic_obj.close()
-            if self.qmgr:
-                self.qmgr.disconnect()
-            logger.info(f"WebSphere MQ publisher {self.name} stopped")
-        except Exception as e:
-            logger.warning(f"Error closing WebSphere MQ connection: {str(e)}")
+        self._close_connections()
+        self._connected = False
+        logger.info(f"WebSphere MQ publisher {self.name} stopped")
 
 
 class WebSphereMQDataSubscriber(DataSubscriber):
-    """Subscriber for WebSphere MQ (IBM MQ) queues and topics"""
+    """Subscriber for WebSphere MQ (IBM MQ) with v1.7.6 connection resilience."""
 
     def __init__(self, name, source, config):
         super().__init__(name, source, config)
@@ -209,103 +291,169 @@ class WebSphereMQDataSubscriber(DataSubscriber):
         self.ssl_key_repository = config.get('ssl_key_repository', None)
 
         # Get options
-        self.wait_interval = config.get('wait_interval', 100)  # milliseconds
+        self.wait_interval = config.get('wait_interval', 100)
 
         # For topics, we need to create a managed subscription queue
         self.subscription_name = config.get('subscription_name', f'{name}_sub')
         self.durable = config.get('durable', False)
 
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        self._connected = False
+        self._stopping = False
+
         # Connect to WebSphere MQ
         self.qmgr = None
         self.queue_obj = None
         self.sub_desc = None
-        self._connect()
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
 
         logger.info(f"WebSphere MQ subscriber connected to {self.queue_manager}, "
                     f"dest_type={self.dest_type}, dest_name={self.dest_name}")
 
-    def _connect(self):
+    def _do_connect(self):
         """Establish connection to WebSphere MQ"""
+        # Build connection options
+        cd = pymqi.CD()
+        cd.ChannelName = self.channel
+        cd.ConnectionName = self.conn_info
+        cd.ChannelType = pymqi.CMQC.MQCHT_CLNTCONN
+        cd.TransportType = pymqi.CMQC.MQXPT_TCP
+
+        # SSL configuration
+        if self.use_ssl and self.ssl_cipher_spec:
+            sco = pymqi.SCO()
+            sco.KeyRepository = self.ssl_key_repository
+            cd.SSLCipherSpec = self.ssl_cipher_spec
+        else:
+            sco = None
+
+        # Connection options
+        opts = pymqi.CMQC.MQCNO_HANDLE_SHARE_BLOCK
+
+        # Authentication
+        if self.username and self.password:
+            opts |= pymqi.CMQC.MQCNO_NONE
+            user = self.username
+            password = self.password
+        else:
+            user = ''
+            password = ''
+
+        # Connect to queue manager
+        self.qmgr = pymqi.QueueManager(None)
+        self.qmgr.connect_with_options(
+            self.queue_manager,
+            user=user,
+            password=password,
+            cd=cd,
+            sco=sco,
+            opts=opts
+        )
+
+        # Open destination
+        if self.dest_type == 'queue':
+            self.queue_obj = pymqi.Queue(self.qmgr, self.dest_name,
+                                         pymqi.CMQC.MQOO_INPUT_SHARED |
+                                         pymqi.CMQC.MQOO_FAIL_IF_QUIESCING)
+        else:  # topic
+            sub = pymqi.SD()
+            sub.ObjectString = self.dest_name
+            sub.Options = pymqi.CMQC.MQSO_CREATE | \
+                          pymqi.CMQC.MQSO_RESUME | \
+                          pymqi.CMQC.MQSO_MANAGED
+
+            if self.durable:
+                sub.Options |= pymqi.CMQC.MQSO_DURABLE
+                sub.SubName = self.subscription_name
+            else:
+                sub.Options |= pymqi.CMQC.MQSO_NON_DURABLE
+
+            self.queue_obj = pymqi.Queue(self.qmgr)
+            self.sub_desc = pymqi.Subscription(self.qmgr)
+            self.sub_desc.sub(sub_name=self.subscription_name if self.durable else None,
+                              sub_desc=sub,
+                              queue=self.queue_obj)
+
+        self._connected = True
+
+    def _connect_with_retry(self):
+        """v1.7.6: Establish connection to WebSphere MQ with retry logic"""
+        last_error = None
+
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"WebSphere MQ subscriber connection attempt {attempt}/{self._max_retries} to {self.conn_info}")
+                self._do_connect()
+                logger.info(f"WebSphere MQ subscriber connected successfully (attempt={attempt})")
+                return
+            except pymqi.MQMIError as e:
+                last_error = e
+                logger.warning(f"WebSphere MQ subscriber connection attempt {attempt}/{self._max_retries} failed: {e.comp}, {e.reason}")
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    time.sleep(self._retry_delay)
+            except Exception as e:
+                last_error = e
+                logger.warning(f"WebSphere MQ subscriber connection attempt {attempt}/{self._max_retries} failed: {e}")
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    time.sleep(self._retry_delay)
+
+        logger.error(f"Failed to connect WebSphere MQ subscriber after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to WebSphere MQ {self.conn_info}: {last_error}")
+
+    def _connect(self):
+        """Alias for _connect_with_retry"""
+        self._connect_with_retry()
+
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect if connection is broken"""
+        if not self._auto_reconnect or self._stopping:
+            return
+            
+        if self._connected and self.qmgr and self.queue_obj:
+            return
+        
+        self._connected = False
+        logger.info("WebSphere MQ subscriber connection lost, attempting reconnection...")
+        
         try:
-            # Build connection options
-            cd = pymqi.CD()
-            cd.ChannelName = self.channel
-            cd.ConnectionName = self.conn_info
-            cd.ChannelType = pymqi.CMQC.MQCHT_CLNTCONN
-            cd.TransportType = pymqi.CMQC.MQXPT_TCP
-
-            # SSL configuration
-            if self.use_ssl and self.ssl_cipher_spec:
-                sco = pymqi.SCO()
-                sco.KeyRepository = self.ssl_key_repository
-                cd.SSLCipherSpec = self.ssl_cipher_spec
-            else:
-                sco = None
-
-            # Connection options
-            opts = pymqi.CMQC.MQCNO_HANDLE_SHARE_BLOCK
-
-            # Authentication
-            if self.username and self.password:
-                opts |= pymqi.CMQC.MQCNO_NONE
-                user = self.username
-                password = self.password
-            else:
-                user = ''
-                password = ''
-
-            # Connect to queue manager
-            self.qmgr = pymqi.QueueManager(None)
-            self.qmgr.connect_with_options(
-                self.queue_manager,
-                user=user,
-                password=password,
-                cd=cd,
-                sco=sco,
-                opts=opts
-            )
-
-            # Open destination
-            if self.dest_type == 'queue':
-                # Open queue for input
-                self.queue_obj = pymqi.Queue(self.qmgr, self.dest_name,
-                                             pymqi.CMQC.MQOO_INPUT_SHARED |
-                                             pymqi.CMQC.MQOO_FAIL_IF_QUIESCING)
-            else:  # topic
-                # For topics, create a subscription
-                sub = pymqi.SD()
-                sub.ObjectString = self.dest_name
-                sub.Options = pymqi.CMQC.MQSO_CREATE | \
-                              pymqi.CMQC.MQSO_RESUME | \
-                              pymqi.CMQC.MQSO_MANAGED
-
-                if self.durable:
-                    sub.Options |= pymqi.CMQC.MQSO_DURABLE
-                    sub.SubName = self.subscription_name
-                else:
-                    sub.Options |= pymqi.CMQC.MQSO_NON_DURABLE
-
-                self.queue_obj = pymqi.Queue(self.qmgr)
-                self.sub_desc = pymqi.Subscription(self.qmgr)
-                self.sub_desc.sub(sub_name=self.subscription_name if self.durable else None,
-                                  sub_desc=sub,
-                                  queue=self.queue_obj)
-
-            logger.info(f"Connected to WebSphere MQ at {self.conn_info}")
-
-        except pymqi.MQMIError as e:
-            logger.error(f"Failed to connect to WebSphere MQ: {e.comp}, {e.reason}")
-            raise
+            self._close_connections()
+            self._connect_with_retry()
         except Exception as e:
-            logger.error(f"Failed to connect to WebSphere MQ: {str(e)}")
-            raise
+            logger.error(f"WebSphere MQ subscriber reconnection failed: {e}")
+
+    def _close_connections(self):
+        """Safely close existing connections"""
+        try:
+            if self.sub_desc:
+                self.sub_desc.close()
+        except:
+            pass
+        try:
+            if self.queue_obj:
+                self.queue_obj.close()
+        except:
+            pass
+        try:
+            if self.qmgr:
+                self.qmgr.disconnect()
+        except:
+            pass
+        self.sub_desc = None
+        self.queue_obj = None
+        self.qmgr = None
 
     def _do_subscribe(self):
-        """Subscribe from WebSphere MQ"""
+        """Subscribe from WebSphere MQ with auto-reconnection"""
         try:
-            # Reconnect if connection is closed
-            if not self.qmgr:
-                self._connect()
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
 
             # Create message descriptor
             md = pymqi.MD()
@@ -326,7 +474,6 @@ class WebSphereMQDataSubscriber(DataSubscriber):
 
             except pymqi.MQMIError as e:
                 if e.reason == pymqi.CMQC.MQRC_NO_MSG_AVAILABLE:
-                    # No messages available (timeout)
                     return None
                 else:
                     raise
@@ -337,8 +484,13 @@ class WebSphereMQDataSubscriber(DataSubscriber):
                             pymqi.CMQC.MQRC_CONNECTION_QUIESCING):
                 logger.error(f"WebSphere MQ connection error: {e.comp}, {e.reason}")
                 logger.error(f"Full stack trace:\n{traceback.format_exc()}")
-                self.qmgr = None
-                self.queue_obj = None
+                self._connected = False
+                
+                if self._auto_reconnect and not self._stopping:
+                    try:
+                        self._reconnect_if_needed()
+                    except:
+                        pass
                 time.sleep(1)
             else:
                 logger.error(f"WebSphere MQ error: {e.comp}, {e.reason}")
@@ -346,22 +498,15 @@ class WebSphereMQDataSubscriber(DataSubscriber):
             return None
 
         except Exception as e:
-            # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from WebSphere MQ: {str(e)}")
             logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
             return None
 
     def stop(self):
         """Stop the subscriber"""
+        self._stopping = True
         super().stop()
-        try:
-            if self.sub_desc:
-                # Close subscription
-                self.sub_desc.close()
-            if self.queue_obj:
-                self.queue_obj.close()
-            if self.qmgr:
-                self.qmgr.disconnect()
-            logger.info(f"WebSphere MQ subscriber {self.name} stopped")
-        except Exception as e:
-            logger.warning(f"Error closing WebSphere MQ connection: {str(e)}")
+        self._close_connections()
+        self._connected = False
+        logger.info(f"WebSphere MQ subscriber {self.name} stopped")

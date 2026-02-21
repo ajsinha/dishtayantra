@@ -1,55 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AutoImportSettings">
-    <option name="autoReloadType" value="SELECTIVE" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="8f8c7aa2-a860-4c37-bdf8-77d0d51f0f56" name="Changes" comment="">
+    <list default="true" id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/dishtayantra.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dishtayantra.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/QUICKSTART.md" beforeDir="false" afterPath="$PROJECT_DIR$/QUICKSTART.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICKSTART_v1.6.0.md" beforeDir="false" afterPath="$PROJECT_DIR$/QUICKSTART_v1.6.0.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICKSTART_v1.7.0.md" beforeDir="false" afterPath="$PROJECT_DIR$/QUICKSTART_v1.7.0.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/activemq_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/activemq_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/grpc_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/grpc_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/rabbitmq_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/rabbitmq_datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/redis_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/redis_datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/tibcoems_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/tibcoems_datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/websphere_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/websphere_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ARCHITECTURE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/dagserver.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Kafka DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Kafka DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/LMDB Zero-Copy Integration Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/LMDB Zero-Copy Integration Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Multi-Language Calculator Integration Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Multi-Language Calculator Integration Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/example/lmdb_calculators/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/run_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/sample_python_publisher.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/sample_python_publisher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/sample_python_publisher.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/dishtyantra_webapp.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/dishtyantra_webapp.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/cpp/management.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cpp/management.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/architecture.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/architecture.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/calculators.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/calculators.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/free_threading.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/free_threading.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/parallelism.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/parallelism.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/pubsub.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pubsub.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/research.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/research.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/rust_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rust_integration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Python Script" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="McpProjectServerCommands">
-    <commands />
-    <urls />
-  </component>
-  <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 3
-}</component>
-  <component name="ProjectId" id="38lRu5oe566FBu6YoazZHysb3nP" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 3
+}]]></component>
+  <component name="ProjectId" id="39zVYaTBvwN7dj1aM4vmICkqkRr" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -57,56 +64,14 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.run_server.executor": "Run",
-    "Python.sample_python_publisher.executor": "Debug",
-    "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "ai.playground.ignore.import.keys.banner.in.settings": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/ashutosh/PycharmProjects/dishtayantra/tests",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/tests" />
-      <recent name="$PROJECT_DIR$/core/pubsub" />
-    </key>
-  </component>
-  <component name="RunManager" selected="Python.run_server">
-    <configuration name="dishtayantra" type="PythonConfigurationType" factoryName="Python">
-      <module name="dishtayantra" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/web/dishtyantra_webapp.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager">
     <configuration name="run_server" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="dishtayantra" />
       <option name="ENV_FILES" value="" />
@@ -120,32 +85,8 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="RUN_TOOL" value="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_server.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="sample_python_publisher" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="dishtayantra" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tests/sample_python_publisher.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -157,32 +98,24 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.run_server" />
-        <item itemvalue="Python.sample_python_publisher" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-4762d8aabb82-6d6dccd035ac-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.30387.173" />
+        <option value="bundled-python-sdk-2653e85de345-6d6dccd035ac-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.31033.139" />
       </set>
     </attachedChunks>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="8f8c7aa2-a860-4c37-bdf8-77d0d51f0f56" name="Changes" comment="" />
-      <created>1769372392707</created>
+      <changelist id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="" />
+      <created>1771698938108</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1769372392707</updated>
-      <workItem from="1769372394242" duration="452000" />
+      <updated>1771698938108</updated>
     </task>
     <servers />
-  </component>
-  <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="3" />
-  </component>
-  <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/dishtayantra$run_server.coverage" NAME="run_server Coverage Results" MODIFIED="1769372668935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

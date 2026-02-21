@@ -1,1037 +1,350 @@
-2026-02-17 16:30:00,493 - INFO - ================================================================================
-2026-02-17 16:30:00,493 - INFO - DISHTAYANTRA COMPUTE SERVER - STARTUP SEQUENCE INITIATED
-2026-02-17 16:30:00,494 - INFO - ================================================================================
-2026-02-17 16:30:00,494 - INFO - Version: 1.7.5
-2026-02-17 16:30:00,494 - INFO - Build Date: 2025-02-12
-2026-02-17 16:30:00,494 - INFO - Python Version: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
-2026-02-17 16:30:00,494 - INFO - Platform: linux
-2026-02-17 16:30:00,494 - INFO - Process ID: 1133296
-2026-02-17 16:30:00,494 - INFO - Working Directory: /home/ashutosh/PycharmProjects/dishtayantra
-2026-02-17 16:30:00,494 - INFO - Startup Time: 2026-02-17T16:30:00.494109
-2026-02-17 16:30:00,494 - INFO - --------------------------------------------------------------------------------
-2026-02-17 16:30:00,494 - INFO - Component [Directories]: OK - All required directories ready
-2026-02-17 16:30:00,628 - WARNING - prometheus_client not installed. Metrics will be disabled. Install with: pip install prometheus-client
-2026-02-17 16:30:00,628 - WARNING - Using dummy metrics (prometheus_client not available)
-2026-02-17 16:30:00,646 - INFO - Loading application properties...
-2026-02-17 16:30:00,647 - INFO - Component [Application Properties]: OK - Loaded from config/application.properties
-2026-02-17 16:30:00,647 - INFO - Loading external module paths...
-2026-02-17 16:30:00,647 - WARNING - Component [Module Path]: WARN - Not found: /opt/custom_modules
-2026-02-17 16:30:00,647 - WARNING - External module path does not exist: /opt/custom_modules
-2026-02-17 16:30:00,647 - WARNING - Component [Module Path]: WARN - Not found: /home/ashutosh/my_plugins
-2026-02-17 16:30:00,647 - WARNING - External module path does not exist: /home/ashutosh/my_plugins
-2026-02-17 16:30:00,647 - WARNING - Component [Module Path]: WARN - Not found: /opt/analytics
-2026-02-17 16:30:00,647 - WARNING - External module path does not exist: /opt/analytics
-2026-02-17 16:30:00,647 - INFO - Checking JVM Manager configuration...
-2026-02-17 16:30:00,648 - ERROR - Component [JVM Manager]: SKIP - Disabled in configuration (enabled=false)
-2026-02-17 16:30:00,648 - INFO - JVM Manager is disabled in jvm_config.json - skipping initialization
-2026-02-17 16:30:00,648 - INFO - Checking CPP Manager configuration...
-2026-02-17 16:30:00,648 - ERROR - Component [CPP Manager]: SKIP - Disabled in configuration (enabled=false)
-2026-02-17 16:30:00,648 - INFO - CPP Manager is disabled in cpp_config.json - skipping initialization
-2026-02-17 16:30:00,648 - INFO - Checking Rust Manager configuration...
-2026-02-17 16:30:00,648 - ERROR - Component [Rust Manager]: SKIP - Disabled in configuration (enabled=false)
-2026-02-17 16:30:00,648 - INFO - Rust Manager is disabled in rust_config.json - skipping initialization
-2026-02-17 16:30:00,648 - INFO - Checking Worker Pool configuration...
-2026-02-17 16:30:00,648 - ERROR - Component [Worker Pool]: SKIP - Disabled in configuration (enabled=false)
-2026-02-17 16:30:00,648 - INFO - Worker Pool is disabled - running in single-process mode
-2026-02-17 16:30:00,648 - INFO - Initializing DishtaYantra Web Application...
-2026-02-17 16:30:00,648 - INFO - Initializing DishtaYantra Web Application...
-2026-02-17 16:30:00,649 - INFO - Configuration loaded successfully
-2026-02-17 16:30:00,649 - INFO - Initializing core components...
-2026-02-17 16:30:00,649 - INFO - Loaded 6 users from ./config/users.json
-2026-02-17 16:30:00,649 - INFO - UserRegistry initialized with file: ./config/users.json, reload interval: 600s
-2026-02-17 16:30:00,649 - INFO - Initializing DAGComputeServer...
-2026-02-17 16:30:00,649 - INFO - Found 2 DAG configuration file(s)
-2026-02-17 16:30:00,649 - INFO - Loading DAG from: ./config/dags/ash_dag_with_auto_clone.json
-2026-02-17 16:30:00,650 - INFO - DAG ash_dag_with_auto_clone: Using duration-based time window
-2026-02-17 16:30:00,650 - INFO -   start_time=0800, duration=10h15m, end_time=1815
-2026-02-17 16:30:00,650 - INFO - Creating subscriber kafka_input for source kafka://topic/input_data
-2026-02-17 16:30:00,684 - INFO - DataSubscriber kafka_input initialized for source kafka://topic/input_data (Priority: False, Key: _dag_priority, AutoPackage: True)
-2026-02-17 16:30:00,686 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
-2026-02-17 16:30:00,687 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <checking_api_versions_recv> [IPv4 ('127.0.0.1', 9092)]>: Broker version identified as 2.6
-2026-02-17 16:30:00,687 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Connection complete.
-2026-02-17 16:30:00,688 - INFO - Updating subscribed topics to: ('input_data',)
-2026-02-17 16:30:00,688 - INFO - kafka-python consumer initialized: ['input_data'] (group_id=etl_consumer, auto_offset_reset=earliest)
-2026-02-17 16:30:00,688 - INFO - Kafka subscriber created for topic input_data using kafka-python
-2026-02-17 16:30:00,688 - INFO - Created subscriber: kafka_input
-2026-02-17 16:30:00,688 - INFO - Creating publisher file_output for destination file:///tmp/data/output.json
-2026-02-17 16:30:00,689 - INFO - DataPublisher file_output initialized for destination file:///tmp/data/output.json (Priority: False, Key: _dag_priority)
-2026-02-17 16:30:00,689 - INFO - File publisher created for /tmp/data/output.json
-2026-02-17 16:30:00,689 - INFO - Created publisher: file_output
-2026-02-17 16:30:00,689 - INFO - Created calculator: data_transformer
-2026-02-17 16:30:00,689 - INFO - Created transformer: null_transformer
-2026-02-17 16:30:00,689 - INFO - Created node: input_node
-2026-02-17 16:30:00,689 - INFO - Created node: calc_node
-2026-02-17 16:30:00,689 - INFO - Created node: output_node
-2026-02-17 16:30:00,689 - INFO - Created edge: input_node_to_calc_node
-2026-02-17 16:30:00,689 - INFO - Created edge: calc_node_to_output_node
-2026-02-17 16:30:00,689 - INFO - DAG built successfully with 3 nodes and 2 edges
-2026-02-17 16:30:00,689 - INFO - ComputeGraph ash_dag_with_auto_clone initialized
-2026-02-17 16:30:00,689 - INFO - Successfully loaded DAG: ash_dag_with_auto_clone
-2026-02-17 16:30:00,689 - INFO - Loading DAG from: ./config/dags/metronome_heartbeat.json
-2026-02-17 16:30:00,689 - INFO - DAG heartbeat_monitor: No start_time provided, running perpetually
-2026-02-17 16:30:00,689 - INFO - Creating subscriber heartbeat_subscriber_1 for source metronome
-2026-02-17 16:30:00,690 - INFO - DataSubscriber heartbeat_subscriber_1 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
-2026-02-17 16:30:00,690 - INFO - Created subscriber: heartbeat_subscriber_1
-2026-02-17 16:30:00,690 - INFO - Creating subscriber heartbeat_subscriber_2 for source metronome
-2026-02-17 16:30:00,690 - INFO - DataSubscriber heartbeat_subscriber_2 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
-2026-02-17 16:30:00,690 - INFO - Created subscriber: heartbeat_subscriber_2
-2026-02-17 16:30:00,690 - INFO - Creating subscriber heartbeat_subscriber_3 for source metronome
-2026-02-17 16:30:00,690 - INFO - DataSubscriber heartbeat_subscriber_3 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
-2026-02-17 16:30:00,690 - INFO - Created subscriber: heartbeat_subscriber_3
-2026-02-17 16:30:00,690 - INFO - Creating subscriber composite_heartbeat_subscriber for source fanin://heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3
-2026-02-17 16:30:00,693 - INFO - DataSubscriber composite_heartbeat_subscriber initialized for source heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3 (Priority: False, Key: _dag_priority, AutoPackage: True)
-2026-02-17 16:30:00,693 - INFO - CompositeDataSubscriber composite_heartbeat_subscriber initialized
-2026-02-17 16:30:00,693 - INFO - Created subscriber: composite_heartbeat_subscriber
-2026-02-17 16:30:00,693 - INFO - DataSubscriber heartbeat_subscriber_1 queue updated (Priority: False)
-2026-02-17 16:30:00,693 - INFO - Added subscriber 'heartbeat_subscriber_1' to composite 'composite_heartbeat_subscriber'
-2026-02-17 16:30:00,693 - INFO - DataSubscriber heartbeat_subscriber_2 queue updated (Priority: False)
-2026-02-17 16:30:00,693 - INFO - Added subscriber 'heartbeat_subscriber_2' to composite 'composite_heartbeat_subscriber'
-2026-02-17 16:30:00,693 - INFO - DataSubscriber heartbeat_subscriber_3 queue updated (Priority: False)
-2026-02-17 16:30:00,693 - INFO - Added subscriber 'heartbeat_subscriber_3' to composite 'composite_heartbeat_subscriber'
-2026-02-17 16:30:00,693 - INFO - Creating publisher heartbeat_publisher for destination mem://topic/heartbeat_topic
-2026-02-17 16:30:00,694 - INFO - DataPublisher heartbeat_publisher initialized for destination mem://topic/heartbeat_topic (Priority: False, Key: _dag_priority)
-2026-02-17 16:30:00,694 - INFO - InMemoryPubSub initialized
-2026-02-17 16:30:00,694 - INFO - Created topic: heartbeat_topic
-2026-02-17 16:30:00,694 - INFO - InMemoryDataPublisher created for mem://topic/heartbeat_topic
-2026-02-17 16:30:00,694 - INFO - Created publisher: heartbeat_publisher
-2026-02-17 16:30:00,694 - INFO - Creating publisher heartbeat_log for destination file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:00,694 - INFO - DataPublisher heartbeat_log initialized for destination file:///tmp/log/dagserver/heartbeat.jsonl (Priority: False, Key: _dag_priority)
-2026-02-17 16:30:00,694 - INFO - File publisher created for /tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:00,694 - INFO - Created publisher: heartbeat_log
-2026-02-17 16:30:00,695 - INFO - Created calculator: heartbeat_enrichment
-2026-02-17 16:30:00,695 - INFO - Attempting to instantiate RandomCalculator from core.calculator.random_calculator
-2026-02-17 16:30:00,695 - INFO - Successfully instantiated RandomCalculator
-2026-02-17 16:30:00,695 - INFO - Created calculator: random_calculator
-2026-02-17 16:30:00,695 - INFO - Created node: metronome_node
-2026-02-17 16:30:00,695 - INFO - Created node: random_calculator_node
-2026-02-17 16:30:00,695 - INFO - Created edge: metronome_node_to_random_calculator_node
-2026-02-17 16:30:00,695 - INFO - DAG built successfully with 2 nodes and 1 edges
-2026-02-17 16:30:00,695 - INFO - ComputeGraph heartbeat_monitor initialized
-2026-02-17 16:30:00,695 - INFO - Successfully loaded DAG: heartbeat_monitor
-2026-02-17 16:30:00,695 - INFO - AutoClone manager loop started
-2026-02-17 16:30:00,695 - INFO - AutoClone manager thread started
-2026-02-17 16:30:00,696 - INFO - Time window monitor: Starting monitoring loop
-2026-02-17 16:30:00,696 - INFO - Time window monitor thread started (checks every 60 seconds)
-2026-02-17 16:30:00,696 - INFO - Connecting to Zookeeper at localhost:2181...
-2026-02-17 16:30:00,696 - INFO - DAGComputeServer initialized with 2 DAG(s)
-2026-02-17 16:30:00,696 - INFO - ======================================================================
-2026-02-17 16:30:00,696 - INFO - AUTO-START: Checking which DAGs should be started on system startup
-2026-02-17 16:30:00,696 - INFO - ======================================================================
-2026-02-17 16:30:00,696 - INFO - AUTO-START: DAG 'ash_dag_with_auto_clone' is WITHIN TIME WINDOW (0800-1815) - will be started
-2026-02-17 16:30:00,697 - INFO - AUTO-START: DAG 'heartbeat_monitor' is PERPETUAL - will be started
-2026-02-17 16:30:00,697 - INFO - AUTO-START: 2 DAG(s) will be started with 5 second intervals
-2026-02-17 16:30:00,697 - INFO - ----------------------------------------------------------------------
-2026-02-17 16:30:00,697 - INFO - 
-2026-02-17 16:30:00,697 - INFO - **********************************************************************
-2026-02-17 16:30:00,697 - INFO - *  AUTO-START: STARTING DAG 'ash_dag_with_auto_clone'
-2026-02-17 16:30:00,697 - INFO - *  Reason: WITHIN TIME WINDOW (0800-1815)
-2026-02-17 16:30:00,697 - INFO - *  Progress: 1 of 2
-2026-02-17 16:30:00,697 - INFO - **********************************************************************
-2026-02-17 16:30:00,697 - INFO - DAG ash_dag_with_auto_clone: Started within time window - normal scheduling
-2026-02-17 16:30:00,697 - INFO - Connecting to localhost(127.0.0.1):2181, use_ssl: False
-2026-02-17 16:30:00,697 - INFO - Subscriber kafka_input started
-2026-02-17 16:30:00,698 - INFO - Subscriber kafka_input resumed
-2026-02-17 16:30:00,698 - INFO - PUBLISH [file_output]:
-2026-02-17 16:30:00,698 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:30:00,698 - INFO -   Type: dict
-2026-02-17 16:30:00,699 - INFO - DAG ash_dag_with_auto_clone: Time window checker started
-2026-02-17 16:30:00,699 - INFO - DAG ash_dag_with_auto_clone: Time window monitor started (0800-1815)
-2026-02-17 16:30:00,699 - INFO -   Count: 1
-2026-02-17 16:30:00,699 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=dell:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to dell:9092 [('127.0.1.1', 9092) IPv4]
-2026-02-17 16:30:00,699 - INFO - ComputeGraph ash_dag_with_auto_clone started
-2026-02-17 16:30:00,699 - INFO -   Preview: {}
-2026-02-17 16:30:00,699 - INFO - 
-2026-02-17 16:30:00,699 - INFO - ██████████████████████████████████████████████████████████████████████
-2026-02-17 16:30:00,699 - INFO - █  DAG STATE CHANGE: STARTED
-2026-02-17 16:30:00,700 - INFO - █  DAG Name: ash_dag_with_auto_clone
-2026-02-17 16:30:00,700 - INFO - █  Reason: User/system initiated start (main process)
-2026-02-17 16:30:00,700 - INFO - █  Timestamp: 2026-02-17 16:30:00
-2026-02-17 16:30:00,700 - INFO - ██████████████████████████████████████████████████████████████████████
-2026-02-17 16:30:00,700 - INFO - 
-2026-02-17 16:30:00,700 - INFO - AUTO-START: Successfully started DAG 'ash_dag_with_auto_clone'
-2026-02-17 16:30:00,700 - INFO - AUTO-START: Pausing 5 seconds before starting next DAG...
-2026-02-17 16:30:00,700 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=dell:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
-2026-02-17 16:30:00,700 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. 
-2026-02-17 16:30:00,708 - INFO - Zookeeper connection established, state: CONNECTED
-2026-02-17 16:30:00,708 - INFO - Connected to Zookeeper, starting election...
-2026-02-17 16:30:00,711 - INFO - Elected as primary DAG server
-2026-02-17 16:30:00,711 - INFO - Subscriber kafka_input resumed
-2026-02-17 16:30:00,711 - INFO - ComputeGraph ash_dag_with_auto_clone resumed
-2026-02-17 16:30:00,711 - INFO - Subscriber heartbeat_subscriber_1 resumed
-2026-02-17 16:30:00,711 - INFO - Subscriber heartbeat_subscriber_2 resumed
-2026-02-17 16:30:00,711 - INFO - Subscriber heartbeat_subscriber_3 resumed
-2026-02-17 16:30:00,711 - INFO - Subscriber heartbeat_subscriber_1 resumed
-2026-02-17 16:30:00,711 - INFO - Subscriber heartbeat_subscriber_2 resumed
-2026-02-17 16:30:00,712 - INFO - Subscriber heartbeat_subscriber_3 resumed
-2026-02-17 16:30:00,712 - INFO - Subscriber composite_heartbeat_subscriber resumed
-2026-02-17 16:30:00,712 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' resumed 3/3 child subscribers
-2026-02-17 16:30:00,712 - INFO - ComputeGraph heartbeat_monitor resumed
-2026-02-17 16:30:00,797 - INFO - Coordinator for group/etl_consumer is BrokerMetadata(nodeId='coordinator-0', host='dell', port=9092, rack=None)
-2026-02-17 16:30:00,797 - INFO - Discovered coordinator coordinator-0 for group etl_consumer
-2026-02-17 16:30:00,897 - INFO - Starting new heartbeat thread
-2026-02-17 16:30:00,898 - INFO - Revoking previously assigned partitions set() for group etl_consumer
-2026-02-17 16:30:00,898 - INFO - Failed to join group etl_consumer: NodeNotReadyError: coordinator-0
-2026-02-17 16:30:00,899 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=dell:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to dell:9092 [('127.0.1.1', 9092) IPv4]
-2026-02-17 16:30:00,899 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=dell:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
-2026-02-17 16:30:00,995 - INFO - (Re-)joining group etl_consumer
-2026-02-17 16:30:00,997 - INFO - Received member id kafka-python-2.2.15-4d86cf83-e8c0-4ed3-a1b1-0554ffede9d9 for group etl_consumer; will retry join-group
-2026-02-17 16:30:00,997 - INFO - Failed to join group etl_consumer: [Error 79] MemberIdRequiredError
-2026-02-17 16:30:00,997 - INFO - (Re-)joining group etl_consumer
-2026-02-17 16:30:01,098 - INFO - Successfully joined group etl_consumer <Generation 14 (member_id: kafka-python-2.2.15-4d86cf83-e8c0-4ed3-a1b1-0554ffede9d9, protocol: range)>
-2026-02-17 16:30:01,099 - INFO - Elected group leader -- performing partition assignments using range
-2026-02-17 16:30:01,103 - INFO - Updated partition assignment: [TopicPartition(topic='input_data', partition=0)]
-2026-02-17 16:30:01,104 - INFO - Setting newly assigned partitions {TopicPartition(topic='input_data', partition=0)} for group etl_consumer
-2026-02-17 16:30:05,696 - INFO - Time window monitor: Beginning DAG monitoring
-2026-02-17 16:30:05,700 - INFO - 
-2026-02-17 16:30:05,700 - INFO - **********************************************************************
-2026-02-17 16:30:05,700 - INFO - *  AUTO-START: STARTING DAG 'heartbeat_monitor'
-2026-02-17 16:30:05,700 - INFO - *  Reason: PERPETUAL (no time window)
-2026-02-17 16:30:05,700 - INFO - *  Progress: 2 of 2
-2026-02-17 16:30:05,700 - INFO - **********************************************************************
-2026-02-17 16:30:05,701 - INFO - Subscriber heartbeat_subscriber_1 started
-2026-02-17 16:30:05,701 - INFO - Subscriber heartbeat_subscriber_1 resumed
-2026-02-17 16:30:05,702 - INFO - Subscriber heartbeat_subscriber_2 started
-2026-02-17 16:30:05,702 - INFO - Subscriber heartbeat_subscriber_2 resumed
-2026-02-17 16:30:05,702 - INFO - Subscriber heartbeat_subscriber_3 started
-2026-02-17 16:30:05,703 - INFO - Subscriber heartbeat_subscriber_3 resumed
-2026-02-17 16:30:05,703 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' started 3/3 child subscribers
-2026-02-17 16:30:05,703 - INFO - Subscriber heartbeat_subscriber_1 resumed
-2026-02-17 16:30:05,703 - INFO - Subscriber heartbeat_subscriber_2 resumed
-2026-02-17 16:30:05,703 - INFO - Subscriber heartbeat_subscriber_3 resumed
-2026-02-17 16:30:05,703 - INFO - Subscriber composite_heartbeat_subscriber resumed
-2026-02-17 16:30:05,703 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' resumed 3/3 child subscribers
-2026-02-17 16:30:05,703 - INFO - Metronome node metronome_node started with interval 10s
-2026-02-17 16:30:05,704 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:30:05,704 - INFO - ComputeGraph heartbeat_monitor started
-2026-02-17 16:30:05,704 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:30:05,704 - INFO - 
-2026-02-17 16:30:05,704 - INFO -   Type: dict
-2026-02-17 16:30:05,704 - INFO - ██████████████████████████████████████████████████████████████████████
-2026-02-17 16:30:05,705 - INFO -   Count: 1
-2026-02-17 16:30:05,705 - INFO - █  DAG STATE CHANGE: STARTED
-2026-02-17 16:30:05,705 - INFO -   Preview: {"metronome_tick": 0, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:05,705 - INFO - █  DAG Name: heartbeat_monitor
-2026-02-17 16:30:05,705 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:30:05,705 - INFO - █  Reason: User/system initiated start (main process)
-2026-02-17 16:30:05,705 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:05,705 - INFO - █  Timestamp: 2026-02-17 16:30:05
-2026-02-17 16:30:05,705 - INFO -   Type: dict
-2026-02-17 16:30:05,705 - INFO - ██████████████████████████████████████████████████████████████████████
-2026-02-17 16:30:05,705 - INFO -   Count: 1
-2026-02-17 16:30:05,705 - INFO - 
-2026-02-17 16:30:05,705 - INFO -   Preview: {"metronome_tick": 0, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:05,706 - INFO - AUTO-START: Successfully started DAG 'heartbeat_monitor'
-2026-02-17 16:30:05,706 - INFO - 
-2026-02-17 16:30:05,706 - INFO - ======================================================================
-2026-02-17 16:30:05,706 - INFO - AUTO-START: Completed - 2 DAG(s) processed
-2026-02-17 16:30:05,706 - INFO - ======================================================================
-2026-02-17 16:30:05,706 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:30:05,706 - INFO - Loaded 1 keys from data/inmemory_redisclone.json (dump from 2026-01-05T10:40:17.068018, skipped 0)
-2026-02-17 16:30:05,707 - INFO - InMemoryRedisClone initialized: dump_file=data/inmemory_redisclone.json, dump_interval=300s
-2026-02-17 16:30:05,707 - INFO - DAGComputeServer initialized in single-process mode
-2026-02-17 16:30:05,707 - INFO - Core components initialized successfully
-2026-02-17 16:30:05,707 - INFO - Initializing route handlers...
-2026-02-17 16:30:05,730 - INFO - Metrics routes initialized
-2026-02-17 16:30:05,742 - INFO - Route handlers initialized successfully
-2026-02-17 16:30:05,742 - INFO - DishtaYantra Web Application initialized successfully
-2026-02-17 16:30:05,742 - INFO - Component [Web Application]: OK - Flask application initialized
-2026-02-17 16:30:05,742 - INFO - DishtaYantra Web Application initialized successfully
-2026-02-17 16:30:05,742 - INFO - Component [Host]: OK - 0.0.0.0
-2026-02-17 16:30:05,742 - INFO - Component [Port]: OK - 5002
-2026-02-17 16:30:05,742 - INFO - Component [Debug Mode]: OK - Disabled
-2026-02-17 16:30:05,742 - INFO - Component [SSL/TLS]: OK - Disabled
-2026-02-17 16:30:05,742 - INFO - Component [Worker Pool]: OK - Disabled (single-process)
-2026-02-17 16:30:05,742 - INFO - Component [JVM Manager]: OK - Disabled
-2026-02-17 16:30:05,742 - INFO - Component [CPP Manager]: OK - Disabled
-2026-02-17 16:30:05,742 - INFO - Component [Rust Manager]: OK - Disabled
-2026-02-17 16:30:05,742 - INFO - --------------------------------------------------------------------------------
-2026-02-17 16:30:05,743 - INFO - STARTUP SEQUENCE COMPLETE - SERVER CONFIGURATION:
-2026-02-17 16:30:05,743 - INFO -   Host: 0.0.0.0
-2026-02-17 16:30:05,743 - INFO -   Port: 5002
-2026-02-17 16:30:05,743 - INFO -   Debug: False
-2026-02-17 16:30:05,743 - INFO -   SSL: Disabled
-2026-02-17 16:30:05,743 - INFO -   Worker Pool: Disabled
-2026-02-17 16:30:05,743 - INFO -   JVM Manager: Disabled
-2026-02-17 16:30:05,743 - INFO -   CPP Manager: Disabled
-2026-02-17 16:30:05,743 - INFO -   Rust Manager: Disabled
-2026-02-17 16:30:05,743 - INFO - --------------------------------------------------------------------------------
-2026-02-17 16:30:05,743 - INFO - SERVER READY - Listening on http://0.0.0.0:5002
-2026-02-17 16:30:05,743 - INFO - ================================================================================
-2026-02-17 16:30:05,743 - INFO - Starting DishtaYantra Web Application on 0.0.0.0:5002
-2026-02-17 16:30:05,744 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+2026-02-21 13:39:50,698 - INFO - ================================================================================
+2026-02-21 13:39:50,698 - INFO - DISHTAYANTRA COMPUTE SERVER - STARTUP SEQUENCE INITIATED
+2026-02-21 13:39:50,698 - INFO - ================================================================================
+2026-02-21 13:39:50,698 - INFO - Version: 1.7.6
+2026-02-21 13:39:50,698 - INFO - Build Date: 2025-02-21
+2026-02-21 13:39:50,699 - INFO - Python Version: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+2026-02-21 13:39:50,699 - INFO - Platform: linux
+2026-02-21 13:39:50,699 - INFO - Process ID: 513472
+2026-02-21 13:39:50,699 - INFO - Working Directory: /home/ashutosh/PycharmProjects/dishtayantra
+2026-02-21 13:39:50,699 - INFO - Startup Time: 2026-02-21T13:39:50.699075
+2026-02-21 13:39:50,699 - INFO - --------------------------------------------------------------------------------
+2026-02-21 13:39:50,699 - INFO - Component [Directories]: OK - All required directories ready
+2026-02-21 13:39:50,827 - WARNING - prometheus_client not installed. Metrics will be disabled. Install with: pip install prometheus-client
+2026-02-21 13:39:50,828 - WARNING - Using dummy metrics (prometheus_client not available)
+2026-02-21 13:39:50,842 - INFO - Loading application properties...
+2026-02-21 13:39:50,842 - INFO - Component [Application Properties]: OK - Loaded from config/application.properties
+2026-02-21 13:39:50,843 - INFO - Loading external module paths...
+2026-02-21 13:39:50,843 - WARNING - Component [Module Path]: WARN - Not found: /opt/custom_modules
+2026-02-21 13:39:50,843 - WARNING - External module path does not exist: /opt/custom_modules
+2026-02-21 13:39:50,843 - WARNING - Component [Module Path]: WARN - Not found: /home/ashutosh/my_plugins
+2026-02-21 13:39:50,843 - WARNING - External module path does not exist: /home/ashutosh/my_plugins
+2026-02-21 13:39:50,843 - WARNING - Component [Module Path]: WARN - Not found: /opt/analytics
+2026-02-21 13:39:50,843 - WARNING - External module path does not exist: /opt/analytics
+2026-02-21 13:39:50,843 - INFO - Checking JVM Manager configuration...
+2026-02-21 13:39:50,843 - ERROR - Component [JVM Manager]: SKIP - Disabled in configuration (enabled=false)
+2026-02-21 13:39:50,843 - INFO - JVM Manager is disabled in jvm_config.json - skipping initialization
+2026-02-21 13:39:50,843 - INFO - Checking CPP Manager configuration...
+2026-02-21 13:39:50,843 - ERROR - Component [CPP Manager]: SKIP - Disabled in configuration (enabled=false)
+2026-02-21 13:39:50,843 - INFO - CPP Manager is disabled in cpp_config.json - skipping initialization
+2026-02-21 13:39:50,843 - INFO - Checking Rust Manager configuration...
+2026-02-21 13:39:50,843 - ERROR - Component [Rust Manager]: SKIP - Disabled in configuration (enabled=false)
+2026-02-21 13:39:50,843 - INFO - Rust Manager is disabled in rust_config.json - skipping initialization
+2026-02-21 13:39:50,843 - INFO - Checking Worker Pool configuration...
+2026-02-21 13:39:50,843 - ERROR - Component [Worker Pool]: SKIP - Disabled in configuration (enabled=false)
+2026-02-21 13:39:50,843 - INFO - Worker Pool is disabled - running in single-process mode
+2026-02-21 13:39:50,843 - INFO - Initializing DishtaYantra Web Application...
+2026-02-21 13:39:50,843 - INFO - Initializing DishtaYantra Web Application...
+2026-02-21 13:39:50,844 - INFO - Configuration loaded successfully
+2026-02-21 13:39:50,844 - INFO - Initializing core components...
+2026-02-21 13:39:50,844 - INFO - Loaded 6 users from ./config/users.json
+2026-02-21 13:39:50,844 - INFO - UserRegistry initialized with file: ./config/users.json, reload interval: 600s
+2026-02-21 13:39:50,844 - INFO - Initializing DAGComputeServer...
+2026-02-21 13:39:50,844 - INFO - Found 2 DAG configuration file(s)
+2026-02-21 13:39:50,844 - INFO - Loading DAG from: ./config/dags/metronome_heartbeat.json
+2026-02-21 13:39:50,844 - INFO - DAG heartbeat_monitor: No start_time provided, running perpetually
+2026-02-21 13:39:50,844 - INFO - Creating subscriber heartbeat_subscriber_1 for source metronome
+2026-02-21 13:39:50,848 - INFO - DataSubscriber heartbeat_subscriber_1 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-02-21 13:39:50,848 - INFO - Created subscriber: heartbeat_subscriber_1
+2026-02-21 13:39:50,848 - INFO - Creating subscriber heartbeat_subscriber_2 for source metronome
+2026-02-21 13:39:50,848 - INFO - DataSubscriber heartbeat_subscriber_2 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-02-21 13:39:50,848 - INFO - Created subscriber: heartbeat_subscriber_2
+2026-02-21 13:39:50,848 - INFO - Creating subscriber heartbeat_subscriber_3 for source metronome
+2026-02-21 13:39:50,848 - INFO - DataSubscriber heartbeat_subscriber_3 initialized for source metronome (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-02-21 13:39:50,848 - INFO - Created subscriber: heartbeat_subscriber_3
+2026-02-21 13:39:50,848 - INFO - Creating subscriber composite_heartbeat_subscriber for source fanin://heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3
+2026-02-21 13:39:50,850 - INFO - DataSubscriber composite_heartbeat_subscriber initialized for source heartbeat_subscriber_1,heartbeat_subscriber_2,heartbeat_subscriber_3 (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-02-21 13:39:50,850 - INFO - CompositeDataSubscriber composite_heartbeat_subscriber initialized
+2026-02-21 13:39:50,850 - INFO - Created subscriber: composite_heartbeat_subscriber
+2026-02-21 13:39:50,850 - INFO - DataSubscriber heartbeat_subscriber_1 queue updated (Priority: False)
+2026-02-21 13:39:50,850 - INFO - Added subscriber 'heartbeat_subscriber_1' to composite 'composite_heartbeat_subscriber'
+2026-02-21 13:39:50,850 - INFO - DataSubscriber heartbeat_subscriber_2 queue updated (Priority: False)
+2026-02-21 13:39:50,850 - INFO - Added subscriber 'heartbeat_subscriber_2' to composite 'composite_heartbeat_subscriber'
+2026-02-21 13:39:50,850 - INFO - DataSubscriber heartbeat_subscriber_3 queue updated (Priority: False)
+2026-02-21 13:39:50,850 - INFO - Added subscriber 'heartbeat_subscriber_3' to composite 'composite_heartbeat_subscriber'
+2026-02-21 13:39:50,850 - INFO - Creating publisher heartbeat_publisher for destination mem://topic/heartbeat_topic
+2026-02-21 13:39:50,851 - INFO - DataPublisher heartbeat_publisher initialized for destination mem://topic/heartbeat_topic (Priority: False, Key: _dag_priority)
+2026-02-21 13:39:50,851 - INFO - InMemoryPubSub initialized
+2026-02-21 13:39:50,851 - INFO - Created topic: heartbeat_topic
+2026-02-21 13:39:50,851 - INFO - InMemoryDataPublisher created for mem://topic/heartbeat_topic
+2026-02-21 13:39:50,851 - INFO - Created publisher: heartbeat_publisher
+2026-02-21 13:39:50,851 - INFO - Creating publisher heartbeat_log for destination file:///tmp/log/dagserver/heartbeat.jsonl
+2026-02-21 13:39:50,852 - INFO - DataPublisher heartbeat_log initialized for destination file:///tmp/log/dagserver/heartbeat.jsonl (Priority: False, Key: _dag_priority)
+2026-02-21 13:39:50,852 - INFO - File publisher created for /tmp/log/dagserver/heartbeat.jsonl
+2026-02-21 13:39:50,852 - INFO - Created publisher: heartbeat_log
+2026-02-21 13:39:50,852 - INFO - Created calculator: heartbeat_enrichment
+2026-02-21 13:39:50,852 - INFO - Attempting to instantiate RandomCalculator from core.calculator.random_calculator
+2026-02-21 13:39:50,852 - INFO - Successfully instantiated RandomCalculator
+2026-02-21 13:39:50,852 - INFO - Created calculator: random_calculator
+2026-02-21 13:39:50,852 - INFO - Created node: metronome_node
+2026-02-21 13:39:50,852 - INFO - Created node: random_calculator_node
+2026-02-21 13:39:50,852 - INFO - Created edge: metronome_node_to_random_calculator_node
+2026-02-21 13:39:50,852 - INFO - DAG built successfully with 2 nodes and 1 edges
+2026-02-21 13:39:50,852 - INFO - ComputeGraph heartbeat_monitor initialized
+2026-02-21 13:39:50,852 - INFO - Successfully loaded DAG: heartbeat_monitor
+2026-02-21 13:39:50,852 - INFO - Loading DAG from: ./config/dags/ash_dag_with_auto_clone.json
+2026-02-21 13:39:50,853 - INFO - DAG ash_dag_with_auto_clone: Using duration-based time window
+2026-02-21 13:39:50,853 - INFO -   start_time=0800, duration=10h15m, end_time=1815
+2026-02-21 13:39:50,853 - INFO - Creating subscriber kafka_input for source kafka://topic/input_data
+2026-02-21 13:39:50,876 - INFO - DataSubscriber kafka_input initialized for source kafka://topic/input_data (Priority: False, Key: _dag_priority, AutoPackage: True)
+2026-02-21 13:39:50,876 - INFO - Kafka consumer connection attempt 1/5 to localhost:9092
+2026-02-21 13:39:50,877 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connecting> [IPv4 ('127.0.0.1', 9092)]>: connecting to localhost:9092 [('127.0.0.1', 9092) IPv4]
+2026-02-21 13:39:50,880 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <checking_api_versions_recv> [IPv4 ('127.0.0.1', 9092)]>: Broker version identified as 2.6
+2026-02-21 13:39:50,880 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Connection complete.
+2026-02-21 13:39:50,880 - INFO - Updating subscribed topics to: ('input_data',)
+2026-02-21 13:39:50,881 - INFO - kafka-python consumer connected successfully: ['input_data'] (group_id=etl_consumer, attempt=1)
+2026-02-21 13:39:50,881 - INFO - Kafka subscriber created for topic input_data using kafka-python
+2026-02-21 13:39:50,881 - INFO - Created subscriber: kafka_input
+2026-02-21 13:39:50,881 - INFO - Creating publisher file_output for destination file:///tmp/data/output.json
+2026-02-21 13:39:50,881 - INFO - DataPublisher file_output initialized for destination file:///tmp/data/output.json (Priority: False, Key: _dag_priority)
+2026-02-21 13:39:50,881 - INFO - File publisher created for /tmp/data/output.json
+2026-02-21 13:39:50,881 - INFO - Created publisher: file_output
+2026-02-21 13:39:50,881 - INFO - Created calculator: data_transformer
+2026-02-21 13:39:50,881 - INFO - Created transformer: null_transformer
+2026-02-21 13:39:50,881 - INFO - Created node: input_node
+2026-02-21 13:39:50,881 - INFO - Created node: calc_node
+2026-02-21 13:39:50,881 - INFO - Created node: output_node
+2026-02-21 13:39:50,881 - INFO - Created edge: input_node_to_calc_node
+2026-02-21 13:39:50,881 - INFO - Created edge: calc_node_to_output_node
+2026-02-21 13:39:50,881 - INFO - DAG built successfully with 3 nodes and 2 edges
+2026-02-21 13:39:50,881 - INFO - ComputeGraph ash_dag_with_auto_clone initialized
+2026-02-21 13:39:50,881 - INFO - Successfully loaded DAG: ash_dag_with_auto_clone
+2026-02-21 13:39:50,882 - INFO - AutoClone manager loop started
+2026-02-21 13:39:50,882 - INFO - AutoClone manager thread started
+2026-02-21 13:39:50,882 - INFO - Time window monitor: Starting monitoring loop
+2026-02-21 13:39:50,882 - INFO - Time window monitor thread started (checks every 60 seconds)
+2026-02-21 13:39:50,882 - INFO - Connecting to Zookeeper at localhost:2181...
+2026-02-21 13:39:50,882 - INFO - DAGComputeServer initialized with 2 DAG(s)
+2026-02-21 13:39:50,883 - INFO - ======================================================================
+2026-02-21 13:39:50,883 - INFO - AUTO-START: Checking which DAGs should be started on system startup
+2026-02-21 13:39:50,883 - INFO - ======================================================================
+2026-02-21 13:39:50,883 - INFO - AUTO-START: DAG 'heartbeat_monitor' is PERPETUAL - will be started
+2026-02-21 13:39:50,883 - INFO - AUTO-START: DAG 'ash_dag_with_auto_clone' is WITHIN TIME WINDOW (0800-1815) - will be started
+2026-02-21 13:39:50,883 - INFO - AUTO-START: 2 DAG(s) will be started with 5 second intervals
+2026-02-21 13:39:50,883 - INFO - ----------------------------------------------------------------------
+2026-02-21 13:39:50,883 - INFO - 
+2026-02-21 13:39:50,883 - INFO - **********************************************************************
+2026-02-21 13:39:50,883 - INFO - *  AUTO-START: STARTING DAG 'heartbeat_monitor'
+2026-02-21 13:39:50,883 - INFO - *  Reason: PERPETUAL (no time window)
+2026-02-21 13:39:50,883 - INFO - *  Progress: 1 of 2
+2026-02-21 13:39:50,883 - INFO - **********************************************************************
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_1 started
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-02-21 13:39:50,884 - INFO - Connecting to localhost(127.0.0.1):2181, use_ssl: False
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_2 started
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_3 started
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-02-21 13:39:50,884 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' started 3/3 child subscribers
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-02-21 13:39:50,884 - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-02-21 13:39:50,884 - INFO - Subscriber composite_heartbeat_subscriber resumed
+2026-02-21 13:39:50,884 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' resumed 3/3 child subscribers
+2026-02-21 13:39:50,885 - INFO - Metronome node metronome_node started with interval 10s
+2026-02-21 13:39:50,885 - INFO - PUBLISH [heartbeat_publisher]:
+2026-02-21 13:39:50,885 - INFO - ComputeGraph heartbeat_monitor started
+2026-02-21 13:39:50,885 - INFO -   Destination: mem://topic/heartbeat_topic
+2026-02-21 13:39:50,885 - INFO - 
+2026-02-21 13:39:50,885 - INFO -   Type: dict
+2026-02-21 13:39:50,885 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:39:50,885 - INFO -   Count: 1
+2026-02-21 13:39:50,885 - INFO - █  DAG STATE CHANGE: STARTED
+2026-02-21 13:39:50,885 - INFO -   Preview: {"metronome_tick": 0, "dag_name": "heartbeat_monitor", "status": "healthy"}
+2026-02-21 13:39:50,885 - INFO - █  DAG Name: heartbeat_monitor
+2026-02-21 13:39:50,885 - INFO - PUBLISH [heartbeat_log]:
+2026-02-21 13:39:50,885 - INFO - █  Reason: User/system initiated start (main process)
+2026-02-21 13:39:50,885 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
+2026-02-21 13:39:50,885 - INFO - █  Timestamp: 2026-02-21 13:39:50
+2026-02-21 13:39:50,885 - INFO -   Type: dict
+2026-02-21 13:39:50,885 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:39:50,886 - INFO -   Count: 1
+2026-02-21 13:39:50,886 - INFO - 
+2026-02-21 13:39:50,886 - INFO -   Preview: {"metronome_tick": 0, "dag_name": "heartbeat_monitor", "status": "healthy"}
+2026-02-21 13:39:50,886 - INFO - AUTO-START: Successfully started DAG 'heartbeat_monitor'
+2026-02-21 13:39:50,886 - INFO - AUTO-START: Pausing 5 seconds before starting next DAG...
+2026-02-21 13:39:50,886 - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-02-21 13:39:50,889 - INFO - Zookeeper connection established, state: CONNECTED
+2026-02-21 13:39:50,890 - INFO - Connected to Zookeeper, starting election...
+2026-02-21 13:39:50,893 - INFO - Elected as primary DAG server
+2026-02-21 13:39:50,893 - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber heartbeat_subscriber_1 resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber heartbeat_subscriber_2 resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber heartbeat_subscriber_3 resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber composite_heartbeat_subscriber resumed
+2026-02-21 13:39:50,893 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' resumed 3/3 child subscribers
+2026-02-21 13:39:50,893 - INFO - ComputeGraph heartbeat_monitor resumed
+2026-02-21 13:39:50,893 - INFO - Subscriber kafka_input resumed
+2026-02-21 13:39:50,893 - INFO - ComputeGraph ash_dag_with_auto_clone resumed
+2026-02-21 13:39:55,882 - INFO - Time window monitor: Beginning DAG monitoring
+2026-02-21 13:39:55,883 - INFO - 
+2026-02-21 13:39:55,883 - INFO - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2026-02-21 13:39:55,883 - INFO - !  TIME WINDOW MONITOR: DAG ENTERING TIME WINDOW
+2026-02-21 13:39:55,883 - INFO - !  DAG: ash_dag_with_auto_clone
+2026-02-21 13:39:55,883 - INFO - !  Window: 0800 - 1815
+2026-02-21 13:39:55,883 - INFO - !  ACTION: Starting DAG automatically
+2026-02-21 13:39:55,883 - INFO - !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2026-02-21 13:39:55,883 - INFO - DAG ash_dag_with_auto_clone: Started within time window - normal scheduling
+2026-02-21 13:39:55,884 - INFO - Subscriber kafka_input started
+2026-02-21 13:39:55,884 - INFO - Subscriber kafka_input resumed
+2026-02-21 13:39:55,885 - INFO - PUBLISH [file_output]:
+2026-02-21 13:39:55,885 - INFO -   Destination: file:///tmp/data/output.json
+2026-02-21 13:39:55,885 - INFO - DAG ash_dag_with_auto_clone: Time window checker started
+2026-02-21 13:39:55,885 - INFO -   Type: dict
+2026-02-21 13:39:55,885 - INFO -   Count: 1
+2026-02-21 13:39:55,885 - INFO -   Preview: {}
+2026-02-21 13:39:55,885 - INFO - DAG ash_dag_with_auto_clone: Time window monitor started (0800-1815)
+2026-02-21 13:39:55,885 - INFO - ComputeGraph ash_dag_with_auto_clone started
+2026-02-21 13:39:55,885 - INFO - 
+2026-02-21 13:39:55,885 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:39:55,885 - INFO - █  DAG STATE CHANGE: STARTED
+2026-02-21 13:39:55,885 - INFO - █  DAG Name: ash_dag_with_auto_clone
+2026-02-21 13:39:55,885 - INFO - █  Reason: User/system initiated start (main process)
+2026-02-21 13:39:55,885 - INFO - █  Timestamp: 2026-02-21 13:39:55
+2026-02-21 13:39:55,885 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:39:55,885 - INFO - 
+2026-02-21 13:39:55,887 - INFO - 
+2026-02-21 13:39:55,887 - INFO - **********************************************************************
+2026-02-21 13:39:55,887 - INFO - *  AUTO-START: STARTING DAG 'ash_dag_with_auto_clone'
+2026-02-21 13:39:55,887 - INFO - *  Reason: WITHIN TIME WINDOW (0800-1815)
+2026-02-21 13:39:55,887 - INFO - *  Progress: 2 of 2
+2026-02-21 13:39:55,887 - INFO - **********************************************************************
+2026-02-21 13:39:55,887 - WARNING - DAG ash_dag_with_auto_clone is already running in main process
+2026-02-21 13:39:55,887 - INFO - AUTO-START: Successfully started DAG 'ash_dag_with_auto_clone'
+2026-02-21 13:39:55,887 - INFO - 
+2026-02-21 13:39:55,887 - INFO - ======================================================================
+2026-02-21 13:39:55,887 - INFO - AUTO-START: Completed - 2 DAG(s) processed
+2026-02-21 13:39:55,887 - INFO - ======================================================================
+2026-02-21 13:39:55,887 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=oryxpro:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to oryxpro:9092 [('127.0.1.1', 9092) IPv4]
+2026-02-21 13:39:55,888 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
+2026-02-21 13:39:55,888 - INFO - Loaded 1 keys from data/inmemory_redisclone.json (dump from 2026-01-05T10:40:17.068018, skipped 0)
+2026-02-21 13:39:55,888 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=bootstrap-0 host=localhost:9092 <connected> [IPv4 ('127.0.0.1', 9092)]>: Closing connection. 
+2026-02-21 13:39:55,888 - INFO - InMemoryRedisClone initialized: dump_file=data/inmemory_redisclone.json, dump_interval=300s
+2026-02-21 13:39:55,889 - INFO - DAGComputeServer initialized in single-process mode
+2026-02-21 13:39:55,889 - INFO - Core components initialized successfully
+2026-02-21 13:39:55,889 - INFO - Initializing route handlers...
+2026-02-21 13:39:55,910 - INFO - Metrics routes initialized
+2026-02-21 13:39:55,920 - INFO - Route handlers initialized successfully
+2026-02-21 13:39:55,920 - INFO - DishtaYantra Web Application initialized successfully
+2026-02-21 13:39:55,920 - INFO - Component [Web Application]: OK - Flask application initialized
+2026-02-21 13:39:55,920 - INFO - DishtaYantra Web Application initialized successfully
+2026-02-21 13:39:55,920 - INFO - Component [Host]: OK - 0.0.0.0
+2026-02-21 13:39:55,920 - INFO - Component [Port]: OK - 5002
+2026-02-21 13:39:55,920 - INFO - Component [Debug Mode]: OK - Disabled
+2026-02-21 13:39:55,920 - INFO - Component [SSL/TLS]: OK - Disabled
+2026-02-21 13:39:55,920 - INFO - Component [Worker Pool]: OK - Disabled (single-process)
+2026-02-21 13:39:55,920 - INFO - Component [JVM Manager]: OK - Disabled
+2026-02-21 13:39:55,920 - INFO - Component [CPP Manager]: OK - Disabled
+2026-02-21 13:39:55,920 - INFO - Component [Rust Manager]: OK - Disabled
+2026-02-21 13:39:55,920 - INFO - --------------------------------------------------------------------------------
+2026-02-21 13:39:55,920 - INFO - STARTUP SEQUENCE COMPLETE - SERVER CONFIGURATION:
+2026-02-21 13:39:55,920 - INFO -   Host: 0.0.0.0
+2026-02-21 13:39:55,920 - INFO -   Port: 5002
+2026-02-21 13:39:55,920 - INFO -   Debug: False
+2026-02-21 13:39:55,920 - INFO -   SSL: Disabled
+2026-02-21 13:39:55,920 - INFO -   Worker Pool: Disabled
+2026-02-21 13:39:55,920 - INFO -   JVM Manager: Disabled
+2026-02-21 13:39:55,920 - INFO -   CPP Manager: Disabled
+2026-02-21 13:39:55,920 - INFO -   Rust Manager: Disabled
+2026-02-21 13:39:55,920 - INFO - --------------------------------------------------------------------------------
+2026-02-21 13:39:55,920 - INFO - SERVER READY - Listening on http://0.0.0.0:5002
+2026-02-21 13:39:55,920 - INFO - ================================================================================
+2026-02-21 13:39:55,920 - INFO - Starting DishtaYantra Web Application on 0.0.0.0:5002
+2026-02-21 13:39:55,922 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:5002
- * Running on http://192.168.2.57:5002
-2026-02-17 16:30:05,744 - INFO - [33mPress CTRL+C to quit[0m
-2026-02-17 16:30:15,709 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:30:15,710 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:30:15,710 - INFO -   Type: dict
-2026-02-17 16:30:15,710 - INFO -   Count: 2
-2026-02-17 16:30:15,710 - INFO -   Preview: {"metronome_tick": 1, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:15,710 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:30:15,711 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:15,711 - INFO -   Type: dict
-2026-02-17 16:30:15,711 - INFO -   Count: 2
-2026-02-17 16:30:15,711 - INFO -   Preview: {"metronome_tick": 1, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:15,711 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:30:25,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:30:25,708 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:30:25,708 - INFO -   Type: dict
-2026-02-17 16:30:25,708 - INFO -   Count: 3
-2026-02-17 16:30:25,708 - INFO -   Preview: {"metronome_tick": 2, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:25,708 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:30:25,708 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:25,708 - INFO -   Type: dict
-2026-02-17 16:30:25,708 - INFO -   Count: 3
-2026-02-17 16:30:25,708 - INFO -   Preview: {"metronome_tick": 2, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:25,708 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:30:29,929 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:29,930 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:29,930 - INFO -   Type: dict
-2026-02-17 16:30:29,930 - INFO -   Count: 1
-2026-02-17 16:30:29,930 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:29,937 - INFO - PUBLISH [file_output]:
-2026-02-17 16:30:29,937 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:30:29,937 - INFO -   Type: dict
-2026-02-17 16:30:29,937 - INFO -   Count: 1
-2026-02-17 16:30:29,937 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:30,728 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:30:30,728 - INFO -   Source: metronome
-2026-02-17 16:30:30,729 - INFO -   Type: dict
-2026-02-17 16:30:30,729 - INFO -   Count: 1
-2026-02-17 16:30:30,729 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030"}
-2026-02-17 16:30:30,932 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:30,932 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:30,932 - INFO -   Type: dict
-2026-02-17 16:30:30,932 - INFO -   Count: 2
-2026-02-17 16:30:30,932 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:31,935 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:31,935 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:31,935 - INFO -   Type: dict
-2026-02-17 16:30:31,936 - INFO -   Count: 3
-2026-02-17 16:30:31,936 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:32,938 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:32,938 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:32,938 - INFO -   Type: dict
-2026-02-17 16:30:32,938 - INFO -   Count: 4
-2026-02-17 16:30:32,939 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:33,941 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:33,941 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:33,941 - INFO -   Type: dict
-2026-02-17 16:30:33,942 - INFO -   Count: 5
-2026-02-17 16:30:33,942 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:34,944 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:34,944 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:34,944 - INFO -   Type: dict
-2026-02-17 16:30:34,944 - INFO -   Count: 6
-2026-02-17 16:30:34,944 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:35,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:30:35,709 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:30:35,709 - INFO -   Type: dict
-2026-02-17 16:30:35,709 - INFO -   Count: 4
-2026-02-17 16:30:35,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030", "metronome_tick": 3, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:35,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:30:35,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:35,709 - INFO -   Type: dict
-2026-02-17 16:30:35,709 - INFO -   Count: 4
-2026-02-17 16:30:35,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030", "metronome_tick": 3, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:35,710 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:30:35,946 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:35,946 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:35,946 - INFO -   Type: dict
-2026-02-17 16:30:35,946 - INFO -   Count: 7
-2026-02-17 16:30:35,946 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:36,949 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:36,950 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:36,950 - INFO -   Type: dict
-2026-02-17 16:30:36,950 - INFO -   Count: 8
-2026-02-17 16:30:36,950 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:37,952 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:37,953 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:37,953 - INFO -   Type: dict
-2026-02-17 16:30:37,953 - INFO -   Count: 9
-2026-02-17 16:30:37,953 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:38,956 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:30:38,956 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:30:38,956 - INFO -   Type: dict
-2026-02-17 16:30:38,956 - INFO -   Count: 10
-2026-02-17 16:30:38,957 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:30:45,706 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:30:45,707 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:30:45,707 - INFO -   Type: dict
-2026-02-17 16:30:45,707 - INFO -   Count: 5
-2026-02-17 16:30:45,707 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030", "metronome_tick": 4, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:45,707 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:30:45,707 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:45,707 - INFO -   Type: dict
-2026-02-17 16:30:45,707 - INFO -   Count: 5
-2026-02-17 16:30:45,707 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030", "metronome_tick": 4, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:45,707 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:30:55,710 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:30:55,710 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:30:55,710 - INFO -   Type: dict
-2026-02-17 16:30:55,710 - INFO -   Count: 6
-2026-02-17 16:30:55,710 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030", "metronome_tick": 5, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:55,711 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:30:55,711 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:30:55,711 - INFO -   Type: dict
-2026-02-17 16:30:55,711 - INFO -   Count: 6
-2026-02-17 16:30:55,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163030", "metronome_tick": 5, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:30:55,712 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:31:00,782 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:31:00,782 - INFO -   Source: metronome
-2026-02-17 16:31:00,782 - INFO -   Type: dict
-2026-02-17 16:31:00,782 - INFO -   Count: 2
-2026-02-17 16:31:00,782 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100"}
-2026-02-17 16:31:00,787 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_2]:
-2026-02-17 16:31:00,787 - INFO -   Source: metronome
-2026-02-17 16:31:00,787 - INFO -   Type: dict
-2026-02-17 16:31:00,787 - INFO -   Count: 1
-2026-02-17 16:31:00,787 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100"}
-2026-02-17 16:31:05,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:31:05,708 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:31:05,708 - INFO -   Type: dict
-2026-02-17 16:31:05,708 - INFO -   Count: 7
-2026-02-17 16:31:05,708 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100", "metronome_tick": 6, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:05,708 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:31:05,708 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:31:05,708 - INFO -   Type: dict
-2026-02-17 16:31:05,708 - INFO -   Count: 7
-2026-02-17 16:31:05,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100", "metronome_tick": 6, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:05,709 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:31:15,713 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:31:15,713 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:31:15,713 - INFO -   Type: dict
-2026-02-17 16:31:15,713 - INFO -   Count: 8
-2026-02-17 16:31:15,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100", "metronome_tick": 7, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:15,713 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:31:15,714 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:31:15,714 - INFO -   Type: dict
-2026-02-17 16:31:15,714 - INFO -   Count: 8
-2026-02-17 16:31:15,714 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100", "metronome_tick": 7, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:15,714 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:31:25,712 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:31:25,712 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:31:25,712 - INFO -   Type: dict
-2026-02-17 16:31:25,712 - INFO -   Count: 9
-2026-02-17 16:31:25,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100", "metronome_tick": 8, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:25,713 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:31:25,713 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:31:25,713 - INFO -   Type: dict
-2026-02-17 16:31:25,713 - INFO -   Count: 9
-2026-02-17 16:31:25,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163100", "metronome_tick": 8, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:25,713 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:31:30,813 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:31:30,814 - INFO -   Source: metronome
-2026-02-17 16:31:30,814 - INFO -   Type: dict
-2026-02-17 16:31:30,814 - INFO -   Count: 3
-2026-02-17 16:31:30,814 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130"}
-2026-02-17 16:31:35,711 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:31:35,711 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:31:35,711 - INFO -   Type: dict
-2026-02-17 16:31:35,711 - INFO -   Count: 10
-2026-02-17 16:31:35,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130", "metronome_tick": 9, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:35,711 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:31:35,711 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:31:35,711 - INFO -   Type: dict
-2026-02-17 16:31:35,711 - INFO -   Count: 10
-2026-02-17 16:31:35,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130", "metronome_tick": 9, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:35,711 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:31:45,712 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:31:45,713 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:31:45,713 - INFO -   Type: dict
-2026-02-17 16:31:45,713 - INFO -   Count: 11
-2026-02-17 16:31:45,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130", "metronome_tick": 10, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:45,713 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:31:45,713 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:31:45,713 - INFO -   Type: dict
-2026-02-17 16:31:45,713 - INFO -   Count: 11
-2026-02-17 16:31:45,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130", "metronome_tick": 10, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:45,713 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:31:55,710 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:31:55,710 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:31:55,711 - INFO -   Type: dict
-2026-02-17 16:31:55,711 - INFO -   Count: 12
-2026-02-17 16:31:55,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130", "metronome_tick": 11, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:55,711 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:31:55,712 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:31:55,712 - INFO -   Type: dict
-2026-02-17 16:31:55,712 - INFO -   Count: 12
-2026-02-17 16:31:55,712 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163130", "metronome_tick": 11, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:31:55,712 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:32:00,844 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:32:00,844 - INFO -   Source: metronome
-2026-02-17 16:32:00,844 - INFO -   Type: dict
-2026-02-17 16:32:00,845 - INFO -   Count: 4
-2026-02-17 16:32:00,845 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200"}
-2026-02-17 16:32:00,865 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_1]:
-2026-02-17 16:32:00,865 - INFO -   Source: metronome
-2026-02-17 16:32:00,865 - INFO -   Type: dict
-2026-02-17 16:32:00,866 - INFO -   Count: 1
-2026-02-17 16:32:00,866 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200"}
-2026-02-17 16:32:00,872 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_2]:
-2026-02-17 16:32:00,872 - INFO -   Source: metronome
-2026-02-17 16:32:00,872 - INFO -   Type: dict
-2026-02-17 16:32:00,873 - INFO -   Count: 2
-2026-02-17 16:32:00,873 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200"}
-2026-02-17 16:32:05,713 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:32:05,714 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:32:05,714 - INFO -   Type: dict
-2026-02-17 16:32:05,714 - INFO -   Count: 13
-2026-02-17 16:32:05,714 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200", "metronome_tick": 12, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:05,714 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:32:05,714 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:32:05,715 - INFO -   Type: dict
-2026-02-17 16:32:05,715 - INFO -   Count: 13
-2026-02-17 16:32:05,715 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200", "metronome_tick": 12, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:05,715 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:32:15,709 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:32:15,709 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:32:15,709 - INFO -   Type: dict
-2026-02-17 16:32:15,709 - INFO -   Count: 14
-2026-02-17 16:32:15,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200", "metronome_tick": 13, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:15,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:32:15,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:32:15,709 - INFO -   Type: dict
-2026-02-17 16:32:15,709 - INFO -   Count: 14
-2026-02-17 16:32:15,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200", "metronome_tick": 13, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:15,710 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:32:25,707 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:32:25,707 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:32:25,707 - INFO -   Type: dict
-2026-02-17 16:32:25,707 - INFO -   Count: 15
-2026-02-17 16:32:25,708 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200", "metronome_tick": 14, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:25,708 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:32:25,708 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:32:25,708 - INFO -   Type: dict
-2026-02-17 16:32:25,708 - INFO -   Count: 15
-2026-02-17 16:32:25,708 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163200", "metronome_tick": 14, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:25,708 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:32:30,891 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:32:30,892 - INFO -   Source: metronome
-2026-02-17 16:32:30,892 - INFO -   Type: dict
-2026-02-17 16:32:30,892 - INFO -   Count: 5
-2026-02-17 16:32:30,892 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230"}
-2026-02-17 16:32:35,715 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:32:35,715 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:32:35,715 - INFO -   Type: dict
-2026-02-17 16:32:35,715 - INFO -   Count: 16
-2026-02-17 16:32:35,716 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230", "metronome_tick": 15, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:35,716 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:32:35,716 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:32:35,716 - INFO -   Type: dict
-2026-02-17 16:32:35,716 - INFO -   Count: 16
-2026-02-17 16:32:35,716 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230", "metronome_tick": 15, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:35,716 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:32:45,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:32:45,709 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:32:45,709 - INFO -   Type: dict
-2026-02-17 16:32:45,709 - INFO -   Count: 17
-2026-02-17 16:32:45,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230", "metronome_tick": 16, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:45,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:32:45,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:32:45,709 - INFO -   Type: dict
-2026-02-17 16:32:45,709 - INFO -   Count: 17
-2026-02-17 16:32:45,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230", "metronome_tick": 16, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:45,710 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:32:55,713 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:32:55,713 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:32:55,713 - INFO -   Type: dict
-2026-02-17 16:32:55,713 - INFO -   Count: 18
-2026-02-17 16:32:55,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230", "metronome_tick": 17, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:55,714 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:32:55,714 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:32:55,714 - INFO -   Type: dict
-2026-02-17 16:32:55,714 - INFO -   Count: 18
-2026-02-17 16:32:55,714 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163230", "metronome_tick": 17, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:32:55,714 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:33:00,931 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:33:00,932 - INFO -   Source: metronome
-2026-02-17 16:33:00,932 - INFO -   Type: dict
-2026-02-17 16:33:00,932 - INFO -   Count: 6
-2026-02-17 16:33:00,932 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300"}
-2026-02-17 16:33:00,947 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_2]:
-2026-02-17 16:33:00,948 - INFO -   Source: metronome
-2026-02-17 16:33:00,948 - INFO -   Type: dict
-2026-02-17 16:33:00,948 - INFO -   Count: 3
-2026-02-17 16:33:00,948 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300"}
-2026-02-17 16:33:05,716 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:33:05,716 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:33:05,716 - INFO -   Type: dict
-2026-02-17 16:33:05,716 - INFO -   Count: 19
-2026-02-17 16:33:05,716 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300", "metronome_tick": 18, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:05,716 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:33:05,716 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:33:05,717 - INFO -   Type: dict
-2026-02-17 16:33:05,717 - INFO -   Count: 19
-2026-02-17 16:33:05,717 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300", "metronome_tick": 18, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:05,717 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:33:15,711 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:33:15,711 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:33:15,711 - INFO -   Type: dict
-2026-02-17 16:33:15,711 - INFO -   Count: 20
-2026-02-17 16:33:15,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300", "metronome_tick": 19, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:15,711 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:33:15,712 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:33:15,712 - INFO -   Type: dict
-2026-02-17 16:33:15,712 - INFO -   Count: 20
-2026-02-17 16:33:15,712 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300", "metronome_tick": 19, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:15,712 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:33:25,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:33:25,709 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:33:25,709 - INFO -   Type: dict
-2026-02-17 16:33:25,709 - INFO -   Count: 21
-2026-02-17 16:33:25,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300", "metronome_tick": 20, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:25,710 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:33:25,710 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:33:25,710 - INFO -   Type: dict
-2026-02-17 16:33:25,710 - INFO -   Count: 21
-2026-02-17 16:33:25,710 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163300", "metronome_tick": 20, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:25,710 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:33:30,976 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:33:30,976 - INFO -   Source: metronome
-2026-02-17 16:33:30,976 - INFO -   Type: dict
-2026-02-17 16:33:30,976 - INFO -   Count: 7
-2026-02-17 16:33:30,977 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330"}
-2026-02-17 16:33:35,714 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:33:35,714 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:33:35,714 - INFO -   Type: dict
-2026-02-17 16:33:35,714 - INFO -   Count: 22
-2026-02-17 16:33:35,715 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330", "metronome_tick": 21, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:35,715 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:33:35,715 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:33:35,715 - INFO -   Type: dict
-2026-02-17 16:33:35,715 - INFO -   Count: 22
-2026-02-17 16:33:35,715 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330", "metronome_tick": 21, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:35,716 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:33:45,707 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:33:45,707 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:33:45,707 - INFO -   Type: dict
-2026-02-17 16:33:45,707 - INFO -   Count: 23
-2026-02-17 16:33:45,707 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330", "metronome_tick": 22, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:45,707 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:33:45,707 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:33:45,707 - INFO -   Type: dict
-2026-02-17 16:33:45,707 - INFO -   Count: 23
-2026-02-17 16:33:45,707 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330", "metronome_tick": 22, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:45,708 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:33:55,710 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:33:55,711 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:33:55,711 - INFO -   Type: dict
-2026-02-17 16:33:55,711 - INFO -   Count: 24
-2026-02-17 16:33:55,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330", "metronome_tick": 23, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:55,711 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:33:55,711 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:33:55,711 - INFO -   Type: dict
-2026-02-17 16:33:55,711 - INFO -   Count: 24
-2026-02-17 16:33:55,711 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163330", "metronome_tick": 23, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:33:55,711 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:34:01,014 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:34:01,014 - INFO -   Source: metronome
-2026-02-17 16:34:01,014 - INFO -   Type: dict
-2026-02-17 16:34:01,015 - INFO -   Count: 8
-2026-02-17 16:34:01,015 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401"}
-2026-02-17 16:34:01,021 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_2]:
-2026-02-17 16:34:01,021 - INFO -   Source: metronome
-2026-02-17 16:34:01,021 - INFO -   Type: dict
-2026-02-17 16:34:01,021 - INFO -   Count: 4
-2026-02-17 16:34:01,021 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401"}
-2026-02-17 16:34:01,026 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_1]:
-2026-02-17 16:34:01,027 - INFO -   Source: metronome
-2026-02-17 16:34:01,027 - INFO -   Type: dict
-2026-02-17 16:34:01,027 - INFO -   Count: 2
-2026-02-17 16:34:01,027 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401"}
-2026-02-17 16:34:05,709 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:34:05,709 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:34:05,709 - INFO -   Type: dict
-2026-02-17 16:34:05,709 - INFO -   Count: 25
-2026-02-17 16:34:05,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401", "metronome_tick": 24, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:05,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:34:05,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:34:05,709 - INFO -   Type: dict
-2026-02-17 16:34:05,709 - INFO -   Count: 25
-2026-02-17 16:34:05,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401", "metronome_tick": 24, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:05,709 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:34:15,713 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:34:15,713 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:34:15,713 - INFO -   Type: dict
-2026-02-17 16:34:15,713 - INFO -   Count: 26
-2026-02-17 16:34:15,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401", "metronome_tick": 25, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:15,713 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:34:15,714 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:34:15,714 - INFO -   Type: dict
-2026-02-17 16:34:15,714 - INFO -   Count: 26
-2026-02-17 16:34:15,714 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401", "metronome_tick": 25, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:15,714 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:34:25,712 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:34:25,712 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:34:25,712 - INFO -   Type: dict
-2026-02-17 16:34:25,713 - INFO -   Count: 27
-2026-02-17 16:34:25,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401", "metronome_tick": 26, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:25,713 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:34:25,713 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:34:25,713 - INFO -   Type: dict
-2026-02-17 16:34:25,713 - INFO -   Count: 27
-2026-02-17 16:34:25,713 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163401", "metronome_tick": 26, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:25,713 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:34:31,050 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:34:31,051 - INFO -   Source: metronome
-2026-02-17 16:34:31,051 - INFO -   Type: dict
-2026-02-17 16:34:31,051 - INFO -   Count: 9
-2026-02-17 16:34:31,051 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431"}
-2026-02-17 16:34:35,716 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:34:35,717 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:34:35,717 - INFO -   Type: dict
-2026-02-17 16:34:35,717 - INFO -   Count: 28
-2026-02-17 16:34:35,717 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431", "metronome_tick": 27, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:35,718 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:34:35,718 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:34:35,718 - INFO -   Type: dict
-2026-02-17 16:34:35,718 - INFO -   Count: 28
-2026-02-17 16:34:35,718 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431", "metronome_tick": 27, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:35,718 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:34:39,592 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:39,592 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:39,592 - INFO -   Type: dict
-2026-02-17 16:34:39,592 - INFO -   Count: 11
-2026-02-17 16:34:39,593 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:40,595 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:40,596 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:40,596 - INFO -   Type: dict
-2026-02-17 16:34:40,596 - INFO -   Count: 12
-2026-02-17 16:34:40,596 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:41,598 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:41,598 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:41,598 - INFO -   Type: dict
-2026-02-17 16:34:41,598 - INFO -   Count: 13
-2026-02-17 16:34:41,598 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:42,601 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:42,601 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:42,601 - INFO -   Type: dict
-2026-02-17 16:34:42,601 - INFO -   Count: 14
-2026-02-17 16:34:42,601 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:43,604 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:43,604 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:43,604 - INFO -   Type: dict
-2026-02-17 16:34:43,604 - INFO -   Count: 15
-2026-02-17 16:34:43,604 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:44,607 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:44,607 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:44,607 - INFO -   Type: dict
-2026-02-17 16:34:44,607 - INFO -   Count: 16
-2026-02-17 16:34:44,607 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:45,609 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:45,609 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:45,609 - INFO -   Type: dict
-2026-02-17 16:34:45,609 - INFO -   Count: 17
-2026-02-17 16:34:45,609 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:45,717 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:34:45,717 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:34:45,717 - INFO -   Type: dict
-2026-02-17 16:34:45,717 - INFO -   Count: 29
-2026-02-17 16:34:45,717 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431", "metronome_tick": 28, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:45,717 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:34:45,717 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:34:45,717 - INFO -   Type: dict
-2026-02-17 16:34:45,717 - INFO -   Count: 29
-2026-02-17 16:34:45,718 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431", "metronome_tick": 28, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:45,718 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:34:46,611 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:46,612 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:46,612 - INFO -   Type: dict
-2026-02-17 16:34:46,612 - INFO -   Count: 18
-2026-02-17 16:34:46,612 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:47,614 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:47,614 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:47,614 - INFO -   Type: dict
-2026-02-17 16:34:47,614 - INFO -   Count: 19
-2026-02-17 16:34:47,614 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:48,616 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:34:48,617 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:34:48,617 - INFO -   Type: dict
-2026-02-17 16:34:48,617 - INFO -   Count: 20
-2026-02-17 16:34:48,617 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:34:55,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:34:55,708 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:34:55,708 - INFO -   Type: dict
-2026-02-17 16:34:55,709 - INFO -   Count: 30
-2026-02-17 16:34:55,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431", "metronome_tick": 29, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:55,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:34:55,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:34:55,709 - INFO -   Type: dict
-2026-02-17 16:34:55,709 - INFO -   Count: 30
-2026-02-17 16:34:55,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163431", "metronome_tick": 29, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:34:55,709 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:01,087 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:35:01,087 - INFO -   Source: metronome
-2026-02-17 16:35:01,087 - INFO -   Type: dict
-2026-02-17 16:35:01,088 - INFO -   Count: 10
-2026-02-17 16:35:01,088 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501"}
-2026-02-17 16:35:01,100 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_2]:
-2026-02-17 16:35:01,101 - INFO -   Source: metronome
-2026-02-17 16:35:01,101 - INFO -   Type: dict
-2026-02-17 16:35:01,101 - INFO -   Count: 5
-2026-02-17 16:35:01,101 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501"}
-2026-02-17 16:35:05,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:35:05,708 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:35:05,708 - INFO -   Type: dict
-2026-02-17 16:35:05,708 - INFO -   Count: 31
-2026-02-17 16:35:05,708 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501", "metronome_tick": 30, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:05,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:35:05,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:35:05,709 - INFO -   Type: dict
-2026-02-17 16:35:05,709 - INFO -   Count: 31
-2026-02-17 16:35:05,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501", "metronome_tick": 30, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:05,709 - INFO - Successfully dumped 1 keys to data/inmemory_redisclone.json
-2026-02-17 16:35:05,710 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:15,716 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:35:15,716 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:35:15,716 - INFO -   Type: dict
-2026-02-17 16:35:15,716 - INFO -   Count: 32
-2026-02-17 16:35:15,716 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501", "metronome_tick": 31, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:15,716 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:35:15,716 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:35:15,716 - INFO -   Type: dict
-2026-02-17 16:35:15,717 - INFO -   Count: 32
-2026-02-17 16:35:15,717 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501", "metronome_tick": 31, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:15,717 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:24,057 - INFO - Auto-packaging non-JSON message: hello0...
-2026-02-17 16:35:24,059 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:24,059 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:24,059 - INFO -   Type: dict
-2026-02-17 16:35:24,059 - INFO -   Count: 21
-2026-02-17 16:35:24,059 - INFO -   Preview: {"_raw_data": "hello0", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:24,069 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:24,069 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:24,069 - INFO -   Type: dict
-2026-02-17 16:35:24,069 - INFO -   Count: 3
-2026-02-17 16:35:24,069 - INFO -   Preview: {"_raw_data": "hello0", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:25,061 - INFO - Auto-packaging non-JSON message: hello1...
-2026-02-17 16:35:25,062 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:25,062 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:25,062 - INFO -   Type: dict
-2026-02-17 16:35:25,062 - INFO -   Count: 22
-2026-02-17 16:35:25,062 - INFO -   Preview: {"_raw_data": "hello1", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:25,063 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:25,064 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:25,064 - INFO -   Type: dict
-2026-02-17 16:35:25,064 - INFO -   Count: 3
-2026-02-17 16:35:25,064 - INFO -   Preview: {"_raw_data": "hello1", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:25,715 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:35:25,715 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:35:25,715 - INFO -   Type: dict
-2026-02-17 16:35:25,715 - INFO -   Count: 33
-2026-02-17 16:35:25,715 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501", "metronome_tick": 32, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:25,715 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:35:25,715 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:35:25,715 - INFO -   Type: dict
-2026-02-17 16:35:25,716 - INFO -   Count: 33
-2026-02-17 16:35:25,716 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163501", "metronome_tick": 32, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:25,716 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:26,064 - INFO - Auto-packaging non-JSON message: hello2...
-2026-02-17 16:35:26,065 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:26,065 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:26,065 - INFO -   Type: dict
-2026-02-17 16:35:26,065 - INFO -   Count: 23
-2026-02-17 16:35:26,065 - INFO -   Preview: {"_raw_data": "hello2", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:26,069 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:26,070 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:26,070 - INFO -   Type: dict
-2026-02-17 16:35:26,070 - INFO -   Count: 3
-2026-02-17 16:35:26,070 - INFO -   Preview: {"_raw_data": "hello2", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:27,068 - INFO - Auto-packaging non-JSON message: hello3...
-2026-02-17 16:35:27,068 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:27,068 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:27,068 - INFO -   Type: dict
-2026-02-17 16:35:27,068 - INFO -   Count: 24
-2026-02-17 16:35:27,069 - INFO -   Preview: {"_raw_data": "hello3", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:27,073 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:27,073 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:27,073 - INFO -   Type: dict
-2026-02-17 16:35:27,073 - INFO -   Count: 3
-2026-02-17 16:35:27,073 - INFO -   Preview: {"_raw_data": "hello3", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:28,071 - INFO - Auto-packaging non-JSON message: hello4...
-2026-02-17 16:35:28,072 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:28,072 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:28,072 - INFO -   Type: dict
-2026-02-17 16:35:28,072 - INFO -   Count: 25
-2026-02-17 16:35:28,072 - INFO -   Preview: {"_raw_data": "hello4", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:28,075 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:28,075 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:28,076 - INFO -   Type: dict
-2026-02-17 16:35:28,076 - INFO -   Count: 3
-2026-02-17 16:35:28,076 - INFO -   Preview: {"_raw_data": "hello4", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:29,074 - INFO - Auto-packaging non-JSON message: hello5...
-2026-02-17 16:35:29,075 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:29,075 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:29,075 - INFO -   Type: dict
-2026-02-17 16:35:29,075 - INFO -   Count: 26
-2026-02-17 16:35:29,075 - INFO -   Preview: {"_raw_data": "hello5", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:29,079 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:29,079 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:29,079 - INFO -   Type: dict
-2026-02-17 16:35:29,079 - INFO -   Count: 3
-2026-02-17 16:35:29,079 - INFO -   Preview: {"_raw_data": "hello5", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:30,077 - INFO - Auto-packaging non-JSON message: hello6...
-2026-02-17 16:35:30,078 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:30,078 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:30,078 - INFO -   Type: dict
-2026-02-17 16:35:30,078 - INFO -   Count: 27
-2026-02-17 16:35:30,078 - INFO -   Preview: {"_raw_data": "hello6", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:30,080 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:30,080 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:30,080 - INFO -   Type: dict
-2026-02-17 16:35:30,080 - INFO -   Count: 3
-2026-02-17 16:35:30,080 - INFO -   Preview: {"_raw_data": "hello6", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:31,080 - INFO - Auto-packaging non-JSON message: hello7...
-2026-02-17 16:35:31,081 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:31,081 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:31,081 - INFO -   Type: dict
-2026-02-17 16:35:31,081 - INFO -   Count: 28
-2026-02-17 16:35:31,082 - INFO -   Preview: {"_raw_data": "hello7", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:31,083 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:31,083 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:31,083 - INFO -   Type: dict
-2026-02-17 16:35:31,083 - INFO -   Count: 3
-2026-02-17 16:35:31,083 - INFO -   Preview: {"_raw_data": "hello7", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:31,125 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:35:31,126 - INFO -   Source: metronome
-2026-02-17 16:35:31,126 - INFO -   Type: dict
-2026-02-17 16:35:31,126 - INFO -   Count: 11
-2026-02-17 16:35:31,126 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531"}
-2026-02-17 16:35:32,084 - INFO - Auto-packaging non-JSON message: hello8...
-2026-02-17 16:35:32,084 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:32,084 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:32,085 - INFO -   Type: dict
-2026-02-17 16:35:32,085 - INFO -   Count: 29
-2026-02-17 16:35:32,085 - INFO -   Preview: {"_raw_data": "hello8", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:32,089 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:32,089 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:32,089 - INFO -   Type: dict
-2026-02-17 16:35:32,090 - INFO -   Count: 3
-2026-02-17 16:35:32,090 - INFO -   Preview: {"_raw_data": "hello8", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:33,087 - INFO - Auto-packaging non-JSON message: hello9...
-2026-02-17 16:35:33,088 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:33,088 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:33,088 - INFO -   Type: dict
-2026-02-17 16:35:33,088 - INFO -   Count: 30
-2026-02-17 16:35:33,088 - INFO -   Preview: {"_raw_data": "hello9", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:33,095 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:33,095 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:33,095 - INFO -   Type: dict
-2026-02-17 16:35:33,095 - INFO -   Count: 3
-2026-02-17 16:35:33,095 - INFO -   Preview: {"_raw_data": "hello9", "_raw_type": "string", "_auto_packaged": true, "_original_format": "plain_text"}
-2026-02-17 16:35:35,717 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:35:35,717 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:35:35,717 - INFO -   Type: dict
-2026-02-17 16:35:35,718 - INFO -   Count: 34
-2026-02-17 16:35:35,718 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531", "metronome_tick": 33, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:35,718 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:35:35,718 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:35:35,718 - INFO -   Type: dict
-2026-02-17 16:35:35,718 - INFO -   Count: 34
-2026-02-17 16:35:35,718 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531", "metronome_tick": 33, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:35,718 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:45,717 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:35:45,717 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:35:45,717 - INFO -   Type: dict
-2026-02-17 16:35:45,717 - INFO -   Count: 35
-2026-02-17 16:35:45,717 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531", "metronome_tick": 34, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:45,717 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:35:45,717 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:35:45,717 - INFO -   Type: dict
-2026-02-17 16:35:45,717 - INFO -   Count: 35
-2026-02-17 16:35:45,717 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531", "metronome_tick": 34, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:45,717 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:47,702 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:47,703 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:47,703 - INFO -   Type: dict
-2026-02-17 16:35:47,703 - INFO -   Count: 31
-2026-02-17 16:35:47,703 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:47,713 - INFO - PUBLISH [file_output]:
-2026-02-17 16:35:47,713 - INFO -   Destination: file:///tmp/data/output.json
-2026-02-17 16:35:47,713 - INFO -   Type: dict
-2026-02-17 16:35:47,713 - INFO -   Count: 3
-2026-02-17 16:35:47,713 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:48,705 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:48,705 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:48,705 - INFO -   Type: dict
-2026-02-17 16:35:48,706 - INFO -   Count: 32
-2026-02-17 16:35:48,706 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:49,708 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:49,708 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:49,708 - INFO -   Type: dict
-2026-02-17 16:35:49,708 - INFO -   Count: 33
-2026-02-17 16:35:49,708 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:50,711 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:50,712 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:50,712 - INFO -   Type: dict
-2026-02-17 16:35:50,712 - INFO -   Count: 34
-2026-02-17 16:35:50,712 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:51,713 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:51,713 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:51,714 - INFO -   Type: dict
-2026-02-17 16:35:51,714 - INFO -   Count: 35
-2026-02-17 16:35:51,714 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:52,716 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:52,717 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:52,717 - INFO -   Type: dict
-2026-02-17 16:35:52,717 - INFO -   Count: 36
-2026-02-17 16:35:52,717 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:53,719 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:53,720 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:53,720 - INFO -   Type: dict
-2026-02-17 16:35:53,720 - INFO -   Count: 37
-2026-02-17 16:35:53,720 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:54,723 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:54,723 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:54,723 - INFO -   Type: dict
-2026-02-17 16:35:54,723 - INFO -   Count: 38
-2026-02-17 16:35:54,723 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:55,715 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:35:55,715 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:35:55,715 - INFO -   Type: dict
-2026-02-17 16:35:55,715 - INFO -   Count: 36
-2026-02-17 16:35:55,715 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531", "metronome_tick": 35, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:55,715 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:35:55,715 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:35:55,715 - INFO -   Type: dict
-2026-02-17 16:35:55,716 - INFO -   Count: 36
-2026-02-17 16:35:55,716 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163531", "metronome_tick": 35, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:35:55,716 - INFO - node: metronome_node setting child random_calculator_node as dirty
-2026-02-17 16:35:55,724 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:55,725 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:55,725 - INFO -   Type: dict
-2026-02-17 16:35:55,725 - INFO -   Count: 39
-2026-02-17 16:35:55,725 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:35:56,727 - INFO - MESSAGE RECEIVED [kafka_input]:
-2026-02-17 16:35:56,728 - INFO -   Source: kafka://topic/input_data
-2026-02-17 16:35:56,728 - INFO -   Type: dict
-2026-02-17 16:35:56,728 - INFO -   Count: 40
-2026-02-17 16:35:56,728 - INFO -   Preview: {"message": "hello"}
-2026-02-17 16:36:01,035 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_1]:
-2026-02-17 16:36:01,035 - INFO -   Source: metronome
-2026-02-17 16:36:01,035 - INFO -   Type: dict
-2026-02-17 16:36:01,035 - INFO -   Count: 3
-2026-02-17 16:36:01,035 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163601"}
-2026-02-17 16:36:01,162 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_3]:
-2026-02-17 16:36:01,162 - INFO -   Source: metronome
-2026-02-17 16:36:01,162 - INFO -   Type: dict
-2026-02-17 16:36:01,162 - INFO -   Count: 12
-2026-02-17 16:36:01,162 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163601"}
-2026-02-17 16:36:01,174 - INFO - MESSAGE RECEIVED [heartbeat_subscriber_2]:
-2026-02-17 16:36:01,174 - INFO -   Source: metronome
-2026-02-17 16:36:01,174 - INFO -   Type: dict
-2026-02-17 16:36:01,174 - INFO -   Count: 6
-2026-02-17 16:36:01,175 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163601"}
-2026-02-17 16:36:05,708 - INFO - PUBLISH [heartbeat_publisher]:
-2026-02-17 16:36:05,708 - INFO -   Destination: mem://topic/heartbeat_topic
-2026-02-17 16:36:05,709 - INFO -   Type: dict
-2026-02-17 16:36:05,709 - INFO -   Count: 37
-2026-02-17 16:36:05,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163601", "metronome_tick": 36, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:36:05,709 - INFO - PUBLISH [heartbeat_log]:
-2026-02-17 16:36:05,709 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
-2026-02-17 16:36:05,709 - INFO -   Type: dict
-2026-02-17 16:36:05,709 - INFO -   Count: 37
-2026-02-17 16:36:05,709 - INFO -   Preview: {"message": "heartbeat", "current_timestamp": "20260217163601", "metronome_tick": 36, "dag_name": "heartbeat_monitor", "status": "healthy"}
-2026-02-17 16:36:05,709 - INFO - node: metronome_node setting child random_calculator_node as dirty
+ * Running on http://192.168.2.58:5002
+2026-02-21 13:39:55,922 - INFO - [33mPress CTRL+C to quit[0m
+2026-02-21 13:39:55,987 - INFO - Coordinator for group/etl_consumer is BrokerMetadata(nodeId='coordinator-0', host='oryxpro', port=9092, rack=None)
+2026-02-21 13:39:55,987 - INFO - Discovered coordinator coordinator-0 for group etl_consumer
+2026-02-21 13:39:56,087 - INFO - Starting new heartbeat thread
+2026-02-21 13:39:56,088 - INFO - Revoking previously assigned partitions set() for group etl_consumer
+2026-02-21 13:39:56,088 - INFO - Failed to join group etl_consumer: NodeNotReadyError: coordinator-0
+2026-02-21 13:39:56,089 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=oryxpro:9092 <connecting> [IPv4 ('127.0.1.1', 9092)]>: connecting to oryxpro:9092 [('127.0.1.1', 9092) IPv4]
+2026-02-21 13:39:56,089 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Connection complete.
+2026-02-21 13:39:56,183 - INFO - (Re-)joining group etl_consumer
+2026-02-21 13:39:56,185 - INFO - Received member id kafka-python-2.2.15-4a973c92-1134-4bdc-a339-3037144d796d for group etl_consumer; will retry join-group
+2026-02-21 13:39:56,185 - INFO - Failed to join group etl_consumer: [Error 79] MemberIdRequiredError
+2026-02-21 13:39:56,185 - INFO - (Re-)joining group etl_consumer
+2026-02-21 13:39:56,187 - INFO - Successfully joined group etl_consumer <Generation 4 (member_id: kafka-python-2.2.15-4a973c92-1134-4bdc-a339-3037144d796d, protocol: range)>
+2026-02-21 13:39:56,187 - INFO - Elected group leader -- performing partition assignments using range
+2026-02-21 13:39:56,290 - INFO - Updated partition assignment: [TopicPartition(topic='input_data', partition=0)]
+2026-02-21 13:39:56,291 - INFO - Setting newly assigned partitions {TopicPartition(topic='input_data', partition=0)} for group etl_consumer
+2026-02-21 13:40:00,889 - INFO - PUBLISH [heartbeat_publisher]:
+2026-02-21 13:40:00,889 - INFO -   Destination: mem://topic/heartbeat_topic
+2026-02-21 13:40:00,889 - INFO -   Type: dict
+2026-02-21 13:40:00,889 - INFO -   Count: 2
+2026-02-21 13:40:00,889 - INFO -   Preview: {"metronome_tick": 1, "dag_name": "heartbeat_monitor", "status": "healthy"}
+2026-02-21 13:40:00,889 - INFO - PUBLISH [heartbeat_log]:
+2026-02-21 13:40:00,889 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
+2026-02-21 13:40:00,890 - INFO -   Type: dict
+2026-02-21 13:40:00,890 - INFO -   Count: 2
+2026-02-21 13:40:00,890 - INFO -   Preview: {"metronome_tick": 1, "dag_name": "heartbeat_monitor", "status": "healthy"}
+2026-02-21 13:40:00,890 - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-02-21 13:40:10,894 - INFO - PUBLISH [heartbeat_publisher]:
+2026-02-21 13:40:10,894 - INFO -   Destination: mem://topic/heartbeat_topic
+2026-02-21 13:40:10,894 - INFO -   Type: dict
+2026-02-21 13:40:10,894 - INFO -   Count: 3
+2026-02-21 13:40:10,894 - INFO -   Preview: {"metronome_tick": 2, "dag_name": "heartbeat_monitor", "status": "healthy"}
+2026-02-21 13:40:10,894 - INFO - PUBLISH [heartbeat_log]:
+2026-02-21 13:40:10,894 - INFO -   Destination: file:///tmp/log/dagserver/heartbeat.jsonl
+2026-02-21 13:40:10,894 - INFO -   Type: dict
+2026-02-21 13:40:10,894 - INFO -   Count: 3
+2026-02-21 13:40:10,894 - INFO -   Preview: {"metronome_tick": 2, "dag_name": "heartbeat_monitor", "status": "healthy"}
+2026-02-21 13:40:10,894 - INFO - node: metronome_node setting child random_calculator_node as dirty
+2026-02-21 13:40:16,873 - INFO - ================================================================================
+2026-02-21 13:40:16,873 - INFO - DISHTAYANTRA COMPUTE SERVER - SHUTDOWN SEQUENCE INITIATED
+2026-02-21 13:40:16,873 - INFO - ================================================================================
+2026-02-21 13:40:16,873 - INFO - Shutdown Time: 2026-02-21T13:40:16.873703
+2026-02-21 13:40:16,873 - INFO - --------------------------------------------------------------------------------
+2026-02-21 13:40:16,873 - INFO - Shutting down Web Application...
+2026-02-21 13:40:16,873 - INFO - Shutting down DishtaYantra Web Application...
+2026-02-21 13:40:16,873 - INFO - Shutting down DAG server...
+2026-02-21 13:40:16,873 - INFO - Shutting down DishtaYantra DAG Server
+2026-02-21 13:40:16,874 - INFO - AutoClone manager thread stopped
+2026-02-21 13:40:17,009 - INFO - Subscriber heartbeat_subscriber_1 stopped
+2026-02-21 13:40:17,210 - INFO - Subscriber heartbeat_subscriber_2 stopped
+2026-02-21 13:40:17,404 - INFO - Subscriber heartbeat_subscriber_3 stopped
+2026-02-21 13:40:17,404 - INFO - Subscriber heartbeat_subscriber_1 stopped
+2026-02-21 13:40:17,404 - INFO - Subscriber heartbeat_subscriber_2 stopped
+2026-02-21 13:40:17,404 - INFO - Subscriber heartbeat_subscriber_3 stopped
+2026-02-21 13:40:17,404 - INFO - CompositeDataSubscriber 'composite_heartbeat_subscriber' stopped 3/3 child subscribers
+2026-02-21 13:40:17,491 - INFO - Metronome node metronome_node stopped
+2026-02-21 13:40:17,491 - INFO - ComputeGraph heartbeat_monitor stopped
+2026-02-21 13:40:17,491 - INFO - 
+2026-02-21 13:40:17,491 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:40:17,491 - INFO - █  DAG STATE CHANGE: STOPPED
+2026-02-21 13:40:17,491 - INFO - █  DAG Name: heartbeat_monitor
+2026-02-21 13:40:17,491 - INFO - █  Reason: User/system initiated stop
+2026-02-21 13:40:17,491 - INFO - █  Timestamp: 2026-02-21 13:40:17
+2026-02-21 13:40:17,492 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:40:17,492 - INFO - 
+2026-02-21 13:40:17,500 - INFO - Subscriber kafka_input stopped
+2026-02-21 13:40:17,503 - INFO - Stopping heartbeat thread
+2026-02-21 13:40:17,503 - INFO - Leaving consumer group (etl_consumer).
+2026-02-21 13:40:17,504 - INFO - LeaveGroup request for group etl_consumer returned successfully
+2026-02-21 13:40:17,505 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Closing connection. 
+2026-02-21 13:40:17,505 - INFO - Fetch to node 0 failed: Cancelled: <BrokerConnection client_id=kafka-python-2.2.15, node_id=0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>
+2026-02-21 13:40:17,505 - INFO - <BrokerConnection client_id=kafka-python-2.2.15, node_id=coordinator-0 host=oryxpro:9092 <connected> [IPv4 ('127.0.1.1', 9092)]>: Closing connection. 
+2026-02-21 13:40:22,505 - INFO - ComputeGraph ash_dag_with_auto_clone stopped
+2026-02-21 13:40:22,506 - INFO - 
+2026-02-21 13:40:22,506 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:40:22,506 - INFO - █  DAG STATE CHANGE: STOPPED
+2026-02-21 13:40:22,506 - INFO - █  DAG Name: ash_dag_with_auto_clone
+2026-02-21 13:40:22,506 - INFO - █  Reason: User/system initiated stop
+2026-02-21 13:40:22,506 - INFO - █  Timestamp: 2026-02-21 13:40:22
+2026-02-21 13:40:22,506 - INFO - ██████████████████████████████████████████████████████████████████████
+2026-02-21 13:40:22,506 - INFO - 
+2026-02-21 13:40:22,506 - INFO - Closing connection to localhost:2181
+2026-02-21 13:40:22,507 - INFO - Zookeeper session closed, state: CLOSED
+2026-02-21 13:40:22,507 - INFO - DishtaYantra DAG Server shutdown complete
+2026-02-21 13:40:22,507 - INFO - Cleaning up user registry...
+2026-02-21 13:40:22,507 - INFO - Cleaning up redis cache...
+2026-02-21 13:40:22,507 - INFO - DishtaYantra Web Application shutdown complete
+2026-02-21 13:40:22,507 - INFO - Web Application shutdown complete
+2026-02-21 13:40:22,507 - INFO - ================================================================================
+2026-02-21 13:40:22,507 - INFO - DISHTAYANTRA COMPUTE SERVER - SHUTDOWN COMPLETE
+2026-02-21 13:40:22,507 - INFO - Shutdown Time: 2026-02-21T13:40:22.507489
+2026-02-21 13:40:22,507 - INFO - ================================================================================

@@ -83,7 +83,7 @@
         border-radius: 0 8px 8px 0;
         margin: 1rem 0;
     }
-    .patent-badge {
+    /* unused */
         background: linear-gradient(135deg, #fbbf24, #f59e0b);
         color: #1e293b;
         padding: 4px 12px;
@@ -134,7 +134,7 @@
     </a>
 </div>
 
-<h2><i class="bi bi-broadcast" style="color: #231f20;"></i> Apache Kafka Integration <span class="badge bg-warning text-dark ms-2" style="font-size: 0.5em; vertical-align: middle;"><i class="bi bi-award"></i> Patent Pending</span></h2>
+<h2><i class="bi bi-broadcast" style="color: #231f20;"></i> Apache Kafka Integration </h2>
 <p class="lead">High-performance Kafka integration with dual library support for maximum flexibility and throughput.</p>
 
 <!-- Key Feature Banner -->
@@ -145,7 +145,7 @@
             <p class="mb-0">Switch between <strong>kafka-python</strong> and <strong>confluent-kafka</strong> via configuration. No code changes required!</p>
         </div>
         <div class="col-md-4 text-end">
-            <span class="patent-badge"><i class="bi bi-shield-check"></i> Patent Pending</span>
+            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Production Ready</span>
         </div>
     </div>
 </div>
@@ -374,10 +374,10 @@ subscriber.stop()</pre>
             <strong><i class="bi bi-lightbulb"></i> Pro Tip:</strong> Use <code>kafka_library: 'confluent-kafka'</code> for production workloads to achieve 10x better performance!
         </div>
 
-        <!-- Smart Deserialize - NEW in v1.7.5 -->
+        <!-- Smart Deserialize - NEW in v1.7.6 -->
         <div class="card mt-4" style="border: 2px solid #238636;">
             <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
-                <h6 class="mb-0"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-light text-dark ms-2">NEW in v1.7.5</span></h6>
+                <h6 class="mb-0"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-light text-dark ms-2">NEW in v1.7.6</span></h6>
             </div>
             <div class="card-body">
                 <p>Kafka subscribers automatically handle <strong>both JSON and non-JSON messages</strong>. No configuration needed!</p>
@@ -405,7 +405,7 @@ echo '{"symbol": "AAPL"}' | kafka-console-producer --topic my_topic --bootstrap-
                     </div>
                     <div class="col-md-6">
                         <div class="alert alert-info mb-0">
-                            <i class="bi bi-info-circle"></i> <strong>v1.7.5 Defaults:</strong>
+                            <i class="bi bi-info-circle"></i> <strong>v1.7.6 Defaults:</strong>
                             <ul class="mb-0 mt-2">
                                 <li><code>auto.offset.reset=earliest</code></li>
                                 <li>Poll-based message retrieval</li>
@@ -810,13 +810,11 @@ print(f"Recommended: {info['recommended']}")</pre>
 </div>
 
 <!-- Legal Notice -->
-<div class="card mb-4 border-warning">
+<div class="card mb-4 border-secondary">
     <div class="card-body">
-        <h6 class="text-warning"><i class="bi bi-shield-exclamation"></i> Patent Notice</h6>
+        <h6 class="text-secondary"><i class="bi bi-shield-check"></i> Legal Notice</h6>
         <p class="small mb-0">
-            <strong>PATENT PENDING:</strong> The dual-library abstraction layer and unified API for Kafka integration is part of the Multi-Broker Message Routing Architecture, which is subject to pending patent applications.
-            <br><br>
-            <strong>© 2025-2030 Ashutosh Sinha.</strong> All rights reserved. DishtaYantra™ is a trademark of Ashutosh Sinha.
+            <strong>© {{ copyright_years }} {{ copyright_holder }}.</strong> All rights reserved. {{ trademark_notice }}.
         </p>
     </div>
 </div>

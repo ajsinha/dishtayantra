@@ -2,12 +2,14 @@
 RabbitMQ DataPublisher and DataSubscriber implementation
 
 Supports both queue and topic messaging patterns similar to ActiveMQ.
+v1.7.6: Enhanced connection retry and auto-recovery support.
 """
 
 import json
 import logging
 import time
 import traceback
+import threading
 from datetime import datetime
 from core.pubsub.datapubsub import DataPublisher, DataSubscriber, smart_deserialize
 import queue
@@ -27,7 +29,7 @@ class RabbitMQConnectionError(Exception):
     pass
 
 class RabbitMQDataPublisher(DataPublisher):
-    """Publisher for RabbitMQ queues and topics"""
+    """Publisher for RabbitMQ queues and topics with v1.7.6 connection resilience."""
 
     def __init__(self, name, destination, config):
         super().__init__(name, destination, config)
@@ -46,12 +48,16 @@ class RabbitMQDataPublisher(DataPublisher):
         self.password = config.get('password', 'guest')
         self.virtual_host = config.get('virtual_host', '/')
 
-        # Connection settings
-        self.max_retries = 5
-        self.retry_delay = 10
+        # v1.7.6: Connection retry configuration
+        self.max_retries = config.get('max_retries', 5)
+        self.retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        self._connected = False
         self.connection = None
         self.channel = None
-        self._connect()
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
 
         # For topics, we use a topic exchange
         if self.dest_type == 'topic':
@@ -75,42 +81,37 @@ class RabbitMQDataPublisher(DataPublisher):
 
     def _do_connect(self):
         """Establish connection to RabbitMQ"""
-        try:
-            credentials = pika.PlainCredentials(self.username, self.password)
-            parameters = pika.ConnectionParameters(
-                host=self.host,
-                port=self.port,
-                virtual_host=self.virtual_host,
-                credentials=credentials,
-                heartbeat=600,
-                blocked_connection_timeout=300
-            )
+        credentials = pika.PlainCredentials(self.username, self.password)
+        parameters = pika.ConnectionParameters(
+            host=self.host,
+            port=self.port,
+            virtual_host=self.virtual_host,
+            credentials=credentials,
+            heartbeat=600,
+            blocked_connection_timeout=300
+        )
 
-            self.connection = pika.BlockingConnection(parameters)
-            self.channel = self.connection.channel()
+        self.connection = pika.BlockingConnection(parameters)
+        self.channel = self.connection.channel()
+        self._connected = True
 
-            logger.info(f"Connected to RabbitMQ at {self.host}:{self.port}")
-
-        except Exception as e:
-            logger.error(f"Failed to connect to RabbitMQ ({self.name}): {str(e)}")
-            raise
-
-    def _connect(self):
-        """Establish connection to RabbitMQ with retry logic"""
+    def _connect_with_retry(self):
+        """v1.7.6: Establish connection to RabbitMQ with retry logic"""
         last_error = None
 
         for attempt in range(1, self.max_retries + 1):
             try:
+                logger.info(f"RabbitMQ publisher connection attempt {attempt}/{self.max_retries} to {self.host}:{self.port}")
                 self._do_connect()
                 if self.channel and not self.channel.is_closed:
+                    logger.info(f"RabbitMQ publisher connected successfully (attempt={attempt})")
                     return  # Success
             except Exception as e:
                 last_error = e
-                logger.warning(
-                    f"Connection attempt {attempt}/{self.max_retries} failed: {str(e)}"
-                )
+                logger.warning(f"RabbitMQ publisher connection attempt {attempt}/{self.max_retries} failed: {e}")
                 if attempt < self.max_retries:
-                    time.sleep(self.retry_delay * attempt)  # Exponential backoff
+                    logger.info(f"Retrying in {self.retry_delay} seconds...")
+                    time.sleep(self.retry_delay)
 
         # All retries failed
         error_msg = f"Failed to connect to RabbitMQ after {self.max_retries} attempts"
@@ -118,21 +119,55 @@ class RabbitMQDataPublisher(DataPublisher):
             error_msg += f": {str(last_error)}"
         raise RabbitMQConnectionError(error_msg)
 
-    def _ensure_connection(self):
-        """Ensure connection is alive, reconnect if needed"""
+    # Keep old method name for compatibility
+    def _connect(self):
+        """Alias for _connect_with_retry"""
+        self._connect_with_retry()
+
+    def _reconnect_if_needed(self):
+        """v1.7.6: Ensure connection is alive, reconnect if needed"""
+        if not self._auto_reconnect:
+            return
+            
         try:
-            if not self.connection or self.connection.is_closed:
-                self._connect()
-            elif not self.channel or self.channel.is_closed:
-                self.channel = self.connection.channel()
+            if self.connection and not self.connection.is_closed:
+                if self.channel and not self.channel.is_closed:
+                    return  # Connection is healthy
+                else:
+                    # Channel closed, reopen it
+                    self.channel = self.connection.channel()
+                    return
+        except Exception:
+            pass
+        
+        self._connected = False
+        logger.info("RabbitMQ publisher connection lost, attempting reconnection...")
+        
+        try:
+            self._close_connections()
+            self._connect_with_retry()
         except Exception as e:
-            logger.error(f"Error ensuring connection: {str(e)}")
+            logger.error(f"RabbitMQ publisher reconnection failed: {e}")
             raise
 
-    def _do_publish(self, data):
-        """Publish to RabbitMQ queue or topic"""
+    def _close_connections(self):
+        """Safely close existing connections"""
         try:
-            self._ensure_connection()
+            if self.channel and not self.channel.is_closed:
+                self.channel.close()
+        except:
+            pass
+        try:
+            if self.connection and not self.connection.is_closed:
+                self.connection.close()
+        except:
+            pass
+
+    def _do_publish(self, data):
+        """Publish to RabbitMQ queue or topic with auto-reconnection"""
+        try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
 
             # Serialize data to JSON
             json_data = json.dumps(data)
@@ -156,28 +191,40 @@ class RabbitMQDataPublisher(DataPublisher):
 
         except Exception as e:
             logger.error(f"Error publishing to RabbitMQ: {str(e)}")
-            # Try to reconnect
-            try:
-                self._connect()
-            except:
-                pass
-            raise
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
+            
+            if self._auto_reconnect:
+                try:
+                    self._reconnect_if_needed()
+                    # Retry the publish
+                    json_data = json.dumps(data)
+                    self.channel.basic_publish(
+                        exchange=self.exchange,
+                        routing_key=self.routing_key,
+                        body=json_data,
+                        properties=pika.BasicProperties(
+                            delivery_mode=2,
+                            content_type='application/json'
+                        )
+                    )
+                    logger.info("Retry publish succeeded after reconnection")
+                except Exception as retry_error:
+                    logger.error(f"Retry publish failed: {retry_error}")
+                    raise
+            else:
+                raise
 
     def stop(self):
         """Stop the publisher"""
         super().stop()
-        try:
-            if self.channel and not self.channel.is_closed:
-                self.channel.close()
-            if self.connection and not self.connection.is_closed:
-                self.connection.close()
-            logger.info(f"RabbitMQ publisher {self.name} stopped")
-        except Exception as e:
-            logger.warning(f"Error closing RabbitMQ connection: {str(e)}")
+        self._close_connections()
+        self._connected = False
+        logger.info(f"RabbitMQ publisher {self.name} stopped")
 
 
 class RabbitMQDataSubscriber(DataSubscriber):
-    """Subscriber for RabbitMQ queues and topics"""
+    """Subscriber for RabbitMQ queues and topics with v1.7.6 connection resilience."""
 
     def __init__(self, name, source, config, given_queue: queue.Queue = None):
         super().__init__(name, source, config, given_queue)
@@ -196,18 +243,30 @@ class RabbitMQDataSubscriber(DataSubscriber):
         self.password = config.get('password', 'guest')
         self.virtual_host = config.get('virtual_host', '/')
 
-        # Connection settings
-        self.max_retries = 5
-        self.retry_delay = 10
+        # v1.7.6: Connection retry configuration
+        self.max_retries = config.get('max_retries', 5)
+        self.retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        self._connected = False
+        self._stopping = False
         self.connection = None
         self.channel = None
-        self._connect()
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
 
         # Setup queue based on type
+        self._setup_queue(config)
+
+        logger.info(f"RabbitMQ subscriber connected to {self.host}:{self.port}, "
+                    f"dest_type={self.dest_type}, queue={self.queue_name}")
+
+    def _setup_queue(self, config):
+        """Setup queue based on destination type"""
         if self.dest_type == 'topic':
             # For topics, create a temporary queue and bind to topic exchange
             self.exchange = config.get('exchange', 'amq.topic')
-            self.queue_name = config.get('queue', f'{name}_queue')
+            self.queue_name = config.get('queue', f'{self.name}_queue')
 
             # Declare exchange
             self.channel.exchange_declare(
@@ -226,7 +285,6 @@ class RabbitMQDataSubscriber(DataSubscriber):
             self.queue_name = result.method.queue
 
             # Bind queue to topic
-            # Support wildcards: * (one word), # (zero or more words)
             binding_key = config.get('binding_key', self.dest_name)
             self.channel.queue_bind(
                 exchange=self.exchange,
@@ -240,48 +298,40 @@ class RabbitMQDataSubscriber(DataSubscriber):
             self.queue_name = self.dest_name
             self.channel.queue_declare(queue=self.queue_name, durable=True)
 
-        logger.info(f"RabbitMQ subscriber connected to {self.host}:{self.port}, "
-                    f"dest_type={self.dest_type}, queue={self.queue_name}")
-
     def _do_connect(self):
         """Establish connection to RabbitMQ"""
-        try:
-            credentials = pika.PlainCredentials(self.username, self.password)
-            parameters = pika.ConnectionParameters(
-                host=self.host,
-                port=self.port,
-                virtual_host=self.virtual_host,
-                credentials=credentials,
-                heartbeat=600,
-                blocked_connection_timeout=300
-            )
+        credentials = pika.PlainCredentials(self.username, self.password)
+        parameters = pika.ConnectionParameters(
+            host=self.host,
+            port=self.port,
+            virtual_host=self.virtual_host,
+            credentials=credentials,
+            heartbeat=600,
+            blocked_connection_timeout=300
+        )
 
-            self.connection = pika.BlockingConnection(parameters)
-            self.channel = self.connection.channel()
-            self.channel.basic_qos(prefetch_count=1)
+        self.connection = pika.BlockingConnection(parameters)
+        self.channel = self.connection.channel()
+        self.channel.basic_qos(prefetch_count=1)
+        self._connected = True
 
-            logger.info(f"Connected to RabbitMQ at {self.host}:{self.port}")
-
-        except Exception as e:
-            logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
-            raise
-
-    def _connect(self):
-        """Establish connection to RabbitMQ with retry logic"""
+    def _connect_with_retry(self):
+        """v1.7.6: Establish connection to RabbitMQ with retry logic"""
         last_error = None
 
         for attempt in range(1, self.max_retries + 1):
             try:
+                logger.info(f"RabbitMQ subscriber connection attempt {attempt}/{self.max_retries} to {self.host}:{self.port}")
                 self._do_connect()
                 if self.channel and not self.channel.is_closed:
+                    logger.info(f"RabbitMQ subscriber connected successfully (attempt={attempt})")
                     return  # Success
             except Exception as e:
                 last_error = e
-                logger.warning(
-                    f"Connection attempt {attempt}/{self.max_retries} failed: {str(e)}"
-                )
+                logger.warning(f"RabbitMQ subscriber connection attempt {attempt}/{self.max_retries} failed: {e}")
                 if attempt < self.max_retries:
-                    time.sleep(self.retry_delay * attempt)  # Exponential backoff
+                    logger.info(f"Retrying in {self.retry_delay} seconds...")
+                    time.sleep(self.retry_delay)
 
         # All retries failed
         error_msg = f"Failed to connect to RabbitMQ after {self.max_retries} attempts"
@@ -289,12 +339,51 @@ class RabbitMQDataSubscriber(DataSubscriber):
             error_msg += f": {str(last_error)}"
         raise RabbitMQConnectionError(error_msg)
 
-    def _do_subscribe(self):
-        """Subscribe from RabbitMQ"""
+    # Keep old method name for compatibility
+    def _connect(self):
+        """Alias for _connect_with_retry"""
+        self._connect_with_retry()
+
+    def _reconnect_if_needed(self):
+        """v1.7.6: Ensure connection is alive, reconnect if needed"""
+        if not self._auto_reconnect or self._stopping:
+            return
+            
         try:
-            # Reconnect if connection is closed
-            if not self.connection or self.connection.is_closed:
-                self._connect()
+            if self.connection and not self.connection.is_closed:
+                if self.channel and not self.channel.is_closed:
+                    return  # Connection is healthy
+        except Exception:
+            pass
+        
+        self._connected = False
+        logger.info("RabbitMQ subscriber connection lost, attempting reconnection...")
+        
+        try:
+            self._close_connections()
+            self._connect_with_retry()
+            self._setup_queue(self.config)
+        except Exception as e:
+            logger.error(f"RabbitMQ subscriber reconnection failed: {e}")
+
+    def _close_connections(self):
+        """Safely close existing connections"""
+        try:
+            if self.channel and not self.channel.is_closed:
+                self.channel.close()
+        except:
+            pass
+        try:
+            if self.connection and not self.connection.is_closed:
+                self.connection.close()
+        except:
+            pass
+
+    def _do_subscribe(self):
+        """Subscribe from RabbitMQ with auto-reconnection"""
+        try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
 
             # Get a message with basic_get (polling mode)
             method_frame, properties, body = self.channel.basic_get(
@@ -314,8 +403,13 @@ class RabbitMQDataSubscriber(DataSubscriber):
         except (AMQPConnectionError, AMQPChannelError) as e:
             logger.error(f"RabbitMQ connection error: {str(e)}")
             logger.error(f"Full stack trace:\n{traceback.format_exc()}")
-            self.connection = None
-            self.channel = None
+            self._connected = False
+            
+            if self._auto_reconnect and not self._stopping:
+                try:
+                    self._reconnect_if_needed()
+                except:
+                    pass
             time.sleep(1)
             return None
 
@@ -323,16 +417,13 @@ class RabbitMQDataSubscriber(DataSubscriber):
             # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error subscribing from RabbitMQ: {str(e)}")
             logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
             return None
 
     def stop(self):
         """Stop the subscriber"""
+        self._stopping = True
         super().stop()
-        try:
-            if self.channel and not self.channel.is_closed:
-                self.channel.close()
-            if self.connection and not self.connection.is_closed:
-                self.connection.close()
-            logger.info(f"RabbitMQ subscriber {self.name} stopped")
-        except Exception as e:
-            logger.warning(f"Error closing RabbitMQ connection: {str(e)}")
+        self._close_connections()
+        self._connected = False
+        logger.info(f"RabbitMQ subscriber {self.name} stopped")

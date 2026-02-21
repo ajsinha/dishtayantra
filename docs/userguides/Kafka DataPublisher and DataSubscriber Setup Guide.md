@@ -2,7 +2,7 @@
 
 ## © 2025-2030 Ashutosh Sinha
 
-**Version 1.1.2** | **Patent Pending**
+**Version 1.1.2** 
 
 ---
 
@@ -21,7 +21,7 @@ The implementation uses a **factory pattern** allowing you to switch between lib
 
 ## What's New in v1.1.2
 
-### Dual Library Support (Patent Pending)
+### Dual Library Support 
 
 - **Seamless switching** between kafka-python and confluent-kafka
 - **Zero code changes** required when switching libraries
@@ -690,10 +690,6 @@ thread.join(timeout=30)
 
 ## Legal Information
 
-### Patent Notice
-
-**PATENT PENDING**: The Multi-Broker Message Routing Architecture and dual-library abstraction layer implemented in DishtaYantra are subject to pending patent applications.
-
 ### Copyright Notice
 
 Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.
@@ -704,4 +700,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.5.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha

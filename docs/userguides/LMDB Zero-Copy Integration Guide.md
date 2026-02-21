@@ -574,23 +574,6 @@ logging.getLogger('core.lmdb').setLevel(logging.DEBUG)
 
 ## Legal Information
 
-### Patent Notice
-
-**PATENT PENDING**: The LMDB-based zero-copy data exchange architecture in DishtaYantra represents a novel approach to heterogeneous language calculator integration. This technology is the subject of one or more pending patent applications.
-
-Protected innovations include:
-
-1. **Automatic payload size detection** for LMDB usage decision
-2. **Unified reference protocol** across Java, C++, and Rust calculators
-3. **Transaction-based zero-copy exchange** between Python and native code
-4. **Memory-mapped file transport** with automatic TTL-based cleanup
-5. **Format-agnostic serialization layer** for cross-language data exchange
-6. **Configurable threshold system** for optimal performance tuning
-
-### Legal Notice
-
-Unauthorized use, reproduction, or implementation of these technologies may constitute patent infringement. This documentation and the associated software are proprietary and confidential.
-
 ### Copyright Notice
 
 Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.
@@ -601,4 +584,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.5.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha

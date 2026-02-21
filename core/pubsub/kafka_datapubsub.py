@@ -124,50 +124,119 @@ class AbstractKafkaConsumerWrapper(ABC):
 # =============================================================================
 
 class KafkaPythonProducerWrapper(AbstractKafkaProducerWrapper):
-    """Wrapper for kafka-python Producer."""
+    """Wrapper for kafka-python Producer with retry and recovery support."""
     
     def __init__(self, bootstrap_servers: List[str], config: Dict[str, Any] = None):
         if not KAFKA_PYTHON_AVAILABLE:
             raise ImportError("kafka-python library not installed. Install with: pip install kafka-python")
         
         config = config or {}
+        self._config = config
+        self._bootstrap_servers = bootstrap_servers
+        
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        
         producer_config = config.get('producer_config', {})
         
         # Default serializer
         if 'value_serializer' not in producer_config:
             producer_config['value_serializer'] = lambda v: json.dumps(v).encode('utf-8')
         
-        self._producer = KafkaPythonProducer(
-            bootstrap_servers=bootstrap_servers,
-            **producer_config
-        )
-        logger.info(f"kafka-python producer initialized: {bootstrap_servers}")
+        self._producer_config = producer_config
+        self._producer = None
+        self._connected = False
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
+    
+    def _connect_with_retry(self):
+        """v1.7.6: Establish Kafka producer connection with retry logic."""
+        last_error = None
+        
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"Kafka producer connection attempt {attempt}/{self._max_retries} to {self._bootstrap_servers}")
+                
+                self._producer = KafkaPythonProducer(
+                    bootstrap_servers=self._bootstrap_servers,
+                    **self._producer_config
+                )
+                
+                self._connected = True
+                logger.info(f"kafka-python producer connected successfully (attempt={attempt})")
+                return
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Kafka producer connection attempt {attempt}/{self._max_retries} failed: {e}")
+                
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    import time
+                    time.sleep(self._retry_delay)
+        
+        logger.error(f"Failed to connect Kafka producer after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to Kafka brokers {self._bootstrap_servers}: {last_error}")
+    
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect producer if connection is broken."""
+        if not self._auto_reconnect or self._connected:
+            return
+        
+        logger.info("Attempting to reconnect Kafka producer...")
+        try:
+            if self._producer:
+                try:
+                    self._producer.close(timeout=1)
+                except:
+                    pass
+            self._connect_with_retry()
+        except Exception as e:
+            logger.error(f"Producer reconnection failed: {e}")
+            raise
     
     def send(self, topic: str, value: Any, key: Optional[Any] = None,
              headers: Optional[List] = None, partition: Optional[int] = None) -> Any:
-        """Send message using kafka-python."""
-        kwargs = {'topic': topic, 'value': value}
-        if key is not None:
-            kwargs['key'] = key
-        if headers is not None:
-            kwargs['headers'] = headers
-        if partition is not None:
-            kwargs['partition'] = partition
-        
-        future = self._producer.send(**kwargs)
-        return future
+        """Send message using kafka-python with automatic reconnection."""
+        try:
+            self._reconnect_if_needed()
+            
+            kwargs = {'topic': topic, 'value': value}
+            if key is not None:
+                kwargs['key'] = key
+            if headers is not None:
+                kwargs['headers'] = headers
+            if partition is not None:
+                kwargs['partition'] = partition
+            
+            future = self._producer.send(**kwargs)
+            return future
+            
+        except Exception as e:
+            logger.error(f"Error sending to Kafka: {e}")
+            self._connected = False
+            if self._auto_reconnect:
+                self._reconnect_if_needed()
+                return self._producer.send(**kwargs)
+            raise
     
     def flush(self, timeout: Optional[float] = None):
         """Flush pending messages."""
-        self._producer.flush(timeout=timeout)
+        if self._producer:
+            self._producer.flush(timeout=timeout)
     
     def close(self, timeout: Optional[float] = None):
         """Close the producer."""
-        self._producer.close(timeout=timeout)
+        if self._producer:
+            self._producer.close(timeout=timeout)
+        self._connected = False
 
 
 class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
-    """Wrapper for kafka-python Consumer."""
+    """Wrapper for kafka-python Consumer with retry and recovery support."""
     
     def __init__(self, topics: List[str], bootstrap_servers: List[str],
                  group_id: str, config: Dict[str, Any] = None):
@@ -175,10 +244,19 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
             raise ImportError("kafka-python library not installed. Install with: pip install kafka-python")
         
         config = config or {}
+        self._config = config
+        self._topics = topics
+        self._bootstrap_servers = bootstrap_servers
+        self._group_id = group_id
+        
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
+        
         consumer_config = config.get('consumer_config', {})
         
         # v1.7.2: Smart deserializer that auto-packages non-JSON messages
-        # This mimics auto_package_non_dict behavior at the Kafka consumer level
         if 'value_deserializer' not in consumer_config:
             consumer_config['value_deserializer'] = self._smart_deserializer
         
@@ -186,20 +264,88 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
         if 'consumer_timeout_ms' not in consumer_config:
             consumer_config['consumer_timeout_ms'] = 100
         
-        # v1.7.2: Set auto.offset.reset to 'earliest' by default to ensure
-        # new consumer groups receive all messages from the beginning
+        # v1.7.2: Set auto.offset.reset to 'earliest' by default
         if 'auto_offset_reset' not in consumer_config:
             consumer_config['auto_offset_reset'] = 'earliest'
         
-        self._consumer = KafkaPythonConsumer(
-            *topics,
-            bootstrap_servers=bootstrap_servers,
-            group_id=group_id,
-            **consumer_config
-        )
-        self._topics = topics
+        self._consumer_config = consumer_config
         self._poll_timeout_ms = consumer_config.get('consumer_timeout_ms', 100)
-        logger.info(f"kafka-python consumer initialized: {topics} (group_id={group_id}, auto_offset_reset={consumer_config.get('auto_offset_reset', 'earliest')})")
+        self._consumer = None
+        self._connected = False
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
+    
+    def _connect_with_retry(self):
+        """
+        v1.7.6: Establish Kafka connection with retry logic.
+        
+        Attempts to connect multiple times before giving up, with configurable
+        delay between attempts. This handles transient Kafka broker unavailability
+        during startup.
+        """
+        last_error = None
+        
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"Kafka consumer connection attempt {attempt}/{self._max_retries} to {self._bootstrap_servers}")
+                
+                self._consumer = KafkaPythonConsumer(
+                    *self._topics,
+                    bootstrap_servers=self._bootstrap_servers,
+                    group_id=self._group_id,
+                    **self._consumer_config
+                )
+                
+                self._connected = True
+                logger.info(f"kafka-python consumer connected successfully: {self._topics} "
+                           f"(group_id={self._group_id}, attempt={attempt})")
+                return
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Kafka consumer connection attempt {attempt}/{self._max_retries} failed: {e}")
+                
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    import time
+                    time.sleep(self._retry_delay)
+        
+        # All retries exhausted
+        logger.error(f"Failed to connect to Kafka after {self._max_retries} attempts. Last error: {last_error}")
+        logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+        raise ConnectionError(f"Could not connect to Kafka brokers {self._bootstrap_servers} after {self._max_retries} attempts: {last_error}")
+    
+    def _reconnect_if_needed(self):
+        """
+        v1.7.6: Check connection health and reconnect if broken.
+        
+        Called before each poll operation to ensure connection is healthy.
+        """
+        if not self._auto_reconnect:
+            return
+        
+        try:
+            # Check if consumer is still connected by accessing partitions
+            if self._consumer:
+                self._consumer.partitions_for_topic(self._topics[0] if self._topics else '')
+                return  # Connection is healthy
+        except Exception as e:
+            logger.warning(f"Kafka connection appears broken: {e}")
+            self._connected = False
+        
+        if not self._connected:
+            logger.info("Attempting to reconnect to Kafka...")
+            try:
+                if self._consumer:
+                    try:
+                        self._consumer.close()
+                    except:
+                        pass
+                self._connect_with_retry()
+            except Exception as e:
+                logger.error(f"Reconnection failed: {e}")
+                raise
     
     @staticmethod
     def _smart_deserializer(raw_bytes: bytes) -> Any:
@@ -265,36 +411,78 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
     
     def close(self):
         """Close the consumer."""
-        self._consumer.close()
+        if self._consumer:
+            self._consumer.close()
+        self._connected = False
     
     def __iter__(self):
         """Iterator interface."""
         return iter(self._consumer)
     
+    def poll(self, timeout_ms: int = 0) -> Optional[Dict[str, Any]]:
+        """
+        Poll for messages with automatic reconnection on failure.
+        
+        v1.7.6: Added reconnection support for broken connections.
+        """
+        try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+            records = self._consumer.poll(timeout_ms=timeout_ms)
+            return records
+        except Exception as e:
+            logger.error(f"Error polling Kafka: {e}")
+            self._connected = False
+            if self._auto_reconnect:
+                try:
+                    self._reconnect_if_needed()
+                    return self._consumer.poll(timeout_ms=timeout_ms)
+                except Exception as retry_error:
+                    logger.error(f"Retry poll failed: {retry_error}")
+            return None
+    
     def get_single_message(self) -> Optional[Any]:
         """
-        Get a single message using poll().
+        Get a single message using poll() with automatic reconnection.
         
-        v1.7.2: Changed from iterator-based to poll-based retrieval for
-        more reliable message consumption, especially with external producers.
+        v1.7.6: Added reconnection support for broken connections.
+        v1.7.2: Changed from iterator-based to poll-based retrieval.
         
         Note: Message logging is handled by base DataSubscriber class.
         """
-        # Use poll() instead of iterator for more reliable message retrieval
-        records = self._consumer.poll(timeout_ms=self._poll_timeout_ms)
-        
-        if records:
-            # records is a dict: {TopicPartition: [ConsumerRecord, ...]}
-            for topic_partition, messages in records.items():
-                if messages:
-                    # Return the first message value
-                    msg = messages[0]
-                    # Log Kafka-specific details (topic/partition/offset)
-                    logger.debug(f"Kafka poll returned message from {topic_partition.topic} "
-                                f"partition {topic_partition.partition} offset {msg.offset}")
-                    return msg.value
-        
-        return None
+        try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+            
+            # Use poll() instead of iterator for more reliable message retrieval
+            records = self._consumer.poll(timeout_ms=self._poll_timeout_ms)
+            
+            if records:
+                # records is a dict: {TopicPartition: [ConsumerRecord, ...]}
+                for topic_partition, messages in records.items():
+                    if messages:
+                        # Return the first message value
+                        msg = messages[0]
+                        # Log Kafka-specific details (topic/partition/offset)
+                        logger.debug(f"Kafka poll returned message from {topic_partition.topic} "
+                                    f"partition {topic_partition.partition} offset {msg.offset}")
+                        return msg.value
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting message from Kafka: {e}")
+            logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+            self._connected = False
+            
+            if self._auto_reconnect:
+                logger.info("Attempting reconnection after message retrieval failure...")
+                try:
+                    self._reconnect_if_needed()
+                except Exception as reconnect_error:
+                    logger.error(f"Reconnection attempt failed: {reconnect_error}")
+            
+            return None
 
 
 # =============================================================================
@@ -303,7 +491,7 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
 
 class ConfluentKafkaProducerWrapper(AbstractKafkaProducerWrapper):
     """
-    Wrapper for confluent-kafka Producer.
+    Wrapper for confluent-kafka Producer with retry and recovery support.
     
     confluent-kafka uses librdkafka (C library) and provides significantly
     higher throughput than kafka-python (~10x faster).
@@ -314,75 +502,138 @@ class ConfluentKafkaProducerWrapper(AbstractKafkaProducerWrapper):
             raise ImportError("confluent-kafka library not installed. Install with: pip install confluent-kafka")
         
         config = config or {}
+        self._config = config
+        self._bootstrap_servers = bootstrap_servers
+        
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
         
         # Build confluent-kafka configuration
-        producer_config = {
+        self._producer_config = {
             'bootstrap.servers': ','.join(bootstrap_servers),
         }
         
         # Map common config options
         confluent_config = config.get('confluent_config', {})
-        producer_config.update(confluent_config)
+        self._producer_config.update(confluent_config)
         
         # Performance optimizations (can be overridden by config)
-        producer_config.setdefault('queue.buffering.max.messages', 100000)
-        producer_config.setdefault('queue.buffering.max.ms', 5)
-        producer_config.setdefault('batch.num.messages', 10000)
+        self._producer_config.setdefault('queue.buffering.max.messages', 100000)
+        self._producer_config.setdefault('queue.buffering.max.ms', 5)
+        self._producer_config.setdefault('batch.num.messages', 10000)
         
-        self._producer = ConfluentProducer(producer_config)
         self._value_serializer = config.get('value_serializer', 
                                             lambda v: json.dumps(v).encode('utf-8'))
         self._key_serializer = config.get('key_serializer',
                                           lambda k: k.encode('utf-8') if isinstance(k, str) else k)
         
-        logger.info(f"confluent-kafka producer initialized: {bootstrap_servers}")
+        self._producer = None
+        self._connected = False
+        
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
+    
+    def _connect_with_retry(self):
+        """v1.7.6: Establish confluent-kafka producer connection with retry logic."""
+        last_error = None
+        
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"Confluent-kafka producer connection attempt {attempt}/{self._max_retries}")
+                
+                self._producer = ConfluentProducer(self._producer_config)
+                
+                self._connected = True
+                logger.info(f"confluent-kafka producer connected successfully (attempt={attempt})")
+                return
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Confluent-kafka producer connection attempt {attempt}/{self._max_retries} failed: {e}")
+                
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    import time
+                    time.sleep(self._retry_delay)
+        
+        logger.error(f"Failed to connect confluent-kafka producer after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to Kafka: {last_error}")
+    
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect producer if connection is broken."""
+        if not self._auto_reconnect or self._connected:
+            return
+        
+        logger.info("Attempting to reconnect confluent-kafka producer...")
+        try:
+            self._connect_with_retry()
+        except Exception as e:
+            logger.error(f"Producer reconnection failed: {e}")
+            raise
     
     def send(self, topic: str, value: Any, key: Optional[Any] = None,
              headers: Optional[List] = None, partition: Optional[int] = None) -> Any:
-        """Send message using confluent-kafka."""
-        # Serialize value
-        serialized_value = self._value_serializer(value)
-        
-        # Serialize key if provided
-        serialized_key = None
-        if key is not None:
-            serialized_key = self._key_serializer(key)
-        
-        # Build kwargs
-        kwargs = {
-            'topic': topic,
-            'value': serialized_value,
-        }
-        if serialized_key is not None:
-            kwargs['key'] = serialized_key
-        if headers is not None:
-            kwargs['headers'] = headers
-        if partition is not None:
-            kwargs['partition'] = partition
-        
-        # Produce (confluent-kafka is async by default)
-        self._producer.produce(**kwargs)
-        
-        # Trigger delivery callbacks (non-blocking)
-        self._producer.poll(0)
-        
-        return None  # confluent-kafka doesn't return futures
+        """Send message using confluent-kafka with automatic reconnection."""
+        try:
+            self._reconnect_if_needed()
+            
+            # Serialize value
+            serialized_value = self._value_serializer(value)
+            
+            # Serialize key if provided
+            serialized_key = None
+            if key is not None:
+                serialized_key = self._key_serializer(key)
+            
+            # Build kwargs
+            kwargs = {
+                'topic': topic,
+                'value': serialized_value,
+            }
+            if serialized_key is not None:
+                kwargs['key'] = serialized_key
+            if headers is not None:
+                kwargs['headers'] = headers
+            if partition is not None:
+                kwargs['partition'] = partition
+            
+            # Produce (confluent-kafka is async by default)
+            self._producer.produce(**kwargs)
+            
+            # Trigger delivery callbacks (non-blocking)
+            self._producer.poll(0)
+            
+            return None  # confluent-kafka doesn't return futures
+            
+        except Exception as e:
+            logger.error(f"Error sending to confluent-kafka: {e}")
+            self._connected = False
+            if self._auto_reconnect:
+                self._reconnect_if_needed()
+                self._producer.produce(**kwargs)
+                self._producer.poll(0)
+            else:
+                raise
     
     def flush(self, timeout: Optional[float] = None):
         """Flush pending messages."""
-        if timeout is not None:
-            self._producer.flush(timeout=timeout)
-        else:
-            self._producer.flush()
+        if self._producer:
+            if timeout is not None:
+                self._producer.flush(timeout=timeout)
+            else:
+                self._producer.flush()
     
     def close(self, timeout: Optional[float] = None):
         """Close the producer."""
         self.flush(timeout=timeout)
+        self._connected = False
 
 
 class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
     """
-    Wrapper for confluent-kafka Consumer.
+    Wrapper for confluent-kafka Consumer with retry and recovery support.
     
     confluent-kafka uses librdkafka (C library) and provides significantly
     higher throughput than kafka-python (~10x faster).
@@ -394,9 +645,18 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
             raise ImportError("confluent-kafka library not installed. Install with: pip install confluent-kafka")
         
         config = config or {}
+        self._config = config
+        self._topics = topics
+        self._bootstrap_servers = bootstrap_servers
+        self._group_id = group_id
+        
+        # v1.7.6: Connection retry configuration
+        self._max_retries = config.get('max_retries', 5)
+        self._retry_delay = config.get('retry_delay', 3)
+        self._auto_reconnect = config.get('auto_reconnect', True)
         
         # Build confluent-kafka configuration
-        consumer_config = {
+        self._consumer_config = {
             'bootstrap.servers': ','.join(bootstrap_servers),
             'group.id': group_id,
             'auto.offset.reset': config.get('auto_offset_reset', 'earliest'),
@@ -405,20 +665,64 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
         
         # Map common config options
         confluent_config = config.get('confluent_config', {})
-        consumer_config.update(confluent_config)
+        self._consumer_config.update(confluent_config)
         
         # Performance optimizations
-        consumer_config.setdefault('fetch.min.bytes', 1)
-        consumer_config.setdefault('fetch.wait.max.ms', 100)
+        self._consumer_config.setdefault('fetch.min.bytes', 1)
+        self._consumer_config.setdefault('fetch.wait.max.ms', 100)
         
-        self._consumer = ConfluentConsumer(consumer_config)
-        self._consumer.subscribe(topics)
-        self._topics = topics
         # v1.7.2: Use smart deserializer that auto-packages non-JSON messages
         self._value_deserializer = config.get('value_deserializer', self._smart_deserializer)
         self._running = True
+        self._consumer = None
+        self._connected = False
         
-        logger.info(f"confluent-kafka consumer initialized: {topics}")
+        # v1.7.6: Connect with retry logic
+        self._connect_with_retry()
+    
+    def _connect_with_retry(self):
+        """v1.7.6: Establish confluent-kafka connection with retry logic."""
+        last_error = None
+        
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                logger.info(f"Confluent-kafka consumer connection attempt {attempt}/{self._max_retries}")
+                
+                self._consumer = ConfluentConsumer(self._consumer_config)
+                self._consumer.subscribe(self._topics)
+                
+                self._connected = True
+                logger.info(f"confluent-kafka consumer connected successfully: {self._topics} (attempt={attempt})")
+                return
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"Confluent-kafka connection attempt {attempt}/{self._max_retries} failed: {e}")
+                
+                if attempt < self._max_retries:
+                    logger.info(f"Retrying in {self._retry_delay} seconds...")
+                    import time
+                    time.sleep(self._retry_delay)
+        
+        logger.error(f"Failed to connect confluent-kafka after {self._max_retries} attempts: {last_error}")
+        raise ConnectionError(f"Could not connect to Kafka: {last_error}")
+    
+    def _reconnect_if_needed(self):
+        """v1.7.6: Reconnect consumer if connection is broken."""
+        if not self._auto_reconnect or self._connected:
+            return
+        
+        logger.info("Attempting to reconnect confluent-kafka consumer...")
+        try:
+            if self._consumer:
+                try:
+                    self._consumer.close()
+                except:
+                    pass
+            self._connect_with_retry()
+        except Exception as e:
+            logger.error(f"Consumer reconnection failed: {e}")
+            raise
     
     @staticmethod
     def _smart_deserializer(raw_bytes: bytes) -> Any:
@@ -473,49 +777,68 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
             }
     
     def poll(self, timeout_ms: int = 0) -> Optional[Dict[str, Any]]:
-        """Poll for messages."""
-        timeout_sec = timeout_ms / 1000.0 if timeout_ms > 0 else 0.1
-        msg = self._consumer.poll(timeout=timeout_sec)
-        
-        if msg is None:
-            return None
-        
-        if msg.error():
-            error = msg.error()
-            if error.code() == ConfluentKafkaError._PARTITION_EOF:
-                return None  # End of partition, not an error
-            else:
-                logger.error(f"Consumer error: {error}")
-                return None
-        
-        # Return deserialized value using smart deserializer
+        """Poll for messages with automatic reconnection."""
         try:
-            return {
-                'value': self._value_deserializer(msg.value()),
-                'key': msg.key().decode('utf-8') if msg.key() else None,
-                'topic': msg.topic(),
-                'partition': msg.partition(),
-                'offset': msg.offset(),
-                'timestamp': msg.timestamp()
-            }
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+            
+            timeout_sec = timeout_ms / 1000.0 if timeout_ms > 0 else 0.1
+            msg = self._consumer.poll(timeout=timeout_sec)
+            
+            if msg is None:
+                return None
+            
+            if msg.error():
+                error = msg.error()
+                if error.code() == ConfluentKafkaError._PARTITION_EOF:
+                    return None  # End of partition, not an error
+                else:
+                    logger.error(f"Consumer error: {error}")
+                    # v1.7.6: Mark as disconnected for certain errors
+                    if 'broker' in str(error).lower() or 'connection' in str(error).lower():
+                        self._connected = False
+                    return None
+            
+            # Return deserialized value using smart deserializer
+            try:
+                return {
+                    'value': self._value_deserializer(msg.value()),
+                    'key': msg.key().decode('utf-8') if msg.key() else None,
+                    'topic': msg.topic(),
+                    'partition': msg.partition(),
+                    'offset': msg.offset(),
+                    'timestamp': msg.timestamp()
+                }
+            except Exception as e:
+                logger.error(f"Error deserializing message: {e}")
+                logger.error(f"Raw message value: {msg.value()[:200] if msg.value() else 'None'}")
+                logger.error(f"Full stack trace:\n{traceback.format_exc()}")
+                # v1.7.2: Return packaged error instead of None
+                return {
+                    'value': {
+                        "_raw_data": msg.value().hex() if msg.value() else None,
+                        "_raw_type": "bytes",
+                        "_auto_packaged": True,
+                        "_error": str(e)
+                    },
+                    'key': None,
+                    'topic': msg.topic(),
+                    'partition': msg.partition(),
+                    'offset': msg.offset(),
+                    'timestamp': msg.timestamp()
+                }
+                
         except Exception as e:
-            logger.error(f"Error deserializing message: {e}")
-            logger.error(f"Raw message value: {msg.value()[:200] if msg.value() else 'None'}")
+            logger.error(f"Error polling confluent-kafka: {e}")
             logger.error(f"Full stack trace:\n{traceback.format_exc()}")
-            # v1.7.2: Return packaged error instead of None
-            return {
-                'value': {
-                    "_raw_data": msg.value().hex() if msg.value() else None,
-                    "_raw_type": "bytes",
-                    "_auto_packaged": True,
-                    "_error": str(e)
-                },
-                'key': None,
-                'topic': msg.topic(),
-                'partition': msg.partition(),
-                'offset': msg.offset(),
-                'timestamp': msg.timestamp()
-            }
+            self._connected = False
+            
+            if self._auto_reconnect:
+                try:
+                    self._reconnect_if_needed()
+                except Exception as reconnect_error:
+                    logger.error(f"Reconnection failed: {reconnect_error}")
+            return None
     
     def subscribe(self, topics: List[str]):
         """Subscribe to topics."""
@@ -525,7 +848,9 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
     def close(self):
         """Close the consumer."""
         self._running = False
-        self._consumer.close()
+        if self._consumer:
+            self._consumer.close()
+        self._connected = False
     
     def __iter__(self):
         """Iterator interface."""
@@ -535,11 +860,26 @@ class ConfluentKafkaConsumerWrapper(AbstractKafkaConsumerWrapper):
                 yield result
     
     def get_single_message(self) -> Optional[Any]:
-        """Get a single message (for compatibility)."""
-        result = self.poll(timeout_ms=100)
-        if result:
-            return result.get('value')
-        return None
+        """Get a single message with automatic reconnection."""
+        try:
+            # v1.7.6: Check and reconnect if needed
+            self._reconnect_if_needed()
+            
+            result = self.poll(timeout_ms=100)
+            if result:
+                return result.get('value')
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting message from confluent-kafka: {e}")
+            self._connected = False
+            
+            if self._auto_reconnect:
+                try:
+                    self._reconnect_if_needed()
+                except Exception as reconnect_error:
+                    logger.error(f"Reconnection failed: {reconnect_error}")
+            return None
 
 
 # =============================================================================

@@ -4,7 +4,7 @@
 
 The Subgraph feature introduces a powerful abstraction for modular, reusable computation units within DishtaYantra DAGs. A subgraph is essentially a "graph-as-a-node" pattern, enabling hierarchical composition of processing pipelines.
 
-**Patent Pending - DishtaYantra Framework**
+
 **Copyright © 2025-2030 Ashutosh Sinha. All Rights Reserved.**
 
 ---

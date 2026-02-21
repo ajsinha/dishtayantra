@@ -75,7 +75,7 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 │  │  ┌─────────────────────────────────────────────────────────────────┐ │ │
 │  │  │              LMDB Zero-Copy Transport (v1.1.2)                   │ │ │
 │  │  │  ┌─────────────────────────────────────────────────────────────┐ │ │ │
-│  │  │  │ Memory-Mapped Files │ 100-1000x Faster │ Patent Pending    │ │ │ │
+│  │  │  │ Memory-Mapped Files │ 100-1000x Faster │ High Performance    │ │ │ │
 │  │  │  └─────────────────────────────────────────────────────────────┘ │ │ │
 │  │  └─────────────────────────────────────────────────────────────────┘ │ │
 │  │  ┌─────────────────────────────────────────────────────────────────┐ │ │
@@ -786,9 +786,9 @@ The Rust Manager provides centralized management of Rust PyO3 modules and calcul
 
 ## LMDB Zero-Copy Data Exchange
 
-### Overview (v1.1.2 - Patent Pending)
+### Overview (v1.1.2 - High Performance)
 
-DishtaYantra v1.1.2 introduces **LMDB-based zero-copy data exchange** for native calculators. This patent-pending innovation enables 100-1000x faster data transfer for large payloads compared to traditional serialization methods.
+DishtaYantra v1.1.2 introduces **LMDB-based zero-copy data exchange** for native calculators. This high-performance innovation enables 100-1000x faster data transfer for large payloads compared to traditional serialization methods.
 
 ### Architecture
 
@@ -943,7 +943,7 @@ if data.get_item("_lmdb_ref")?.is_true()? {
 
 ### Innovation Summary
 
-This architecture represents a **patent-pending innovation** not found in any other DAG framework:
+This architecture represents a **high-performance innovation** not found in any other DAG framework:
 
 1. **Automatic payload size detection** for LMDB usage decision
 2. **Unified reference protocol** across Java, C++, and Rust
@@ -1539,7 +1539,7 @@ services:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.1.2 | Dec 2025 | LMDB zero-copy data exchange (Patent Pending) |
+| 1.1.2 | Dec 2025 | LMDB zero-copy data exchange  |
 | 1.1.1 | Dec 2025 | System monitoring, admin features, logs viewer |
 | 1.1.0 | Dec 2025 | Java, C++, Rust, REST calculators, free-threading |
 | 1.0.0 | Nov 2025 | Initial release |
@@ -1560,17 +1560,6 @@ services:
 
 ## Legal Information
 
-### Patent Notice
-
-**PATENT PENDING**: The LMDB Zero-Copy Data Exchange technology described in this document is the subject of one or more pending patent applications.
-
-Protected innovations include:
-- Automatic payload size detection for LMDB routing decisions
-- Unified reference protocol for heterogeneous language calculator integration
-- Transaction-based zero-copy data exchange between Python and native code
-- Memory-mapped file transport with automatic TTL-based cleanup
-- Format-agnostic serialization layer for cross-language data exchange
-
 ### Copyright Notice
 
 © 2025-2030 Ashutosh Sinha. All rights reserved.
@@ -1585,4 +1574,4 @@ This document contains proprietary and confidential information. Unauthorized co
 
 ---
 
-**DishtaYantra v1.5.0** | Patent Pending | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha
