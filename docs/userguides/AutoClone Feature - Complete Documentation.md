@@ -35,21 +35,38 @@ Timeline View:
 
 ### Enable AutoClone in DAG Config
 
-Add an `autoclone` dictionary to your DAG configuration JSON file:
+Add an `autoclone` dictionary to your DAG configuration JSON file. There are
+two equivalent ways to define the active window — a **duration** (preferred)
+or a legacy explicit **ramp_down_time**.
+
+**Preferred — duration based:**
 
 ```json
 {
   "name": "my_production_dag",
   "start_time": "0900",
-  "end_time": "1700",
+  "duration": "8h",
   "nodes": [...],
   "edges": [...],
-  
+
   "autoclone": {
-    "ramp_up_time": "0900",
-    "ramp_down_time": "1700",
+    "ramp_up_time": "0930",
+    "duration": "1h30m",
     "ramp_count": 5
   }
+}
+```
+
+Here clones ramp up starting at 09:30 and the ramp-down begins at
+09:30 + 1h30m = 11:00.
+
+**Legacy — explicit ramp_down_time (still supported):**
+
+```json
+"autoclone": {
+  "ramp_up_time": "0900",
+  "ramp_down_time": "1700",
+  "ramp_count": 5
 }
 ```
 
@@ -57,60 +74,90 @@ Add an `autoclone` dictionary to your DAG configuration JSON file:
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `ramp_up_time` | String | Yes | Time to start creating clones (HHMM format, e.g., "0900") |
-| `ramp_down_time` | String | Yes | Time to start stopping/deleting clones (HHMM format, e.g., "1700") |
-| `ramp_count` | Integer | Yes | Number of clones to create (must be > 0) |
+| `ramp_up_time` | String | **Yes** | Wall-clock time to start creating clones (HHMM, e.g. `"0930"`) |
+| `ramp_count` | Integer | **Yes** | Number of clones to create at peak (must be > 0) |
+| `duration` | String | One of these | How long the ramped-up state lasts (e.g. `"1h30m"`, `"8h"`, `"45m"`). Ramp-down begins at `ramp_up_time + duration`. **Preferred.** |
+| `ramp_down_time` | String | One of these | Explicit wall-clock time to begin tearing clones down (HHMM). **Legacy** alternative to `duration`. |
+| `timezone` | String | No | IANA timezone the ramp times are interpreted in (e.g. `"America/New_York"`). Defaults to the DAG's schedule timezone, or `America/New_York` if the DAG has no schedule. |
 
-**IMPORTANT:** All three parameters MUST be present and non-empty. If any are missing or empty, AutoClone is disabled.
+**Required vs optional:**
+
+- `ramp_up_time` and `ramp_count` are **always required**.
+- You should provide **either** `duration` (preferred) **or** `ramp_down_time`
+  (legacy). If you provide **neither**, AutoClone uses a **default duration of
+  8h** (ramp-down at `ramp_up_time + 8h`).
+- If `duration` is present it **takes precedence** over any `ramp_down_time`.
+- If `ramp_up_time` or `ramp_count` is missing/empty, or `ramp_count` is not a
+  positive integer, or a supplied `duration` is invalid, AutoClone is treated
+  as **disabled** for that DAG (fail-safe — it simply does nothing rather than
+  erroring).
+
+### Timezone behavior
+
+`ramp_up_time` and the ramp-down time are **wall-clock times** evaluated in a
+timezone, exactly like the DAG scheduling feature — **not** the server's local
+time. This matters because servers commonly run in UTC: `ramp_up_time: "0930"`
+means 09:30 in the configured zone, so ramping happens at the right local time
+whether the host clock is UTC or anything else. Resolution order for the zone:
+
+1. `autoclone.timezone` if set;
+2. otherwise the DAG's `schedule.timezone` if the DAG has a schedule;
+3. otherwise the default `America/New_York`.
+
+DST transitions are handled automatically.
 
 ## Behavior Details
 
 ### Ramp Up Phase (Starting at ramp_up_time)
 
-1. **First clone created immediately** at ramp_up_time
-2. **Wait 1 minute**
-3. **Second clone created**
-4. Repeat until `ramp_count` clones are created
-5. **Each clone is started automatically** after creation
-6. **All clones have no time window** (always active)
+1. **First clone created** on the first manager pass at/after `ramp_up_time`
+2. **One additional clone per minute** thereafter
+3. Repeat until `ramp_count` clones exist
+4. **Each clone is started automatically** after creation
+5. **All clones have no time window** (always active while they exist)
+
+The manager thread wakes every 10 seconds, so a clone is created on the first
+pass once at least 60 seconds have elapsed since the previous one (the first
+clone is created immediately when the window opens).
 
 **Example:**
-- ramp_up_time: "0900"
-- ramp_count: 3
-- Timeline:
-  - 09:00 - Create and start clone #1
-  - 09:01 - Create and start clone #2
-  - 09:02 - Create and start clone #3
+- ramp_up_time: "0930", ramp_count: 3
+- Timeline (in the configured timezone):
+  - 09:30 - Create and start clone #1
+  - 09:31 - Create and start clone #2
+  - 09:32 - Create and start clone #3
   - Status: "active" with 3 clones running
 
 ### Active Phase (Between ramp_up_time and ramp_down_time)
 
 - All clones are running
-- Parent DAG status shows: "active (3/3)"
+- Parent DAG status shows: "active"
 - No new clones created
 - Existing clones continue to run
 
 ### Ramp Down Phase (Starting at ramp_down_time)
 
-1. **First clone stopped and deleted** at ramp_down_time
-2. **Wait 1 minute**
-3. **Second clone stopped and deleted**
-4. Repeat until all clones are removed
-5. System returns to **idle** state
+`ramp_down_time` is `ramp_up_time + duration` (or the explicit legacy value,
+or `ramp_up_time + 8h` by default).
+
+1. **First clone stopped and deleted** on the first pass at/after ramp-down
+2. **One clone removed per minute** thereafter
+3. Repeat until all clones are removed
+4. System returns to **idle** state
 
 **Example:**
-- ramp_down_time: "1700"
+- ramp_up_time "0930" + duration "1h30m" -> ramp_down at 11:00
 - Timeline:
-  - 17:00 - Stop and delete clone #1
-  - 17:01 - Stop and delete clone #2
-  - 17:02 - Stop and delete clone #3
+  - 11:00 - Stop and delete clone #1
+  - 11:01 - Stop and delete clone #2
+  - 11:02 - Stop and delete clone #3
   - Status: "idle"
 
-### Idle Phase (Outside time window)
+### Idle Phase (Outside the ramp window)
 
 - No clones exist
 - Status: "idle"
-- Waiting for next ramp_up_time
+- Waiting for the next `ramp_up_time`
 
 ## Clone Characteristics
 
@@ -183,11 +230,14 @@ AutoClone creates clones with these properties:
   "name": "order_processing",
   "autoclone": {
     "ramp_up_time": "0800",
-    "ramp_down_time": "1800",
-    "ramp_count": 4
+    "duration": "10h",
+    "ramp_count": 4,
+    "timezone": "America/New_York"
   }
 }
 ```
+
+(Equivalent legacy form: `"ramp_down_time": "1800"` instead of `duration`.)
 
 **Result:**
 - 08:00-08:04: 4 clones created (1 per minute)
@@ -258,6 +308,20 @@ Auto-created clones **CAN** be:
   - `"1730"` = 5:30 PM
   - `"0000"` = Midnight
   - `"2359"` = 11:59 PM
+- Times are **wall-clock in the configured timezone** (see "Timezone behavior"
+  above) — `America/New_York` by default — not the server's local clock.
+
+### Duration Format
+
+When using `duration` (preferred over `ramp_down_time`):
+
+- `"8h"` = 8 hours
+- `"1h30m"` = 1 hour 30 minutes
+- `"45m"` = 45 minutes
+- `"2h15m"` = 2 hours 15 minutes
+
+Ramp-down occurs at `ramp_up_time + duration`. If the computed ramp-down
+crosses midnight, the window wraps correctly.
 
 ### Timing Precision
 
@@ -267,9 +331,13 @@ Auto-created clones **CAN** be:
 
 ### Primary/Secondary Servers
 
-- AutoClone only runs on **PRIMARY** server
-- If Zookeeper is unavailable, server defaults to PRIMARY
-- Secondary servers do not manage AutoClone
+- AutoClone only runs on the **PRIMARY** instance, so an HA fleet never
+  double-creates clones.
+- PRIMARY election is handled by the configured HA provider
+  (`none`, `zookeeper`, `redis`, `s3`, or `socket`). With `ha.provider=none`
+  a standalone server is always PRIMARY.
+- On demotion the manager loop simply stops acting (it checks `is_primary`
+  every pass); the newly-elected PRIMARY takes over AutoClone management.
 
 ## Monitoring
 
@@ -349,24 +417,37 @@ When disabled:
 ### AutoClone Not Working
 
 **Check:**
-1. ✅ All three parameters present and non-empty
-2. ✅ ramp_count is a positive integer
-3. ✅ Time format is HHMM
-4. ✅ Server is PRIMARY (check logs)
-5. ✅ Current time is within ramp_up window
+1. ✅ `ramp_up_time` and `ramp_count` are present and non-empty
+2. ✅ `ramp_count` is a positive integer
+3. ✅ Either `duration` or `ramp_down_time` is set (or accept the 8h default)
+4. ✅ A supplied `duration` is valid (e.g. `"1h30m"`, not `"90"`)
+5. ✅ Time format is HHMM
+6. ✅ Server is PRIMARY (check logs)
+7. ✅ Current time **in the configured timezone** is within the ramp window
+
+### Ramp Happens at the Wrong Time
+
+**Most common cause: timezone.** Ramp times are wall-clock in the configured
+zone (default `America/New_York`), not the server's local clock. If your
+server runs in UTC and clones ramp several hours early or late:
+
+1. ✅ Set `autoclone.timezone` (or the DAG's `schedule.timezone`) explicitly to
+   the zone you intend the HHMM times to mean.
+2. ✅ Confirm in the logs which ramp-down time was computed
+   (`AutoClone <dag>: Using duration ... ramp_down_time=...`).
 
 ### Clones Not Being Created
 
 **Check:**
-1. ✅ Check server logs for errors
-2. ✅ Verify time format
-3. ✅ Check if ramp_up_time has passed
-4. ✅ Verify server has necessary permissions
+1. ✅ Check server logs for errors (filter the log viewer by this DAG)
+2. ✅ Verify time format and timezone
+3. ✅ Check if `ramp_up_time` (in the configured zone) has passed
+4. ✅ Verify the server has necessary permissions
 
 ### Clones Not Being Deleted
 
 **Check:**
-1. ✅ Verify ramp_down_time configuration
+1. ✅ Verify `duration` / `ramp_down_time` configuration
 2. ✅ Check server logs
 3. ✅ Ensure clones are not stuck in running state
 

@@ -148,7 +148,7 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         else:
             logger.info(f"DAG {self.name}: Lazy initialization (components deferred)")
 
-        logger.info(f"ComputeGraph {self.name} initialized")
+        logger.info(f"DAG {self.name}: initialized")
 
     def subscriber_by_name(self, sub_name):
         return self.subscribers[sub_name]
@@ -330,7 +330,7 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
                             f"(window={self.start_time}-{self.end_time}, "
                             f"schedule={self.schedule.to_dict() if self.schedule else None})")
 
-        logger.info(f"ComputeGraph {self.name} started")
+        logger.info(f"DAG {self.name}: started")
 
     def suspend(self, ui_driven=False):
         """Suspend the compute graph
@@ -342,12 +342,12 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         
         if ui_driven:
             self._ui_suspended = True
-            logger.info(f"ComputeGraph {self.name} suspended by UI - auto-resume disabled")
+            logger.info(f"DAG {self.name}: suspended by UI - auto-resume disabled")
         
         for subscriber in self.subscribers.values():
             subscriber.suspend()
 
-        logger.info(f"ComputeGraph {self.name} suspended")
+        logger.info(f"DAG {self.name}: suspended")
 
     def resume(self, ui_driven=False):
         """Resume the compute graph
@@ -359,12 +359,12 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         
         if ui_driven:
             self._ui_suspended = False
-            logger.info(f"ComputeGraph {self.name} resumed by UI - normal scheduling")
+            logger.info(f"DAG {self.name}: resumed by UI - normal scheduling")
 
         for subscriber in self.subscribers.values():
             subscriber.resume()
 
-        logger.info(f"ComputeGraph {self.name} resumed")
+        logger.info(f"DAG {self.name}: resumed")
 
     def stop(self):
         """Stop the compute graph"""
@@ -390,7 +390,7 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         if self._compute_thread:
             self._compute_thread.join(timeout=5)
 
-        logger.info(f"ComputeGraph {self.name} stopped")
+        logger.info(f"DAG {self.name}: stopped")
 
     def do_compute(self):
         """Main compute loop"""

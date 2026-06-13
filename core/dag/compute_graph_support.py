@@ -30,6 +30,10 @@ from core.schedule.dag_schedule import is_schedule_active
 
 logger = logging.getLogger(__name__)
 
+# Sentinel so apply_schedule_update() can distinguish "duration not passed"
+# (keep current value) from an explicit None (perpetual / default window).
+_UNSET = object()
+
 
 class GraphAlgorithmsMixin:
     """Cycle detection and topological ordering."""
@@ -135,13 +139,23 @@ class TimeWindowMixin:
         return is_schedule_active(self.start_time, self.end_time,
                                   getattr(self, 'schedule', None), now)
 
-    def apply_schedule_update(self, start_time, end_time, schedule):
+    def apply_schedule_update(self, start_time, end_time, schedule,
+                              duration=_UNSET):
         """
         Apply an intraday schedule change (v2.1.0). Called by the DAG
         server's schedule-refresh loop when the DAG's configuration object
         in storage changed; together with the holiday-calendar TTL this
         guarantees edits take effect within 5 minutes. The monitor loop
         picks the new rules up on its next 60-second pass.
+
+        v2.2 BUGFIX: also refresh ``self.duration``. The scheduling decision
+        uses ``end_time`` (which was always updated correctly), but the
+        dashboard's Time Window column and duration badge are derived from
+        ``start_time`` + ``duration``. Leaving ``duration`` stale made an
+        edited window display the OLD span (e.g. a new 1100/01h00m window
+        rendered as 11:00-17:30 using the previous 6h30m duration), even
+        though the DAG actually ran 11:00-12:00. ``duration`` defaults to a
+        sentinel so existing callers that omit it keep the old value.
         """
         old = (self.start_time, self.end_time,
                self.schedule.to_dict() if getattr(self, 'schedule', None)
@@ -149,6 +163,8 @@ class TimeWindowMixin:
         self.start_time = start_time
         self.end_time = end_time
         self.schedule = schedule
+        if duration is not _UNSET:
+            self.duration = duration
         new = (self.start_time, self.end_time,
                self.schedule.to_dict() if self.schedule else None)
         logger.info("")

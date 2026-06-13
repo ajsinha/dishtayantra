@@ -27,6 +27,7 @@ Copyright © 2025 Ashutosh Sinha. All rights reserved.
 """
 
 import os
+from core.version import VERSION
 import time
 import json
 import threading
@@ -284,7 +285,7 @@ class LMDBDataSubscriber:
                 'received_at': datetime.now().isoformat(),
                 'message_id': msg.message_id,
                 'sequence': msg.sequence,
-                'packaging_version': '1.5.2'
+                'packaging_version': VERSION
             }
         
         self.packaged_count += 1

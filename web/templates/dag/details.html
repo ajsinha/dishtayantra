@@ -79,15 +79,17 @@
     .page-header h2 i {
         color: var(--primary-light, #4a90c2);
     }
-    /* DAG Graph View (v2.2) */
+    /* DAG Graph View (v2.2 - interactive, Cytoscape) */
     .dag-graph-container {
+        position: relative;
         width: 100%;
-        overflow-x: auto;
+        height: 460px;
         background: var(--bg-body);
         border: 1px solid var(--border-color);
         border-radius: 10px;
+        overflow: hidden;
     }
-    #dagGraphSvg { display: block; min-width: 100%; }
+    .dag-graph-cy { width: 100%; height: 100%; }
     .graph-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; }
     .legend-item { display: inline-flex; align-items: center; gap: 5px; color: var(--text-secondary); }
     .legend-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
@@ -95,11 +97,48 @@
     .legend-dot.role-compute  { background: var(--brass, #e3a44a); }
     .legend-dot.role-subgraph { background: #8b5cf6; }
     .legend-dot.role-sink     { background: #10b981; }
-    .dag-node text { font-family: 'Inter', sans-serif; }
-    .dag-node .node-type { fill: var(--text-muted); font-size: 10px; }
-    .dag-edge path { fill: none; stroke-width: 1.6; }
-    .dag-edge text { fill: var(--text-secondary); font-size: 10px;
-        font-family: 'Spline Sans Mono', monospace; }
+    .graph-toolbar .btn { line-height: 1; }
+    /* Floating node-state panel */
+    .dag-node-panel {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 280px;
+        max-height: calc(100% - 24px);
+        overflow-y: auto;
+        background: var(--bg-card, #fff);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+        z-index: 5;
+        font-size: 0.85rem;
+    }
+    .dag-node-panel-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 12px; border-bottom: 1px solid var(--border-color);
+        font-weight: 600; color: var(--text-primary);
+        font-family: 'Spline Sans Mono', monospace; word-break: break-all;
+    }
+    .dag-node-panel-close {
+        background: none; border: none; font-size: 1.3rem; line-height: 1;
+        cursor: pointer; color: var(--text-muted); padding: 0 4px;
+    }
+    .dag-node-panel-body { padding: 10px 12px; }
+    .dag-node-panel-body .np-row {
+        display: flex; justify-content: space-between; gap: 10px;
+        padding: 4px 0; border-bottom: 1px dashed var(--border-color);
+    }
+    .dag-node-panel-body .np-row:last-child { border-bottom: none; }
+    .dag-node-panel-body .np-label { color: var(--text-secondary); }
+    .dag-node-panel-body .np-value {
+        color: var(--text-primary); font-family: 'Spline Sans Mono', monospace;
+        text-align: right; word-break: break-word;
+    }
+    .dag-node-panel-body .np-value.err { color: #ef4444; }
+    .dag-node-panel-body .np-badge {
+        display: inline-block; padding: 1px 8px; border-radius: 999px;
+        font-size: 0.72rem; color: #fff;
+    }
 </style>
 {% endblock %}
 
@@ -110,9 +149,16 @@
             <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Dashboard
             </a>
-            <a href="{{ url_for('dag_state', dag_name=dag_name) }}" class="btn btn-info">
-                <i class="bi bi-graph-up"></i> DAG State
-            </a>
+            <div class="d-flex gap-2">
+                {% if is_admin %}
+                <a href="{{ url_for('system_logs') }}?file=dagserver&dag={{ dag_name }}" class="btn btn-outline-secondary" title="Show this DAG's log entries">
+                    <i class="bi bi-card-text"></i> View Logs
+                </a>
+                {% endif %}
+                <a href="{{ url_for('dag_state', dag_name=dag_name) }}" class="btn btn-info">
+                    <i class="bi bi-graph-up"></i> DAG State
+                </a>
+            </div>
         </div>
         <h2><i class="bi bi-diagram-3"></i> DAG Details: {{ dag_name }}</h2>
 
@@ -199,26 +245,43 @@
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Graph View</h5>
-                <div class="graph-legend">
-                    <span class="legend-item"><span class="legend-dot role-source"></span> Source</span>
-                    <span class="legend-item"><span class="legend-dot role-compute"></span> Compute</span>
-                    <span class="legend-item"><span class="legend-dot role-subgraph"></span> Subgraph</span>
-                    <span class="legend-item"><span class="legend-dot role-sink"></span> Sink</span>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="graph-legend">
+                        <span class="legend-item"><span class="legend-dot role-source"></span> Source</span>
+                        <span class="legend-item"><span class="legend-dot role-compute"></span> Compute</span>
+                        <span class="legend-item"><span class="legend-dot role-subgraph"></span> Subgraph</span>
+                        <span class="legend-item"><span class="legend-dot role-sink"></span> Sink</span>
+                    </div>
+                    <div class="btn-group btn-group-sm graph-toolbar" role="group" aria-label="Graph controls">
+                        <button type="button" class="btn btn-outline-secondary" id="graphZoomIn" title="Zoom in"><i class="bi bi-zoom-in"></i></button>
+                        <button type="button" class="btn btn-outline-secondary" id="graphZoomOut" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
+                        <button type="button" class="btn btn-outline-secondary" id="graphFit" title="Fit to view"><i class="bi bi-arrows-fullscreen"></i></button>
+                        <button type="button" class="btn btn-outline-secondary" id="graphRelayout" title="Re-run layout"><i class="bi bi-diagram-2"></i></button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
                 <div id="dagGraphContainer" class="dag-graph-container">
-                    <svg id="dagGraphSvg" width="100%" height="420" role="img"
-                         aria-label="Visual graph of the DAG nodes and their connections"></svg>
+                    <div id="dagGraphCy" class="dag-graph-cy"
+                         role="img" aria-label="Interactive graph of the DAG nodes and their connections"></div>
                     <div id="dagGraphEmpty" class="text-muted text-center py-4" style="display:none;">
                         This DAG has no nodes to display.
                     </div>
+                    <!-- Floating node-state panel (shown on click / right-click) -->
+                    <div id="dagNodePanel" class="dag-node-panel" style="display:none;">
+                        <div class="dag-node-panel-head">
+                            <span id="dagNodePanelTitle">Node</span>
+                            <button type="button" class="dag-node-panel-close" id="dagNodePanelClose" title="Close">&times;</button>
+                        </div>
+                        <div class="dag-node-panel-body" id="dagNodePanelBody"></div>
+                    </div>
                 </div>
                 <small class="text-muted d-block mt-2">
-                    Flow runs left &rarr; right in topological order. Edge labels show
-                    the data transformer applied as data crosses that edge.
+                    Flow runs left &rarr; right in topological order. Scroll to zoom, drag the
+                    background to pan, drag nodes to reposition. <strong>Click or right-click a node</strong>
+                    to see its live state. Edge labels show the data transformer applied as data crosses that edge.
                 </small>
             </div>
         </div>
@@ -760,169 +823,188 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/cytoscape/cytoscape.min.js') }}"></script>
 <script>
-// ---- DAG Graph View (v2.2): dependency-free layered SVG renderer ----
+// ---- DAG Graph View (v2.2): interactive Cytoscape renderer ----
 var DAG_GRAPH = {{ graph_data | tojson }};
+var DAG_CY = null;
 
-function renderDagGraph() {
-    var svg = document.getElementById('dagGraphSvg');
-    if (!svg) return;
+function cssVar(name, fallback) {
+    var v = getComputedStyle(document.body).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+}
+
+function buildDagGraph() {
     var data = DAG_GRAPH || {nodes: [], edges: []};
     var nodes = data.nodes || [];
     var edges = data.edges || [];
+    var cyEl = document.getElementById('dagGraphCy');
+    var emptyEl = document.getElementById('dagGraphEmpty');
+    if (!cyEl) return;
 
     if (nodes.length === 0) {
-        svg.style.display = 'none';
-        var empty = document.getElementById('dagGraphEmpty');
-        if (empty) empty.style.display = 'block';
+        cyEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'block';
         return;
     }
 
-    var SVGNS = 'http://www.w3.org/2000/svg';
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-
-    // Build adjacency for layer assignment (longest path from a source).
-    var byId = {};
-    nodes.forEach(function (n) { byId[n.id] = n; n._incoming = []; n._layer = 0; });
-    edges.forEach(function (e) {
-        if (byId[e.to]) byId[e.to]._incoming.push(e.from);
-    });
-
-    // Longest-path layering. nodes arrive in topological order, so a single
-    // forward pass settles layers correctly.
-    nodes.forEach(function (n) {
-        var maxIn = -1;
-        n._incoming.forEach(function (src) {
-            if (byId[src] && byId[src]._layer > maxIn) maxIn = byId[src]._layer;
-        });
-        n._layer = maxIn + 1;
-    });
-
-    // Group nodes by layer.
-    var layers = {};
-    var maxLayer = 0;
-    nodes.forEach(function (n) {
-        (layers[n._layer] = layers[n._layer] || []).push(n);
-        if (n._layer > maxLayer) maxLayer = n._layer;
-    });
-
-    // Geometry.
-    var NODE_W = 170, NODE_H = 54, H_GAP = 90, V_GAP = 28;
-    var PAD_X = 24, PAD_Y = 24;
-    var colX = function (layer) { return PAD_X + layer * (NODE_W + H_GAP); };
-
-    var maxRows = 0;
-    Object.keys(layers).forEach(function (k) {
-        if (layers[k].length > maxRows) maxRows = layers[k].length;
-    });
-
-    var width = PAD_X * 2 + (maxLayer + 1) * NODE_W + maxLayer * H_GAP;
-    var height = PAD_Y * 2 + maxRows * NODE_H + (maxRows - 1) * V_GAP;
-    height = Math.max(height, 120);
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-    svg.setAttribute('width', width);
-    svg.setAttribute('height', Math.min(height, 600));
-
-    // Assign positions (centre each layer vertically).
-    var pos = {};
-    Object.keys(layers).forEach(function (k) {
-        var col = layers[k];
-        var totalH = col.length * NODE_H + (col.length - 1) * V_GAP;
-        var startY = (height - totalH) / 2;
-        col.forEach(function (n, i) {
-            pos[n.id] = {
-                x: colX(parseInt(k, 10)),
-                y: startY + i * (NODE_H + V_GAP)
-            };
-        });
-    });
-
     var roleColor = {
-        source: '#4a90c2', compute: '#e3a44a',
+        source: '#4a90c2', compute: cssVar('--brass', '#e3a44a'),
         subgraph: '#8b5cf6', sink: '#10b981'
     };
+    var textColor = cssVar('--text-primary', '#1a1a1a');
+    var edgeColor = cssVar('--text-muted', '#94a3b8');
 
-    // Arrowhead marker.
-    var defs = document.createElementNS(SVGNS, 'defs');
-    var marker = document.createElementNS(SVGNS, 'marker');
-    marker.setAttribute('id', 'dag-arrow');
-    marker.setAttribute('viewBox', '0 0 10 10');
-    marker.setAttribute('refX', '9'); marker.setAttribute('refY', '5');
-    marker.setAttribute('markerWidth', '7'); marker.setAttribute('markerHeight', '7');
-    marker.setAttribute('orient', 'auto-start-reverse');
-    var mpath = document.createElementNS(SVGNS, 'path');
-    mpath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-    var edgeStroke = getComputedStyle(document.body).getPropertyValue('--text-muted') || '#94a3b8';
-    mpath.setAttribute('fill', edgeStroke.trim() || '#94a3b8');
-    marker.appendChild(mpath); defs.appendChild(marker); svg.appendChild(defs);
-
-    // Draw edges first (under nodes).
+    var elements = [];
+    nodes.forEach(function (n) {
+        elements.push({ data: {
+            id: n.id, label: n.label, role: n.role || 'compute',
+            ntype: n.type, color: roleColor[n.role] || roleColor.compute,
+            state: n   // carry the full node payload for the panel
+        }});
+    });
     edges.forEach(function (e) {
-        var a = pos[e.from], b = pos[e.to];
-        if (!a || !b) return;
-        var x1 = a.x + NODE_W, y1 = a.y + NODE_H / 2;
-        var x2 = b.x, y2 = b.y + NODE_H / 2;
-        var midX = (x1 + x2) / 2;
-        var g = document.createElementNS(SVGNS, 'g');
-        g.setAttribute('class', 'dag-edge');
-        var path = document.createElementNS(SVGNS, 'path');
-        path.setAttribute('d', 'M ' + x1 + ' ' + y1 +
-            ' C ' + midX + ' ' + y1 + ', ' + midX + ' ' + y2 +
-            ', ' + x2 + ' ' + y2);
-        path.setAttribute('stroke', (edgeStroke.trim() || '#94a3b8'));
-        path.setAttribute('marker-end', 'url(#dag-arrow)');
-        g.appendChild(path);
-        if (e.label) {
-            var t = document.createElementNS(SVGNS, 'text');
-            t.setAttribute('x', midX); t.setAttribute('y', (y1 + y2) / 2 - 5);
-            t.setAttribute('text-anchor', 'middle');
-            t.textContent = e.label;
-            g.appendChild(t);
-        }
-        svg.appendChild(g);
+        elements.push({ data: {
+            id: 'e_' + e.from + '__' + e.to,
+            source: e.from, target: e.to,
+            label: e.label || ''
+        }});
     });
 
-    // Draw nodes.
-    nodes.forEach(function (n) {
-        var p = pos[n.id];
-        var g = document.createElementNS(SVGNS, 'g');
-        g.setAttribute('class', 'dag-node');
-        var rect = document.createElementNS(SVGNS, 'rect');
-        rect.setAttribute('x', p.x); rect.setAttribute('y', p.y);
-        rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
-        rect.setAttribute('rx', '8');
-        var col = roleColor[n.role] || '#e3a44a';
-        rect.setAttribute('fill', col + '22');   // translucent fill
-        rect.setAttribute('stroke', col);
-        rect.setAttribute('stroke-width', '1.6');
-        g.appendChild(rect);
+    if (DAG_CY) { try { DAG_CY.destroy(); } catch (e) {} DAG_CY = null; }
 
-        var label = document.createElementNS(SVGNS, 'text');
-        label.setAttribute('x', p.x + NODE_W / 2);
-        label.setAttribute('y', p.y + NODE_H / 2 - 2);
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('font-size', '12');
-        label.setAttribute('font-weight', '600');
-        label.setAttribute('fill', 'var(--text-primary)');
-        var name = n.label.length > 22 ? n.label.slice(0, 21) + '\u2026' : n.label;
-        label.textContent = name;
-        var title = document.createElementNS(SVGNS, 'title');
-        title.textContent = n.label + ' (' + n.type + ')';
-        label.appendChild(title);
-        g.appendChild(label);
+    DAG_CY = cytoscape({
+        container: cyEl,
+        elements: elements,
+        wheelSensitivity: 0.2,
+        minZoom: 0.2,
+        maxZoom: 3,
+        style: [
+            { selector: 'node', style: {
+                'background-color': 'data(color)',
+                'background-opacity': 0.18,
+                'border-color': 'data(color)',
+                'border-width': 2,
+                'shape': 'round-rectangle',
+                'label': 'data(label)',
+                'width': 'label', 'height': 46,
+                'padding': '12px',
+                'text-valign': 'center', 'text-halign': 'center',
+                'text-wrap': 'wrap', 'text-max-width': '150px',
+                'font-size': 12, 'font-weight': 600,
+                'font-family': 'Inter, sans-serif',
+                'color': textColor
+            }},
+            { selector: 'node:selected', style: {
+                'border-width': 4, 'background-opacity': 0.32
+            }},
+            { selector: 'edge', style: {
+                'width': 1.8, 'line-color': edgeColor,
+                'target-arrow-color': edgeColor,
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier',
+                'label': 'data(label)',
+                'font-size': 10, 'color': cssVar('--text-secondary', '#666'),
+                'font-family': 'Spline Sans Mono, monospace',
+                'text-background-color': cssVar('--bg-body', '#fff'),
+                'text-background-opacity': 0.85,
+                'text-background-padding': 2
+            }}
+        ],
+        layout: dagLayout()
+    });
 
-        var type = document.createElementNS(SVGNS, 'text');
-        type.setAttribute('class', 'node-type');
-        type.setAttribute('x', p.x + NODE_W / 2);
-        type.setAttribute('y', p.y + NODE_H / 2 + 13);
-        type.setAttribute('text-anchor', 'middle');
-        type.textContent = n.type;
-        g.appendChild(type);
-
-        svg.appendChild(g);
+    // Interactions: click and right-click both open the node-state panel.
+    DAG_CY.on('tap', 'node', function (evt) { showNodePanel(evt.target); });
+    DAG_CY.on('cxttap', 'node', function (evt) { showNodePanel(evt.target); });
+    // Click on empty background closes the panel.
+    DAG_CY.on('tap', function (evt) {
+        if (evt.target === DAG_CY) hideNodePanel();
     });
 }
-document.addEventListener('DOMContentLoaded', renderDagGraph);
+
+function dagLayout() {
+    // Left-to-right layered layout that matches the topological flow.
+    return {
+        name: 'breadthfirst',
+        directed: true,
+        spacingFactor: 1.3,
+        padding: 20,
+        transform: function (node, pos) { return { x: pos.y, y: pos.x }; }
+    };
+}
+
+function showNodePanel(node) {
+    var s = node.data('state') || {};
+    var panel = document.getElementById('dagNodePanel');
+    var title = document.getElementById('dagNodePanelTitle');
+    var body = document.getElementById('dagNodePanelBody');
+    if (!panel) return;
+
+    title.textContent = s.label || node.id();
+
+    function esc(v) {
+        return String(v).replace(/[&<>"']/g, function (c) {
+            return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+        });
+    }
+    function row(label, value, cls) {
+        return '<div class="np-row"><span class="np-label">' + esc(label) +
+               '</span><span class="np-value ' + (cls || '') + '">' +
+               esc(value) + '</span></div>';
+    }
+
+    var color = (node.data('color') || '#e3a44a');
+    var html = '';
+    html += '<div class="np-row"><span class="np-label">Role</span>' +
+            '<span class="np-value"><span class="np-badge" style="background:' +
+            color + '">' + esc(s.role || '-') + '</span></span></div>';
+    html += row('Type', s.type || '-');
+    if (s.calculator) html += row('Calculator', s.calculator);
+    if (s.calculation_count !== null && s.calculation_count !== undefined)
+        html += row('Calculations', s.calculation_count);
+    html += row('Last run', s.last_calculation || 'Never');
+    html += row('Dependencies',
+                (s.dependencies && s.dependencies.length)
+                    ? s.dependencies.join(', ') : 'None');
+    var errs = s.error_count || 0;
+    html += row('Errors', errs, errs > 0 ? 'err' : '');
+    if (errs > 0 && s.last_error)
+        html += row('Last error', s.last_error, 'err');
+
+    body.innerHTML = html;
+    panel.style.display = 'block';
+}
+
+function hideNodePanel() {
+    var panel = document.getElementById('dagNodePanel');
+    if (panel) panel.style.display = 'none';
+}
+
+function initDagGraphControls() {
+    var z = function (factor) {
+        if (!DAG_CY) return;
+        DAG_CY.zoom({ level: DAG_CY.zoom() * factor,
+                      renderedPosition: { x: DAG_CY.width() / 2,
+                                          y: DAG_CY.height() / 2 } });
+    };
+    var bind = function (id, fn) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('click', fn);
+    };
+    bind('graphZoomIn', function () { z(1.25); });
+    bind('graphZoomOut', function () { z(0.8); });
+    bind('graphFit', function () { if (DAG_CY) DAG_CY.fit(undefined, 30); });
+    bind('graphRelayout', function () {
+        if (DAG_CY) DAG_CY.layout(dagLayout()).run();
+    });
+    bind('dagNodePanelClose', hideNodePanel);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    initDagGraphControls();
+    buildDagGraph();
+});
 
 // Pagination state for each table
 var tables = {

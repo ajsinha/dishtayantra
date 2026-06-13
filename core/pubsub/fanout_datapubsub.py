@@ -37,7 +37,7 @@ class FanoutDataPublisher(DataPublisher):
 
     def __init__(self, name, destination, config):
         """
-        Initialize MessageRouterDataPublisher
+        Initialize FanoutDataPublisher
 
         Args:
             name: Name of the router publisher
@@ -77,7 +77,7 @@ class FanoutDataPublisher(DataPublisher):
                 raise TypeError(f"Child publisher '{key}' is not a DataPublisher instance")
 
         logger.info(
-            f"MessageRouterDataPublisher '{name}' initialized with {len(self.child_publishers)} child publishers")
+            f"FanoutDataPublisher '{name}' initialized with {len(self.child_publishers)} child publishers")
 
     def _load_resolver(self, class_path) -> RoutingKeyResolverLike:
         """

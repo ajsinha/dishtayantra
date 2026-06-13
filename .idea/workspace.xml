@@ -5,169 +5,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICKSTART.md" beforeDir="false" afterPath="$PROJECT_DIR$/QUICKSTART.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICKSTART_v1.5.2.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICKSTART_v1.6.0.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/QUICKSTART_v1.7.0.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/dags/ash_dag_with_auto_clone.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/dags/metronome_heartbeat.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/dags/metronome_heartbeat.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/users.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/calculator/java_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/java_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/calculator/rest_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/rest_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/cpp/cpp_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/cpp/cpp_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/scheduled_heartbeat.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/dags/scheduled_heartbeat.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/users.json.migrated" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/core/dag/compute_graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/dag_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/node_implementations.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/node_implementations.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/subgraph.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/subgraph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/time_window_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/time_window_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/db/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/db/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/db/db_connection_pool.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/db/db_connection_pool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/db/db_connection_pool_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/db/db_connection_pool_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/jvm/jvm_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/jvm/jvm_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/lmdb/lmdb_transport.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/lmdb/lmdb_transport.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/metrics/prometheus_metrics.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/metrics/prometheus_metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/properties_configurator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/properties_configurator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/activemq_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/activemq_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/fanin_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/fanin_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph_support.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph_support.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/dag_server_autoclone.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server_autoclone.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/dag_server_support.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server_support.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/fanout_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/fanout_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/grpc_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/grpc_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/holder_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/holder_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/inmemory_redisclone.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/inmemory_redisclone.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/inmemoryredis_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/inmemoryredis_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/lmdbpubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/lmdbpubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/pubsubfactory.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/pubsubfactory.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/rabbitmq_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/rabbitmq_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/redis_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/redis_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/websphere_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/websphere_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/rust/rust_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/rust/rust_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/user_registry.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/user_registry.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_pool.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_pool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_process.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/fanout_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/fanout_subscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/lmdbpubsub_endpoints.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/lmdbpubsub_endpoints.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ARCHITECTURE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/ActiveMQ DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/ActiveMQ DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Admin and System Monitoring Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Admin and System Monitoring Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/AutoClone - Visual Guide.md" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/userguides/AutoClone Feature - Complete Documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/AutoClone Feature - Complete Documentation.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/COMPLETE_IMPLEMENTATION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Cache Management Implementation.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/DB Connection Pool Manager.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/DB Connection Pool.md" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Delete Button Visibility - Visual Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Enterprise Pipeline 50 Nodes - Quick Reference.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/In-Memory DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/In-Memory DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/In-Memory Redis Clone.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/In-Memory Redis Clone.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/InMemoryPubSub Manager Comprehensive Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/InMemoryRedis Quick Reference Card.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Kafka DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Kafka DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/LMDB Zero-Copy Integration Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/LMDB Zero-Copy Integration Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Multi-Language Calculator Integration Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Multi-Language Calculator Integration Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Multi-Role User System - Implementation Summary.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/PROJECT_COMPLETE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Prometheus Monitoring Integration Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Prometheus Monitoring Integration Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/QUICKSTART.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/REST DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/REST DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/RabbitMQ DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/RabbitMQ DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Redis DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Redis DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient AciveMQ.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient Kafka.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient Rabbit.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient Redis.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient TibcoEMS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient WebsphereMQ.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/TIBCO EMS DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/TIBCO EMS DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/User Management Architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/User Management Architecture.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/WebSphere MQ (IBM MQ) DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/WebSphere MQ (IBM MQ) DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Message Router Components - Complete Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Message Router Components - Complete Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/userguides/Worker Pool and DAG Affinity Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Worker Pool and DAG Affinity Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/gRPC DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/gRPC DataPublisher and DataSubscriber Setup Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/example/lmdb_calculators/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/dag/trade_ingest.py" beforeDir="false" afterPath="$PROJECT_DIR$/example/tradeprocessor/dag/trade_ingest.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" afterPath="$PROJECT_DIR$/logs/dagserver.log" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/admin_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/admin_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/auth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/auth_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/cache_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/cache_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/cpp_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/cpp_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/dag_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dag_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/dagdesigner_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dagdesigner_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/admin_log_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/admin_log_routes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes/dashboard_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dashboard_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/jvm_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/jvm_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/metrics_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/metrics_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/noauth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/noauth_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/rust_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/rust_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/user_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/user_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/worker_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/worker_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_worker_pool.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_worker_pool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/dishtyantra_webapp.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_schedule.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_schedule.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/admin/system_logs.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/admin/system_logs.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/admin/system_monitoring.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/admin/system_monitoring.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/admin/workers.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/admin/workers.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/cache/create.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cache/create.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/cache/edit.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cache/edit.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/cache/management.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cache/management.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/cache/view.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cache/view.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/cpp/management.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cpp/management.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/cpp/module_details.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/cpp/module_details.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/clone.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/clone.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/designer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/designer.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/dag/details.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/details.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/publish_message.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/publish_message.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/state.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/state.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/activemq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/activemq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/api_reference.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/api_reference.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/architecture.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/architecture.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/autoclone.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/autoclone.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/cache.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/cache.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/calculators.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/calculators.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/dag_configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/dag_configuration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/dag_designer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/dag_designer.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/free_threading.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/free_threading.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/getting_started.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/getting_started.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/glossary.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/glossary.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/ibmmq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/ibmmq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/inmemory_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/inmemory_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/parallelism.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/parallelism.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/prometheus_monitoring.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/prometheus_monitoring.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/pubsub.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pubsub.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/py4j_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/py4j_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rabbitmq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rabbitmq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/redis_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/redis_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/research.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/research.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rest_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rest_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rust_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rust_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/sample_dags.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/sample_dags.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/subgraph.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/subgraph.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tibco_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/tibco_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/time_windows.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/time_windows.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/transformers.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/transformers.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/userguide_view.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/userguide_view.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/userguides.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/userguides.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/worker_pool.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/worker_pool.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/jvm/calculators.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/jvm/calculators.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/jvm/gateway_details.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/jvm/gateway_details.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/jvm/management.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/jvm/management.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/user/create.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/user/create.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/user/edit.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/user/edit.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/user/management.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/user/management.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -257,7 +119,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1771698938108</updated>
-      <workItem from="1781296084492" duration="8628000" />
+      <workItem from="1781296084492" duration="10812000" />
     </task>
     <servers />
   </component>
@@ -265,6 +127,6 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/dishtayantra$run_server.coverage" NAME="run_server Coverage Results" MODIFIED="1781362893675" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/dishtayantra$run_server.coverage" NAME="run_server Coverage Results" MODIFIED="1781370235436" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

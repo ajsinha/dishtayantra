@@ -28,6 +28,22 @@ from web.fastapi_compat import (
 logger = logging.getLogger(__name__)
 
 
+def _json_safe(value):
+    """Coerce a value to something JSON-serializable for the graph payload.
+
+    datetimes -> ISO string; everything else is returned as-is (str fallback
+    for exotic types) so a node's live state never breaks template rendering.
+    """
+    if value is None:
+        return None
+    from datetime import datetime, date
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
 class DashboardRoutes:
     """Handles dashboard-related routes."""
 
@@ -162,11 +178,27 @@ class DashboardRoutes:
             graph_nodes = []
             graph_edges = []
             for node in sorted_nodes:
+                deps = [edge.from_node.name
+                        for edge in node._incoming_edges]
+                calc = getattr(node, '_calculator', None)
                 graph_nodes.append({
                     'id': node.name,
                     'label': node.name,
                     'type': node.__class__.__name__,
                     'role': _role(node.__class__.__name__),
+                    # Live state for the interactive node panel:
+                    'dependencies': deps,
+                    'calculator': (getattr(calc, 'name', None)
+                                   or (calc.__class__.__name__
+                                       if calc is not None else None)),
+                    'calculation_count': getattr(calc, '_calculation_count',
+                                                 None) if calc else None,
+                    'last_calculation': _json_safe(
+                        getattr(node, '_last_compute', None)),
+                    'error_count': len(getattr(node, '_errors', []) or []),
+                    'last_error': (list(getattr(node, '_errors', []))[-1]
+                                   if getattr(node, '_errors', None)
+                                   else None),
                 })
                 for edge in node._incoming_edges:
                     edge_obj = {

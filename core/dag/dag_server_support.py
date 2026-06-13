@@ -208,12 +208,15 @@ class DAGMonitorMixin:
             new_start = str(raw_start).replace(':', '')
             if duration is not None:
                 new_end = calculate_end_time(new_start, duration)
+                new_duration = duration
             elif legacy_end:
                 new_end = str(legacy_end).replace(':', '')
+                new_duration = None
             else:
                 new_end = calculate_end_time(new_start, None)
+                new_duration = None
         else:
-            new_start, new_end = None, None
+            new_start, new_end, new_duration = None, None, None
 
         # Parse + validate the (possibly new) schedule block. A broken
         # edit must NOT replace a working schedule: log and keep the old.
@@ -228,12 +231,14 @@ class DAGMonitorMixin:
         old_schedule = getattr(dag, 'schedule', None)
         unchanged = (new_start == dag.start_time and
                      new_end == dag.end_time and
+                     new_duration == getattr(dag, 'duration', None) and
                      ((new_schedule is None and old_schedule is None) or
                       (new_schedule is not None and
                        new_schedule == old_schedule)))
         if unchanged:
             return
-        dag.apply_schedule_update(new_start, new_end, new_schedule)
+        dag.apply_schedule_update(new_start, new_end, new_schedule,
+                                  duration=new_duration)
 
 
     def _time_window_monitor_loop(self):

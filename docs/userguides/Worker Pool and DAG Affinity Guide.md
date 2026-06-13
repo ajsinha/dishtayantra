@@ -465,7 +465,7 @@ LMDB is memory-mapped and supports multiple readers across processes.
 
 ---
 
-## Files Added in v1.5.2
+## Files
 
 | File | Description |
 |------|-------------|

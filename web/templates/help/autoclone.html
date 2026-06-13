@@ -111,7 +111,17 @@
                 <tr>
                     <td><code>ramp_count</code></td>
                     <td>integer</td>
-                    <td>Number of clones to create</td>
+                    <td>Number of clones to create (must be &gt; 0)</td>
+                </tr>
+                <tr>
+                    <td><code>ramp_down_time</code></td>
+                    <td>HHMM</td>
+                    <td>Legacy alternative to <code>duration</code>; explicit time to begin ramp-down. If neither is set, defaults to 8h.</td>
+                </tr>
+                <tr>
+                    <td><code>timezone</code></td>
+                    <td>IANA name</td>
+                    <td>Zone the ramp times are evaluated in (e.g. <code>America/New_York</code>). Defaults to the DAG's schedule timezone, else <code>America/New_York</code>. Ramp times are wall-clock, <em>not</em> server-local.</td>
                 </tr>
             </tbody>
         </table>

@@ -91,6 +91,17 @@
     .log-filter-btn.INFO { border-color: #3b82f6; }
     .log-filter-btn.WARNING { border-color: #f59e0b; }
     .log-filter-btn.ERROR { border-color: #ef4444; }
+    .log-dag-tag {
+        display: inline-block;
+        background: color-mix(in srgb, var(--brass, #e3a44a) 22%, transparent);
+        color: var(--brass, #e3a44a);
+        border: 1px solid color-mix(in srgb, var(--brass, #e3a44a) 45%, transparent);
+        border-radius: 4px;
+        padding: 0 6px;
+        margin-right: 6px;
+        font-size: 0.72rem;
+        font-family: 'Spline Sans Mono', monospace;
+    }
     
     .log-stats {
         display: flex;
@@ -238,6 +249,13 @@
                 <option value="application">application.log</option>
                 <option value="error">error.log</option>
             </select>
+
+            <select class="log-file-selector" id="dagFilterSelect" title="Filter by DAG">
+                <option value="">All DAGs &amp; server</option>
+                {% for d in dag_names %}
+                <option value="{{ d }}"{% if d == selected_dag %} selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
             
             <input type="text" class="search-box" placeholder="Search logs..." id="logSearch">
             
@@ -260,9 +278,10 @@
     <div class="log-viewer" id="logViewer">
         {% if log_entries %}
             {% for entry in log_entries %}
-            <div class="log-line" data-level="{{ entry.level }}">
+            <div class="log-line" data-level="{{ entry.level }}" data-dag="{{ entry.dag or '' }}">
                 <span class="log-timestamp">{{ entry.timestamp }}</span>
                 <span class="log-level {{ entry.level }}">{{ entry.level }}</span>
+                {% if entry.dag %}<span class="log-dag-tag">{{ entry.dag }}</span>{% endif %}
                 <span class="log-message">{{ entry.message }}</span>
             </div>
             {% endfor %}
@@ -279,6 +298,27 @@
 
 {% block extra_js %}
 <script>
+// Current server-side filters (file + dag) drive page reloads; level/search
+// are client-side over the already-loaded entries.
+var SELECTED_FILE = "{{ selected_file or 'dagserver' }}";
+var SELECTED_DAG = "{{ selected_dag or '' }}";
+
+// Reflect server-side selections in the dropdowns on load.
+(function initSelectors() {
+    var fileSel = document.getElementById('logFileSelect');
+    if (fileSel) fileSel.value = SELECTED_FILE;
+    function reload() {
+        var f = document.getElementById('logFileSelect').value;
+        var d = document.getElementById('dagFilterSelect').value;
+        var qs = 'file=' + encodeURIComponent(f);
+        if (d) qs += '&dag=' + encodeURIComponent(d);
+        window.location.href = "{{ url_for('system_logs') }}?" + qs;
+    }
+    if (fileSel) fileSel.addEventListener('change', reload);
+    var dagSel = document.getElementById('dagFilterSelect');
+    if (dagSel) dagSel.addEventListener('change', reload);
+})();
+
 // Filter buttons
 document.querySelectorAll('.log-filter-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -309,18 +349,26 @@ document.getElementById('logSearch').addEventListener('input', function() {
     filterLogs(activeLevel);
 });
 
+function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;',
+        '>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function refreshLogs() {
     const logFile = document.getElementById('logFileSelect').value;
-    fetch(`{{ url_for('system_logs_api') }}?file=${logFile}`)
+    let url = `{{ url_for('system_logs_api') }}?file=${encodeURIComponent(logFile)}`;
+    if (SELECTED_DAG) url += `&dag=${encodeURIComponent(SELECTED_DAG)}`;
+    fetch(url)
         .then(response => response.json())
         .then(data => {
             const viewer = document.getElementById('logViewer');
             if (data.entries && data.entries.length > 0) {
                 viewer.innerHTML = data.entries.map(entry => `
-                    <div class="log-line" data-level="${entry.level}">
-                        <span class="log-timestamp">${entry.timestamp}</span>
+                    <div class="log-line" data-level="${entry.level}" data-dag="${entry.dag || ''}">
+                        <span class="log-timestamp">${escapeHtml(entry.timestamp)}</span>
                         <span class="log-level ${entry.level}">${entry.level}</span>
-                        <span class="log-message">${entry.message}</span>
+                        ${entry.dag ? `<span class="log-dag-tag">${escapeHtml(entry.dag)}</span>` : ''}
+                        <span class="log-message">${escapeHtml(entry.message)}</span>
                     </div>
                 `).join('');
             } else {
@@ -341,7 +389,9 @@ function refreshLogs() {
 
 function downloadLogs() {
     const logFile = document.getElementById('logFileSelect').value;
-    window.location.href = `{{ url_for('download_logs') }}?file=${logFile}`;
+    let url = `{{ url_for('download_logs') }}?file=${encodeURIComponent(logFile)}`;
+    if (SELECTED_DAG) url += `&dag=${encodeURIComponent(SELECTED_DAG)}`;
+    window.location.href = url;
 }
 
 // Auto-scroll to bottom on load

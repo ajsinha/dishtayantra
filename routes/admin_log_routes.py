@@ -38,6 +38,26 @@ LOG_PATHS = {
 
 VALID_LEVELS = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 
+# Matches the conventional DAG-tagged message prefix used throughout the
+# engine, e.g. "DAG scheduled_heartbeat: started". The name is the token(s)
+# up to the first colon. Kept deliberately strict (word/.-/ chars) so a
+# stray "DAG: foo" or prose mentioning "DAG" does not false-match.
+import re as _re
+_DAG_TAG_RE = _re.compile(r'^DAG\s+([A-Za-z0-9_.\-]+)\s*[:]\s*(.*)$',
+                          _re.DOTALL)
+
+
+def extract_dag_name(message):
+    """Return the DAG name a log message refers to, or None.
+
+    Recognizes the engine's "DAG <name>: ..." convention. Returns the bare
+    name so the viewer can filter/group by DAG without per-DAG logfiles.
+    """
+    if not message:
+        return None
+    m = _DAG_TAG_RE.match(message.strip())
+    return m.group(1) if m else None
+
 
 class AdminLogRoutes:
     """Admin log viewing and live streaming routes handler."""
@@ -65,8 +85,12 @@ class AdminLogRoutes:
     # Parsing helpers
     # ------------------------------------------------------------------ #
 
-    def _parse_log_file(self, log_path, max_lines=500):
-        """Parse the tail of a log file into structured entries."""
+    def _parse_log_file(self, log_path, max_lines=500, dag_filter=None):
+        """Parse the tail of a log file into structured entries.
+
+        When ``dag_filter`` is given, only entries attributed to that DAG
+        (via the "DAG <name>:" convention) are returned.
+        """
         entries = []
         if not os.path.exists(log_path):
             return entries
@@ -95,6 +119,9 @@ class AdminLogRoutes:
                                 entry['message'] = ' - '.join(parts[1:])
                         else:
                             entry['message'] = parts[1]
+                entry['dag'] = extract_dag_name(entry['message'])
+                if dag_filter and entry['dag'] != dag_filter:
+                    continue
                 entries.append(entry)
         except Exception as e:  # noqa: BLE001
             logger.error(f"Error parsing log file {log_path}: {e}")
@@ -134,7 +161,8 @@ class AdminLogRoutes:
                 level = 'INFO'
             source_name = os.path.basename(source_file).replace('.log', '')
             return {'timestamp': timestamp, 'level': level,
-                    'message': message, 'source': source_name}
+                    'message': message, 'source': source_name,
+                    'dag': extract_dag_name(message)}
         except Exception as e:  # noqa: BLE001
             logger.error(f"Error parsing log line: {e}")
             logger.error(traceback.format_exc())
@@ -151,37 +179,85 @@ class AdminLogRoutes:
         """System logs viewer page."""
         self.guards.admin_required(request)
         log_file = request.query_params.get('file', 'dagserver')
+        dag_filter = request.query_params.get('dag') or None
         log_path = LOG_PATHS.get(log_file, LOG_PATHS['dagserver'])
-        entries = self._parse_log_file(log_path)
+        # Parse unfiltered once to discover which DAGs appear in the log
+        # (for the filter dropdown), then apply the filter for display.
+        all_entries = self._parse_log_file(log_path)
+        dag_names = sorted({e['dag'] for e in all_entries if e.get('dag')})
+        entries = [e for e in all_entries if e['dag'] == dag_filter] \
+            if dag_filter else all_entries
         stats = self._get_log_stats(entries)
         if os.path.exists(log_path):
             stats['file_size'] = format_bytes(os.path.getsize(log_path))
         return render(request, 'admin/system_logs.html',
                       log_entries=entries,
                       log_stats=stats,
-                      selected_file=log_file)
+                      selected_file=log_file,
+                      dag_names=dag_names,
+                      selected_dag=dag_filter or '')
 
     def system_logs_api(self, request: Request):
         """API endpoint for log refreshes."""
         self.guards.admin_required(request)
         log_file = request.query_params.get('file', 'dagserver')
+        dag_filter = request.query_params.get('dag') or None
         log_path = LOG_PATHS.get(log_file, LOG_PATHS['dagserver'])
-        entries = self._parse_log_file(log_path)
-        return JSONResponse({'entries': entries, 'total': len(entries)})
+        all_entries = self._parse_log_file(log_path)
+        dag_names = sorted({e['dag'] for e in all_entries if e.get('dag')})
+        entries = [e for e in all_entries if e['dag'] == dag_filter] \
+            if dag_filter else all_entries
+        return JSONResponse({'entries': entries, 'total': len(entries),
+                             'dag_names': dag_names})
 
     def download_logs(self, request: Request):
-        """Download the selected raw log file."""
+        """Download the selected raw log file, optionally filtered to one DAG.
+
+        A ``dag`` query param produces an on-demand filtered download (lines
+        attributed to that DAG only) rather than maintaining a per-DAG file.
+        """
         self.guards.admin_required(request)
         log_file = request.query_params.get('file', 'dagserver')
+        dag_filter = request.query_params.get('dag') or None
         log_path = LOG_PATHS.get(log_file, LOG_PATHS['dagserver'])
-        if os.path.exists(log_path):
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            return FileResponse(
-                log_path,
+        if not os.path.exists(log_path):
+            flash(request, 'Log file not found.', 'error')
+            return redirect_to(request, 'system_logs')
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        if dag_filter:
+            # Build a filtered text body on the fly. Read the whole file and
+            # keep lines attributed to this DAG.
+            lines = []
+            try:
+                with open(log_path, 'r', encoding='utf-8',
+                          errors='ignore') as f:
+                    for line in f:
+                        msg = line
+                        if ' - ' in line:
+                            parts = line.split(' - ', 2)
+                            msg = parts[2] if len(parts) >= 3 else line
+                        if extract_dag_name(msg.strip()) == dag_filter:
+                            lines.append(line.rstrip('\n'))
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Error filtering log for DAG "
+                             f"{dag_filter}: {e}")
+                flash(request, 'Could not build filtered log.', 'error')
+                return redirect_to(request, 'system_logs')
+            body = '\n'.join(lines) + ('\n' if lines else '')
+            safe_dag = ''.join(c for c in dag_filter
+                               if c.isalnum() or c in '_.-')
+            return StreamingResponse(
+                iter([body]),
                 media_type='text/plain',
-                filename=f'{log_file}_{timestamp}.log')
-        flash(request, 'Log file not found.', 'error')
-        return redirect_to(request, 'system_logs')
+                headers={'Content-Disposition':
+                         f'attachment; filename='
+                         f'"{log_file}_{safe_dag}_{timestamp}.log"'})
+
+        return FileResponse(
+            log_path,
+            media_type='text/plain',
+            filename=f'{log_file}_{timestamp}.log')
 
     def live_logs(self, request: Request):
         """Render the live logs page."""

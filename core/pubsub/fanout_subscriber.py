@@ -42,7 +42,7 @@ class FanoutDataSubscriber(FanoutSubscriberStatsMixin, DataSubscriber):
 
     def __init__(self, name, config):
         """
-        Initialize MessageRouterDataSubscriber
+        Initialize FanoutDataSubscriber
 
         Args:
             name: Name of the router subscriber
@@ -106,7 +106,7 @@ class FanoutDataSubscriber(FanoutSubscriberStatsMixin, DataSubscriber):
             self.add_child_subscriber(key, child)
 
         logger.info(
-            f"MessageRouterDataSubscriber '{self.name}' initialized with {len(self.child_subscribers)} child subscribers")
+            f"FanoutDataSubscriber '{self.name}' initialized with {len(self.child_subscribers)} child subscribers")
         return child_subscription_objects
 
     def _load_resolver(self, class_path):

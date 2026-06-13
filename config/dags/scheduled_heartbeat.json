@@ -1,7 +1,7 @@
 {
   "name": "scheduled_heartbeat",
-  "start_time": "1103",
-
+  "start_time": "0930",
+  "end_time": null,
   "subscribers": [
     {
       "name": "sched_hb_subscriber_1",
@@ -109,5 +109,5 @@
     ],
     "timezone": "America/New_York"
   },
-  "duration": "1h00m"
+  "duration": "6h30m"
 }

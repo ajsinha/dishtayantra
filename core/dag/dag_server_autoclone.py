@@ -103,7 +103,9 @@ class DAGAutoCloneMixin:
                 if not self.is_primary:
                     continue
 
-                current_time = datetime.now().strftime('%H%M')
+                # current_time is resolved per-DAG below in the schedule's
+                # timezone (autoclone ramp times are wall-clock like the
+                # market schedule, so a UTC server must not shift them).
 
                 # Collect work to do without holding the lock for long
                 dags_to_process = []
@@ -126,6 +128,24 @@ class DAGAutoCloneMixin:
 
                         autoclone_config = dag.config['autoclone']
                         ramp_up_time = autoclone_config['ramp_up_time']
+
+                        # Evaluate ramp times in the schedule's timezone
+                        # (default US/Eastern) so they behave as wall-clock
+                        # regardless of the server's own zone. An explicit
+                        # autoclone.timezone overrides; otherwise inherit the
+                        # DAG schedule's timezone.
+                        from core.schedule.dag_schedule import (
+                            DEFAULT_SCHEDULE_TIMEZONE, _resolve_timezone)
+                        tz_name = autoclone_config.get('timezone')
+                        if not tz_name:
+                            sched = getattr(dag, 'schedule', None)
+                            tz_name = getattr(sched, 'timezone_name', None) \
+                                or DEFAULT_SCHEDULE_TIMEZONE
+                        tzinfo = _resolve_timezone(tz_name)
+                        if tzinfo is not None:
+                            current_time = datetime.now(tzinfo).strftime('%H%M')
+                        else:
+                            current_time = datetime.now().strftime('%H%M')
 
                         # NEW: Support duration instead of ramp_down_time
                         # Calculate ramp_down_time from ramp_up_time + duration

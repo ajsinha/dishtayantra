@@ -10,6 +10,7 @@ Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
 import json
+from core.version import VERSION
 from abc import ABC, abstractmethod
 import threading
 import queue
@@ -194,7 +195,7 @@ class DataSubscriber(AbstractDataPubSub):
                     'subscriber_name': self.name,
                     'source': self.source,
                     'received_at': datetime.now().isoformat(),
-                    'packaging_version': '1.5.2'
+                    'packaging_version': VERSION
                 }
             
             # Track packaging statistics

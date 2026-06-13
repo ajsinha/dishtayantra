@@ -21,9 +21,10 @@
 11. [Admin & Monitoring System](#admin--monitoring-system)
 12. [Prometheus Metrics Integration](#prometheus-metrics-integration)
 13. [High Availability](#high-availability)
-14. [Security Architecture](#security-architecture)
-15. [Performance Considerations](#performance-considerations)
-16. [Deployment Architecture](#deployment-architecture)
+14. [Market-Aware Scheduling](#market-aware-scheduling)
+15. [Security Architecture](#security-architecture)
+16. [Performance Considerations](#performance-considerations)
+17. [Deployment Architecture](#deployment-architecture)
 
 ---
 
@@ -48,7 +49,7 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 │  └────────────────────────────────┬────────────────────────────────────┘ │
 │                                   │                                      │
 │  ┌────────────────────────────────┴────────────────────────────────────┐ │
-│  │                     Worker Pool Manager (v1.5.2)                     │ │
+│  │                     Worker Pool Manager                     │ │
 │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │ │
 │  │  │  Affinity   │  │   Health    │  │    LMDB     │  │   Auto     │  │ │
 │  │  │  Manager    │  │   Monitor   │  │   Pub/Sub   │  │  Restart   │  │ │
@@ -207,7 +208,7 @@ Represents a single DAG with all its nodes and edges.
 
 ## Worker Pool Architecture
 
-### Overview (v1.5.2)
+### Overview
 
 The Worker Pool provides true CPU parallelism by distributing DAG execution across multiple worker processes, bypassing Python's Global Interpreter Lock (GIL).
 
@@ -316,7 +317,7 @@ Benefits:
 
 ## JVM Manager Architecture
 
-### Overview (v1.6.0)
+### Overview
 
 The JVM Manager provides centralized management of Java Virtual Machine instances and Py4J gateway connections for Java calculator integration.
 
@@ -453,7 +454,7 @@ Main Process                          Worker Process
 
 ## CPP Manager Architecture
 
-### Overview (v1.7.0)
+### Overview
 
 The CPP Manager provides centralized management of C++ pybind11 modules and calculators for high-performance native computation.
 
@@ -562,7 +563,7 @@ Similar to JVM Manager, CPP Manager works across main and worker processes:
 
 ## Rust Manager Architecture
 
-### Overview (v1.7.0)
+### Overview
 
 The Rust Manager provides centralized management of Rust PyO3 modules and calculators with memory safety guarantees at compile time.
 
@@ -1360,6 +1361,50 @@ class MyCalculator:
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Market-Aware Scheduling
+
+Each DAG may carry a schedule that gates when it runs. A schedule combines a
+daily time window, day-of-week rules, holiday calendars, and a timezone, all
+evaluated together on every monitor pass.
+
+### Schedule model
+
+- **Time window** — `start_time` (HHMM) plus a `duration` (e.g. `6h30m`);
+  the end is computed as `start_time + duration`. Windows that wrap past
+  midnight are handled. A legacy explicit `end_time` is still accepted.
+- **Days** — `days_of_week` (allow-list) and `exclude_days_of_week`
+  (deny-list).
+- **Holiday calendars** — one or more named calendars (e.g. `USA`, `CANADA`)
+  baked for 2026-2040; a DAG is inactive on any followed calendar's holiday.
+- **Timezone** — an IANA name (default `America/New_York`). **The whole
+  schedule is evaluated in this timezone, not the server's local clock.**
+  Because servers commonly run in UTC, a naive comparison would shift a
+  market window by several hours; resolving "now" in the schedule's zone
+  (via `zoneinfo`, DST-aware) keeps `0930-1600` meaning Eastern market hours
+  regardless of host timezone.
+
+### Evaluation path
+
+```
+dag.is_within_schedule(now=None)
+        │
+        ▼
+is_schedule_active(start_time, end_time, schedule, now)
+        │   resolves "now" in schedule.timezone
+        ├─► is_within_time_window(...)      (wrap-around aware)
+        └─► schedule.is_active(...)          (day-of-week + holiday)
+        ▼
+   (active: bool, reason: str)   ← reason is surfaced on the dashboard
+```
+
+The DAG server's time-window monitor loop (PRIMARY only) calls
+`is_within_schedule()` every cycle to auto-suspend/resume DAGs as they leave
+and enter their window. Intraday edits to a DAG's schedule or to calendar
+files are picked up within ~5 minutes without a restart. AutoClone ramp times
+are evaluated in the same timezone for consistency.
 
 ---
 

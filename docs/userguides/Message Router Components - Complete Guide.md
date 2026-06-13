@@ -2,20 +2,20 @@
 
 ## Overview
 
-The Message Router system provides **intelligent routing capabilities** for both incoming (subscriber) and outgoing (publisher) messages in the Abhikarta LLM Platform's pub/sub infrastructure.
+The Message Router system provides **intelligent routing capabilities** for both incoming (subscriber) and outgoing (publisher) messages in the DishtaYantra pub/sub infrastructure.
 
 ### Components
 
-1. **MessageRouterDataSubscriber** - Routes incoming messages from one source to multiple child subscribers (Fan-Out for Subscribers)
-2. **MessageRouterDataPublisher** - Routes outgoing messages to multiple child publishers based on strategy (Fan-Out for Publishers)
+1. **FanoutDataSubscriber** - Routes incoming messages from one source to multiple child subscribers (Fan-Out for Subscribers)
+2. **FanoutDataPublisher** - Routes outgoing messages to multiple child publishers based on strategy (Fan-Out for Publishers)
 
 Both components use **pluggable resolver strategies** to determine routing destinations, providing flexibility for various routing patterns.
 
 ## Component Comparison
 
-### MessageRouterDataSubscriber vs MessageRouterDataPublisher
+### FanoutDataSubscriber vs FanoutDataPublisher
 
-| Feature | MessageRouterDataSubscriber | MessageRouterDataPublisher |
+| Feature | FanoutDataSubscriber | FanoutDataPublisher |
 |---------|----------------------------|---------------------------|
 | **Direction** | Incoming (Subscribe) | Outgoing (Publish) |
 | **Source** | Single DataSubscriber | Application calls publish() |
@@ -37,7 +37,7 @@ Both components use **pluggable resolver strategies** to determine routing desti
 ### Pattern 1: Full Router Pipeline
 
 ```
-External Source → MessageRouterDataSubscriber → Processing → MessageRouterDataPublisher → Multiple Destinations
+External Source → FanoutDataSubscriber → Processing → FanoutDataPublisher → Multiple Destinations
 
 [Source]
    ↓
@@ -50,7 +50,7 @@ External Source → MessageRouterDataSubscriber → Processing → MessageRouter
 ### Pattern 2: Subscriber-Only Routing
 
 ```
-Single Source → MessageRouterDataSubscriber → Multiple Specialized Processors
+Single Source → FanoutDataSubscriber → Multiple Specialized Processors
 
 [Kafka Topic]
       ↓
@@ -63,7 +63,7 @@ Single Source → MessageRouterDataSubscriber → Multiple Specialized Processor
 ### Pattern 3: Publisher-Only Routing
 
 ```
-Application → MessageRouterDataPublisher → Multiple Destinations
+Application → FanoutDataPublisher → Multiple Destinations
 
 [Your App]
      ↓
@@ -75,7 +75,9 @@ Application → MessageRouterDataPublisher → Multiple Destinations
 
 ## Quick Start Examples
 
-### MessageRouterDataSubscriber Example
+> **Note on config:** `source_subscriber` and the values in `child_subscribers` / `child_publishers` are **names** (strings) of subscribers/publishers the server knows about, not live instances. The router resolves them by name. `resolver_class` is a dotted path to a class you provide that implements `resolve(message_dict) -> routing_key`.
+
+### FanoutDataSubscriber Example
 
 ```python
 from core.pubsub.fanout_datapubsub import FanoutDataSubscriber
@@ -88,19 +90,20 @@ log_sub = create_subscriber('logs', {'source': 'mem://queue/logs'})
 
 # Configure router
 config = {
-    'child_subscribers': {'order': order_sub, 'log': log_sub},
-    'resolver_class': 'core.pubsub.example_resolvers.FieldBasedResolver'
+    'source_subscriber': 'source',          # name of the source subscriber
+    'child_subscribers': {'order': 'orders', 'log': 'logs'},  # key -> subscriber NAME
+    'resolver_class': 'myapp.resolvers.FieldBasedResolver'  # user-provided
 }
 
 # Create and start
-router = FanoutDataSubscriber('router', source, config)
+router = FanoutDataSubscriber('router', config)
 router.start()
 
 # Messages with {'type': 'order'} → order_sub
 # Messages with {'type': 'log'} → log_sub
 ```
 
-### MessageRouterDataPublisher Example
+### FanoutDataPublisher Example
 
 ```python
 from core.pubsub.fanout_datapubsub import FanoutDataPublisher
@@ -119,7 +122,7 @@ config = {
         'file': file_pub,
         'queue': queue_pub
     },
-    'resolver_class': 'core.pubsub.example_resolvers.FieldBasedResolver'
+    'resolver_class': 'myapp.resolvers.FieldBasedResolver'  # user-provided
 }
 
 # Create router
@@ -131,7 +134,7 @@ router.publish({'type': 'database', 'order_id': 123, 'amount': 99.99})
 
 ## Configuration
 
-### MessageRouterDataSubscriber Configuration
+### FanoutDataSubscriber Configuration
 
 ```python
 config = {
@@ -146,7 +149,7 @@ config = {
 }
 ```
 
-### MessageRouterDataPublisher Configuration
+### FanoutDataPublisher Configuration
 
 ```python
 config = {
@@ -170,21 +173,20 @@ config = {
 
 ```python
 # Subscriber side - route incoming messages
-subscriber_router = MessageRouterDataSubscriber(
+subscriber_router = FanoutDataSubscriber(
     'input_router',
-    source_subscriber,
     {
         'child_subscribers': {
             'order': order_processor_sub,
             'log': log_processor_sub,
             'notification': notification_processor_sub
         },
-        'resolver_class': 'core.pubsub.example_resolvers.FieldBasedResolver'
+        'resolver_class': 'myapp.resolvers.FieldBasedResolver'  # user-provided
     }
 )
 
 # Publisher side - route processed results to destinations
-publisher_router = MessageRouterDataPublisher(
+publisher_router = FanoutDataPublisher(
     'output_router',
     'router://output',
     {
@@ -193,7 +195,7 @@ publisher_router = MessageRouterDataPublisher(
             'log': file_publisher,
             'notification': queue_publisher
         },
-        'resolver_class': 'core.pubsub.example_resolvers.FieldBasedResolver'
+        'resolver_class': 'myapp.resolvers.FieldBasedResolver'  # user-provided
     }
 )
 ```
@@ -204,21 +206,20 @@ publisher_router = MessageRouterDataPublisher(
 
 ```python
 # Subscriber side - route to priority queues
-subscriber_router = MessageRouterDataSubscriber(
+subscriber_router = FanoutDataSubscriber(
     'priority_input',
-    source_subscriber,
     {
         'child_subscribers': {
             'high': high_priority_processor,
             'medium': medium_priority_processor,
             'low': batch_processor
         },
-        'resolver_class': 'core.pubsub.example_resolvers.PriorityBasedResolver'
+        'resolver_class': 'myapp.resolvers.PriorityBasedResolver'  # user-provided
     }
 )
 
 # Publisher side - high priority to memory, low priority to database
-publisher_router = MessageRouterDataPublisher(
+publisher_router = FanoutDataPublisher(
     'priority_output',
     'router://priority',
     {
@@ -227,7 +228,7 @@ publisher_router = MessageRouterDataPublisher(
             'medium': database_publisher,
             'low': archive_file_publisher
         },
-        'resolver_class': 'core.pubsub.example_resolvers.PriorityBasedResolver'
+        'resolver_class': 'myapp.resolvers.PriorityBasedResolver'  # user-provided
     }
 )
 ```
@@ -243,7 +244,7 @@ class RegionResolver:
         return region
 
 # Publisher side - publish to regional endpoints
-publisher_router = MessageRouterDataPublisher(
+publisher_router = FanoutDataPublisher(
     'geo_router',
     'router://geo',
     {
@@ -269,9 +270,8 @@ class TenantResolver:
         return f'tenant_{tenant_id}' if tenant_id else 'default'
 
 # Subscriber side - tenant-specific processors
-subscriber_router = MessageRouterDataSubscriber(
+subscriber_router = FanoutDataSubscriber(
     'tenant_input',
-    source_subscriber,
     {
         'child_subscribers': {
             'tenant_acme': acme_processor,
@@ -283,7 +283,7 @@ subscriber_router = MessageRouterDataSubscriber(
 )
 
 # Publisher side - tenant-specific storage
-publisher_router = MessageRouterDataPublisher(
+publisher_router = FanoutDataPublisher(
     'tenant_output',
     'router://tenant',
     {
@@ -304,23 +304,22 @@ publisher_router = MessageRouterDataPublisher(
 ```python
 # Subscriber side - distribute to worker pool
 workers = {f'partition_{i}': worker_subs[i] for i in range(8)}
-subscriber_router = MessageRouterDataSubscriber(
+subscriber_router = FanoutDataSubscriber(
     'worker_router',
-    source_subscriber,
     {
         'child_subscribers': workers,
-        'resolver_class': 'core.pubsub.example_resolvers.ModuloHashResolver'
+        'resolver_class': 'myapp.resolvers.ModuloHashResolver'  # user-provided
     }
 )
 
 # Publisher side - load balance across API endpoints
 endpoints = {f'partition_{i}': endpoint_pubs[i] for i in range(4)}
-publisher_router = MessageRouterDataPublisher(
+publisher_router = FanoutDataPublisher(
     'api_router',
     'router://api',
     {
         'child_publishers': endpoints,
-        'resolver_class': 'core.pubsub.example_resolvers.ModuloHashResolver'
+        'resolver_class': 'myapp.resolvers.ModuloHashResolver'  # user-provided
     }
 )
 ```
@@ -376,7 +375,7 @@ details = router.details()
 lines_cleared = router.clear_unrouted_file()
 ```
 
-### MessageRouterDataSubscriber Specific Methods
+### FanoutDataSubscriber Specific Methods
 
 ```python
 # Start router and optionally children
@@ -393,7 +392,7 @@ data = router.get_data(block_time=1)
 total = router.get_total_child_receive_count()
 ```
 
-### MessageRouterDataPublisher Specific Methods
+### FanoutDataPublisher Specific Methods
 
 ```python
 # Publish message (will be routed automatically)
@@ -437,7 +436,7 @@ def check_routing_health(router):
 import logging
 
 # Enable debug logging for detailed routing information
-logging.getLogger('core.pubsub.message_router_datapubsub').setLevel(logging.DEBUG)
+logging.getLogger('core.pubsub.fanout_datapubsub').setLevel(logging.DEBUG)
 
 # Each routing decision is logged at DEBUG level
 # Errors are logged at ERROR level
@@ -469,19 +468,19 @@ router.clear_unrouted_file()
 
 | Component | Typical Throughput | Latency Overhead |
 |-----------|-------------------|------------------|
-| MessageRouterDataSubscriber | 1,000-10,000 msg/sec | <1ms |
-| MessageRouterDataPublisher | 5,000-50,000 msg/sec | <0.5ms |
+| FanoutDataSubscriber | 1,000-10,000 msg/sec | <1ms |
+| FanoutDataPublisher | 5,000-50,000 msg/sec | <0.5ms |
 
 *Note: Performance depends on resolver complexity and child count*
 
 ### Resource Usage
 
-**MessageRouterDataSubscriber**:
+**FanoutDataSubscriber**:
 - Memory: ~(queue_depth × msg_size) × (1 + N children)
 - Threads: 2 + N (router + source + N children)
 - CPU: Minimal (mostly queue operations)
 
-**MessageRouterDataPublisher**:
+**FanoutDataPublisher**:
 - Memory: ~(queue_depth × msg_size) × (1 + N children)
 - Threads: 1 + potential N (router + optional child threads)
 - CPU: Minimal (resolver + queue operations)
@@ -519,15 +518,14 @@ def check_queue_health(router):
             alert(f"Queue {key} is 90% full!")
 ```
 
-## Integration with Abhikarta
+## Integration Patterns
 
-### LangGraph Workflow Routing
+### Workflow Routing
 
 ```python
 # Route different workflow types to specialized executors
-workflow_sub_router = MessageRouterDataSubscriber(
+workflow_sub_router = FanoutDataSubscriber(
     'workflow_input',
-    workflow_source,
     {
         'child_subscribers': {
             'chat': chat_executor_sub,
@@ -539,7 +537,7 @@ workflow_sub_router = MessageRouterDataSubscriber(
 )
 
 # Route results to different storage backends
-workflow_pub_router = MessageRouterDataPublisher(
+workflow_pub_router = FanoutDataPublisher(
     'workflow_output',
     'router://workflow_results',
     {
@@ -567,7 +565,7 @@ class LLMCostResolver:
         else:
             return 'haiku'  # Fast and cheap
 
-llm_pub_router = MessageRouterDataPublisher(
+llm_pub_router = FanoutDataPublisher(
     'llm_router',
     'router://llm',
     {
@@ -675,7 +673,6 @@ order_source = create_subscriber('orders', {'source': 'kafka://orders_topic'})
 
 order_input_router = FanoutDataSubscriber(
     'order_input',
-    order_source,
     {
         'child_subscribers': {
             'high_value': high_value_processor_sub,
@@ -747,14 +744,7 @@ def health_check():
 
 The Message Router components provide flexible, high-performance routing for both incoming and outgoing messages:
 
-- **MessageRouterDataSubscriber**: Route incoming data to appropriate processors
-- **MessageRouterDataPublisher**: Route outgoing data to appropriate destinations
+- **FanoutDataSubscriber**: Route incoming data to appropriate processors
+- **FanoutDataPublisher**: Route outgoing data to appropriate destinations
 
 Both components share the same resolver pattern, making them easy to learn and use together in complete data pipelines.
-
----
-
-For detailed implementation examples, see:
-- `message_router_examples.py` (Subscriber examples)
-- `message_router_publisher_examples.py` (Publisher examples)
-- `MESSAGE_ROUTER_README.md` (Original subscriber documentation)

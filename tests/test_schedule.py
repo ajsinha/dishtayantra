@@ -397,3 +397,48 @@ def test_classify_schedule_reason_kinds():
         'outside the daily time window 09:30-16:00 America/New_York '
         '(now 08:00)') == 'time_window'
     assert classify_schedule_reason('') == 'active'
+
+
+def test_apply_schedule_update_refreshes_duration():
+    """v2.2 BUGFIX: editing a DAG's window intraday must also refresh
+    self.duration, not just end_time. Previously a new 1100/01h00m window
+    kept the old duration and displayed as 11:00-17:30 (start + stale
+    6h30m) even though it correctly ran 11:00-12:00."""
+    from core.dag.compute_graph_support import TimeWindowMixin
+    from core.dag.time_window_utils import (calculate_end_time,
+                                             get_time_window_info)
+
+    class _FakeDag(TimeWindowMixin):
+        name = 'fake'
+        start_time = '0930'
+        end_time = '1600'
+        duration = '6h30m'
+        schedule = None
+
+    dag = _FakeDag()
+    # Simulate the refresh recomputing for the new 1100 / 01h00m config.
+    new_end = calculate_end_time('1100', '01h00m')
+    assert new_end == '1200'
+    dag.apply_schedule_update('1100', new_end, None, duration='01h00m')
+
+    assert dag.start_time == '1100'
+    assert dag.end_time == '1200'
+    assert dag.duration == '01h00m'   # the bug: this stayed '6h30m'
+    info = get_time_window_info(dag.start_time, dag.duration)
+    assert info['display_end'] == '12:00'
+
+
+def test_apply_schedule_update_duration_defaults_preserved():
+    """Omitting duration keeps the existing value (backward compatible)."""
+    from core.dag.compute_graph_support import TimeWindowMixin
+
+    class _FakeDag(TimeWindowMixin):
+        name = 'fake'
+        start_time = '0930'
+        end_time = '1600'
+        duration = '6h30m'
+        schedule = None
+
+    dag = _FakeDag()
+    dag.apply_schedule_update('1000', '1100', None)  # no duration arg
+    assert dag.duration == '6h30m'   # unchanged

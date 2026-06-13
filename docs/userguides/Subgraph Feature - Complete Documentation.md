@@ -143,6 +143,7 @@ DishtaYantra supports two ways to define subgraphs:
 | `execution_mode` | `synchronous`, `asynchronous` | How subgraph executes within parent |
 | `dark_output_mode` | `cached`, `passthrough`, `block` | What to output when subgraph is suspended |
 | `error_policy` | `propagate`, `use_cached`, `auto_suspend` | How to handle execution errors |
+| `control_source` | pub/sub source URI | Optional stream the supervisor watches for light-up/down control messages |
 
 ### Node Borrowing
 
@@ -163,6 +164,27 @@ This means:
 ---
 
 ## Supervisor Control
+
+### Control Source (driving light-up/down from a stream)
+
+A `SubgraphNode` may declare a `control_source` — any pub/sub source URI
+(e.g. a Kafka topic, an in-memory queue) — that the subgraph supervisor
+watches for light-up / light-down control messages. This lets an external
+system drive subgraph activation without code changes:
+
+```json
+{
+  "name": "risk_subgraph",
+  "type": "SubgraphNode",
+  "subgraph_file": "subgraphs/risk_calculation.json",
+  "entry_connection": "validation_subgraph",
+  "exit_connections": ["risk_output"],
+  "control_source": "kafka://topic/subgraph_control"
+}
+```
+
+When `control_source` is omitted, the subgraph is controlled only
+programmatically (the API calls below) or by the parent DAG's own schedule.
 
 ### Light Up / Light Down
 
