@@ -1,0 +1,84 @@
+{
+    "_comment": "EXAMPLE JVM configuration for the JVM-worker tutorial.",
+    "_how_to_use": "To run Java calculators: (1) pip install py4j, (2) build the JAR with java/build.sh, (3) back up config/jvm_config.json and copy this file over it, (4) restart the server. The shipped config/jvm_config.json has the JVM manager DISABLED by default.",
+
+    "jvm_manager": {
+        "enabled": true,
+        "_enabled_note": "true = manage JVM subprocesses and Py4J gateways automatically.",
+        "auto_start_on_load": true,
+        "_auto_start_note": "Start the JVM(s) when the server boots.",
+        "shutdown_timeout_seconds": 30,
+        "health_check_interval_seconds": 30,
+        "config_check_interval_seconds": 600,
+        "_config_check_note": "Re-read this file every 10 minutes; restart affected JVMs if it changed."
+    },
+
+    "gateways": [
+        {
+            "name": "primary",
+            "enabled": true,
+            "host": "localhost",
+            "base_port": 25333,
+            "pool_size": 4,
+            "_pool_size_note": "THIS IS THE JVM WORKER POOL: 4 gateway server instances on ports 25333-25336, each a concurrent lane into the JVM. More lanes = more Java calculator calls in flight at once.",
+
+            "jvm": {
+                "auto_start": true,
+                "java_home": null,
+                "_java_home_note": "Path to a JDK. null = use the system default 'java' on PATH.",
+                "heap_size_mb": 512,
+                "max_heap_size_mb": 2048,
+                "jvm_options": ["-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100"],
+                "classpath": ["java/lib/*"],
+                "_classpath_note": "Run java/build.sh first to produce java/lib/dishtayantra-calculators.jar (and download py4j.jar)."
+            },
+
+            "connection": {
+                "timeout_seconds": 30,
+                "retry_attempts": 3,
+                "retry_delay_seconds": 2,
+                "keep_alive": true
+            }
+        },
+        {
+            "name": "secondary",
+            "enabled": false,
+            "_enabled_note": "Enable a SECOND JVM pool for isolation or extra throughput (e.g. keep heavy risk jobs off the primary JVM). Java calculators choose a pool via gateway_config.gateway.",
+            "host": "localhost",
+            "base_port": 25340,
+            "pool_size": 2,
+            "jvm": {
+                "auto_start": true,
+                "java_home": null,
+                "heap_size_mb": 256,
+                "max_heap_size_mb": 1024,
+                "jvm_options": [],
+                "classpath": ["java/lib/dishtayantra-calculators.jar", "java/lib/py4j.jar"]
+            },
+            "connection": {
+                "timeout_seconds": 30,
+                "retry_attempts": 3,
+                "retry_delay_seconds": 2,
+                "keep_alive": true
+            }
+        }
+    ],
+
+    "jar_files": {
+        "dishtayantra_jar": "java/lib/dishtayantra-calculators.jar",
+        "py4j_jar": "java/lib/py4j.jar",
+        "additional_jars": []
+    },
+
+    "logging": {
+        "java_log_level": "INFO",
+        "py4j_log_level": "WARNING",
+        "log_file": "logs/jvm_gateway.log"
+    },
+
+    "monitoring": {
+        "collect_jvm_metrics": true,
+        "collect_gateway_stats": true,
+        "metrics_interval_seconds": 60
+    }
+}

@@ -28,6 +28,10 @@ class Node(ABC):
         self._graph = None
         self._lock = threading.RLock()
 
+        # v3.0.0: per-node throughput counters (for the DAG stats UI).
+        self._messages_in = 0   # inputs accepted for computation
+        self._messages_out = 0  # outputs propagated downstream
+
     def input(self):
         """Return copy of input data"""
         with self._lock:
@@ -122,6 +126,7 @@ class Node(ABC):
                 return False
 
             self._input = copy.deepcopy(transformed_input)
+            self._messages_in += 1
 
             # Calculate if calculator is available
             if self._calculator:
@@ -137,6 +142,7 @@ class Node(ABC):
             # Check if output has changed
             if transformed_output != self._output:
                 self._output = copy.deepcopy(transformed_output)
+                self._messages_out += 1
 
                 # Mark children as dirty
                 for edge in self._outgoing_edges:
@@ -167,6 +173,8 @@ class Node(ABC):
             'isdirty': self._isdirty,
             'last_compute': self._last_compute,
             'compute_count': self._compute_count,
+            'messages_in': self._messages_in,
+            'messages_out': getattr(self, '_published_count', self._messages_out),
             'input': self._input,
             'output': self._output,
             'errors': list(self._errors),

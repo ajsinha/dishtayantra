@@ -48,6 +48,11 @@ class MetricsRoutes:
         self.dag_server = dag_server
         self.redis_cache = redis_cache
         self._start_time = time.time()
+        # Per-DAG cumulative messages-processed totals seen on the last scrape.
+        # messages_received is a Prometheus Counter (inc-only), but the source
+        # of truth (subscriber._receive_count) is an absolute running total, so
+        # we bridge by incrementing the counter by the per-scrape delta.
+        self._last_msg_counts = {}
         self._register_routes()
         logger.info("Metrics routes initialized")
 
@@ -139,10 +144,21 @@ class MetricsRoutes:
             if self.dag_server:
                 try:
                     dags = getattr(self.dag_server, 'dags', {})
+                    per_dag = {}
+                    total_processed = 0
+                    for name, d in dags.items():
+                        processed = self._dag_messages_processed(d)
+                        total_processed += processed
+                        per_dag[name] = {
+                            'running': bool(getattr(d, 'is_running', False)),
+                            'messages_processed': processed,
+                        }
                     json_metrics['dags'] = {
                         'loaded': len(dags),
                         'running': len([d for d in dags.values()
-                                        if getattr(d, 'is_running', False)])
+                                        if getattr(d, 'is_running', False)]),
+                        'messages_processed_total': total_processed,
+                        'per_dag': per_dag,
                     }
                 except Exception as e:  # noqa: BLE001
                     logger.error(f"Unable to fetch DAG stats: {e}")
@@ -180,8 +196,25 @@ class MetricsRoutes:
     # Metric refresh helpers
     # ------------------------------------------------------------------ #
 
+    def _dag_messages_processed(self, dag):
+        """Sum of messages received across a DAG's subscribers.
+
+        This is the count of messages that entered the DAG for processing. It
+        reads the absolute running total each subscriber maintains
+        (``_receive_count``); returns 0 for DAGs with no subscribers.
+        """
+        total = 0
+        subscribers = getattr(dag, 'subscribers', {}) or {}
+        for sub in subscribers.values():
+            try:
+                total += int(getattr(sub, '_receive_count', 0) or 0)
+            except (TypeError, ValueError):
+                continue
+        return total
+
     def _update_dag_metrics(self):
-        """Update DAG-related gauges (per-DAG nodes/edges + active count)."""
+        """Update DAG-related gauges (per-DAG nodes/edges + active count) and
+        per-DAG messages-processed counters."""
         try:
             if not self.dag_server:
                 return
@@ -195,6 +228,22 @@ class MetricsRoutes:
                         .set(nodes)
                     metrics.dag_edges_total.labels(dag_name=dag_name) \
                         .set(edges)
+
+                    # Per-DAG messages processed: bridge the absolute running
+                    # total into the inc-only Prometheus Counter via a delta.
+                    total = self._dag_messages_processed(dag)
+                    prev = self._last_msg_counts.get(dag_name, 0)
+                    delta = total - prev
+                    if delta < 0:
+                        # DAG restarted / counters reset; rebase without going
+                        # negative on the monotonic Counter.
+                        delta = total
+                    if delta > 0:
+                        metrics.messages_received.labels(
+                            transport='dag', topic='all',
+                            dag_name=dag_name).inc(delta)
+                    self._last_msg_counts[dag_name] = total
+
                     if getattr(dag, 'is_running', False):
                         active_count += 1
                 except Exception as e:  # noqa: BLE001

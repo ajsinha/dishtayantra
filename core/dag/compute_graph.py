@@ -124,6 +124,13 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         self._suspend_event = threading.Event()
         self._suspend_event.set()  # Start in running state
 
+        # v3.0.0: event-driven wakeup for the compute loop. Subscribers (and
+        # metronomes) set this when new work arrives so the loop reacts
+        # immediately instead of waiting for a fixed poll interval. A small
+        # fallback timeout preserves liveness for sources that do not signal.
+        self._work_available = threading.Event()
+        self._idle_poll_interval = 0.01  # fallback wait; was the fixed sleep
+
         self._time_check_thread = None
         
         # UI override flag: when True, time window checker won't auto-suspend
@@ -311,7 +318,16 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         # Start metronome nodes
         for node in self.nodes.values():
             if isinstance(node, MetronomeNode):
+                # v3.0.0: let ticks wake the compute loop immediately.
+                node._notify_callback = self.notify_work
                 node.start_metronome()
+
+        # v3.0.0: wire subscribers to wake the compute loop on data arrival.
+        for subscriber in self.subscribers.values():
+            try:
+                subscriber.set_notify_callback(self.notify_work)
+            except Exception:
+                pass  # older/foreign subscribers without the hook still work
 
         # Start compute thread
         if not self._compute_thread or not self._compute_thread.is_alive():
@@ -392,8 +408,26 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
 
         logger.info(f"DAG {self.name}: stopped")
 
+    def notify_work(self):
+        """v3.0.0: wake the compute loop immediately (event-driven).
+
+        Called by subscribers when data arrives and by metronome ticks. Safe to
+        call from any thread; if the loop is mid-sweep the event simply stays
+        set and is consumed on the next wait.
+        """
+        self._work_available.set()
+
     def do_compute(self):
-        """Main compute loop"""
+        """Main compute loop (v3.0.0: event-driven, minimal polling).
+
+        Instead of a fixed sleep between sweeps, the loop reacts to work:
+        - If a sweep did real work, it loops again immediately to drain the
+          pipeline at full speed (per-hop latency approaches the cost of the
+          work itself rather than a poll interval).
+        - If a sweep was idle, it blocks on ``_work_available`` with a small
+          fallback timeout, so an incoming message wakes it in well under a
+          millisecond while still staying responsive to non-signalling sources.
+        """
         sorted_nodes = self.topological_sort()
 
         while not self._stop_event.is_set():
@@ -401,6 +435,11 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
 
             if self._stop_event.is_set():
                 break
+
+            # Consume any pending wakeup before the sweep so signals that arrive
+            # during the sweep are not lost (they re-set the event -> next wait
+            # returns immediately).
+            self._work_available.clear()
 
             # Pre-compute phase
             for node in sorted_nodes:
@@ -413,12 +452,19 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
                     computed = node.compute()
                     if computed:
                         acted_node_set.append(node)
-                    #node.post_compute()
             for node in acted_node_set:
                 node.increment_compute_count()
                 node.post_compute()
 
-            time.sleep(0.01)  # Small delay to prevent CPU spinning
+            if acted_node_set:
+                # Work was done: drain immediately, do not wait. This is what
+                # collapses multi-hop latency from (depth x poll_interval) down
+                # to the cost of the work itself.
+                continue
+
+            # Idle: wait for a wakeup signal, with a small fallback timeout so
+            # non-signalling sources (and safety) still get serviced.
+            self._work_available.wait(timeout=self._idle_poll_interval)
 
     def clone(self, start_time=None, duration=None, lazy_init=False):
         """

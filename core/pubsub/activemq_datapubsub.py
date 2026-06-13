@@ -175,14 +175,33 @@ class ActiveMQListener(stomp.ConnectionListener):
         try:
             # v1.7.2: Use smart deserializer for non-JSON message handling
             data = smart_deserialize(frame.body, f"activemq:{self.subscriber.name}")
-            
+
             # v1.7.2 Policy: Log every message received
             self._log_message(data)
-            
-            self.subscriber._internal_queue.put(data, timeout=1)
-            with self.subscriber._lock:
-                self.subscriber._last_receive = datetime.now().isoformat()
-                self.subscriber._receive_count += 1
+
+            # v3.0.0 ZERO-LOSS: never drop on a full internal queue. Block-retry
+            # the enqueue (which backpressures the broker - this STOMP callback
+            # not returning slows delivery) until space is available.
+            enqueued = False
+            while not enqueued and not self.subscriber._stop_event.is_set():
+                try:
+                    self.subscriber._internal_queue.put(data, timeout=1)
+                    enqueued = True
+                except queue.Full:
+                    logger.warning(
+                        f"Internal queue full for activemq:{self.subscriber.name}; "
+                        f"applying backpressure (will retry, not drop)")
+                    continue
+            if enqueued:
+                with self.subscriber._lock:
+                    self.subscriber._last_receive = datetime.now().isoformat()
+                    self.subscriber._receive_count += 1
+                cb = getattr(self.subscriber, '_notify_callback', None)
+                if cb is not None:
+                    try:
+                        cb()
+                    except Exception:
+                        pass
         except Exception as e:
             # v1.7.2 Policy: Full stack trace for all exceptions
             logger.error(f"Error processing ActiveMQ message: {str(e)}")

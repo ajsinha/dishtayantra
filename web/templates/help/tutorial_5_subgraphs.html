@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorial 5: Two Subgraphs & a Full Risk Platform - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: var(--bg-body); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .tut-hero {
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+        color: #eef0f8; padding: 2rem; border-radius: 14px; margin-bottom: 1.5rem;
+    }
+    .tut-hero h2 { color: #eef0f8; }
+    .tut-badge {
+        display: inline-block; padding: 4px 12px; border-radius: 999px;
+        font-size: 0.75rem; font-weight: 600; background: #6b2d8a; color: #fff; letter-spacing: 0.04em;
+    }
+    .file-label {
+        font-family: 'Spline Sans Mono', monospace; font-size: 0.85rem;
+        background: color-mix(in srgb, var(--brass) 18%, var(--bg-card));
+        color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+        padding: 2px 10px; border-radius: 6px; display: inline-block; margin-bottom: 0.4rem;
+    }
+    .step-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 50%; background: var(--brass);
+        color: #1a1207; font-weight: 700; margin-right: 8px;
+    }
+    pre[class*="language-"] { border-radius: 10px; font-size: 0.82rem; }
+    .callout {
+        border-left: 4px solid var(--info-color);
+        background: color-mix(in srgb, var(--info-color) 10%, var(--bg-card));
+        padding: 0.9rem 1.1rem; border-radius: 8px; margin: 1rem 0;
+    }
+    .callout.warn { border-left-color: var(--warning-color);
+        background: color-mix(in srgb, var(--warning-color) 10%, var(--bg-card)); }
+    .flow {
+        font-family: 'Spline Sans Mono', monospace; font-size: 0.82rem;
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        border-radius: 8px; padding: 1rem; margin: 1rem 0; white-space: pre; overflow-x: auto;
+    }
+    .pill-table td { vertical-align: top; }
+    .pill-table code { font-size: 0.82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}"><i class="bi bi-arrow-left"></i> Back to Help</a>
+    &nbsp;&middot;&nbsp; Tutorial 5 of 6
+</div>
+
+<div class="tut-hero">
+    <span class="tut-badge">ADVANCED &middot; SUBGRAPHS</span>
+    <h2 class="mt-3"><i class="bi bi-diagram-3"></i> Two Subgraphs &amp; a Full Risk Platform</h2>
+    <p class="mb-0" style="opacity:0.9;">
+        Build one DAG that exercises nearly the whole platform: three input
+        feeds merged with a fan-in, <strong>two subgraphs</strong> (validation and
+        risk analytics), three parallel analytics branches that fan back in, and
+        four heterogeneous sinks &mdash; all gated by a market-hours schedule and
+        controllable through a subgraph supervisor.
+    </p>
+</div>
+
+<p>The earlier tutorials built up from a single node to a layered enterprise
+pipeline. This one focuses on the platform's most powerful structural feature:
+<strong>subgraphs</strong> &mdash; reusable, independently controllable sub-pipelines
+that can be "lit up" and "lit down" at runtime while the parent DAG keeps
+running. We will assemble a realistic trading <em>risk &amp; surveillance</em>
+platform that uses two of them.</p>
+
+<div class="callout">
+    <strong>Ready-made:</strong> the complete DAG ships at
+    <span class="file-label">config/example/dags/complex_risk_platform_showcase.json</span>,
+    and its file-based subgraph at
+    <span class="file-label">config/subgraphs/risk_analytics_pipeline.json</span>.
+    Copy the DAG into <code>config/dags/</code> (the subgraph file is already in place),
+    restart or hit <strong>Reload DAGs</strong>, and open it in the
+    <strong>Graph View</strong> to follow along. This tutorial explains how it is
+    built, piece by piece.
+</div>
+
+<h3 class="mt-4">What we are building</h3>
+<div class="flow">                       ┌─ var_branch ───┐
+trade_in ─┐                            │                │
+market_in ─┼─► ingest_merge ─► [validation_subgraph] ─► [risk_subgraph] ─┼─ greeks_branch ─┼─► analytics_merge ─┬─► limit_node ─┬─► risk_out
+refdata_in ┘     (fan-in)        (subgraph #1)            (subgraph #2)   └─ liquidity_br. ─┘     (fan-in)        │               └─► alert_node ─► alert_out
+                                                                                                                 ├─► surveillance_node ─► surveillance_out
+                                                                                                                 └─► audit_node ─► audit_out</div>
+
+<p>That is 18 top-level nodes plus 8 more inside the two subgraphs &mdash; 26 in
+all &mdash; with four input subscribers, four output publishers, and seventeen
+calculators across seven calculator types. Let us build it in stages.</p>
+
+<hr>
+
+<h3><span class="step-num">1</span> Three feeds, merged with a fan-in</h3>
+<p>A risk engine needs trades, live market data, and reference data. We declare
+three subscribers and a fourth <code>fanin://</code> subscriber that merges them
+into a single stream, then attach an <code>ApplyDefaultsCalculator</code> so every
+record gets sane defaults.</p>
+<pre class="language-json"><code>"subscribers": [
+  { "name": "trade_feed",          "config": { "source": "mem://queue/trades" } },
+  { "name": "market_data_feed",    "config": { "source": "mem://queue/market_data" } },
+  { "name": "reference_data_feed", "config": { "source": "mem://queue/reference_data" } },
+  { "name": "merged_inputs",
+    "config": { "source": "fanin://trade_feed,market_data_feed,reference_data_feed" } }
+]</code></pre>
+<p>The three source nodes (<code>trade_in</code>, <code>market_in</code>,
+<code>refdata_in</code>) each feed <code>ingest_merge</code>, which subscribes to the
+merged stream. In the Graph View you will see three edges converge on one node
+&mdash; the classic fan-in shape.</p>
+
+<div class="callout">
+    <strong>Why a fan-in node?</strong> Each feed can arrive at its own rate from
+    its own broker. The <code>fanin://</code> source interleaves them so downstream
+    logic sees one ordered stream and does not need to know how many inputs there
+    were.
+</div>
+
+<h3><span class="step-num">2</span> Subgraph #1 &mdash; inline validation &amp; enrichment</h3>
+<p>Our first subgraph is defined <strong>inline</strong> (embedded directly in the
+node). It validates, enriches, scrubs internal-only fields, and normalizes field
+names &mdash; four internal nodes that "borrow" calculators from the parent.</p>
+<pre class="language-json"><code>{
+  "name": "validation_subgraph",
+  "type": "SubgraphNode",
+  "config": {
+    "entry_connection": "ingest_merge",
+    "exit_connections": ["risk_subgraph"],
+    "execution_mode": "synchronous",
+    "control_source": "mem://queue/subgraph_control"
+  },
+  "subgraph": {
+    "name": "validation_enrichment_pipeline",
+    "entry_node": "sg_validate",
+    "exit_node": "sg_normalize",
+    "dark_output_mode": "passthrough",
+    "error_policy": "propagate",
+    "nodes": [
+      { "name": "sg_validate",  "borrows": "validate_trade",  "role": "entry" },
+      { "name": "sg_enrich",    "borrows": "enrich_market" },
+      { "name": "sg_scrub",     "borrows": "drop_internal" },
+      { "name": "sg_normalize", "borrows": "normalize_names", "role": "exit" }
+    ],
+    "edges": [
+      { "from": "sg_validate", "to": "sg_enrich" },
+      { "from": "sg_enrich",   "to": "sg_scrub" },
+      { "from": "sg_scrub",    "to": "sg_normalize" }
+    ]
+  }
+}</code></pre>
+<p>Key ideas:</p>
+<table class="table table-sm pill-table">
+  <tr><td><code>entry_connection</code> / <code>exit_connections</code></td>
+      <td>How the subgraph wires into the parent: input comes from
+      <code>ingest_merge</code>; output flows to <code>risk_subgraph</code>.</td></tr>
+  <tr><td><code>entry_node</code> / <code>exit_node</code></td>
+      <td>The first and last <em>internal</em> nodes &mdash; the subgraph's own
+      boundary.</td></tr>
+  <tr><td><code>borrows</code></td>
+      <td>Each internal node reuses a calculator defined once in the parent's
+      <code>calculators</code> list &mdash; no duplication.</td></tr>
+  <tr><td><code>dark_output_mode: passthrough</code></td>
+      <td>When this subgraph is "lit down", it passes input straight through
+      untouched (validation is optional under load).</td></tr>
+</table>
+
+<h3><span class="step-num">3</span> Subgraph #2 &mdash; the risk analytics engine (file-based)</h3>
+<p>The second subgraph is the heavy compute core: scenario generation, pricing,
+netting, and PFE exposure metrics. Unlike subgraph #1, this one is
+<strong>loaded from an external file</strong> via <code>subgraph_file</code> &mdash;
+the node in the parent DAG just points at it:</p>
+<pre class="language-json"><code>{
+  "name": "risk_subgraph",
+  "type": "SubgraphNode",
+  "config": {
+    "subgraph_file": "risk_analytics_pipeline.json",
+    "entry_connection": "validation_subgraph",
+    "exit_connections": ["var_branch", "greeks_branch", "liquidity_branch"],
+    "execution_mode": "synchronous",
+    "control_source": "mem://queue/subgraph_control"
+  }
+}</code></pre>
+<p>The referenced file lives at
+<span class="file-label">config/subgraphs/risk_analytics_pipeline.json</span>
+(the loader searches <code>config/subgraphs/</code>, <code>subgraphs/</code>, then the
+working directory, so a bare filename is enough). Its contents are a standalone
+subgraph definition:</p>
+<pre class="language-json"><code>{
+  "name": "risk_analytics_pipeline",
+  "type": "subgraph",
+  "version": "1.0.0",
+  "entry_node": "sg_scenario",
+  "exit_node": "sg_pfe",
+  "dark_output_mode": "cached",
+  "error_policy": "use_cached",
+  "nodes": [
+    { "name": "sg_scenario", "borrows": "scenario_gen",  "role": "entry" },
+    { "name": "sg_price",    "borrows": "price_trade" },
+    { "name": "sg_netting",  "borrows": "apply_netting" },
+    { "name": "sg_pfe",      "borrows": "pfe_metrics",   "role": "exit" }
+  ],
+  "edges": [
+    { "from": "sg_scenario", "to": "sg_price" },
+    { "from": "sg_price",    "to": "sg_netting" },
+    { "from": "sg_netting",  "to": "sg_pfe" }
+  ]
+}</code></pre>
+<div class="callout">
+    <strong>Inline vs file-based.</strong> Subgraph #1 is <em>embedded</em>
+    (defined directly in the parent under a <code>"subgraph"</code> key) &mdash; handy
+    when it is used once. Subgraph #2 is <em>file-based</em> (<code>subgraph_file</code>)
+    &mdash; the same definition can then be reused by several parent DAGs and versioned
+    on its own. The borrowed calculators (<code>scenario_gen</code>, etc.) are still
+    defined once in the <strong>parent</strong> DAG's <code>calculators</code> list.
+</div>
+
+<div class="callout">
+    <strong>Two subgraphs, two dark-output strategies.</strong> Validation uses
+    <code>passthrough</code> (skip cleanly when down). Risk uses <code>cached</code>
+    with <code>error_policy: use_cached</code> &mdash; if the expensive engine is lit
+    down or errors, downstream consumers keep receiving the <em>last good</em>
+    exposure numbers instead of nothing. This is exactly how you would protect a
+    real risk feed during a market data outage.
+</div>
+
+<h3><span class="step-num">4</span> Parallel analytics branches, then fan back in</h3>
+<p>The risk subgraph fans out to three independent branches &mdash; Value-at-Risk,
+option Greeks, and a liquidity score (the only non-null calculator, a
+<code>RandomCalculator</code>, so you can watch numbers move). All three converge on
+<code>analytics_merge</code>.</p>
+<pre class="language-json"><code>{ "from_node": "risk_subgraph", "to_node": "var_branch" },
+{ "from_node": "risk_subgraph", "to_node": "greeks_branch" },
+{ "from_node": "risk_subgraph", "to_node": "liquidity_branch" },
+
+{ "from_node": "var_branch",       "to_node": "analytics_merge" },
+{ "from_node": "greeks_branch",    "to_node": "analytics_merge" },
+{ "from_node": "liquidity_branch", "to_node": "analytics_merge" }</code></pre>
+<p>This fan-out / fan-in around a subgraph is the platform's idiom for "run several
+analyses on the same enriched data, then combine."</p>
+
+<h3><span class="step-num">5</span> Four sinks: results, alerts, surveillance, audit</h3>
+<p>After the merge, the data branches to four destinations. Note the pattern: a
+<code>CalculationNode</code> does the work, and a separate
+<code>PublisherSinkNode</code> publishes it &mdash; calculation nodes compute,
+sink nodes publish.</p>
+<pre class="language-json"><code>{ "from_node": "analytics_merge", "to_node": "limit_node" },
+{ "from_node": "analytics_merge", "to_node": "surveillance_node" },
+{ "from_node": "analytics_merge", "to_node": "audit_node" },
+
+{ "from_node": "limit_node",        "to_node": "alert_node" },
+{ "from_node": "alert_node",        "to_node": "alert_out" },
+{ "from_node": "surveillance_node", "to_node": "surveillance_out" },
+{ "from_node": "audit_node",        "to_node": "audit_out" },
+{ "from_node": "limit_node",        "to_node": "risk_out" }</code></pre>
+<p>The four publishers show off heterogeneous outputs: three in-memory topics/queues
+(<code>risk_results</code>, <code>surveillance</code>, <code>alerts</code>) and one
+<strong>file sink</strong> writing a JSON-lines audit log to disk.</p>
+
+<div class="callout warn">
+    <strong>Common gotcha.</strong> A plain <code>CalculationNode</code> cannot
+    publish &mdash; only sink nodes can. If you attach <code>publishers</code> to a
+    calculation node the DAG will fail to build. Always end a publishing branch
+    with a <code>PublisherSinkNode</code> (or <code>SinkNode</code>).
+</div>
+
+<h3><span class="step-num">6</span> Schedule &amp; supervisor</h3>
+<p>The whole DAG runs only during US market hours, and both subgraphs share a
+control stream so a supervisor can light them up or down without touching the
+parent.</p>
+<pre class="language-json"><code>"schedule": {
+  "days_of_week": ["mon", "tue", "wed", "thu", "fri"],
+  "holiday_calendars": ["USA"],
+  "timezone": "America/New_York"
+},
+"subgraph_supervisor": {
+  "enabled": true,
+  "control_source": "mem://queue/subgraph_control"
+}</code></pre>
+<p>Because the schedule timezone is <code>America/New_York</code>, the
+<code>0930-1600</code> window means Eastern market hours no matter what timezone the
+server runs in. On the dashboard, outside that window the DAG shows
+<strong>Outside Schedule</strong> with the exact reason.</p>
+
+<h3 class="mt-4">Run it</h3>
+<ol>
+  <li>Copy <code>config/example/dags/complex_risk_platform_showcase.json</code>
+      into <code>config/dags/</code>.</li>
+  <li>Click <strong>Reload DAGs</strong> on the dashboard (or restart the server).</li>
+  <li>Open the DAG's <strong>Details</strong> page and explore the
+      <strong>Graph View</strong>: scroll to zoom, drag to pan, and
+      <strong>click any node</strong> to see its live state. The two subgraph nodes
+      appear in purple.</li>
+  <li>Scroll to the <strong>Subgraphs</strong> panel to see each subgraph's state,
+      execution count, latency, and internal nodes &mdash; and to light them up or
+      down.</li>
+</ol>
+
+<div class="callout">
+    <strong>What this one DAG demonstrates:</strong> multi-source ingestion,
+    fan-in and fan-out, two independently-controlled subgraphs with different
+    dark-output strategies, calculator borrowing, parallel compute branches,
+    heterogeneous sinks (memory + file), market-aware scheduling, and supervisor
+    control &mdash; most of the platform, in a single file.
+</div>
+
+<div class="callout warn">
+    <strong>Performance note.</strong> A single DAG runs on one compute thread, so
+    even with subgraphs the sweep is sequential. For CPU-heavy risk runs, assign the
+    DAG to the <a href="{{ url_for('help_worker_pool') }}">worker pool</a>, or use
+    <a href="{{ url_for('help_autoclone') }}">AutoClone</a> to scale copies during
+    peak hours.
+</div>
+
+<h4 class="mt-4">You have completed the tutorials</h4>
+<p>For depth on the features used here, see
+<a href="{{ url_for('help_subgraph') }}">Subgraphs</a>,
+<a href="{{ url_for('help_scheduling') }}">Scheduling</a>,
+<a href="{{ url_for('help_autoclone') }}">AutoClone</a>, and the per-broker setup
+guides under <a href="{{ url_for('help_userguides') }}">User Guides</a>.</p>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_tutorial_4') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Tutorial 4</a>
+    <a href="{{ url_for('help_tutorial_6') }}" class="btn btn-primary">
+        Tutorial 6: Parallel DAGs <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

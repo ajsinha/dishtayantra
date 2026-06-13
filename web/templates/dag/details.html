@@ -139,8 +139,39 @@
         display: inline-block; padding: 1px 8px; border-radius: 999px;
         font-size: 0.72rem; color: #fff;
     }
+    /* v3.0.0: horizontal queue-depth bar */
+    .qbar-wrap { min-width: 130px; }
+    .qbar-track {
+        position: relative; height: 16px; border-radius: 8px;
+        background: color-mix(in srgb, var(--text-primary) 12%, transparent);
+        overflow: hidden; border: 1px solid var(--border-color);
+    }
+    .qbar-fill {
+        height: 100%; border-radius: 8px 0 0 8px;
+        background: linear-gradient(90deg, #2563eb, #1f8a4c);
+        transition: width 0.4s ease;
+    }
+    .qbar-fill.warn { background: linear-gradient(90deg, #d97706, #dc2626); }
+    .qbar-label {
+        font-size: 0.72rem; color: var(--text-secondary);
+        margin-top: 2px; white-space: nowrap;
+    }
 </style>
 {% endblock %}
+
+{% macro queue_bar(depth, capacity) %}
+    {# Horizontal utilisation bar for a queue. depth/capacity -> filled %. #}
+    {% set d = depth if depth is not none else 0 %}
+    {% set cap = capacity if capacity and capacity > 0 else 0 %}
+    {% set pct = ((d / cap) * 100) if cap > 0 else 0 %}
+    {% set pct = 100 if pct > 100 else pct %}
+    <div class="qbar-wrap">
+        <div class="qbar-track" title="{{ d }} of {{ cap if cap else '∞' }}">
+            <div class="qbar-fill {% if pct >= 80 %}warn{% endif %}" style="width: {{ '%.1f'|format(pct) }}%;"></div>
+        </div>
+        <div class="qbar-label">{{ "{:,}".format(d) }} / {% if cap %}{{ "{:,}".format(cap) }}{% else %}&infin;{% endif %}{% if cap %} ({{ '%.0f'|format(pct) }}%){% endif %}</div>
+    </div>
+{% endmacro %}
 
 {% block content %}
 <div class="row mb-3">
@@ -228,7 +259,74 @@
         </div>
         {% endif %}
 
-        <!-- Auto-refresh toggle -->
+        <!-- v3.0.0: DAG throughput stats - messages ingested vs published -->
+        {% if dag_stats %}
+        <div class="card mt-3 mb-3" style="border-left: 4px solid #2563eb;">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-bar-chart-line"></i> Message Throughput
+                </h5>
+                <div class="row text-center mb-2">
+                    <div class="col-6">
+                        <div style="font-size: 2rem; font-weight: 700; color: #2563eb;">
+                            {{ "{:,}".format(dag_stats.messages_ingested) }}
+                        </div>
+                        <div class="text-muted">
+                            <i class="bi bi-box-arrow-in-down"></i> Messages Ingested
+                        </div>
+                        <small class="text-muted">received by subscribers</small>
+                    </div>
+                    <div class="col-6">
+                        <div style="font-size: 2rem; font-weight: 700; color: #1f8a4c;">
+                            {{ "{:,}".format(dag_stats.messages_published) }}
+                        </div>
+                        <div class="text-muted">
+                            <i class="bi bi-box-arrow-up"></i> Messages Published
+                        </div>
+                        <small class="text-muted">written to publishers/sinks</small>
+                    </div>
+                </div>
+
+                {% if dag_stats.ingest_breakdown %}
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong class="small text-muted">INGEST (per subscriber)</strong>
+                        <table class="table table-sm mb-0 mt-1">
+                            <thead><tr><th>Subscriber</th><th class="text-end">Received</th><th class="text-end">Queue</th></tr></thead>
+                            <tbody>
+                            {% for s in dag_stats.ingest_breakdown %}
+                                <tr>
+                                    <td><span title="{{ s.source }}">{{ s.name }}</span></td>
+                                    <td class="text-end">{{ "{:,}".format(s.received) }}</td>
+                                    <td class="text-end">{% if s.queue_depth is not none %}{{ s.queue_depth }}{% else %}-{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <strong class="small text-muted">PUBLISH (per sink)</strong>
+                        <table class="table table-sm mb-0 mt-1">
+                            <thead><tr><th>Sink node</th><th class="text-end">Published</th></tr></thead>
+                            <tbody>
+                            {% for p in dag_stats.publish_breakdown %}
+                                <tr>
+                                    <td>{{ p.name }}</td>
+                                    <td class="text-end">{{ "{:,}".format(p.published) }}</td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="2" class="text-muted">no publisher sinks</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="auto-refresh-toggle mt-3">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
@@ -424,7 +522,7 @@
                             <tr>
                                 <td>{{ name }}</td>
                                 <td><code>{{ sub.source }}</code></td>
-                                <td>{{ sub.current_depth }} / {{ sub.max_depth }}</td>
+                                <td>{{ queue_bar(sub.current_depth, sub.max_depth) }}</td>
                                 <td>{{ sub.last_receive or 'Never' }}</td>
                                 {% if is_admin %}
                                 <td>
@@ -490,7 +588,7 @@
                             <tr>
                                 <td>{{ name }}</td>
                                 <td><code>{{ pub.destination }}</code></td>
-                                <td>{{ pub.queue_depth }}</td>
+                                <td>{{ queue_bar(pub.queue_depth, pub.max_queue_depth) }}</td>
                                 <td>{{ pub.last_publish or 'Never' }}</td>
                                 <td>{{ pub.publish_count }}</td>
                             </tr>

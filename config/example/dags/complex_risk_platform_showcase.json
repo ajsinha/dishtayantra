@@ -1,0 +1,198 @@
+{
+  "name": "complex_risk_platform_showcase",
+  "description": "Showcase DAG: a real-time trading risk & surveillance platform. Demonstrates multi-source ingestion, fan-out routing, TWO subgraphs (an INLINE/embedded validation+enrichment subgraph and a FILE-BASED risk-analytics subgraph loaded via subgraph_file), parallel analytics branches, a fan-in merge, conditional alerting, and multiple heterogeneous sinks. Designed to exercise the breadth of the platform in a single DAG.",
+
+  "start_time": "0930",
+  "duration": "6h30m",
+  "schedule": {
+    "days_of_week": ["mon", "tue", "wed", "thu", "fri"],
+    "holiday_calendars": ["USA"],
+    "timezone": "America/New_York"
+  },
+
+  "subscribers": [
+    {
+      "name": "trade_feed",
+      "config": { "source": "mem://queue/trades" }
+    },
+    {
+      "name": "market_data_feed",
+      "config": { "source": "mem://queue/market_data" }
+    },
+    {
+      "name": "reference_data_feed",
+      "config": { "source": "mem://queue/reference_data" }
+    },
+    {
+      "name": "merged_inputs",
+      "config": { "source": "fanin://trade_feed,market_data_feed,reference_data_feed" }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "risk_results_pub",
+      "config": { "destination": "mem://topic/risk_results" }
+    },
+    {
+      "name": "surveillance_pub",
+      "config": { "destination": "mem://topic/surveillance" }
+    },
+    {
+      "name": "alerts_pub",
+      "config": { "destination": "mem://queue/alerts" }
+    },
+    {
+      "name": "audit_log_pub",
+      "config": { "destination": "file:///tmp/log/dagserver/risk_audit.jsonl" }
+    }
+  ],
+
+  "calculators": [
+    { "name": "field_defaults",  "type": "ApplyDefaultsCalculator",
+      "config": { "defaults": { "currency": "USD", "source_system": "showcase" } } },
+    { "name": "validate_trade",  "type": "NullCalculator",
+      "config": { "description": "Schema + sanity validation of incoming trades" } },
+    { "name": "enrich_market",   "type": "NullCalculator",
+      "config": { "description": "Joins reference + market data onto each trade" } },
+    { "name": "drop_internal",   "type": "AttributeFilterAwayCalculator",
+      "config": { "attributes": ["internal_only", "debug_tag"] } },
+    { "name": "normalize_names", "type": "AttributeNameChangeCalculator",
+      "config": { "mappings": { " qty": "quantity", "px": "price" } } },
+
+    { "name": "scenario_gen",    "type": "NullCalculator",
+      "config": { "description": "Generates Monte-Carlo market scenarios" } },
+    { "name": "price_trade",     "type": "NullCalculator",
+      "config": { "description": "Prices each trade across scenarios" } },
+    { "name": "apply_netting",   "type": "NullCalculator",
+      "config": { "description": "Applies counterparty netting agreements" } },
+    { "name": "pfe_metrics",     "type": "NullCalculator",
+      "config": { "description": "Computes PFE / EPE exposure metrics" } },
+
+    { "name": "var_calc",        "type": "NullCalculator",
+      "config": { "description": "Parallel branch: Value-at-Risk" } },
+    { "name": "greeks_calc",     "type": "NullCalculator",
+      "config": { "description": "Parallel branch: option Greeks" } },
+    { "name": "liquidity_score", "type": "core.calculator.random_calculator.RandomCalculator",
+      "config": { "description": "Parallel branch: synthetic liquidity score" } },
+
+    { "name": "merge_analytics", "type": "NullCalculator",
+      "config": { "description": "Fan-in merge of the three analytics branches" } },
+    { "name": "limit_check",     "type": "NullCalculator",
+      "config": { "description": "Checks merged exposure against credit limits" } },
+    { "name": "surveillance",    "type": "NullCalculator",
+      "config": { "description": "Market-abuse / wash-trade surveillance" } },
+    { "name": "alert_router",    "type": "NullCalculator",
+      "config": { "description": "Decides which breaches become alerts" } },
+    { "name": "audit_stamp",     "type": "PassthruCalculator",
+      "config": { "description": "Stamps an audit record (passthrough)" } }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "trade_in",      "type": "SubscriptionNode", "subscriber": "trade_feed",          "config": {} },
+    { "name": "market_in",     "type": "SubscriptionNode", "subscriber": "market_data_feed",    "config": {} },
+    { "name": "refdata_in",    "type": "SubscriptionNode", "subscriber": "reference_data_feed", "config": {} },
+
+    { "name": "ingest_merge",  "type": "SubscriptionNode", "subscriber": "merged_inputs",
+      "calculator": "field_defaults", "config": {} },
+
+    {
+      "name": "validation_subgraph",
+      "type": "SubgraphNode",
+      "config": {
+        "entry_connection": "ingest_merge",
+        "exit_connections": ["risk_subgraph"],
+        "execution_mode": "synchronous",
+        "control_source": "mem://queue/subgraph_control"
+      },
+      "subgraph": {
+        "name": "validation_enrichment_pipeline",
+        "description": "Subgraph #1 (inline): validate, enrich, scrub, and normalize each record before risk runs.",
+        "entry_node": "sg_validate",
+        "exit_node": "sg_normalize",
+        "execution_mode": "synchronous",
+        "dark_output_mode": "passthrough",
+        "error_policy": "propagate",
+        "nodes": [
+          { "name": "sg_validate",  "borrows": "validate_trade",  "role": "entry" },
+          { "name": "sg_enrich",    "borrows": "enrich_market" },
+          { "name": "sg_scrub",     "borrows": "drop_internal" },
+          { "name": "sg_normalize", "borrows": "normalize_names", "role": "exit" }
+        ],
+        "edges": [
+          { "from": "sg_validate", "to": "sg_enrich" },
+          { "from": "sg_enrich",   "to": "sg_scrub" },
+          { "from": "sg_scrub",    "to": "sg_normalize" }
+        ]
+      }
+    },
+
+    {
+      "name": "risk_subgraph",
+      "type": "SubgraphNode",
+      "config": {
+        "subgraph_file": "risk_analytics_pipeline.json",
+        "entry_connection": "validation_subgraph",
+        "exit_connections": ["var_branch", "greeks_branch", "liquidity_branch"],
+        "execution_mode": "synchronous",
+        "control_source": "mem://queue/subgraph_control"
+      }
+    },
+
+    { "name": "var_branch",       "type": "CalculationNode", "calculator": "var_calc",        "config": {} },
+    { "name": "greeks_branch",    "type": "CalculationNode", "calculator": "greeks_calc",     "config": {} },
+    { "name": "liquidity_branch", "type": "CalculationNode", "calculator": "liquidity_score", "config": {} },
+
+    { "name": "analytics_merge",  "type": "CalculationNode", "calculator": "merge_analytics", "config": {} },
+
+    { "name": "limit_node",       "type": "CalculationNode", "calculator": "limit_check",     "config": {} },
+    { "name": "surveillance_node","type": "CalculationNode", "calculator": "surveillance",    "config": {} },
+    { "name": "alert_node",       "type": "CalculationNode", "calculator": "alert_router",    "config": {} },
+    { "name": "audit_node",       "type": "CalculationNode", "calculator": "audit_stamp",     "config": {} },
+
+    { "name": "surveillance_out", "type": "PublisherSinkNode",
+      "config": { "publishers": ["surveillance_pub"] } },
+    { "name": "alert_out",        "type": "PublisherSinkNode",
+      "config": { "publishers": ["alerts_pub"] } },
+    { "name": "audit_out",        "type": "PublisherSinkNode",
+      "config": { "publishers": ["audit_log_pub"] } },
+
+    { "name": "risk_out",         "type": "PublisherSinkNode",
+      "config": { "publishers": ["risk_results_pub"] } }
+  ],
+
+  "edges": [
+    { "from_node": "trade_in",            "to_node": "ingest_merge" },
+    { "from_node": "market_in",           "to_node": "ingest_merge" },
+    { "from_node": "refdata_in",          "to_node": "ingest_merge" },
+
+    { "from_node": "ingest_merge",        "to_node": "validation_subgraph" },
+    { "from_node": "validation_subgraph", "to_node": "risk_subgraph" },
+
+    { "from_node": "risk_subgraph",       "to_node": "var_branch" },
+    { "from_node": "risk_subgraph",       "to_node": "greeks_branch" },
+    { "from_node": "risk_subgraph",       "to_node": "liquidity_branch" },
+
+    { "from_node": "var_branch",          "to_node": "analytics_merge" },
+    { "from_node": "greeks_branch",       "to_node": "analytics_merge" },
+    { "from_node": "liquidity_branch",    "to_node": "analytics_merge" },
+
+    { "from_node": "analytics_merge",     "to_node": "limit_node" },
+    { "from_node": "analytics_merge",     "to_node": "surveillance_node" },
+    { "from_node": "analytics_merge",     "to_node": "audit_node" },
+
+    { "from_node": "surveillance_node",   "to_node": "surveillance_out" },
+    { "from_node": "audit_node",          "to_node": "audit_out" },
+
+    { "from_node": "limit_node",          "to_node": "alert_node" },
+    { "from_node": "alert_node",          "to_node": "alert_out" },
+    { "from_node": "limit_node",          "to_node": "risk_out" }
+  ],
+
+  "subgraph_supervisor": {
+    "enabled": true,
+    "control_source": "mem://queue/subgraph_control"
+  }
+}

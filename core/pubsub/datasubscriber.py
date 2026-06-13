@@ -66,6 +66,11 @@ class DataSubscriber(AbstractDataPubSub):
 
         self.source = source
         self.max_depth = config.get('max_depth', 100000)
+        # v3.0.0: idle poll interval for the subscription loop. The old fixed
+        # 0.1s sleep dominated ingress latency (~50-100ms). A smaller default
+        # cuts that to single-digit ms; tune per source. Set higher to reduce
+        # idle CPU on low-rate sources, lower for latency-critical feeds.
+        self.idle_poll_interval = float(config.get('idle_poll_interval', 0.005))
 
         # v1.5.2: Non-dictionary message packaging configuration
         self.auto_package_non_dict = config.get('auto_package_non_dict', True)
@@ -94,6 +99,12 @@ class DataSubscriber(AbstractDataPubSub):
         self._lock = threading.Lock()
         self._sequence_counter = 0  # For maintaining insertion order within same priority
         self._is_priority_queue = isinstance(self._internal_queue, queue.PriorityQueue)
+
+        # v3.0.0: optional event-driven wakeup. A consumer (e.g. the owning
+        # ComputeGraph compute loop) can register a zero-arg callback that is
+        # invoked immediately after a message is enqueued, so the consumer can
+        # wake without polling. Defaults to None => no behavioural change.
+        self._notify_callback = None
 
         logger.info(
             f"DataSubscriber {name} initialized for source {source} "
@@ -268,17 +279,60 @@ class DataSubscriber(AbstractDataPubSub):
                     with self._lock:
                         self._last_receive = datetime.now().isoformat()
                         self._receive_count += 1
+
+                    # v3.0.0: wake any event-driven consumer immediately rather
+                    # than making it poll. Best-effort: a failing callback must
+                    # never break the subscription loop.
+                    if self._notify_callback is not None:
+                        try:
+                            self._notify_callback()
+                        except Exception as e:
+                            logger.warning(
+                                f"notify_callback failed for {self.name}: {e}")
                 else:
-                    time.sleep(0.1)
+                    time.sleep(self.idle_poll_interval)
             except queue.Full:
-                logger.warning(f"Internal queue full for subscriber {self.name}")
-                logger.warning(f"Full stack trace:\n{traceback.format_exc()}")
-                time.sleep(0.5)
+                # v3.0.0 ZERO-LOSS: never discard a message. The internal queue
+                # is full (consumer not keeping up); block-retry the SAME
+                # message until space frees up instead of dropping it. We hold
+                # the already-deserialized `data` and re-attempt enqueue.
+                logger.warning(f"Internal queue full for subscriber {self.name}; "
+                               f"applying backpressure (will retry, not drop)")
+                requeued = False
+                while not self._stop_event.is_set() and not requeued:
+                    try:
+                        if self._is_priority_queue:
+                            with self._lock:
+                                sequence = self._sequence_counter
+                                self._sequence_counter += 1
+                            self._internal_queue.put((priority, sequence, data),
+                                                     timeout=1)
+                        else:
+                            self._internal_queue.put(data, timeout=1)
+                        requeued = True
+                        with self._lock:
+                            self._last_receive = datetime.now().isoformat()
+                            self._receive_count += 1
+                        if self._notify_callback is not None:
+                            try:
+                                self._notify_callback()
+                            except Exception:
+                                pass
+                    except queue.Full:
+                        continue  # keep applying backpressure until space frees
             except Exception as e:
                 # v1.7.2 Policy: Full stack trace for all exceptions
                 logger.error(f"Error in subscription loop for {self.name}: {str(e)}")
                 logger.error(f"Full stack trace:\n{traceback.format_exc()}")
                 time.sleep(1)
+
+    def set_notify_callback(self, callback):
+        """v3.0.0: register a zero-arg callback fired after each enqueue.
+
+        Used for event-driven wakeup so a consumer does not have to poll.
+        Pass None to clear.
+        """
+        self._notify_callback = callback
 
     def _log_message_received(self, data):
         """

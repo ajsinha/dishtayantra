@@ -1,0 +1,72 @@
+{
+  "_comment": "JVM gateway-pool tutorial example. Each calculator here runs INSIDE the JVM via the Py4J gateway pool. Requires: (1) pip install py4j, (2) java/build.sh to compile java/lib/dishtayantra-calculators.jar, (3) jvm_manager enabled in config/jvm_config.json. Without those, this DAG will not load (Java calculators need a live JVM).",
+  "name": "jvm_trade_risk_pipeline",
+  "description": "A trade validation -> pricing -> risk pipeline where every calculation step executes in Java on the JVM gateway pool. Demonstrates routing CPU-heavy numeric work to JVM workers while the orchestration stays in Python. Mixes a Python sink with Java compute.",
+
+  "version": "2.2",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    { "name": "trade_feed", "config": { "source": "mem://queue/jvm_trades" } }
+  ],
+
+  "publishers": [
+    { "name": "priced_out", "config": { "destination": "mem://topic/jvm_priced" } },
+    { "name": "risk_log",   "config": { "destination": "file:///tmp/log/dagserver/jvm_risk.jsonl" } }
+  ],
+
+  "calculators": [
+    {
+      "name": "validate",
+      "type": "core.calculator.java_calculator.JavaCalculator",
+      "config": {
+        "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$DataValidationCalculator",
+        "gateway_config": { "gateway": "primary" },
+        "strict_mode": false,
+        "required_fields": ["symbol", "price", "quantity", "side"]
+      }
+    },
+    {
+      "name": "price",
+      "type": "core.calculator.java_calculator.JavaCalculator",
+      "config": {
+        "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$TradePricingCalculator",
+        "gateway_config": { "gateway": "primary" },
+        "commission_rate": 0.001,
+        "fee_per_trade": 1.50
+      }
+    },
+    {
+      "name": "risk",
+      "type": "core.calculator.java_calculator.JavaCalculator",
+      "config": {
+        "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$RiskCalculator",
+        "gateway_config": { "gateway": "primary" },
+        "confidence_level": 0.95,
+        "time_horizon_days": 10
+      }
+    }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "trade_in",  "type": "SubscriptionNode", "subscriber": "trade_feed",
+      "calculator": "validate", "config": {} },
+    { "name": "price_node","type": "CalculationNode", "calculator": "price", "config": {} },
+    { "name": "risk_node", "type": "CalculationNode", "calculator": "risk",  "config": {} },
+    { "name": "priced_sink","type": "PublisherSinkNode",
+      "config": { "publishers": ["priced_out"] } },
+    { "name": "risk_sink", "type": "PublisherSinkNode",
+      "config": { "publishers": ["risk_log"] } }
+  ],
+
+  "edges": [
+    { "from_node": "trade_in",   "to_node": "price_node" },
+    { "from_node": "price_node", "to_node": "risk_node" },
+    { "from_node": "price_node", "to_node": "priced_sink" },
+    { "from_node": "risk_node",  "to_node": "risk_sink" }
+  ]
+}

@@ -168,6 +168,78 @@ explanation. Start at Tutorial 1 and build up.</p>
             </div>
         </div>
     </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6b2d8a;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-5-circle" style="color: #6b2d8a;"></i> Two Subgraphs
+                    <span class="badge text-white ms-2" style="background: #6b2d8a;">SUBGRAPHS</span></h5>
+                <p class="card-text">A full risk &amp; surveillance platform in one DAG:
+                fan-in inputs, <strong>two subgraphs</strong>, parallel analytics
+                branches that fan back in, and four heterogeneous sinks.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Two subgraphs (inline) + supervisor</li>
+                    <li>Fan-in / fan-out, borrowed calculators</li>
+                    <li>Memory + file sinks, market schedule</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_5') }}" class="btn btn-sm text-white" style="background: #6b2d8a;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #1f8a4c;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-6-circle" style="color: #1f8a4c;"></i> Parallel DAGs
+                    <span class="badge text-white ms-2" style="background: #1f8a4c;">MULTI-DAG</span></h5>
+                <p class="card-text">Two independent DAGs running at once and
+                coordinating through shared in-memory queues &mdash; a producer
+                emits work, a consumer processes and acknowledges back.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Producer + consumer DAGs</li>
+                    <li>In-memory pub/sub coordination</li>
+                    <li>Bidirectional request/ack loop</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_6') }}" class="btn btn-sm text-white" style="background: #1f8a4c;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #2563eb;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-7-circle" style="color: #2563eb;"></i> Worker Pool
+                    <span class="badge text-white ms-2" style="background: #2563eb;">PARALLELISM</span></h5>
+                <p class="card-text">Spread DAGs across multiple worker processes for
+                true multi-core parallelism. Pin, dedicate, or auto-place DAGs &mdash;
+                with a full screen-by-screen UI walkthrough.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Enable the pool, choose worker count</li>
+                    <li>Pinned / exclusive / automatic placement</li>
+                    <li>Cross-worker pipeline + /admin/workers</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_7') }}" class="btn btn-sm text-white" style="background: #2563eb;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #d97706;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-8-circle" style="color: #d97706;"></i> JVM Pool
+                    <span class="badge text-white ms-2" style="background: #d97706;">JAVA</span></h5>
+                <p class="card-text">Run calculation steps in Java on a real JVM via the
+                Py4J gateway pool, while the DAG stays in Python &mdash; with a full
+                UI walkthrough and honest prerequisites.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Enable the JVM, size the gateway pool</li>
+                    <li>Predefined Java calculators</li>
+                    <li>All-Java pipeline + /jvm UI</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_8') }}" class="btn btn-sm text-white" style="background: #d97706;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Getting Started Section -->

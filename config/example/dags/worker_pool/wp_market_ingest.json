@@ -1,0 +1,42 @@
+{
+  "_comment": "Worker-pool tutorial example 1 of 3: PINNED to a specific worker.",
+  "name": "wp_market_ingest",
+  "description": "Market-data ingestion DAG, PINNED to Worker 0 so it always lands on the same process (useful when a feed library is not thread-safe or you want predictable placement). Publishes to an lmdb:// queue so a DAG on a DIFFERENT worker can read it.",
+
+  "priority": 8,
+  "dag_cpu_weight": 0.2,
+
+  "worker_affinity": {
+    "_comment": "Choose ONE placement style. Here we pin to a fixed worker.",
+    "pinned_worker": 0,
+    "exclusive": false,
+    "preferred_workers": []
+  },
+
+  "start_time": null,
+  "duration": null,
+
+  "publishers": [
+    { "name": "ticks_out", "config": { "destination": "lmdb://queue/market_ticks" } }
+  ],
+
+  "calculators": [
+    { "name": "stamp_tick", "type": "ApplyDefaultsCalculator",
+      "config": { "defaults": { "kind": "tick", "source": "feedA" } } }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "beat",      "type": "MetronomeNode",
+      "config": { "interval": 3, "message": "tick" } },
+    { "name": "build_tick","type": "CalculationNode", "calculator": "stamp_tick", "config": {} },
+    { "name": "emit_tick", "type": "PublisherSinkNode",
+      "config": { "publishers": ["ticks_out"] } }
+  ],
+
+  "edges": [
+    { "from_node": "beat",       "to_node": "build_tick" },
+    { "from_node": "build_tick", "to_node": "emit_tick" }
+  ]
+}

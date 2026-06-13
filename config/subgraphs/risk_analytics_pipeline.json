@@ -1,0 +1,26 @@
+{
+  "name": "risk_analytics_pipeline",
+  "type": "subgraph",
+  "version": "1.0.0",
+  "description": "File-based subgraph: the core exposure engine - scenario generation, pricing, counterparty netting, and PFE/EPE metrics. Referenced by complex_risk_platform_showcase via subgraph_file.",
+
+  "entry_node": "sg_scenario",
+  "exit_node": "sg_pfe",
+
+  "execution_mode": "synchronous",
+  "dark_output_mode": "cached",
+  "error_policy": "use_cached",
+
+  "nodes": [
+    { "name": "sg_scenario", "borrows": "scenario_gen",  "role": "entry" },
+    { "name": "sg_price",    "borrows": "price_trade" },
+    { "name": "sg_netting",  "borrows": "apply_netting" },
+    { "name": "sg_pfe",      "borrows": "pfe_metrics",   "role": "exit" }
+  ],
+
+  "edges": [
+    { "from": "sg_scenario", "to": "sg_price" },
+    { "from": "sg_price",    "to": "sg_netting" },
+    { "from": "sg_netting",  "to": "sg_pfe" }
+  ]
+}

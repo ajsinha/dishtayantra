@@ -6,6 +6,21 @@ Single source of truth for the application version. Every module, template,
 banner, and document must reference this module rather than hard-coding a
 version string.
 
+Version 3.0.0 highlights:
+    - Event-driven compute loop: DAGs react to data immediately instead of
+      polling on a fixed interval, collapsing per-hop latency from tens/hundreds
+      of milliseconds to sub-millisecond on the in-process path
+    - Subscribers wake the compute loop on message arrival (notify hook); the
+      idle poll interval is configurable (idle_poll_interval) and far lower by
+      default, cutting ingress latency ~180x in benchmarks
+    - Suitable for near-real-time, low-latency pipelines (low-single-digit-ms
+      hops) in addition to throughput workloads
+    - Free-threading (Python 3.13 no-GIL) enablement + testing guide and a
+      dependency compatibility checker
+    - Interactive Cytoscape.js graph view (zoom/pan/drag, live node-state panel)
+    - Expanded tutorials: two-subgraph showcase, parallel-DAG coordination,
+      multi-worker-pool execution, and the JVM gateway pool
+
 Version 2.2 highlights:
     - FastAPI web layer (replacing Flask) served by uvicorn, with full
       light/dark theming and locally-vendored front-end assets
@@ -26,8 +41,8 @@ Version 2.2 highlights:
 Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-VERSION = "2.2"
-BUILD_DATE = "2026-06-12"
+VERSION = "3.0.0"
+BUILD_DATE = "2026-06-13"
 APP_NAME = "DishtaYantra"
 
 

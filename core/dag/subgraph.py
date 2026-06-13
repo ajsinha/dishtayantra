@@ -444,7 +444,12 @@ class Subgraph(SubgraphStructureMixin):
                 'avg_execution_time_ms': self.metrics.avg_execution_time_ms,
                 'last_execution_time_ms': self.metrics.last_execution_time_ms,
                 'cache_hit_count': self.metrics.cache_hit_count,
-                'error_count': self.metrics.error_count
+                'error_count': self.metrics.error_count,
+                # UI-facing aliases (the details template reads these names):
+                'avg_latency_ms': self.metrics.avg_execution_time_ms,
+                'last_latency_ms': self.metrics.last_execution_time_ms,
+                'cache_hits': self.metrics.cache_hit_count,
+                'errors': self.metrics.error_count
             }
         }
 

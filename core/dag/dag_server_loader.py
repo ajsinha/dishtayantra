@@ -277,6 +277,38 @@ class DAGLoaderMixin:
                 if not dag.config.get('config_filename'):
                     summary["skipped_in_memory"].append(name)
 
+        # ---- v3.0.0: auto-start newly added DAGs (mirrors startup) ----
+        # Previously a reloaded DAG was registered but never started, so its
+        # subscribers/compute loop stayed idle until a full server restart.
+        # Start each just-added DAG if it is perpetual or currently within its
+        # schedule, matching _auto_start_eligible_dags() behaviour.
+        # Guarded: only when this object exposes start() (the full server);
+        # the loader mixin alone cannot start DAGs.
+        if hasattr(self, 'start') and callable(getattr(self, 'start')):
+            for dag_name in summary["added"]:
+                try:
+                    dag = self.dags.get(dag_name)
+                    if dag is None:
+                        continue
+                    is_perpetual = ((dag.start_time is None or dag.end_time is None)
+                                    and getattr(dag, 'schedule', None) is None)
+                    should_start = is_perpetual
+                    if not should_start:
+                        active, _reason = dag.is_within_schedule()
+                        should_start = active
+                    if should_start:
+                        self.start(dag_name)
+                        logger.info("reload_from_storage: auto-started DAG '%s'",
+                                    dag_name)
+                    else:
+                        logger.info("reload_from_storage: DAG '%s' added but not "
+                                    "started (schedule inactive)", dag_name)
+                except Exception as e:  # noqa: BLE001
+                    logger.error("reload_from_storage: failed to auto-start "
+                                 "'%s': %s", dag_name, e)
+                    logger.error(traceback.format_exc())
+                    summary["errors"].append({"dag": dag_name, "error": str(e)})
+
         logger.info("reload_from_storage complete: +%d added, -%d removed, "
                     "%d errors", len(summary["added"]),
                     len(summary["removed"]), len(summary["errors"]))

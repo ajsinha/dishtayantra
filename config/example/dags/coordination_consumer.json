@@ -1,0 +1,74 @@
+{
+  "name": "coordination_consumer",
+  "description": "Parallel-DAG coordination demo (2 of 2). Subscribes to mem://queue/work_items produced by the 'coordination_producer' DAG, processes each item, and publishes an acknowledgement back to mem://queue/work_results. Because the in-memory pub/sub bus is a process-wide singleton, the two DAGs coordinate purely through shared queues - no shared code, no direct calls. Run BOTH DAGs at the same time to see the loop.",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    {
+      "name": "work_listener",
+      "config": { "source": "mem://queue/work_items" }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "results_publisher",
+      "config": { "destination": "mem://queue/work_results" }
+    },
+    {
+      "name": "processed_log",
+      "config": { "destination": "file:///tmp/log/dagserver/coordination_processed.jsonl" }
+    }
+  ],
+
+  "calculators": [
+    {
+      "name": "process_item",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": { "processed_by": "consumer", "status": "done" }
+      }
+    },
+    {
+      "name": "build_ack",
+      "type": "PassthruCalculator",
+      "config": { "description": "Forms the acknowledgement sent back to the producer" }
+    }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    {
+      "name": "work_in",
+      "type": "SubscriptionNode",
+      "subscriber": "work_listener",
+      "calculator": "process_item",
+      "config": {}
+    },
+    {
+      "name": "ack_build",
+      "type": "CalculationNode",
+      "calculator": "build_ack",
+      "config": {}
+    },
+    {
+      "name": "ack_out",
+      "type": "PublisherSinkNode",
+      "config": { "publishers": ["results_publisher"] }
+    },
+    {
+      "name": "archive_out",
+      "type": "PublisherSinkNode",
+      "config": { "publishers": ["processed_log"] }
+    }
+  ],
+
+  "edges": [
+    { "from_node": "work_in",   "to_node": "ack_build" },
+    { "from_node": "work_in",   "to_node": "archive_out" },
+    { "from_node": "ack_build", "to_node": "ack_out" }
+  ]
+}

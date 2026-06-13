@@ -293,20 +293,32 @@ class FanoutDataSubscriber(FanoutSubscriberStatsMixin, DataSubscriber):
             if routing_key in self.child_subscribers:
                 child = self.child_subscribers[routing_key]
 
-                try:
-                    # Push message to child's internal queue
-                    child._internal_queue.put(data, timeout=1)
+                # v3.0.0 ZERO-LOSS: never drop on a full child queue. Block-retry
+                # until the child has space (backpressures the upstream feed).
+                enqueued = False
+                while not enqueued and not self._stop_event.is_set():
+                    try:
+                        child._internal_queue.put(data, timeout=1)
+                        enqueued = True
+                    except queue.Full:
+                        logger.warning(
+                            f"Child subscriber '{routing_key}' queue full in "
+                            f"router '{self.name}'; applying backpressure "
+                            f"(will retry, not drop)")
+                        continue
 
+                if enqueued:
                     # Update routing statistics
                     with self._lock:
                         self._routed_count[routing_key] = self._routed_count.get(routing_key, 0) + 1
-
+                    # Wake the child's event-driven consumer if present.
+                    cb = getattr(child, '_notify_callback', None)
+                    if cb is not None:
+                        try:
+                            cb()
+                        except Exception:
+                            pass
                     logger.debug(f"Routed message to '{routing_key}' in router '{self.name}'")
-
-                except queue.Full:
-                    logger.error(f"Child subscriber '{routing_key}' queue is full, dropping message")
-                    with self._lock:
-                        self._error_count += 1
 
             else:
                 # No child subscriber for this key - write to unrouted file

@@ -157,16 +157,16 @@ class EventHubsDataSubscriber(DataSubscriber):
             decoded = json.loads(body)
         except (json.JSONDecodeError, TypeError):
             decoded = body
-        try:
-            self._bridge.put(decoded, timeout=1)
-        except _queue.Full:
-            logger.warning(f"EventHubs bridge queue full for {self.name}; "
-                           f"dropping oldest")
+        # v3.0.0 ZERO-LOSS: never drop. Block-retry until the bridge has room.
+        enqueued = False
+        while not enqueued:
             try:
-                self._bridge.get_nowait()
-                self._bridge.put_nowait(decoded)
-            except (_queue.Empty, _queue.Full):
-                pass
+                self._bridge.put(decoded, timeout=1)
+                enqueued = True
+            except _queue.Full:
+                logger.warning(f"EventHubs bridge queue full for {self.name}; "
+                               f"applying backpressure (will retry, not drop)")
+                continue
 
     def _start_consumer(self):
         self._consumer = self._EventHubConsumerClient.from_connection_string(

@@ -1,0 +1,67 @@
+{
+    "_comment": "EXAMPLE Worker Pool Configuration for the multi-worker tutorial.",
+    "_how_to_use": "To try the worker pool, copy this file to config/worker_config.json (back up the existing one first), then restart the server. The shipped config/worker_config.json has the pool DISABLED by default so the platform runs single-process out of the box.",
+
+    "worker_pool": {
+        "enabled": true,
+        "_enabled_note": "true = run DAGs across separate OS processes (true parallelism). false = single-process mode.",
+
+        "num_workers": 4,
+        "_num_workers_note": "Number of worker processes to spawn. Use an integer, or the string 'auto' to use the machine's CPU count. Start with the number of physical cores.",
+
+        "min_workers": 2,
+        "max_workers": 32,
+        "_minmax_note": "num_workers is clamped into [min_workers, max_workers].",
+
+        "worker_startup_timeout_seconds": 30,
+        "worker_shutdown_timeout_seconds": 10,
+        "worker_stabilization_seconds": 10,
+        "_stabilization_note": "Pause after workers report ready before dispatching DAGs, so module imports finish first.",
+
+        "health_check_interval_seconds": 5,
+        "status_report_interval_seconds": 2,
+
+        "auto_restart_on_crash": true,
+        "max_restart_attempts": 3,
+        "restart_backoff_seconds": 5,
+        "_restart_note": "If a worker process crashes, the pool restarts it (up to max_restart_attempts) and re-dispatches its DAGs."
+    },
+
+    "affinity": {
+        "default_strategy": "weight_based",
+        "_strategies": ["round_robin", "weight_based", "least_loaded", "random"],
+        "_strategy_note": "How DAGs without an explicit worker_affinity are placed. weight_based packs by estimated CPU cost; least_loaded picks the emptiest worker; round_robin cycles; random scatters.",
+
+        "rebalance_enabled": true,
+        "rebalance_threshold": 0.3,
+        "rebalance_interval_seconds": 60,
+        "_rebalance_note": "Periodically move DAGs between workers if load is more than rebalance_threshold (30%) out of balance. Pinned/exclusive DAGs are never moved.",
+
+        "allow_dag_pinning": true,
+        "allow_exclusive_workers": true,
+        "_permission_note": "Master switches for the per-DAG worker_affinity options. If false, those options are ignored."
+    },
+
+    "communication": {
+        "control_queue_maxsize": 1000,
+        "status_queue_maxsize": 5000,
+
+        "use_lmdb_for_cross_worker": true,
+        "lmdb_path": "data/worker_lmdb",
+        "lmdb_map_size_mb": 1024,
+        "_lmdb_note": "DAGs on different worker processes cannot share an in-memory queue (separate memory spaces). Cross-worker pub/sub uses a memory-mapped LMDB store instead. Use lmdb:// sources/destinations to pass data between DAGs on different workers."
+    },
+
+    "monitoring": {
+        "collect_cpu_metrics": true,
+        "collect_memory_metrics": true,
+        "collect_dag_metrics": true,
+        "metrics_history_size": 1000
+    },
+
+    "defaults": {
+        "dag_cpu_weight": 0.2,
+        "dag_priority": 5,
+        "_defaults_note": "Used by weight_based placement when a DAG does not declare its own weight/priority. Heavier DAGs get spread out; higher-priority DAGs are placed first."
+    }
+}

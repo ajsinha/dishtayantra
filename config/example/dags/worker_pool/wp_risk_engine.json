@@ -1,0 +1,47 @@
+{
+  "_comment": "Worker-pool tutorial example 2 of 3: EXCLUSIVE worker (dedicated process).",
+  "name": "wp_risk_engine",
+  "description": "Heavy risk engine that reads market ticks from the cross-worker lmdb:// queue and runs CPU-intensive work. Marked EXCLUSIVE so it gets a dedicated worker process with no other DAGs competing for that core - the right choice for a hot, latency-sensitive pipeline.",
+
+  "priority": 9,
+  "dag_cpu_weight": 0.8,
+  "_weight_note": "High weight tells weight_based placement this DAG is expensive; combined with exclusive it owns a worker outright.",
+
+  "worker_affinity": {
+    "exclusive": true,
+    "_exclusive_note": "Dedicated worker, no co-tenants."
+  },
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    { "name": "ticks_in", "config": { "source": "lmdb://queue/market_ticks" } }
+  ],
+
+  "publishers": [
+    { "name": "risk_out", "config": { "destination": "lmdb://queue/risk_results" } }
+  ],
+
+  "calculators": [
+    { "name": "price_it",  "type": "core.calculator.random_calculator.RandomCalculator",
+      "config": { "description": "Stand-in for heavy pricing/Monte-Carlo work" } },
+    { "name": "tag_result","type": "ApplyDefaultsCalculator",
+      "config": { "defaults": { "stage": "risk", "engine": "wp_risk_engine" } } }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "in_ticks",  "type": "SubscriptionNode", "subscriber": "ticks_in",
+      "calculator": "price_it", "config": {} },
+    { "name": "finalize",  "type": "CalculationNode", "calculator": "tag_result", "config": {} },
+    { "name": "out_risk",  "type": "PublisherSinkNode",
+      "config": { "publishers": ["risk_out"] } }
+  ],
+
+  "edges": [
+    { "from_node": "in_ticks", "to_node": "finalize" },
+    { "from_node": "finalize", "to_node": "out_risk" }
+  ]
+}

@@ -182,6 +182,10 @@ class NoAuthRoutes:
         ('/help/tutorial-2', 'help_tutorial_2', 'help/tutorial_2_pipeline.html'),
         ('/help/tutorial-3', 'help_tutorial_3', 'help/tutorial_3_advanced.html'),
         ('/help/tutorial-4', 'help_tutorial_4', 'help/tutorial_4_enterprise.html'),
+        ('/help/tutorial-5', 'help_tutorial_5', 'help/tutorial_5_subgraphs.html'),
+        ('/help/tutorial-6', 'help_tutorial_6', 'help/tutorial_6_coordination.html'),
+        ('/help/tutorial-7', 'help_tutorial_7', 'help/tutorial_7_worker_pool.html'),
+        ('/help/tutorial-8', 'help_tutorial_8', 'help/tutorial_8_jvm.html'),
     ]
 
     def __init__(self, app: FastAPI):

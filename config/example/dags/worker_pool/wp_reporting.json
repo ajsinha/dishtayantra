@@ -1,0 +1,37 @@
+{
+  "_comment": "Worker-pool tutorial example 3 of 3: AUTO-PLACED (no worker_affinity).",
+  "name": "wp_reporting",
+  "description": "Lightweight reporting/consumer DAG with NO worker_affinity block, so the pool places it automatically using the default strategy (weight_based). It reads risk results from the cross-worker lmdb:// queue and writes a file report. This is the common case: most DAGs should let the pool decide.",
+
+  "priority": 4,
+  "dag_cpu_weight": 0.15,
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    { "name": "risk_in", "config": { "source": "lmdb://queue/risk_results" } }
+  ],
+
+  "publishers": [
+    { "name": "report_out", "config": { "destination": "file:///tmp/log/dagserver/wp_report.jsonl" } }
+  ],
+
+  "calculators": [
+    { "name": "summarize", "type": "PassthruCalculator",
+      "config": { "description": "Forms a report line from each risk result" } }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "in_risk",   "type": "SubscriptionNode", "subscriber": "risk_in",
+      "calculator": "summarize", "config": {} },
+    { "name": "write_rpt", "type": "PublisherSinkNode",
+      "config": { "publishers": ["report_out"] } }
+  ],
+
+  "edges": [
+    { "from_node": "in_risk", "to_node": "write_rpt" }
+  ]
+}

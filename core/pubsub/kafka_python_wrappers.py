@@ -178,6 +178,14 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
         self._poll_timeout_ms = consumer_config.get('consumer_timeout_ms', 100)
         self._consumer = None
         self._connected = False
+
+        # v3.0.0 BUGFIX: buffer the full polled batch. poll() returns many
+        # records at once; previously only messages[0] was returned and the
+        # rest of the batch was discarded while auto-commit advanced past them
+        # all -> massive message loss under load. We now drain the buffer one
+        # message at a time so every record in a batch is delivered.
+        from collections import deque
+        self._msg_buffer = deque()
         
         # v1.7.6: Connect with retry logic
         self._connect_with_retry()
@@ -349,45 +357,50 @@ class KafkaPythonConsumerWrapper(AbstractKafkaConsumerWrapper):
     
     def get_single_message(self) -> Optional[Any]:
         """
-        Get a single message using poll() with automatic reconnection.
-        
-        v1.7.6: Added reconnection support for broken connections.
-        v1.7.2: Changed from iterator-based to poll-based retrieval.
-        
-        Note: Message logging is handled by base DataSubscriber class.
+        Get a single message, draining a buffered poll() batch.
+
+        v3.0.0: poll() returns a batch of records across partitions. We buffer
+        the ENTIRE batch and return one message per call, so no record is ever
+        discarded (the previous implementation kept only the first message of
+        each batch and lost the rest as auto-commit advanced the offsets).
         """
         try:
+            # Serve from the buffer first.
+            if self._msg_buffer:
+                return self._msg_buffer.popleft()
+
             # v1.7.6: Check and reconnect if needed
             self._reconnect_if_needed()
-            
-            # Use poll() instead of iterator for more reliable message retrieval
+
+            # Refill: poll a batch and buffer EVERY record, preserving order.
             records = self._consumer.poll(timeout_ms=self._poll_timeout_ms)
-            
             if records:
                 # records is a dict: {TopicPartition: [ConsumerRecord, ...]}
                 for topic_partition, messages in records.items():
-                    if messages:
-                        # Return the first message value
-                        msg = messages[0]
-                        # Log Kafka-specific details (topic/partition/offset)
-                        logger.debug(f"Kafka poll returned message from {topic_partition.topic} "
-                                    f"partition {topic_partition.partition} offset {msg.offset}")
-                        return msg.value
-            
+                    for msg in messages:
+                        logger.debug(
+                            f"Kafka buffered message from {topic_partition.topic} "
+                            f"partition {topic_partition.partition} "
+                            f"offset {msg.offset}")
+                        self._msg_buffer.append(msg.value)
+
+            if self._msg_buffer:
+                return self._msg_buffer.popleft()
+
             return None
-            
+
         except Exception as e:
             logger.error(f"Error getting message from Kafka: {e}")
             logger.error(f"Full stack trace:\n{traceback.format_exc()}")
             self._connected = False
-            
+
             if self._auto_reconnect:
                 logger.info("Attempting reconnection after message retrieval failure...")
                 try:
                     self._reconnect_if_needed()
                 except Exception as reconnect_error:
                     logger.error(f"Reconnection attempt failed: {reconnect_error}")
-            
+
             return None
 
 

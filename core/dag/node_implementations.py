@@ -18,6 +18,7 @@ class PublisherSinkNode(Node):
         super().__init__(name, config)
         self.publishers = config.get("publishers", [])
         self._edge_tracker = {}
+        self._published_count = 0  # messages actually published to sinks
 
     def compute(self) -> bool:
         """Compute node output based on inputs"""
@@ -25,7 +26,11 @@ class PublisherSinkNode(Node):
             return False
 
 
-        # Gather inputs from incoming edges
+        # Gather inputs from incoming edges. Per-edge change-detection emits an
+        # edge's data once per distinct value: with unique messages this passes
+        # every message through exactly once; with repeated identical values it
+        # de-dups (value-graph behaviour). This correctly avoids re-publishing
+        # stale edge state on every compute sweep.
         edge_data_collection = []
         for edge in self._incoming_edges:
             edge_data = edge.get_data()
@@ -42,11 +47,13 @@ class PublisherSinkNode(Node):
                     edge_data_collection.append(edge_data)
 
         if len(edge_data_collection) >0:
+            self._messages_in += len(edge_data_collection)
             self_graph = self._graph
             for data in edge_data_collection:
                 for publisher_name in self.publishers:
                     local_publisher = self_graph.get_publisher_by_name(publisher_name)
                     local_publisher.publish(data)
+                self._published_count += 1
             #self.increment_compute_count()
             return True
         else:
@@ -83,6 +90,7 @@ class SubscriptionNode(Node):
 
             # Merge with current input
             self._input = data
+            self._messages_in += 1
 
             # Apply input transformers
             transformed_input = self._input
@@ -100,9 +108,11 @@ class SubscriptionNode(Node):
             for transformer in self._output_transformers:
                 transformed_output = transformer.transform(transformed_output)
 
-            # Update output if changed
+            # Update output. Equality gate: only propagate when the output
+            # changed (dependency-graph semantics).
             if transformed_output != self._output:
                 self._output = transformed_output
+                self._messages_out += 1
 
                 # Mark children as dirty
                 for edge in self._outgoing_edges:
@@ -129,6 +139,7 @@ class PublicationNode(Node):
         super().__init__(name, config)
         self.publishers = []
         self._last_published_output = None
+        self._published_count = 0  # messages actually published to sinks
 
     def add_publisher(self, publisher):
         """Add a data publisher"""
@@ -143,7 +154,7 @@ class PublicationNode(Node):
             # Run parent compute logic
             super().compute()
 
-            # Publish if output changed
+            # Publish only when the output changed (dependency-graph semantics).
             if self._output != self._last_published_output:
                 for publisher in self.publishers:
                     try:
@@ -151,6 +162,7 @@ class PublicationNode(Node):
                     except Exception as e:
                         logger.error(f"Error publishing from node {self.name}: {str(e)}")
 
+                self._published_count += 1
                 self._last_published_output = self._output.copy() if self._output else None
             #self.increment_compute_count()
             return True
@@ -203,6 +215,13 @@ class MetronomeNode(Node):
                 self.set_dirty()
                 self._last_execution = current_time
                 logger.debug(f"Metronome node {self.name} tick at {current_time}")
+                # v3.0.0: wake the compute loop immediately on a tick.
+                cb = getattr(self, '_notify_callback', None)
+                if cb is not None:
+                    try:
+                        cb()
+                    except Exception:
+                        pass
                 # Small sleep before next check
                 time.sleep(0.1)
             else:

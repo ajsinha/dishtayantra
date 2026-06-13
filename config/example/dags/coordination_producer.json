@@ -1,0 +1,70 @@
+{
+  "name": "coordination_producer",
+  "description": "Parallel-DAG coordination demo (1 of 2). A metronome drives this producer to emit work items onto an in-memory queue (mem://queue/work_items) every few seconds. It also listens on mem://queue/work_results for acknowledgements published by the consumer DAG, demonstrating bidirectional coordination between two independently-scheduled DAGs running in the same server. Pair with 'coordination_consumer'.",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    {
+      "name": "results_listener",
+      "config": { "source": "mem://queue/work_results" }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "work_publisher",
+      "config": { "destination": "mem://queue/work_items" }
+    }
+  ],
+
+  "calculators": [
+    {
+      "name": "make_work",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": { "kind": "work_item", "origin": "producer", "priority": "normal" }
+      }
+    },
+    {
+      "name": "ack_logger",
+      "type": "PassthruCalculator",
+      "config": { "description": "Receives consumer acknowledgements (feedback loop)" }
+    }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    {
+      "name": "tick",
+      "type": "MetronomeNode",
+      "config": { "interval": 5, "message": "generate" }
+    },
+    {
+      "name": "build_work",
+      "type": "CalculationNode",
+      "calculator": "make_work",
+      "config": {}
+    },
+    {
+      "name": "emit_work",
+      "type": "PublisherSinkNode",
+      "config": { "publishers": ["work_publisher"] }
+    },
+
+    {
+      "name": "results_in",
+      "type": "SubscriptionNode",
+      "subscriber": "results_listener",
+      "calculator": "ack_logger",
+      "config": {}
+    }
+  ],
+
+  "edges": [
+    { "from_node": "tick",       "to_node": "build_work" },
+    { "from_node": "build_work", "to_node": "emit_work" }
+  ]
+}

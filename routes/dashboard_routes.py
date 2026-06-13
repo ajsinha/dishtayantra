@@ -196,6 +196,10 @@ class DashboardRoutes:
                     'last_calculation': _json_safe(
                         getattr(node, '_last_compute', None)),
                     'error_count': len(getattr(node, '_errors', []) or []),
+                    'messages_in': getattr(node, '_messages_in', 0),
+                    'messages_out': getattr(node, '_published_count',
+                                            getattr(node, '_messages_out', 0)),
+                    'streaming': getattr(node, '_streaming', False),
                     'last_error': (list(getattr(node, '_errors', []))[-1]
                                    if getattr(node, '_errors', None)
                                    else None),
@@ -217,12 +221,45 @@ class DashboardRoutes:
                     graph_edges.append(edge_obj)
             graph_data = {'nodes': graph_nodes, 'edges': graph_edges}
 
+            # v3.0.0: DAG throughput stats for the UI - messages ingested
+            # (summed across subscribers) and messages published (summed across
+            # publisher-sink nodes), plus a per-source / per-sink breakdown.
+            ingested_total = 0
+            ingest_breakdown = []
+            for sub_name, sub in (getattr(dag, 'subscribers', {}) or {}).items():
+                cnt = int(getattr(sub, '_receive_count', 0) or 0)
+                ingested_total += cnt
+                ingest_breakdown.append({
+                    'name': sub_name,
+                    'source': getattr(sub, 'source', ''),
+                    'received': cnt,
+                    'queue_depth': (sub.get_queue_size()
+                                    if hasattr(sub, 'get_queue_size') else None),
+                })
+            published_total = 0
+            publish_breakdown = []
+            for node in sorted_nodes:
+                pub_cnt = getattr(node, '_published_count', None)
+                if pub_cnt is not None:
+                    published_total += int(pub_cnt)
+                    publish_breakdown.append({
+                        'name': node.name,
+                        'published': int(pub_cnt),
+                    })
+            dag_stats = {
+                'messages_ingested': ingested_total,
+                'messages_published': published_total,
+                'ingest_breakdown': ingest_breakdown,
+                'publish_breakdown': publish_breakdown,
+            }
+
             return render(request, 'dag/details.html',
                           dag_name=dag_name,
                           details=details,
                           source_json=source_json,
                           source_config=source_config,
                           graph_data=graph_data,
+                          dag_stats=dag_stats,
                           node_details=node_details,
                           worker_info=worker_info,
                           worker_pool_enabled=worker_pool_enabled,

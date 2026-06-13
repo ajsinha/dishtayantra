@@ -260,13 +260,19 @@ class LMDBDataSubscriber:
             if '_dag_priority' not in data:
                 data['_dag_priority'] = self.config.get('dag_priority', 5)
         
-        # Add to queue
-        try:
-            self._queue.put_nowait(data)
-            self.received_count += 1
-            self.last_receive_time = time.time()
-        except Full:
-            logger.warning(f"Subscriber '{self.name}' queue full, dropping message")
+        # Add to queue. v3.0.0 ZERO-LOSS: never drop on a full queue; block-retry
+        # until space frees up (applies backpressure to LMDB consumption).
+        enqueued = False
+        while not enqueued:
+            try:
+                self._queue.put(data, timeout=1)
+                enqueued = True
+            except Full:
+                logger.warning(f"Subscriber '{self.name}' queue full; applying "
+                               f"backpressure (will retry, not drop)")
+                continue
+        self.received_count += 1
+        self.last_receive_time = time.time()
     
     def _package_message(self, data: Any, msg: LMDBMessage) -> dict:
         """Package a non-dict message into standard format"""
