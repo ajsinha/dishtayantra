@@ -45,6 +45,25 @@
                     </p>
                 </div>
 
+                {% if original_schedule and (original_schedule.days_of_week or original_schedule.holiday_calendars or original_schedule.exclude_days_of_week) %}
+                <div class="alert alert-success mb-4">
+                    <h6 class="alert-heading"><i class="bi bi-calendar-check"></i> Schedule Inherited by the Clone</h6>
+                    <p class="mb-1"><small>The clone keeps the parent's day-of-week and holiday-calendar
+                       schedule. Only the time window below is editable here.</small></p>
+                    <ul class="mb-0">
+                        {% if original_schedule.days_of_week %}
+                        <li><strong>Active days:</strong> {{ original_schedule.days_of_week }}</li>
+                        {% endif %}
+                        {% if original_schedule.exclude_days_of_week %}
+                        <li><strong>Excluded days:</strong> {{ original_schedule.exclude_days_of_week }}</li>
+                        {% endif %}
+                        {% if original_schedule.holiday_calendars %}
+                        <li><strong>Holiday calendars:</strong> {{ original_schedule.holiday_calendars|join(', ') }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
                 <form method="POST" action="{{ url_for('clone_dag', dag_name=dag_name) }}" id="cloneForm">
                     <div class="mb-4">
                         <label for="start_time" class="form-label">

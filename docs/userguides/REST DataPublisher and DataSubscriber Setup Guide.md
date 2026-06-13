@@ -1096,6 +1096,29 @@ print("  Demonstrates automatic retry mechanism")
 
 The REST implementation provides a flexible foundation for API-based messaging, ideal for integrating with external services and HTTP-based architectures!
 
+## SSL/TLS Security
+
+REST endpoints use HTTPS simply by giving an `https://` base URL. TLS
+verification is on by default and controlled by `verify_ssl`.
+
+| Key | Purpose |
+| --- | --- |
+| `verify_ssl` | Verify the server's TLS certificate (default `true`) |
+| `verify_ssl` (path) | A CA bundle path may be supplied to verify against a custom CA |
+
+```json
+{
+  "destination": "rest://orders",
+  "base_url": "https://api.internal",
+  "publish_endpoint": "/v1/orders",
+  "http_method": "POST",
+  "verify_ssl": true
+}
+```
+
+Set `verify_ssl` to `false` only for testing against self-signed certificates;
+never disable verification in production. For client authentication, supply the
+appropriate headers/token via the REST connector's header configuration.
 
 ## Copyright Notice
 

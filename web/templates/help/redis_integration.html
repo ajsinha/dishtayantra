@@ -4,16 +4,16 @@
 
 {% block extra_css %}
 <style>
-    .help-nav { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .help-nav { background: var(--bg-body); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
     .code-block { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre; }
     .code-block.python { border-left: 4px solid #3776ab; }
     .code-block.json { border-left: 4px solid #10b981; }
     .code-block.bash { border-left: 4px solid #64748b; }
     .broker-color { color: #dc382d; }
-    .feature-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
+    .feature-card { border: 2px solid var(--border-color); border-radius: 12px; padding: 1.5rem; height: 100%; transition: all 0.3s ease; }
     .feature-card:hover { border-color: #dc382d; box-shadow: 0 4px 15px rgba(220, 56, 45, 0.2); }
-    .tip-box { background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
-    .warning-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .tip-box { background: color-mix(in srgb, var(--success-color) 12%, var(--bg-card)); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+    .warning-box { background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card)); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
 </style>
 {% endblock %}
 

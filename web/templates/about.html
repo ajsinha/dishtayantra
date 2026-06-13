@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .about-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
         color: white;
         padding: 4rem 2rem;
         border-radius: 16px;
@@ -26,8 +26,8 @@
     }
     .about-hero .version-badge {
         background: rgba(0, 212, 170, 0.2);
-        border: 2px solid #00d4aa;
-        color: #00d4aa;
+        border: 2px solid var(--brass, #e3a44a);
+        color: var(--brass, #e3a44a);
         padding: 0.5rem 1.5rem;
         border-radius: 50px;
         font-weight: 600;
@@ -52,7 +52,7 @@
     }
     .feature-icon i {
         font-size: 1.5rem;
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
     }
     .tech-badge {
         background: #f1f5f9;
@@ -82,7 +82,7 @@
     }
     .author-avatar i {
         font-size: 3rem;
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
     }
     .nav-buttons {
         display: flex;
@@ -90,16 +90,45 @@
         justify-content: center;
         flex-wrap: wrap;
     }
+    /* v2.2: Capabilities section */
+    .cap-group {
+        color: var(--accent-color);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .cap-group i { margin-right: 6px; }
+    .cap-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+    .cap-list li {
+        position: relative;
+        padding-left: 1.4rem;
+        margin-bottom: 0.45rem;
+        color: var(--text-secondary);
+        line-height: 1.45;
+    }
+    .cap-list li::before {
+        content: "\f270";
+        font-family: "bootstrap-icons";
+        position: absolute;
+        left: 0;
+        color: var(--brass, #e3a44a);
+        font-size: 0.85rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
 <div class="about-hero">
-    <i class="bi bi-diagram-3" style="font-size: 4rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
+    <i class="bi bi-diagram-3" style="font-size: 4rem; color: var(--brass, #e3a44a); display: block; margin-bottom: 1rem;"></i>
     <h1>DishtaYantra</h1>
     <p class="tagline">Enterprise-Grade DAG Execution Engine for Real-Time Data Processing</p>
-    <span class="version-badge">Version 1.7.6</span>
+    <span class="version-badge">Version {{ app_version }}</span>
 </div>
 
 <!-- Navigation Buttons -->
@@ -121,7 +150,7 @@
             </div>
             <div class="card-body">
                 <p class="lead">DishtaYantra (Sanskrit: दिष्टयन्त्र - "Directed Instrument") is a powerful, enterprise-grade Directed Acyclic Graph (DAG) execution engine designed for real-time data processing and workflow orchestration.</p>
-                <p>Built with Python and Flask, DishtaYantra provides a flexible framework for creating complex data pipelines that can:</p>
+                <p>Built with Python and FastAPI, DishtaYantra provides a flexible framework for creating complex data pipelines that can:</p>
                 <ul>
                     <li><strong>Ingest data</strong> from multiple sources including Kafka, RabbitMQ, ActiveMQ, TIBCO EMS, WebSphere MQ, REST APIs, Files, and more</li>
                     <li><strong>Process and transform</strong> data using customizable calculators and transformers</li>
@@ -290,7 +319,7 @@
                 <div class="feature-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
                     <i class="bi bi-cpu" style="color: white;"></i>
                 </div>
-                <h5>Worker Pool <span class="badge text-white" style="background: #0ea5e9; font-size: 0.6rem;">1.5.2</span></h5>
+                <h5>Worker Pool</h5>
                 <p class="text-muted">Multiprocessing with DAG affinity. True CPU parallelism with auto-restart.</p>
             </div>
         </div>
@@ -302,7 +331,7 @@
                 <div class="feature-icon" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
                     <i class="bi bi-database" style="color: white;"></i>
                 </div>
-                <h5>LMDB Pub/Sub <span class="badge text-white" style="background: #6366f1; font-size: 0.6rem;">1.5.2</span></h5>
+                <h5>LMDB Pub/Sub</h5>
                 <p class="text-muted">Cross-process communication via memory-mapped LMDB for zero-copy data sharing.</p>
             </div>
         </div>
@@ -312,9 +341,9 @@
 <!-- Competitive Advantage Section -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-0" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;">
+        <div class="card border-0" style="background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%) !important;">
             <div class="card-header border-0" style="background: transparent !important;">
-                <h5 class="mb-0" style="color: #ffffff !important;"><i class="bi bi-trophy" style="color: #00d4aa;"></i> Competitive Advantage</h5>
+                <h5 class="mb-0" style="color: #ffffff !important;"><i class="bi bi-trophy" style="color: var(--brass, #e3a44a);"></i> Competitive Advantage</h5>
             </div>
             <div class="card-body" style="background: transparent !important;">
                 <p class="lead" style="color: rgba(226, 232, 240, 0.85) !important;">Why choose DishtaYantra over Apache Spark, Apache Flink, Apache Airflow, or commercial alternatives?</p>
@@ -545,9 +574,9 @@
                 <!-- Bottom tagline -->
                 <div class="text-center mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
                     <p class="mb-0" style="color: rgba(226, 232, 240, 0.9) !important;">
-                        <i class="bi bi-quote me-2" style="color: #00d4aa;"></i>
+                        <i class="bi bi-quote me-2" style="color: var(--brass, #e3a44a);"></i>
                         <em>"The performance of C++, the safety of Rust, the ecosystem of Python, and the simplicity of a single process."</em>
-                        <i class="bi bi-quote ms-2" style="color: #00d4aa;"></i>
+                        <i class="bi bi-quote ms-2" style="color: var(--brass, #e3a44a);"></i>
                     </p>
                 </div>
             </div>
@@ -555,844 +584,77 @@
     </div>
 </div>
 
-<!-- What's New in 1.7.6 -->
+
+<!-- Capabilities (v2.2: replaced the long release-by-release changelog
+     with a concise, current feature listing) -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card" style="border: 2px solid #238636;">
-            <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.6 <span class="badge bg-light text-dark ms-2">LATEST</span></h5>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-grid-3x3-gap"></i> Capabilities</h5>
             </div>
             <div class="card-body">
-                <!-- Kafka Connection Resilience -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-arrow-repeat"></i> Kafka Connection Resilience <span class="badge bg-success">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-shield-check" style="color: #238636;"></i> Retry on Startup</h6>
-                        <ul>
-                            <li><strong>Configurable retry attempts</strong> (default: 5)</li>
-                            <li>Delay between retries (default: 3 seconds)</li>
-                            <li>Works with kafka-python and confluent-kafka</li>
-                            <li>No more startup failures due to transient Kafka issues</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-lightning-charge" style="color: #2ea043;"></i> Automatic Recovery</h6>
-                        <ul>
-                            <li><strong>Auto-reconnect</strong> on broken connections</li>
-                            <li>Transparent to DAG processing</li>
-                            <li>Health monitoring built-in</li>
-                            <li>Configurable via <code>application.properties</code></li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Template Properties -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-gear"></i> Centralized Configuration <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <p>Author email, copyright, and GitHub repo are now configured in <code>application.properties</code> and automatically injected into all HTML templates.</p>
-                    </div>
-                </div>
-
-                <!-- Smart Deserializer -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-magic"></i> Smart Message Deserialization</h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-braces-asterisk" style="color: #238636;"></i> Universal Smart Deserializer</h6>
-                        <ul>
-                            <li><strong>Auto-package non-JSON messages</strong> into dict format</li>
-                            <li>Works across ALL pubsub implementations</li>
-                            <li>Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, WebSphere MQ</li>
-                            <li>Redis Pub/Sub, gRPC streaming</li>
-                            <li>No configuration needed - works automatically</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-arrow-left-right" style="color: #2ea043;"></i> Message Transformation</h6>
-                        <ul>
-                            <li><code>{"key": "value"}</code> → passes through unchanged</li>
-                            <li><code>hello world</code> → <code>{"_raw_data": "hello world", "_auto_packaged": true}</code></li>
-                            <li><code>[1, 2, 3]</code> → <code>{"_raw_data": [1,2,3], "_raw_type": "list"}</code></li>
-                            <li>Binary data → hex-encoded with error info</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Enhanced Logging Policy -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-journal-check"></i> Enhanced Logging Policy</h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-inbox" style="color: #238636;"></i> Message Tracking</h6>
-                        <ul>
-                            <li><strong>Every message logged</strong> on publish and receive</li>
-                            <li>Source, type, count, and preview in logs</li>
-                            <li>Consistent format across all brokers</li>
-                            <li>Configurable log levels</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-bug" style="color: #dc3545;"></i> Exception Handling</h6>
-                        <ul>
-                            <li><strong>Full stack traces</strong> for all exceptions</li>
-                            <li>Easier debugging and troubleshooting</li>
-                            <li>Connection error details</li>
-                            <li>Deserialization failure diagnostics</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Kafka Improvements -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-hdd-network"></i> Kafka Consumer Improvements <span class="badge bg-warning text-dark">ENHANCED</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>Poll-based retrieval</strong> instead of iterator</li>
-                            <li>More reliable with external producers</li>
-                            <li>Default <code>auto.offset.reset=earliest</code></li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>Both kafka-python and confluent-kafka</strong> updated</li>
-                            <li>Partition and offset logging</li>
-                            <li>Graceful error recovery</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Live Logs -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-success"><i class="bi bi-broadcast"></i> Live Logs Streaming</h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-terminal" style="color: #238636;"></i> Real-Time Log Viewer</h6>
-                        <ul>
-                            <li><strong>Server-Sent Events (SSE)</strong> for live streaming</li>
-                            <li>Auto-reconnect on connection drops</li>
-                            <li>Level filtering (DEBUG, INFO, WARNING, ERROR, CRITICAL)</li>
-                            <li>Source filtering (DAG Server, Workers, Calculators, Pub/Sub)</li>
-                            <li>Real-time search through log messages</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-sliders" style="color: #2ea043;"></i> Interactive Controls</h6>
-                        <ul>
-                            <li><strong>Pause/Resume</strong> stream without losing connection</li>
-                            <li><strong>Auto-scroll</strong> toggle for following new entries</li>
-                            <li><strong>Clear buffer</strong> to reset display</li>
-                            <li><strong>Statistics bar</strong> with counts and log rate</li>
-                            <li><strong>Connection status</strong> visual indicators</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('live_logs') }}" class="btn btn-success me-2">
-                        <i class="bi bi-broadcast"></i> View Live Logs
-                    </a>
-                    <a href="{{ url_for('help_research') }}" class="btn btn-outline-success">
-                        <i class="bi bi-journal-text"></i> View Research Paper
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- What's New in 1.7.0 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card" style="border: 2px solid #00599C;">
-            <div class="card-header" style="background: linear-gradient(135deg, #00599C, #004482); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.7.0</h5>
-            </div>
-            <div class="card-body">
-                <!-- CPP Manager -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-cpu"></i> CPP Manager & pybind11 Integration Enhancement (1.7.0) <span class="badge" style="background: linear-gradient(135deg, #00599C, #004482);">MAJOR</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-gear-fill" style="color: #00599C;"></i> Config-Based C++ Module Management</h6>
-                        <ul>
-                            <li><strong>cpp_config.json</strong> - Centralized configuration for C++ modules</li>
-                            <li>Multiple module support with automatic loading</li>
-                            <li>Auto-initialization when application properties are loaded</li>
-                            <li>Calculator instance caching and pooling</li>
-                            <li>LMDB zero-copy data exchange support</li>
-                            <li><strong>Config monitoring</strong> - Hot reload when config changes</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-braces" style="color: #004482;"></i> High-Performance C++ Calculators</h6>
-                        <ul>
-                            <li><strong>~100ns call overhead</strong> (vs ~100-500μs for Java/Py4J)</li>
-                            <li>Direct memory sharing with Python (zero-copy)</li>
-                            <li>SIMD optimization opportunities</li>
-                            <li>CMake-based build system</li>
-                            <li>Web UI build and reload support</li>
-                            <li>Worker process awareness for distributed execution</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Pre-configured C++ Calculators -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-calculator"></i> Pre-configured C++ Calculators (1.7.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <p>Define calculator configurations in cpp_config.json and reference them by name in DAGs:</p>
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">PassthroughCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">MathCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">StatisticsCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">MatrixCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">StringTransformCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #00599C;">DataValidationCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #004482;">TradePricingCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge" style="background: #004482;">RiskMetricsCalculator</span></li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Web UI for CPP Management -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-window"></i> C++ Management Web UI (1.7.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>/cpp</strong> - C++ Management dashboard</li>
-                            <li>Module status and health monitoring</li>
-                            <li>Load/unload/reload modules via UI</li>
-                            <li>Build modules with one click (CMake)</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li>Calculator definitions and usage examples</li>
-                            <li>Configuration preview and editing</li>
-                            <li>Performance metrics display</li>
-                            <li>API endpoints for automation</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Example DAGs -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> C++ Calculator Example DAGs (1.7.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
+                <p class="text-muted mb-4">A consolidated view of what DishtaYantra does today.</p>
                 <div class="row">
-                    <div class="col-md-12">
-                        <p>Ready-to-use example DAGs in <code>config/example/dags/</code>:</p>
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><span class="badge bg-secondary">cpp_math_pipeline_dag.json</span></li>
-                            <li class="list-inline-item"><span class="badge bg-secondary">cpp_trade_pricing_dag.json</span></li>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="cap-group"><i class="bi bi-diagram-3"></i> Compute &amp; Orchestration</h6>
+                        <ul class="cap-list">
+                            <li>Directed-acyclic-graph execution engine for real-time data pipelines</li>
+                            <li>Visual DAG designer plus JSON/YAML configuration</li>
+                            <li>Subgraphs, fan-in / fan-out, and metronome-driven nodes</li>
+                            <li>Worker-pool execution for process isolation and scale-out</li>
+                            <li>Live clone, suspend, resume, and hot-reload of DAGs</li>
                         </ul>
                     </div>
-                </div>
-                
-                <!-- Rust Manager Section -->
-                <hr class="my-4">
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-gear-wide-connected"></i> Rust Manager & PyO3 Integration Enhancement (1.7.0) <span class="badge" style="background: linear-gradient(135deg, #B7410E, #DEA584);">MAJOR</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <p><strong>Config-based Rust Module Management:</strong></p>
-                        <ul>
-                            <li><code>config/rust_config.json</code> - Central configuration</li>
-                            <li>Automatic module loading on startup</li>
-                            <li>Hot-reload when config changes</li>
-                            <li>LMDB zero-copy support for large payloads</li>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="cap-group"><i class="bi bi-calculator"></i> Polyglot Calculators</h6>
+                        <ul class="cap-list">
+                            <li>Python calculators and transformers</li>
+                            <li>C++ via pybind11</li>
+                            <li>Rust via PyO3</li>
+                            <li>Java via Py4J / JVM gateway</li>
+                            <li>REST-backed calculators for external services</li>
                         </ul>
                     </div>
-                    <div class="col-md-6">
-                        <p><strong>Memory Safety Guarantees:</strong></p>
-                        <ul>
-                            <li>Compile-time memory safety via Rust ownership</li>
-                            <li>Thread safety enforced by the type system</li>
-                            <li>Rayon parallel processing with GIL release</li>
-                            <li>~50ns call overhead for maximum performance</li>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="cap-group"><i class="bi bi-arrow-left-right"></i> Messaging &amp; Pub/Sub</h6>
+                        <ul class="cap-list">
+                            <li>Kafka, RabbitMQ, ActiveMQ, TIBCO EMS, IBM WebSphere MQ</li>
+                            <li>Redis, in-memory, file, gRPC, and LMDB transports</li>
+                            <li>AWS SQS, Kinesis, and SNS</li>
+                            <li>Azure Service Bus and Event Hubs</li>
+                            <li>Cloud object-store pub/sub (S3, Azure Blob, GCS)</li>
+                            <li>Optional resilient wrappers: retry, outage-buffering, reconnect</li>
                         </ul>
                     </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-calculator"></i> Pre-configured Rust Calculators (1.7.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>RustMathCalculator</strong> - Math operations with SIMD</li>
-                            <li><strong>RustStatisticsCalculator</strong> - Statistical analysis</li>
-                            <li><strong>RustStringCalculator</strong> - Memory-safe string ops</li>
-                            <li><strong>RustHashCalculator</strong> - SHA256, FNV hashing</li>
-                            <li><strong>RustJsonCalculator</strong> - Fast JSON parsing</li>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="cap-group"><i class="bi bi-calendar-week"></i> Market-Aware Scheduling</h6>
+                        <ul class="cap-list">
+                            <li>Time windows with duration syntax (e.g. 09:30 + 6h30m)</li>
+                            <li>Day-of-week allow / deny lists</li>
+                            <li>USA and Canada market holiday calendars</li>
+                            <li>Intraday schedule edits honored within five minutes</li>
+                            <li>Correct handling of windows that wrap past midnight</li>
                         </ul>
                     </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>RustDataValidationCalculator</strong> - Type-safe validation</li>
-                            <li><strong>RustTradePricingCalculator</strong> - Thread-safe pricing</li>
-                            <li><strong>RustRiskMetricsCalculator</strong> - VaR, Greeks</li>
-                            <li><strong>RustTimeSeriesCalculator</strong> - Moving averages</li>
-                            <li><strong>RustPassthroughCalculator</strong> - Testing/benchmarks</li>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="cap-group"><i class="bi bi-shield-check"></i> Availability &amp; Operations</h6>
+                        <ul class="cap-list">
+                            <li>High-availability manager: Zookeeper, Redis, S3-lease, or socket</li>
+                            <li>Automatic primary election and failover</li>
+                            <li>Prometheus metrics and live system monitoring</li>
+                            <li>System and live log views</li>
+                            <li>In-memory cache with browsing and management UI</li>
                         </ul>
                     </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-window"></i> Rust Management Web UI (1.7.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <p>Access at <code>/rust</code> - Features include:</p>
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><span class="badge bg-success">Module Load/Unload</span></li>
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">Hot Reload</span></li>
-                            <li class="list-inline-item"><span class="badge bg-primary">maturin Build</span></li>
-                            <li class="list-inline-item"><span class="badge bg-info">Calculator Testing</span></li>
-                            <li class="list-inline-item"><span class="badge bg-secondary">Config Preview</span></li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> Rust Calculator Example DAGs (1.7.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <p>Ready-to-use example DAGs:</p>
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><span class="badge bg-secondary">rust_math_pipeline_dag.json</span></li>
-                            <li class="list-inline-item"><span class="badge bg-secondary">rust_timeseries_analysis_dag.json</span></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- What's New in 1.6.0 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card" style="border: 2px solid #f89820;">
-            <div class="card-header" style="background: linear-gradient(135deg, #f89820, #ea6227); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.6.0</h5>
-            </div>
-            <div class="card-body">
-                <!-- JVM Manager -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-cpu"></i> JVM Manager & Py4J Integration Enhancement (1.6.0) <span class="badge" style="background: linear-gradient(135deg, #f89820, #ea6227);">MAJOR</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-gear-fill" style="color: #f89820;"></i> Config-Based JVM Management</h6>
-                        <ul>
-                            <li><strong>jvm_config.json</strong> - Centralized configuration for JVMs and gateways</li>
-                            <li>Multiple gateway support (primary, secondary, custom)</li>
-                            <li>Auto-start JVMs when application properties are loaded</li>
-                            <li>Configurable heap size, JVM options, and classpath</li>
-                            <li>Connection pooling with round-robin gateway selection</li>
-                            <li><strong>Config monitoring</strong> - Auto-restart JVMs when config changes</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-heart-pulse" style="color: #ea6227;"></i> Health Monitoring & Lifecycle</h6>
-                        <ul>
-                            <li>Automatic health checks with configurable intervals</li>
-                            <li>Auto-restart failed gateways and JVM processes</li>
-                            <li><strong>Kill/Restart JVM</strong> via UI or API</li>
-                            <li>Graceful shutdown with configurable timeout</li>
-                            <li>JVM process PID tracking and monitoring</li>
-                            <li>Worker process awareness for distributed execution</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Pre-configured Calculators -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-calculator"></i> Pre-configured Java Calculators (1.6.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <p>Define calculator configurations in jvm_config.json and reference them by name in DAGs:</p>
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">PassthruCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">MathCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">TradePricingCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">RiskCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">StringTransformCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-warning text-dark">AggregationCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-success">PortfolioCalculator</span></li>
-                            <li class="list-inline-item"><span class="badge bg-success">DataValidationCalculator</span></li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Web UI for JVM Management -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-window"></i> JVM Management Web UI (1.6.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-display" style="color: #0ea5e9;"></i> Management Dashboard</h6>
-                        <ul>
-                            <li>View all gateway configurations and status</li>
-                            <li>Monitor JVM health and connection statistics</li>
-                            <li><strong>Stop/Start/Restart JVMs</strong> via UI controls</li>
-                            <li>Reconnect failed gateways via UI</li>
-                            <li>Browse registered Java calculators</li>
-                            <li><strong>Config auto-reload</strong> - monitors for changes every 10 minutes</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-code-slash" style="color: #0284c7;"></i> API Endpoints</h6>
-                        <ul>
-                            <li><code>GET /api/jvm/status</code> - JVM Manager status</li>
-                            <li><code>GET /api/jvm/gateways</code> - List all gateways</li>
-                            <li><code>POST /api/jvm/gateways/{name}/stop</code> - Stop/Kill JVM</li>
-                            <li><code>POST /api/jvm/gateways/{name}/restart</code> - Restart JVM</li>
-                            <li><code>POST /api/jvm/reload-config</code> - Reload configuration</li>
-                            <li><code>GET /api/jvm/calculators</code> - List Java calculators</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Example DAGs -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> Java Calculator Example DAGs (1.6.0) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <p>Example DAGs demonstrating Java calculator integration:</p>
-                        <ul>
-                            <li><code>java_trade_pricing_dag.json</code> - Trade pricing with commission, tax, and VAT</li>
-                            <li><code>java_risk_calculation_dag.json</code> - VaR and Greeks-based risk analysis</li>
-                            <li><code>java_math_hybrid_dag.json</code> - Hybrid Python-Java pipeline</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- What's New in 1.5.2 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card" style="border: 2px solid #00d4aa;">
-            <div class="card-header" style="background: linear-gradient(135deg, #1e3a5f, #2d5a87); color: white;">
-                <h5 class="mb-0"><i class="bi bi-stars"></i> What's New in Version 1.5.2</h5>
-            </div>
-            <div class="card-body">
-                <!-- New in 1.5.2 -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-box-seam"></i> Non-Dictionary Message Packaging (1.5.2) <span class="badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-archive" style="color: #10b981;"></i> Automatic Message Wrapping</h6>
-                        <ul>
-                            <li><strong>Auto-package non-dict messages</strong> - strings, lists, bytes wrapped into dict</li>
-                            <li>Consistent format for all downstream calculators</li>
-                            <li>Original type preserved in <code>_original_type</code> field</li>
-                            <li>Configurable wrapper key (default: <code>payload</code>)</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-info-circle" style="color: #059669;"></i> Message Metadata & Tracing</h6>
-                        <ul>
-                            <li>Subscriber name and source tracked</li>
-                            <li>Receive timestamp for audit trails</li>
-                            <li>Optional metadata (disable for high-frequency)</li>
-                            <li>Backward compatible - dicts pass through unchanged</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-link-45deg"></i> Extended In-Memory URI Support (1.5.2) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <ul class="list-inline">
-                            <li class="list-inline-item"><code>mem://name</code> - Simple format</li>
-                            <li class="list-inline-item"><code>inmemory://name</code> - Alternative format</li>
-                            <li class="list-inline-item"><code>memory://name</code> - Alternative format</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-send"></i> Enhanced Publish Message UI (1.5.2) <span class="badge bg-info">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <ul>
-                            <li>Support for publishing <strong>raw non-JSON messages</strong> (CSV, text, etc.)</li>
-                            <li>Format selector: JSON mode vs Raw Text mode</li>
-                            <li>Visual feedback for message type being published</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-cpu"></i> Worker Pool & Multiprocessing (1.5.2) <span class="badge" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">MAJOR</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-cpu-fill" style="color: #0ea5e9;"></i> True CPU Parallelism</h6>
-                        <ul>
-                            <li><strong>Multiprocessing worker pool</strong> - bypass Python GIL</li>
-                            <li>Configurable number of workers (auto or fixed, 2-32)</li>
-                            <li>DAG affinity - pin DAGs to specific workers</li>
-                            <li>Weight-based load balancing across workers</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-heart-pulse" style="color: #0284c7;"></i> Fault Tolerance</h6>
-                        <ul>
-                            <li>Automatic health monitoring (2s heartbeat interval)</li>
-                            <li>Auto-restart crashed workers with exponential backoff</li>
-                            <li>DAG restoration after worker restart</li>
-                            <li>Web UI for monitoring and management</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Worker Pool Architecture Details -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6><i class="bi bi-diagram-3" style="color: #0ea5e9;"></i> Core Architecture Components</h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>WorkerPoolManager</strong> - Orchestrates worker lifecycle, DAG assignments, and health monitoring</li>
-                            <li><strong>DAGWorkerProcess</strong> - Individual worker process that owns multiple DAGs, shares calculator registry</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>DAGAffinityManager</strong> - Handles DAG-to-worker assignment with load balancing strategies</li>
-                            <li><strong>WorkerHealthMonitor</strong> - Tracks health via heartbeats, triggers auto-restart on failure</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Worker Management Features -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6><i class="bi bi-gear" style="color: #0ea5e9;"></i> Worker Management Features</h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>DAG Migration</strong> - Move DAGs between workers at runtime</li>
-                            <li><strong>Exclusive Workers</strong> - Dedicate a worker to a single critical DAG</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>Load Rebalancing</strong> - Automatic rebalancing when imbalance exceeds threshold</li>
-                            <li><strong>Manual Restart</strong> - Restart individual workers via API or UI</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Affinity Strategies Table -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h6><i class="bi bi-shuffle" style="color: #0ea5e9;"></i> DAG Affinity Strategies</h6>
-                        <table class="table table-sm table-bordered mt-2">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Strategy</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td><code>weight_based</code></td><td>Default - Assigns DAGs to worker with lowest estimated CPU weight</td></tr>
-                                <tr><td><code>round_robin</code></td><td>Distributes DAGs evenly across workers in rotation</td></tr>
-                                <tr><td><code>least_loaded</code></td><td>Uses actual CPU metrics for assignment decisions</td></tr>
-                                <tr><td><code>random</code></td><td>Random assignment (useful for testing)</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Health Monitoring Details -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-activity" style="color: #0ea5e9;"></i> Health Monitoring</h6>
-                        <ul>
-                            <li>Heartbeat interval: <strong>2 seconds</strong></li>
-                            <li>Unhealthy threshold: <strong>3 missed heartbeats</strong> (15s)</li>
-                            <li>Restart backoff: <strong>5s → 10s → 20s</strong> (max 60s)</li>
-                            <li>Max restart attempts: <strong>3</strong> (configurable)</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-sliders" style="color: #0ea5e9;"></i> Configuration</h6>
-                        <ul>
-                            <li>Config file: <code>config/worker_config.json</code></li>
-                            <li>Workers: <strong>2-32</strong> (or "auto" for CPU count)</li>
-                            <li>Cross-worker: <strong>LMDB Pub/Sub</strong></li>
-                            <li>API: <code>/api/workers/*</code> endpoints</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-database"></i> LMDB Pub/Sub for Cross-Process Communication (1.5.2) <span class="badge" style="background: linear-gradient(135deg, #6366f1, #4f46e5);">NEW</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-arrow-left-right" style="color: #6366f1;"></i> Cross-Worker Data Sharing</h6>
-                        <ul>
-                            <li><code>lmdb://channel_name</code> URI scheme</li>
-                            <li>Memory-mapped for zero-copy reads</li>
-                            <li>Multiple reader processes supported</li>
-                            <li>ACID compliant data integrity</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-gear" style="color: #4f46e5;"></i> Configuration</h6>
-                        <ul>
-                            <li>LMDBDataPublisher and LMDBDataSubscriber</li>
-                            <li>Auto-packaging of non-dict messages</li>
-                            <li>Configurable poll intervals</li>
-                            <li>Works seamlessly with worker pool</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <!-- From 1.5.0 -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-diagram-2"></i> Subgraph Feature (1.5.0) <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">FEATURED</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-layers" style="color: #667eea;"></i> Graph-as-a-Node Pattern</h6>
-                        <ul>
-                            <li><strong>Modular composition</strong> - encapsulate pipelines as single nodes</li>
-                            <li>Hierarchical nesting up to 3 levels deep</li>
-                            <li>Node borrowing - no calculator duplication</li>
-                            <li>Inline or external file configuration</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-lightbulb" style="color: #764ba2;"></i> Dynamic Light Up/Down Control</h6>
-                        <ul>
-                            <li>Activate or suspend subgraphs at runtime</li>
-                            <li>Supervisor bulk control (all subgraphs at once)</li>
-                            <li>Dirty propagation blocking when suspended</li>
-                            <li>Configurable dark output modes (cached/passthrough/block)</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <!-- From 1.1.2 -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-lightning-charge-fill"></i> LMDB Zero-Copy Data Exchange (1.1.2) <span class="badge" style="background: #06b6d4;">High Performance</span></h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-lightning-charge-fill" style="color: #06b6d4;"></i> Memory-Mapped Transport</h6>
-                        <ul>
-                            <li><strong>100-1000x faster</strong> than serialization for large payloads</li>
-                            <li>Zero-copy via LMDB memory-mapped files</li>
-                            <li>Automatic for payloads above configurable threshold</li>
-                            <li>ACID transaction guarantees</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-code-slash" style="color: #06b6d4;"></i> Native Calculator Support</h6>
-                        <ul>
-                            <li>Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)</li>
-                            <li>Unified reference protocol across all languages</li>
-                            <li>Automatic cleanup with TTL expiration</li>
-                            <li>Configurable via application.properties</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <!-- From 1.1.1 -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-activity"></i> Admin & Monitoring (1.1.1)</h6>
-                    </div>
-                </div>
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-speedometer2" style="color: #10b981;"></i> System Monitoring Dashboard</h6>
-                        <ul>
-                            <li>Real-time CPU, Memory, Disk monitoring</li>
-                            <li>DAG server statistics and health checks</li>
-                            <li>Process list and network statistics</li>
-                            <li>Calculator integration availability</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-shield-lock" style="color: #8b5cf6;"></i> Admin Features</h6>
-                        <ul>
-                            <li>Admin dropdown menu in navbar</li>
-                            <li>System logs viewer with filtering</li>
-                            <li>Log download and search functionality</li>
-                            <li>Auto-refresh monitoring metrics</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <hr>
-                
-                <!-- From 1.1.0 -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <h6 class="text-primary"><i class="bi bi-translate"></i> Multi-Language Calculator Support (1.1.0)</h6>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-cup-hot-fill" style="color: #f89820;"></i> Py4J Java Integration</h6>
-                        <ul>
-                            <li><strong>10-100x faster</strong> calculations with Java</li>
-                            <li>Gateway pooling for concurrent execution</li>
-                            <li>Same calculator interface in Java and Python</li>
-                            <li>Built-in examples: pricing, risk, HFT</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-braces" style="color: #00599C;"></i> pybind11 C++ Integration</h6>
-                        <ul>
-                            <li><strong>50-100x faster</strong> with native C++</li>
-                            <li>~100ns call overhead</li>
-                            <li>SIMD optimization, zero-copy memory</li>
-                            <li>Cross-platform: Linux, macOS, Windows</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-gear-wide-connected" style="color: #CE422B;"></i> Rust PyO3 Integration</h6>
-                        <ul>
-                            <li>Memory safety guaranteed at compile time</li>
-                            <li>Thread safety enforced by type system</li>
-                            <li>Fearless concurrency with rayon</li>
-                            <li>Easy deployment with maturin</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-cloud-arrow-up" style="color: #8b5cf6;"></i> REST API Integration</h6>
-                        <ul>
-                            <li>HTTP POST endpoints as calculators</li>
-                            <li>API Key, Basic Auth, Bearer token support</li>
-                            <li>Automatic retries with exponential backoff</li>
-                            <li>Connection pooling for performance</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-lightning-charge" style="color: #f59e0b;"></i> Free-Threading Support</h6>
-                        <ul>
-                            <li>Ready for Python 3.13+ no-GIL builds</li>
-                            <li>True multi-core parallel execution</li>
-                            <li>Thread-safe calculator base classes</li>
-                            <li>Comprehensive documentation</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-ui-checks" style="color: #4a90c2;"></i> UI Improvements</h6>
-                        <ul>
-                            <li>Uniform action buttons on dashboard</li>
-                            <li>Enhanced stats bar visibility</li>
-                            <li>Comprehensive glossary page</li>
-                            <li>Improved time windows documentation</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-bug" style="color: #10b981;"></i> Bug Fixes</h6>
-                        <ul>
-                            <li>Fixed force-start outside time window</li>
-                            <li>UI override flags for time window control</li>
-                            <li>Subscribers properly resumed on start</li>
-                            <li>Cleaner state management</li>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="cap-group"><i class="bi bi-hdd-stack"></i> Storage, Config &amp; Security</h6>
+                        <ul class="cap-list">
+                            <li>Pluggable storage: filesystem, S3, Azure Blob, GCS</li>
+                            <li>Format-agnostic configuration (YAML or properties)</li>
+                            <li>${variable} resolution with env and command-line overrides</li>
+                            <li>User database with roles and API keys (SQLite or PostgreSQL)</li>
+                            <li>Self-hosted front-end assets for air-gapped deployments</li>
                         </ul>
                     </div>
                 </div>
@@ -1413,8 +675,8 @@
                     <div class="col-md-3 mb-3">
                         <h6>Backend</h6>
                         <span class="tech-badge">Python 3.8+</span>
-                        <span class="tech-badge">Flask</span>
-                        <span class="tech-badge">Threading</span>
+                        <span class="tech-badge">FastAPI</span>
+                        <span class="tech-badge">uvicorn (ASGI)</span>
                         <span class="tech-badge">Free-Threading Ready</span>
                     </div>
                     <div class="col-md-3 mb-3">
@@ -1428,21 +690,43 @@
                         <span class="tech-badge">Bootstrap 5</span>
                         <span class="tech-badge">jQuery</span>
                         <span class="tech-badge">Bootstrap Icons</span>
+                        <span class="tech-badge">Self-hosted (air-gapped)</span>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <h6>Messaging</h6>
-                        <span class="tech-badge">Apache Kafka</span>
+                        <h6>Messaging &amp; Cloud</h6>
+                        <span class="tech-badge">Kafka</span>
                         <span class="tech-badge">RabbitMQ</span>
+                        <span class="tech-badge">ActiveMQ</span>
+                        <span class="tech-badge">TIBCO EMS</span>
+                        <span class="tech-badge">IBM MQ</span>
                         <span class="tech-badge">Redis</span>
-                        <span class="tech-badge">+5 more</span>
+                        <span class="tech-badge">AWS SQS/Kinesis/SNS</span>
+                        <span class="tech-badge">Azure Service Bus/Event Hubs</span>
+                        <span class="tech-badge">gRPC</span>
+                        <span class="tech-badge">LMDB</span>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h6>Storage</h6>
+                        <span class="tech-badge">Filesystem</span>
+                        <span class="tech-badge">Amazon S3</span>
+                        <span class="tech-badge">Azure Blob</span>
+                        <span class="tech-badge">Google Cloud Storage</span>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h6>Data &amp; Identity</h6>
+                        <span class="tech-badge">SQLite</span>
+                        <span class="tech-badge">PostgreSQL</span>
+                        <span class="tech-badge">Aerospike</span>
+                        <span class="tech-badge">PBKDF2 auth + API keys</span>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h6>Availability &amp; Ops</h6>
+                        <span class="tech-badge">HA: ZooKeeper/Redis/S3/socket</span>
+                        <span class="tech-badge">Prometheus metrics</span>
+                        <span class="tech-badge">YAML / properties config</span>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Use Cases -->
         </div>
     </div>
 </div>

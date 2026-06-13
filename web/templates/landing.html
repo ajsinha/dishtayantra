@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DishtaYantra — The Directed Compute Instrument</title>
+<meta name="description" content="DishtaYantra is an enterprise DAG compute engine for real-time trading data: polyglot calculators, cloud storage, high availability, and market-aware scheduling.">
+<!-- Fonts vendored locally (v2.2) - no external CDN dependency. -->
+<link href="{{ url_for('static', filename='vendor/fonts/landing-fonts.css') }}" rel="stylesheet">
+<style>
+:root{
+  --night:#0c1022;          /* pre-market sky */
+  --night-2:#11162e;        /* raised surface */
+  --night-3:#181f3d;        /* card surface */
+  --line:#28304f;           /* hairline on night */
+  --brass:#e3a44a;          /* instrument metalwork */
+  --brass-soft:#f0c98c;
+  --tick:#7fb4ff;           /* data accent */
+  --ink:#eef0f8;            /* primary text */
+  --ink-dim:#9aa3c0;        /* secondary text */
+  --serif:"Instrument Serif", Georgia, serif;
+  --sans:"Archivo", -apple-system, "Segoe UI", sans-serif;
+  --mono:"Spline Sans Mono", "SF Mono", Consolas, monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--night);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--brass);color:var(--night)}
+:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:2px}
+
+/* ------------------------------------------------ top bar */
+.bar{
+  position:fixed;inset:0 0 auto 0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 clamp(20px,4vw,56px);height:72px;
+  border-bottom:1px solid var(--line);
+}
+.bar::before{ /* blur layer kept off the children so the nav stays crisp */
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:color-mix(in srgb, var(--night) 85%, transparent);
+  backdrop-filter:blur(14px);
+}
+.wordmark{display:flex;align-items:baseline;gap:10px}
+.wordmark .mark{
+  font-family:var(--serif);font-size:26px;letter-spacing:.01em;color:var(--ink);
+}
+.wordmark .mark em{font-style:italic;color:var(--brass)}
+.wordmark .ver{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:.08em}
+.bar nav{display:flex;align-items:center;gap:clamp(14px,2.5vw,34px)}
+.bar nav a:not(.btn){font-size:14px;font-weight:500;color:var(--ink-dim);transition:color .2s}
+.bar nav a:not(.btn):hover{color:var(--ink)}
+.btn{
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:var(--sans);font-weight:700;font-size:14.5px;
+  padding:11px 22px;border-radius:6px;border:1px solid transparent;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s, border-color .18s;
+  cursor:pointer;
+}
+.btn-brass{background:var(--brass);color:#1a1206}
+.btn-brass:hover{transform:translateY(-1px);box-shadow:0 8px 28px -8px rgba(227,164,74,.55);background:var(--brass-soft)}
+.btn-line{border-color:var(--line);color:var(--ink)}
+.btn-line:hover{border-color:var(--brass);color:var(--brass-soft)}
+.btn .arr{transition:transform .18s}
+.btn:hover .arr{transform:translateX(3px)}
+
+/* ------------------------------------------------ hero */
+.hero{
+  position:relative;min-height:100vh;
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  align-items:center;gap:clamp(24px,4vw,64px);
+  padding:112px clamp(20px,4vw,56px) 64px;
+  max-width:1380px;margin:0 auto;
+}
+.hero::before{ /* faint radial dawn behind the instrument */
+  content:"";position:absolute;right:-12%;top:6%;width:62vw;height:62vw;max-width:900px;max-height:900px;
+  background:radial-gradient(circle at center, rgba(227,164,74,.10), rgba(127,180,255,.05) 38%, transparent 64%);
+  pointer-events:none;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--brass);display:flex;align-items:center;gap:12px;margin-bottom:26px;
+}
+.eyebrow::before{content:"";width:34px;height:1px;background:var(--brass)}
+h1{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(44px,5.6vw,76px);line-height:1.04;letter-spacing:-.005em;
+  margin-bottom:22px;text-wrap:balance;
+}
+h1 em{font-style:italic;color:var(--brass-soft)}
+.lede{
+  font-size:clamp(16px,1.35vw,18.5px);color:var(--ink-dim);max-width:54ch;margin-bottom:38px;
+}
+.lede strong{color:var(--ink);font-weight:600}
+.cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:44px}
+.proof{
+  display:flex;flex-wrap:wrap;gap:clamp(20px,3vw,44px);
+  border-top:1px solid var(--line);padding-top:26px;
+}
+.proof div{min-width:120px}
+.proof b{display:block;font-family:var(--mono);font-size:21px;font-weight:500;color:var(--ink);letter-spacing:.01em}
+.proof span{font-size:12.5px;color:var(--ink-dim);letter-spacing:.04em}
+
+/* ------------------------------------------------ the instrument (signature) */
+.instrument{position:relative;display:flex;justify-content:center}
+.instrument svg{width:100%;max-width:560px;height:auto;overflow:visible}
+.i-edge{stroke:var(--line);stroke-width:1.1;fill:none}
+.i-edge.gold{stroke:rgba(227,164,74,.55)}
+.i-ring{stroke:#222a4a;stroke-width:1;fill:none;stroke-dasharray:2 7}
+.i-node{fill:var(--night-2);stroke:var(--brass);stroke-width:1.4}
+.i-node.minor{stroke:#5a6488;stroke-width:1.1}
+.i-core{fill:var(--brass)}
+.i-label{font-family:var(--mono);font-size:9.5px;fill:var(--ink-dim);letter-spacing:.14em}
+.pulse{fill:var(--tick)}
+.pulse.gold{fill:var(--brass-soft)}
+.i-caption{
+  position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--ink-dim);white-space:nowrap;
+}
+
+/* ------------------------------------------------ session ribbon */
+.ribbon{
+  border-block:1px solid var(--line);
+  background:var(--night-2);
+  overflow:hidden;white-space:nowrap;
+}
+.ribbon-track{
+  display:inline-flex;gap:0;padding:14px 0;
+  animation:ticker 46s linear infinite;
+}
+.ribbon-item{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:var(--ink-dim);
+  padding:0 34px;border-right:1px solid var(--line);
+}
+.ribbon-item b{color:var(--ink);font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.open{background:#5fd39a;box-shadow:0 0 8px rgba(95,211,154,.6)}
+.dot.hol{background:var(--brass)}
+.dot.window{background:var(--tick)}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ------------------------------------------------ sections */
+section{padding:clamp(72px,9vw,120px) clamp(20px,4vw,56px);max-width:1380px;margin:0 auto}
+.sec-head{max-width:760px;margin-bottom:clamp(40px,5vw,64px)}
+.sec-head h2{
+  font-family:var(--serif);font-weight:400;font-size:clamp(30px,3.4vw,44px);
+  line-height:1.12;margin:18px 0 16px;text-wrap:balance;
+}
+.sec-head p{color:var(--ink-dim);font-size:17px;max-width:60ch}
+
+/* capability grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+@media (max-width:1080px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.grid{grid-template-columns:1fr}}
+.cap{
+  background:var(--night);padding:34px 30px 38px;
+  transition:background .25s ease;position:relative;
+}
+.cap:hover{background:var(--night-3)}
+.cap::after{
+  content:"";position:absolute;left:30px;right:30px;bottom:0;height:1px;
+  background:var(--brass);transform:scaleX(0);transform-origin:left;transition:transform .3s ease;
+}
+.cap:hover::after{transform:scaleX(1)}
+.cap .tag{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--brass);text-transform:uppercase}
+.cap h3{font-family:var(--sans);font-weight:600;font-size:19px;margin:14px 0 10px;color:var(--ink)}
+.cap p{font-size:14.5px;color:var(--ink-dim);line-height:1.65}
+.cap code{font-family:var(--mono);font-size:12.5px;color:var(--tick);background:rgba(127,180,255,.08);padding:1px 6px;border-radius:4px}
+
+/* schedule spotlight */
+.spot{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,5vw,72px);align-items:center;
+}
+.spot .sched-card{
+  background:var(--night-2);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  box-shadow:0 30px 80px -30px rgba(0,0,0,.6);
+}
+.sched-card .head{
+  display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;color:var(--ink-dim);letter-spacing:.08em;
+}
+.sched-card .head .dot{background:var(--brass)}
+.sched-card pre{
+  font-family:var(--mono);font-size:13.5px;line-height:1.75;padding:22px 24px;overflow-x:auto;color:var(--ink-dim);
+}
+.sched-card .k{color:var(--tick)}
+.sched-card .s{color:var(--brass-soft)}
+.sched-card .c{color:#5a6488}
+.spot ul{list-style:none;margin-top:26px}
+.spot li{
+  display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);
+  font-size:15px;color:var(--ink-dim);
+}
+.spot li:last-child{border-bottom:none}
+.spot li::before{content:"—";color:var(--brass);flex:none}
+.spot li b{color:var(--ink);font-weight:600}
+
+/* polyglot strip */
+.poly{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:8px}
+.poly div{
+  flex:1;min-width:150px;background:var(--night);padding:22px 24px;text-align:center;
+  font-family:var(--mono);font-size:14px;color:var(--ink-dim);letter-spacing:.06em;transition:color .2s,background .25s;
+}
+.poly div:hover{color:var(--brass-soft);background:var(--night-3)}
+.poly div span{display:block;font-size:11px;letter-spacing:.16em;color:#5a6488;margin-top:5px}
+
+/* final cta */
+.fin{
+  text-align:center;border-top:1px solid var(--line);
+}
+.fin h2{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4vw,52px);margin-bottom:18px}
+.fin h2 em{font-style:italic;color:var(--brass-soft)}
+.fin p{color:var(--ink-dim);margin-bottom:36px}
+footer{
+  border-top:1px solid var(--line);padding:30px clamp(20px,4vw,56px);
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;
+  font-size:13px;color:var(--ink-dim);max-width:1380px;margin:0 auto;
+}
+footer .f-links{display:flex;gap:24px}
+footer a:hover{color:var(--brass-soft)}
+footer .mono{font-family:var(--mono);font-size:12px;letter-spacing:.06em}
+
+/* load choreography */
+.rise{opacity:0;transform:translateY(18px);animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards}
+.rise.d1{animation-delay:.08s}.rise.d2{animation-delay:.18s}.rise.d3{animation-delay:.3s}
+.rise.d4{animation-delay:.44s}.rise.d5{animation-delay:.6s}
+@keyframes rise{to{opacity:1;transform:none}}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr;padding-top:120px;text-align:left}
+  .instrument{order:-1;margin-bottom:10px}
+  .instrument svg{max-width:380px}
+  .spot{grid-template-columns:1fr}
+  .bar nav a.hide-m{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .rise,.reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="wordmark" href="/">
+    <span class="mark">Dishta<em>Yantra</em></span>
+    <span class="ver">v{{ app_version }}</span>
+  </a>
+  <nav>
+    <a class="hide-m" href="#capabilities">Capabilities</a>
+    <a class="hide-m" href="#scheduling">Scheduling</a>
+    <a class="hide-m" href="{{ url_for('help') }}">Documentation</a>
+    <a class="hide-m" href="{{ url_for('about') }}">About</a>
+    <a class="btn btn-brass" href="{{ url_for('login') }}">Sign in <span class="arr">→</span></a>
+  </nav>
+</header>
+
+<!-- ============================================================ HERO -->
+<main class="hero">
+  <div>
+    <p class="eyebrow rise">Directed Acyclic Graph Compute Engine</p>
+    <h1 class="rise d1">The instrument that <em>computes and moves data</em> with intent.</h1>
+    <p class="lede rise d2">
+      DishtaYantra executes real-time computation as directed graphs —
+      <strong>Python, C++, Rust, and Java calculators</strong> wired to Kafka, cloud
+      object stores, and twenty other brokers, supervised with high availability
+      and <strong>market-aware schedule management</strong>.
+    </p>
+    <div class="cta-row rise d3">
+      <a class="btn btn-brass" href="{{ url_for('login') }}">Open the console <span class="arr">→</span></a>
+      <a class="btn btn-line" href="{{ url_for('help') }}">Read the documentation</a>
+    </div>
+    <div class="proof rise d4">
+      <div><b>4</b><span>calculator runtimes</span></div>
+      <div><b>20+</b><span>broker integrations</span></div>
+      <div><b>&lt; 5 min</b><span>intraday schedule reaction</span></div>
+      <div><b>2026–2040</b><span>NYSE &amp; TSX holiday calendars</span></div>
+    </div>
+  </div>
+
+  <!-- The signature: a DAG drawn as a yantra — fine gold geometry, live data pulses -->
+  <div class="instrument rise d2" aria-hidden="true">
+    <svg viewBox="0 0 560 560" xmlns="http://www.w3.org/2000/svg">
+      <!-- concentric construction rings -->
+      <circle class="i-ring" cx="280" cy="280" r="252"/>
+      <circle class="i-ring" cx="280" cy="280" r="186"/>
+      <circle class="i-ring" cx="280" cy="280" r="116"/>
+
+      <!-- edges: sources -> transforms -->
+      <path id="e1" class="i-edge gold" d="M280,46 L168,150"/>
+      <path id="e2" class="i-edge gold" d="M280,46 L392,150"/>
+      <path id="e3" class="i-edge" d="M62,348 L168,150"/>
+      <path id="e4" class="i-edge" d="M498,348 L392,150"/>
+      <!-- transforms -> core -->
+      <path id="e5" class="i-edge gold" d="M168,150 L280,280"/>
+      <path id="e6" class="i-edge gold" d="M392,150 L280,280"/>
+      <path id="e7" class="i-edge" d="M62,348 L280,280"/>
+      <path id="e8" class="i-edge" d="M498,348 L280,280"/>
+      <!-- core -> sinks -->
+      <path id="e9"  class="i-edge gold" d="M280,280 L186,432"/>
+      <path id="e10" class="i-edge gold" d="M280,280 L374,432"/>
+      <path id="e11" class="i-edge" d="M186,432 L280,514"/>
+      <path id="e12" class="i-edge" d="M374,432 L280,514"/>
+
+      <!-- nodes -->
+      <circle class="i-node" cx="280" cy="46" r="13"/>
+      <circle class="i-node minor" cx="62"  cy="348" r="10"/>
+      <circle class="i-node minor" cx="498" cy="348" r="10"/>
+      <circle class="i-node" cx="168" cy="150" r="12"/>
+      <circle class="i-node" cx="392" cy="150" r="12"/>
+      <circle class="i-node" cx="186" cy="432" r="12"/>
+      <circle class="i-node" cx="374" cy="432" r="12"/>
+      <circle class="i-node minor" cx="280" cy="514" r="10"/>
+      <!-- core -->
+      <circle class="i-node" cx="280" cy="280" r="22"/>
+      <circle class="i-core" cx="280" cy="280" r="7">
+        <animate attributeName="r" values="7;9;7" dur="3.2s" repeatCount="indefinite"/>
+      </circle>
+
+      <!-- labels -->
+      <text class="i-label" x="280" y="22"  text-anchor="middle">KAFKA://TICKS</text>
+      <text class="i-label" x="120" y="132" text-anchor="middle">TRANSFORM</text>
+      <text class="i-label" x="440" y="132" text-anchor="middle">CALCULATE</text>
+      <text class="i-label" x="280" y="324" text-anchor="middle">DAG CORE</text>
+      <text class="i-label" x="130" y="458" text-anchor="middle">S3://RESULTS</text>
+      <text class="i-label" x="432" y="458" text-anchor="middle">GRPC://RISK</text>
+      <text class="i-label" x="280" y="542" text-anchor="middle">LEDGER</text>
+
+      <!-- data pulses along the edges -->
+      <circle class="pulse" r="3"><animateMotion dur="2.6s" repeatCount="indefinite" begin="0s"><mpath href="#e1"/></animateMotion></circle>
+      <circle class="pulse" r="3"><animateMotion dur="2.6s" repeatCount="indefinite" begin="1.3s"><mpath href="#e2"/></animateMotion></circle>
+      <circle class="pulse gold" r="3"><animateMotion dur="2.2s" repeatCount="indefinite" begin=".6s"><mpath href="#e5"/></animateMotion></circle>
+      <circle class="pulse gold" r="3"><animateMotion dur="2.2s" repeatCount="indefinite" begin="1.7s"><mpath href="#e6"/></animateMotion></circle>
+      <circle class="pulse" r="3"><animateMotion dur="3s" repeatCount="indefinite" begin=".2s"><mpath href="#e7"/></animateMotion></circle>
+      <circle class="pulse gold" r="3"><animateMotion dur="2.4s" repeatCount="indefinite" begin=".9s"><mpath href="#e9"/></animateMotion></circle>
+      <circle class="pulse gold" r="3"><animateMotion dur="2.4s" repeatCount="indefinite" begin="2s"><mpath href="#e10"/></animateMotion></circle>
+      <circle class="pulse" r="3"><animateMotion dur="2.8s" repeatCount="indefinite" begin="1.1s"><mpath href="#e11"/></animateMotion></circle>
+    </svg>
+    <span class="i-caption">FIG. 01 — A DIRECTED GRAPH, INSTRUMENTED</span>
+  </div>
+</main>
+
+<!-- ============================================================ SESSION RIBBON -->
+<div class="ribbon" aria-hidden="true">
+  <div class="ribbon-track">
+    <!-- duplicated once for the seamless loop -->
+    <span class="ribbon-item"><span class="dot open"></span> NYSE SESSION <b>09:30–16:00 ET</b></span>
+    <span class="ribbon-item"><span class="dot open"></span> TSX SESSION <b>09:30–16:00 ET</b></span>
+    <span class="ribbon-item"><span class="dot window"></span> OVERNIGHT WINDOW <b>22:00–06:00</b> WRAPS MIDNIGHT</span>
+    <span class="ribbon-item"><span class="dot hol"></span> USA CALENDAR <b>150 HOLIDAYS · 2026–2040</b></span>
+    <span class="ribbon-item"><span class="dot hol"></span> CANADA CALENDAR <b>150 HOLIDAYS · 2026–2040</b></span>
+    <span class="ribbon-item"><span class="dot window"></span> SCHEDULE EDITS LIVE IN <b>&lt; 5 MINUTES</b></span>
+    <span class="ribbon-item"><span class="dot open"></span> NYSE SESSION <b>09:30–16:00 ET</b></span>
+    <span class="ribbon-item"><span class="dot open"></span> TSX SESSION <b>09:30–16:00 ET</b></span>
+    <span class="ribbon-item"><span class="dot window"></span> OVERNIGHT WINDOW <b>22:00–06:00</b> WRAPS MIDNIGHT</span>
+    <span class="ribbon-item"><span class="dot hol"></span> USA CALENDAR <b>150 HOLIDAYS · 2026–2040</b></span>
+    <span class="ribbon-item"><span class="dot hol"></span> CANADA CALENDAR <b>150 HOLIDAYS · 2026–2040</b></span>
+    <span class="ribbon-item"><span class="dot window"></span> SCHEDULE EDITS LIVE IN <b>&lt; 5 MINUTES</b></span>
+  </div>
+</div>
+
+<!-- ============================================================ CAPABILITIES -->
+<section id="capabilities">
+  <div class="sec-head reveal">
+    <p class="eyebrow">The Machinery</p>
+    <h2>Everything between the tick and the ledger.</h2>
+    <p>Each subsystem is configuration-switched, fail-fast, and observable — change a property, not your code.</p>
+  </div>
+  <div class="grid">
+    <div class="cap reveal">
+      <span class="tag">Compute</span>
+      <h3>Polyglot calculators</h3>
+      <p>Run nodes in Python, C++ (pybind11), Rust (PyO3), or Java (Py4J) inside one graph — with LMDB zero-copy exchange for payloads where serialization is the bottleneck.</p>
+    </div>
+    <div class="cap reveal">
+      <span class="tag">Transport</span>
+      <h3>20+ broker integrations</h3>
+      <p>Kafka, RabbitMQ, ActiveMQ, TIBCO EMS, IBM MQ, Redis, gRPC, REST, SQL — plus native object-store pub/sub on <code>s3://</code>, <code>azureblob://</code>, and <code>gcs://</code>.</p>
+    </div>
+    <div class="cap reveal">
+      <span class="tag">Resilience</span>
+      <h3>Connectors that ride out outages</h3>
+      <p>One flag — <code>"resilient": true</code> — adds exponential-backoff retry, automatic reconnection, and FIFO outage buffering, so a broker blip never reorders your fills.</p>
+    </div>
+    <div class="cap reveal">
+      <span class="tag">Continuity</span>
+      <h3>High availability, your way</h3>
+      <p>Primary election over Zookeeper, Redis leases, S3 leases, or a bare exclusive socket. The new primary resumes exactly the DAGs the old one suspended.</p>
+    </div>
+    <div class="cap reveal">
+      <span class="tag">Storage</span>
+      <h3>Graphs live where you do</h3>
+      <p>DAG definitions on the local filesystem, Amazon S3, Azure Blob, or Google Cloud Storage — switched by a single property, shared across every instance.</p>
+    </div>
+    <div class="cap reveal">
+      <span class="tag">Operations</span>
+      <h3>Watch it work</h3>
+      <p>Visual DAG designer, Prometheus metrics, health probes, live log streaming, a process-parallel worker pool, and database-backed users with hashed credentials and API keys.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SCHEDULING SPOTLIGHT -->
+<section id="scheduling">
+  <div class="sec-head reveal">
+    <p class="eyebrow">Market-Aware Scheduling</p>
+    <h2>It knows when the bell rings — <br>and when it doesn't.</h2>
+    <p>Time windows that wrap midnight, weekday rules, and holiday calendars composed per DAG. Built because trading systems shouldn't compute into a closed market.</p>
+  </div>
+  <div class="spot">
+    <div class="sched-card reveal">
+      <div class="head"><span class="dot"></span> config/dags/us_equities_session.json</div>
+      <pre>{
+  <span class="k">"name"</span>: <span class="s">"us_equities_session"</span>,
+  <span class="k">"start_time"</span>: <span class="s">"0930"</span>,
+  <span class="k">"duration"</span>: <span class="s">"6h30m"</span>,
+  <span class="k">"schedule"</span>: {
+    <span class="k">"days_of_week"</span>: [<span class="s">"mon"</span>,<span class="s">"tue"</span>,<span class="s">"wed"</span>,<span class="s">"thu"</span>,<span class="s">"fri"</span>],
+    <span class="k">"holiday_calendars"</span>: [<span class="s">"USA"</span>, <span class="s">"CANADA"</span>]
+  }
+  <span class="c">// Edit this file intraday — the running</span>
+  <span class="c">// system honors it within five minutes.</span>
+}</pre>
+    </div>
+    <div class="reveal">
+      <ul>
+        <li><span><b>Follow several calendars at once.</b> A cross-listed strategy following USA and CANADA stands down whenever either market closes.</span></li>
+        <li><span><b>Fifteen years pre-computed.</b> NYSE and TSX holiday sets for 2026–2040 ship as plain JSON — extend or regenerate them with one script.</span></li>
+        <li><span><b>Overnight windows that actually work.</b> 22:00–06:00 wraps midnight correctly, normalized to minutes-since-midnight.</span></li>
+        <li><span><b>Live without restarts.</b> Calendar files and DAG schedules reload automatically; a broken edit is rejected and the last good rules stay in force.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="poly reveal" aria-label="calculator runtimes">
+    <div>Python <span>NATIVE</span></div>
+    <div>C++ <span>PYBIND11</span></div>
+    <div>Rust <span>PYO3</span></div>
+    <div>Java <span>PY4J</span></div>
+    <div>LMDB <span>ZERO-COPY</span></div>
+  </div>
+</section>
+
+<!-- ============================================================ FINAL CTA -->
+<section class="fin">
+  <h2 class="reveal">Point the instrument. <em>Let it run.</em></h2>
+  <p class="reveal">Sign in to the console, or start with the documentation and a sample graph.</p>
+  <div class="cta-row reveal" style="justify-content:center">
+    <a class="btn btn-brass" href="{{ url_for('login') }}">Sign in <span class="arr">→</span></a>
+    <a class="btn btn-line" href="{{ url_for('help_getting_started') }}">Getting started guide</a>
+  </div>
+</section>
+
+<footer>
+  <span class="mono">DISHTAYANTRA v{{ app_version }} — DIRECTED COMPUTE ENGINE</span>
+  <div class="f-links">
+    <a href="{{ url_for('about') }}">About</a>
+    <a href="{{ url_for('help') }}">Documentation</a>
+    <a href="{{ url_for('help_research') }}">Research</a>
+    <a href="{{ url_for('login') }}">Sign in</a>
+  </div>
+  <span>{{ trademark_notice }} · © {{ copyright_years }} {{ copyright_holder }}</span>
+</footer>
+
+<script>
+// Scroll-triggered reveals (no library; honors reduced motion via CSS)
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

@@ -1,440 +1,306 @@
-"""DAG management routes module"""
+"""
+DAG Management Routes (FastAPI, v2.0.0)
+=======================================
+
+Admin-only DAG lifecycle operations: create (upload JSON), clone with a new
+time window, delete, start/stop, suspend/resume, manual message publishing
+to a subscriber's external broker, and subgraph light-up/light-down control.
+
+Route names match the legacy Flask endpoint names so templates work
+unchanged.  UI error policy (architecture mandate #5): failures are flashed
+to the user AND logged with the full stack trace; API endpoints return
+detailed JSON errors.
+
+Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
+"""
+
 import json
 import logging
-from flask import render_template, request, redirect, url_for, flash, jsonify
+import re
+import traceback
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+from web.fastapi_compat import (
+    AuthGuards,
+    flash,
+    flash_error_and_log,
+    redirect_to,
+    render,
+)
+
+from routes.dag_messaging_routes import DAGMessagingMixin
 
 logger = logging.getLogger(__name__)
 
 
-class DAGRoutes:
-    """Handles DAG management routes"""
-    
-    def __init__(self, app, dag_server, admin_required, worker_pool=None):
+class DAGRoutes(DAGMessagingMixin):
+    """Handles DAG management routes (admin only)."""
+
+    def __init__(self, app: FastAPI, dag_server, guards: AuthGuards,
+                 worker_pool=None):
         self.app = app
         self.dag_server = dag_server
-        self.admin_required = admin_required
-        self.worker_pool = worker_pool  # v1.5.2: Worker pool for DAG dispatch
+        self.guards = guards
+        self.worker_pool = worker_pool  # v1.5.2: worker pool for dispatch
         self._register_routes()
-    
-    def _register_routes(self):
-        """Register all DAG management routes"""
-        self.app.add_url_rule('/dag/create', 'create_dag', 
-                             self.admin_required(self.create_dag), 
-                             methods=['GET', 'POST'])
-        self.app.add_url_rule('/dag/<dag_name>/clone', 'clone_dag', 
-                             self.admin_required(self.clone_dag), 
-                             methods=['GET', 'POST'])
-        self.app.add_url_rule('/dag/<dag_name>/delete', 'delete_dag', 
-                             self.admin_required(self.delete_dag), 
-                             methods=['POST'])
-        self.app.add_url_rule('/dag/<dag_name>/start', 'start_dag', 
-                             self.admin_required(self.start_dag), 
-                             methods=['POST'])
-        self.app.add_url_rule('/dag/<dag_name>/stop', 'stop_dag', 
-                             self.admin_required(self.stop_dag), 
-                             methods=['POST'])
-        self.app.add_url_rule('/dag/<dag_name>/suspend', 'suspend_dag', 
-                             self.admin_required(self.suspend_dag), 
-                             methods=['POST'])
-        self.app.add_url_rule('/dag/<dag_name>/resume', 'resume_dag', 
-                             self.admin_required(self.resume_dag), 
-                             methods=['POST'])
-        self.app.add_url_rule('/dag/<dag_name>/subscriber/<subscriber_name>/publish', 
-                             'publish_message', 
-                             self.admin_required(self.publish_message), 
-                             methods=['GET', 'POST'])
-        
+
+    def _register_routes(self) -> None:
+        """Register all DAG management routes."""
+        add = self.app.add_api_route
+        add('/dags/reload', self.reload_dags, methods=['POST'],
+            name='reload_dags', include_in_schema=False)
+        add('/dag/create', self.create_dag_page, methods=['GET'],
+            name='create_dag', include_in_schema=False)
+        add('/dag/create', self.create_dag_submit, methods=['POST'],
+            include_in_schema=False)
+        add('/dag/{dag_name}/clone', self.clone_dag_page, methods=['GET'],
+            name='clone_dag', include_in_schema=False)
+        add('/dag/{dag_name}/clone', self.clone_dag_submit, methods=['POST'],
+            include_in_schema=False)
+        add('/dag/{dag_name}/delete', self.delete_dag, methods=['POST'],
+            name='delete_dag', include_in_schema=False)
+        add('/dag/{dag_name}/start', self.start_dag, methods=['POST'],
+            name='start_dag', include_in_schema=False)
+        add('/dag/{dag_name}/stop', self.stop_dag, methods=['POST'],
+            name='stop_dag', include_in_schema=False)
+        add('/dag/{dag_name}/suspend', self.suspend_dag, methods=['POST'],
+            name='suspend_dag', include_in_schema=False)
+        add('/dag/{dag_name}/resume', self.resume_dag, methods=['POST'],
+            name='resume_dag', include_in_schema=False)
+        add('/dag/{dag_name}/subscriber/{subscriber_name}/publish',
+            self.publish_message_page, methods=['GET'],
+            name='publish_message', include_in_schema=False)
+        add('/dag/{dag_name}/subscriber/{subscriber_name}/publish',
+            self.publish_message_submit, methods=['POST'],
+            include_in_schema=False)
         # Subgraph control routes
-        self.app.add_url_rule('/dag/<dag_name>/subgraph/control',
-                             'dag_subgraph_control',
-                             self.admin_required(self.subgraph_control),
-                             methods=['POST'])
-        self.app.add_url_rule('/dag/<dag_name>/subgraph/status',
-                             'dag_subgraph_status',
-                             self.subgraph_status,
-                             methods=['GET'])
-    
-    def create_dag(self):
-        """Create a new DAG"""
-        if request.method == 'GET':
-            return render_template('dag/create.html')
+        add('/dag/{dag_name}/subgraph/control', self.subgraph_control,
+            methods=['POST'], name='dag_subgraph_control',
+            include_in_schema=False)
+        add('/dag/{dag_name}/subgraph/status', self.subgraph_status,
+            methods=['GET'], name='dag_subgraph_status',
+            include_in_schema=False)
 
+    # ------------------------------------------------------------------ #
+    # Create / clone / delete
+    # ------------------------------------------------------------------ #
+
+    def create_dag_page(self, request: Request):
+        """Render the DAG creation (JSON upload) page."""
+        self.guards.admin_required(request)
+        return render(request, 'dag/create.html')
+
+    async def create_dag_submit(self, request: Request):
+        """Create a new DAG from an uploaded JSON configuration file."""
+        self.guards.admin_required(request)
         try:
-            if 'config_file' not in request.files:
-                flash('No file provided', 'error')
-                return redirect(url_for('create_dag'))
+            form = await request.form()
+            upload = form.get('config_file')
+            if upload is None:
+                return redirect_to(request, 'create_dag',
+                                   flash_message='No file provided',
+                                   flash_category='error')
+            if not upload.filename:
+                return redirect_to(request, 'create_dag',
+                                   flash_message='No file selected',
+                                   flash_category='error')
+            if not upload.filename.endswith('.json'):
+                return redirect_to(request, 'create_dag',
+                                   flash_message='File must be a JSON file',
+                                   flash_category='error')
 
-            file = request.files['config_file']
-            if file.filename == '':
-                flash('No file selected', 'error')
-                return redirect(url_for('create_dag'))
+            content = await upload.read()
+            config_data = json.loads(content)
+            dag_name = self.dag_server.add_dag(config_data, upload.filename)
+            return redirect_to(
+                request, 'dashboard',
+                flash_message=f'DAG {dag_name} created successfully')
+        except Exception as e:  # noqa: BLE001 - flashed + full-trace logged
+            flash_error_and_log(request, 'Error creating DAG', e)
+            return redirect_to(request, 'create_dag')
 
-            if not file.filename.endswith('.json'):
-                flash('File must be a JSON file', 'error')
-                return redirect(url_for('create_dag'))
-
-            config_data = json.load(file)
-            dag_name = self.dag_server.add_dag(config_data, file.filename)
-
-            flash(f'DAG {dag_name} created successfully', 'success')
-            return redirect(url_for('dashboard'))
-        except Exception as e:
-            logger.error(f"Error creating DAG: {str(e)}")
-            flash(f'Error creating DAG: {str(e)}', 'error')
-            return redirect(url_for('create_dag'))
-    
-    def clone_dag(self, dag_name):
-        """Clone an existing DAG"""
-        if request.method == 'GET':
-            try:
-                # Get original DAG details
-                dag = self.dag_server.dags.get(dag_name)
-                if not dag:
-                    flash(f'DAG {dag_name} not found', 'error')
-                    return redirect(url_for('dashboard'))
-
-                return render_template('dag/clone.html',
-                                       dag_name=dag_name,
-                                       original_start=dag.start_time,
-                                       original_end=dag.end_time,
-                                       original_duration=dag.duration)
-            except Exception as e:
-                logger.error(f"Error loading clone page: {str(e)}")
-                flash(f'Error: {str(e)}', 'error')
-                return redirect(url_for('dashboard'))
-
+    def clone_dag_page(self, request: Request, dag_name: str):
+        """Render the clone page with the original DAG's time window."""
+        self.guards.admin_required(request)
         try:
-            # Get form data
-            start_time = request.form.get('start_time', '').strip()
-            duration = request.form.get('duration', '').strip()
+            dag = self.dag_server.dags.get(dag_name)
+            if not dag:
+                return redirect_to(request, 'dashboard',
+                                   flash_message=f'DAG {dag_name} not found',
+                                   flash_category='error')
+            return render(request, 'dag/clone.html',
+                          dag_name=dag_name,
+                          original_start=dag.start_time,
+                          original_end=dag.end_time,
+                          original_duration=dag.duration,
+                          original_schedule=dag.schedule.to_dict()
+                          if getattr(dag, 'schedule', None) else None)
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error loading clone page', e)
+            return redirect_to(request, 'dashboard')
 
-            # Convert empty strings to None
-            if not start_time:
-                start_time = None
-            if not duration:
-                duration = None
+    async def clone_dag_submit(self, request: Request, dag_name: str):
+        """Clone an existing DAG with an optional new time window."""
+        self.guards.admin_required(request)
+        try:
+            form = await request.form()
+            start_time = (form.get('start_time') or '').strip()
+            duration = (form.get('duration') or '').strip()
+
+            start_time = start_time or None
+            duration = duration or None
 
             # Clean start_time - remove colons if present
             if start_time:
                 start_time = start_time.replace(':', '')
-
-                # Validate start_time format
                 if len(start_time) != 4 or not start_time.isdigit():
-                    flash('Invalid start_time format. Use HHMM format (e.g., 0900)', 'error')
-                    return redirect(url_for('clone_dag', dag_name=dag_name))
-
-                hour = int(start_time[:2])
-                minute = int(start_time[2:])
+                    return redirect_to(
+                        request, 'clone_dag', dag_name=dag_name,
+                        flash_message='Invalid start_time format. Use HHMM '
+                                      'format (e.g., 0900)',
+                        flash_category='error')
+                hour, minute = int(start_time[:2]), int(start_time[2:])
                 if hour > 23 or minute > 59:
-                    flash('Invalid start_time. Hour must be 0-23, minute must be 0-59', 'error')
-                    return redirect(url_for('clone_dag', dag_name=dag_name))
+                    return redirect_to(
+                        request, 'clone_dag', dag_name=dag_name,
+                        flash_message='Invalid start_time. Hour must be '
+                                      '0-23, minute must be 0-59',
+                        flash_category='error')
 
             # Validate duration format if provided
             if duration:
-                import re
-                duration_pattern = r'^(\d+h)?(\d+m)?$'
-                if not re.match(duration_pattern, duration.lower()):
-                    flash('Invalid duration format. Use format like: 1h, 30m, or 1h30m', 'error')
-                    return redirect(url_for('clone_dag', dag_name=dag_name))
-
-                # Check that duration has at least hours or minutes
+                if not re.match(r'^(\d+h)?(\d+m)?$', duration.lower()):
+                    return redirect_to(
+                        request, 'clone_dag', dag_name=dag_name,
+                        flash_message='Invalid duration format. Use format '
+                                      'like: 1h, 30m, or 1h30m',
+                        flash_category='error')
                 if 'h' not in duration.lower() and 'm' not in duration.lower():
-                    flash('Duration must include hours (h) or minutes (m)', 'error')
-                    return redirect(url_for('clone_dag', dag_name=dag_name))
+                    return redirect_to(
+                        request, 'clone_dag', dag_name=dag_name,
+                        flash_message='Duration must include hours (h) or '
+                                      'minutes (m)',
+                        flash_category='error')
 
-            # Clone the DAG with new time window
-            cloned_name = self.dag_server.clone_dag(dag_name, start_time, duration)
+            cloned_name = self.dag_server.clone_dag(dag_name, start_time,
+                                                    duration)
 
-            # Prepare success message
             if start_time and duration:
-                flash(f'DAG cloned to {cloned_name} with start_time={start_time}, duration={duration}', 'success')
+                message = (f'DAG cloned to {cloned_name} with '
+                           f'start_time={start_time}, duration={duration}')
             elif start_time:
-                flash(f'DAG cloned to {cloned_name} with start_time={start_time} (default duration: -5 minutes)', 'success')
+                message = (f'DAG cloned to {cloned_name} with '
+                           f'start_time={start_time} '
+                           f'(default duration: -5 minutes)')
             else:
-                flash(f'DAG cloned to {cloned_name} with perpetual running (24/7)', 'success')
+                message = (f'DAG cloned to {cloned_name} with perpetual '
+                           f'running (24/7)')
+            return redirect_to(request, 'dashboard', flash_message=message)
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error cloning DAG', e)
+            return redirect_to(request, 'clone_dag', dag_name=dag_name)
 
-            return redirect(url_for('dashboard'))
-        except Exception as e:
-            logger.error(f"Error cloning DAG: {str(e)}")
-            import traceback
-            logger.error(traceback.format_exc())
-            flash(f'Error cloning DAG: {str(e)}', 'error')
-            return redirect(url_for('clone_dag', dag_name=dag_name))
-    
-    def delete_dag(self, dag_name):
-        """Delete a DAG"""
+    def reload_dags(self, request: Request):
+        """Re-scan the DAG storage prefix and reconcile the live registry.
+
+        Adds DAGs whose JSON files were dropped into the prefix and removes
+        DAGs whose source files were deleted. Admin-only; primary-only
+        (the server rejects the mutation on a secondary instance).
+        """
+        self.guards.admin_required(request)
+        try:
+            result = self.dag_server.reload_from_storage(remove_missing=True)
+            added = result.get('added', [])
+            removed = result.get('removed', [])
+            errors = result.get('errors', [])
+
+            parts = []
+            if added:
+                parts.append(f"added {len(added)} ({', '.join(added)})")
+            if removed:
+                parts.append(f"removed {len(removed)} ({', '.join(removed)})")
+            if not added and not removed:
+                parts.append("no changes - registry already matches storage")
+
+            if errors:
+                # Partial success: surface the count, log the details.
+                flash(request,
+                      f"Reloaded DAGs: {'; '.join(parts)}; "
+                      f"{len(errors)} error(s) - see logs.", 'warning')
+            else:
+                flash(request, f"Reloaded DAGs: {'; '.join(parts)}.",
+                      'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error reloading DAGs from storage', e)
+        return redirect_to(request, 'dashboard')
+
+    def delete_dag(self, request: Request, dag_name: str):
+        """Delete a DAG."""
+        self.guards.admin_required(request)
         try:
             self.dag_server.delete(dag_name)
-            flash(f'DAG {dag_name} deleted', 'success')
-        except Exception as e:
-            logger.error(f"Error deleting DAG: {str(e)}")
-            flash(f'Error deleting DAG: {str(e)}', 'error')
+            flash(request, f'DAG {dag_name} deleted', 'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error deleting DAG', e)
+        return redirect_to(request, 'dashboard')
 
-        return redirect(url_for('dashboard'))
-    
-    def start_dag(self, dag_name):
-        """Start a DAG
-        
-        v1.5.2: DAGComputeServer.start() handles worker pool dispatch automatically
-        """
+    # ------------------------------------------------------------------ #
+    # Lifecycle: start / stop / suspend / resume
+    # ------------------------------------------------------------------ #
+
+    def start_dag(self, request: Request, dag_name: str):
+        """Start a DAG (worker pool dispatch handled by the server)."""
+        self.guards.admin_required(request)
         try:
             self.dag_server.start(dag_name)
-            
-            # Check where it's running to show appropriate message
             if self.worker_pool and self.worker_pool.is_running():
                 worker_id = self.worker_pool.get_dag_assignment(dag_name)
                 if worker_id is not None:
-                    flash(f'DAG {dag_name} started on Worker {worker_id}', 'success')
+                    flash(request, f'DAG {dag_name} started on Worker '
+                                   f'{worker_id}', 'success')
                 else:
-                    flash(f'DAG {dag_name} started', 'success')
+                    flash(request, f'DAG {dag_name} started', 'success')
             else:
-                flash(f'DAG {dag_name} started', 'success')
-        except Exception as e:
-            logger.error(f"Error starting DAG: {str(e)}")
-            flash(f'Error starting DAG: {str(e)}', 'error')
+                flash(request, f'DAG {dag_name} started', 'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error starting DAG', e)
+        return redirect_to(request, 'dashboard')
 
-        return redirect(url_for('dashboard'))
-    
-    def stop_dag(self, dag_name):
-        """Stop a DAG
-        
-        v1.5.2: DAGComputeServer.stop() handles worker pool automatically
-        """
+    def stop_dag(self, request: Request, dag_name: str):
+        """Stop a DAG."""
+        self.guards.admin_required(request)
         try:
-            # Check where it was running before stopping
             worker_id = None
             if self.worker_pool and self.worker_pool.is_running():
                 worker_id = self.worker_pool.get_dag_assignment(dag_name)
-            
             self.dag_server.stop(dag_name)
-            
             if worker_id is not None:
-                flash(f'DAG {dag_name} stopped (was on Worker {worker_id})', 'success')
+                flash(request, f'DAG {dag_name} stopped (was on Worker '
+                               f'{worker_id})', 'success')
             else:
-                flash(f'DAG {dag_name} stopped', 'success')
-        except Exception as e:
-            logger.error(f"Error stopping DAG: {str(e)}")
-            flash(f'Error stopping DAG: {str(e)}', 'error')
+                flash(request, f'DAG {dag_name} stopped', 'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error stopping DAG', e)
+        return redirect_to(request, 'dashboard')
 
-        return redirect(url_for('dashboard'))
-    
-    def suspend_dag(self, dag_name):
-        """Suspend a DAG"""
+    def suspend_dag(self, request: Request, dag_name: str):
+        """Suspend a DAG."""
+        self.guards.admin_required(request)
         try:
             self.dag_server.suspend(dag_name)
-            flash(f'DAG {dag_name} suspended', 'success')
-        except Exception as e:
-            logger.error(f"Error suspending DAG: {str(e)}")
-            flash(f'Error suspending DAG: {str(e)}', 'error')
+            flash(request, f'DAG {dag_name} suspended', 'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error suspending DAG', e)
+        return redirect_to(request, 'dashboard')
 
-        return redirect(url_for('dashboard'))
-    
-    def resume_dag(self, dag_name):
-        """Resume a DAG"""
+    def resume_dag(self, request: Request, dag_name: str):
+        """Resume a DAG."""
+        self.guards.admin_required(request)
         try:
             self.dag_server.resume(dag_name)
-            flash(f'DAG {dag_name} resumed', 'success')
-        except Exception as e:
-            logger.error(f"Error resuming DAG: {str(e)}")
-            flash(f'Error resuming DAG: {str(e)}', 'error')
-
-        return redirect(url_for('dashboard'))
-    
-    def publish_message(self, dag_name, subscriber_name):
-        """Display the publish message page (GET) or handle message submission (POST)
-        
-        v1.5.2: Updated to work with lazy-initialized DAGs. When worker pool is enabled,
-        DAG components aren't built in main process, so we get subscriber config directly
-        from the DAG configuration instead of the subscriber object.
-        """
-        if request.method == 'GET':
-            try:
-                details = self.dag_server.details(dag_name)
-
-                # Check if subscriber exists
-                if subscriber_name not in details.get('subscribers', {}):
-                    flash(f'Subscriber {subscriber_name} not found', 'error')
-                    return redirect(url_for('dag_details', dag_name=dag_name))
-
-                subscriber_info = details['subscribers'][subscriber_name]
-
-                return render_template(
-                    'dag/publish_message.html',
-                    dag_name=dag_name,
-                    subscriber_name=subscriber_name,
-                    subscriber_info=subscriber_info,
-                    is_admin=True
-                )
-            except Exception as e:
-                logger.error(f"Error loading publish message page: {str(e)}")
-                flash(f'Error: {str(e)}', 'error')
-                return redirect(url_for('dag_details', dag_name=dag_name))
-
-        # POST method - handle message submission
-        try:
-            message = request.form.get('message')
-            is_raw = request.form.get('is_raw', 'false').lower() == 'true'
-            
-            if not message:
-                return jsonify({'error': 'No message provided'}), 400
-
-            # Parse message based on format
-            if is_raw:
-                # v1.2.0: Raw message mode - send as string without JSON parsing
-                # The subscriber with auto_package_non_dict=true will package it
-                message_data = message
-                logger.info(f"Publishing raw message to {subscriber_name}: {message[:100]}...")
-            else:
-                # JSON mode - parse and validate
-                message_data = json.loads(message)
-
-            # Get the DAG
-            dag = self.dag_server.dags.get(dag_name)
-            if not dag:
-                return jsonify({'error': 'DAG not found'}), 404
-
-            # v1.5.2: Get subscriber config from DAG config (works with lazy-init)
-            # When worker pool is enabled, dag.subscribers may be empty, but dag.config
-            # always has the full configuration
-            subscriber_config = None
-            source = None
-            
-            # First try to get from built subscriber (if components are built)
-            subscriber = dag.subscribers.get(subscriber_name)
-            if subscriber:
-                source = subscriber.source
-                subscriber_config = subscriber.config.copy()
-            else:
-                # Fallback to DAG config (for lazy-initialized DAGs)
-                for sub_cfg in dag.config.get('subscribers', []):
-                    if sub_cfg.get('name') == subscriber_name:
-                        subscriber_config = sub_cfg.get('config', {}).copy()
-                        source = subscriber_config.get('source')
-                        break
-            
-            if not subscriber_config or not source:
-                return jsonify({'error': f'Subscriber {subscriber_name} not found in DAG configuration'}), 404
-
-            # Check if subscriber type supports publishing
-            supported_prefixes = ['mem://', 'inmemory://', 'memory://', 'kafka://', 'redischannel://', 'activemq://', 'rabbitmq://', 'tibcoems://']
-            if not any(prefix in source for prefix in supported_prefixes):
-                return jsonify({'error': 'Subscriber type does not support publishing'}), 400
-
-            # v1.7.2: Create a real publisher to the ACTUAL external system (Kafka, ActiveMQ, etc.)
-            # This ensures the message goes through the full pubsub path:
-            #   UI → Publisher → External Broker → Subscriber → DAG
-            # NOT bypassing the external system.
-            from core.pubsub.pubsubfactory import create_publisher
-            subscriber_config['destination'] = source
-
-            logger.info("")
-            logger.info("=" * 70)
-            logger.info("  UI MESSAGE PUBLISH - INITIATING")
-            logger.info(f"  Creating REAL publisher to external system: {source}")
-            logger.info("  Flow: UI → Publisher → External Broker → Subscriber → DAG")
-            logger.info("=" * 70)
-
-            temp_publisher = create_publisher(f'ui_pub_{subscriber_name}', subscriber_config)
-            temp_publisher.publish(message_data)
-            temp_publisher.stop()
-
-            msg_type = 'raw' if is_raw else 'JSON'
-            
-            # v1.7.2: Distinct log message for UI publish success
-            logger.info("")
-            logger.info("=" * 70)
-            logger.info("  UI MESSAGE PUBLISH - SUCCESS")
-            logger.info(f"  DAG: {dag_name}")
-            logger.info(f"  Subscriber: {subscriber_name}")
-            logger.info(f"  External Destination: {source}")
-            logger.info(f"  Message Type: {msg_type}")
-            if isinstance(message_data, str):
-                preview = message_data[:100] + '...' if len(message_data) > 100 else message_data
-                logger.info(f"  Message Preview: {preview}")
-            else:
-                logger.info(f"  Message Keys: {list(message_data.keys()) if isinstance(message_data, dict) else 'N/A'}")
-            logger.info("  Message sent to EXTERNAL broker - DAG subscriber will receive it")
-            logger.info("=" * 70)
-            
-            return jsonify({'success': True, 'message': f'{msg_type} message published successfully'})
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON: {str(e)}")
-            return jsonify({'error': f'Invalid JSON: {str(e)}'}), 400
-        except Exception as e:
-            logger.error(f"Error publishing message: {str(e)}")
-            import traceback
-            logger.error(traceback.format_exc())
-            return jsonify({'error': str(e)}), 500
-    
-    def subgraph_control(self, dag_name):
-        """
-        Control subgraph state (light up / light down).
-        
-        Expected JSON body:
-        {
-            "command": "light_up" | "light_down" | "light_up_all" | "light_down_all",
-            "subgraph": "subgraph_name",  // For single commands
-            "reason": "optional reason"
-        }
-        """
-        try:
-            dag = self.dag_server.dags.get(dag_name)
-            if not dag:
-                return jsonify({'success': False, 'error': 'DAG not found'}), 404
-            
-            data = request.get_json()
-            if not data:
-                return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
-            
-            command = data.get('command')
-            subgraph_name = data.get('subgraph')
-            reason = data.get('reason', 'Manual control via UI')
-            
-            if command == 'light_up':
-                if not subgraph_name:
-                    return jsonify({'success': False, 'error': 'Subgraph name required'}), 400
-                dag.light_up_subgraph(subgraph_name, reason)
-                logger.info(f"Subgraph '{subgraph_name}' in DAG '{dag_name}' activated. Reason: {reason}")
-                return jsonify({'success': True, 'message': f'Subgraph {subgraph_name} activated'})
-            
-            elif command == 'light_down':
-                if not subgraph_name:
-                    return jsonify({'success': False, 'error': 'Subgraph name required'}), 400
-                dag.light_down_subgraph(subgraph_name, reason)
-                logger.info(f"Subgraph '{subgraph_name}' in DAG '{dag_name}' suspended. Reason: {reason}")
-                return jsonify({'success': True, 'message': f'Subgraph {subgraph_name} suspended'})
-            
-            elif command == 'light_up_all':
-                dag.light_up_all_subgraphs(reason)
-                logger.info(f"All subgraphs in DAG '{dag_name}' activated. Reason: {reason}")
-                return jsonify({'success': True, 'message': 'All subgraphs activated'})
-            
-            elif command == 'light_down_all':
-                dag.light_down_all_subgraphs(reason)
-                logger.info(f"All subgraphs in DAG '{dag_name}' suspended. Reason: {reason}")
-                return jsonify({'success': True, 'message': 'All subgraphs suspended'})
-            
-            else:
-                return jsonify({'success': False, 'error': f'Unknown command: {command}'}), 400
-                
-        except Exception as e:
-            logger.error(f"Error controlling subgraph: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
-    
-    def subgraph_status(self, dag_name):
-        """Get status of all subgraphs in a DAG."""
-        try:
-            dag = self.dag_server.dags.get(dag_name)
-            if not dag:
-                return jsonify({'error': 'DAG not found'}), 404
-            
-            status = dag.get_subgraph_status()
-            return jsonify({
-                'dag_name': dag_name,
-                'subgraph_count': len(status),
-                'subgraphs': status
-            })
-            
-        except Exception as e:
-            logger.error(f"Error getting subgraph status: {str(e)}")
-            return jsonify({'error': str(e)}), 500
+            flash(request, f'DAG {dag_name} resumed', 'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request, 'Error resuming DAG', e)
+        return redirect_to(request, 'dashboard')

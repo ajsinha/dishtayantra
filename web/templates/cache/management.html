@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .cache-stats {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
         color: white;
         border-radius: 12px;
         padding: 24px;
@@ -19,7 +19,7 @@
     .stat-value {
         font-size: 2.4em;
         font-weight: 400;
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
         line-height: 1.2;
     }
     .stat-label {
@@ -27,16 +27,16 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         font-weight: 400;
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
         margin-top: 8px;
     }
     .query-section {
-        background: white;
+        background: var(--bg-card);
         border-radius: 12px;
         padding: 24px;
         margin-bottom: 24px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        border: 2px solid #e2e8f0;
+        border: 2px solid var(--border-color);
     }
     .query-section h5 {
         color: var(--primary-dark, #1e3a5f);
@@ -46,15 +46,15 @@
         color: var(--primary-light, #4a90c2);
     }
     .admin-controls {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
-        border-left: 4px solid #f59e0b;
+        background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card));
+        border-left: 4px solid var(--warning-color);
         border-radius: 8px;
         padding: 18px;
         margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+        box-shadow: var(--card-shadow);
     }
     .admin-controls h5 {
-        color: #92400e;
+        color: var(--warning-color);
         margin-bottom: 12px;
     }
     .value-cell {
@@ -64,7 +64,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 0.85em;
-        background: #f8fafc;
+        background: var(--bg-body);
         padding: 4px 8px;
         border-radius: 4px;
     }

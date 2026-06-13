@@ -6,52 +6,65 @@
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Vendored locally (v2.2): no external CDN dependency, so the UI
+         renders fully in air-gapped / restricted-egress deployments. -->
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+    <link href="{{ url_for('static', filename='vendor/fonts/inter.css') }}" rel="stylesheet">
+    <!-- v2.2: landing-identity fonts (Instrument Serif headings, Spline
+         Sans Mono for data) so the app shell echoes the landing page. -->
+    <link href="{{ url_for('static', filename='vendor/fonts/landing-fonts.css') }}" rel="stylesheet">
     <!-- Prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/prism/prism-tomorrow.min.css') }}" rel="stylesheet">
     <style>
         /* ============================================
            THEME VARIABLES - LIGHT MODE (Default)
+           v2.2: reskinned to the landing-page identity - deep indigo
+           "night sky" chrome, brass instrument accent, blue data tick.
            ============================================ */
         :root, [data-theme="light"] {
-            --primary-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
-            --primary-dark: #1e3a5f;
-            --primary-medium: #2d5a87;
-            --primary-light: #4a90c2;
-            --accent-color: #00d4aa;
-            
+            --primary-gradient: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+            --primary-dark: #0c1022;
+            --primary-medium: #181f3d;
+            --primary-light: #28304f;
+            --accent-color: #e3a44a;          /* brass instrument accent */
+
+            /* Brand tokens carried from the landing page */
+            --brass: #e3a44a;
+            --brass-soft: #f0c98c;
+            --tick: #4a6fb0;                  /* data accent (darkened for light bg) */
+            --night: #0c1022;
+
             /* Background colors */
-            --bg-body: #f8fafc;
+            --bg-body: #f6f7fb;
             --bg-card: #ffffff;
             --bg-card-header: var(--primary-gradient);
-            --bg-table-header: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-            --bg-table-stripe: rgba(30, 58, 95, 0.02);
-            --bg-table-hover: #f8fafc;
+            --bg-table-header: linear-gradient(135deg, #eef0f7, #e2e6f2);
+            --bg-table-stripe: rgba(12, 16, 34, 0.02);
+            --bg-table-hover: #f0f2fa;
             --bg-input: #ffffff;
-            --bg-code: #2d3748;
-            
+            --bg-code: #11162e;
+
             /* Text colors */
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --text-muted: #94a3b8;
-            --text-on-primary: #ffffff;
-            --text-link: #2563eb;
-            
+            --text-primary: #14182e;
+            --text-secondary: #5a6488;
+            --text-muted: #9aa3c0;
+            --text-on-primary: #eef0f8;
+            --text-link: #c98a2e;             /* brass-toned links */
+
             /* Border colors */
-            --border-color: #e2e8f0;
-            --border-light: #f1f5f9;
-            
+            --border-color: #e2e6f2;
+            --border-light: #eef0f7;
+
             /* Shadow */
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            
+            --card-shadow: 0 4px 16px -6px rgba(12, 16, 34, 0.18), 0 2px 4px -1px rgba(12, 16, 34, 0.08);
+            --card-shadow-hover: 0 14px 32px -10px rgba(12, 16, 34, 0.28), 0 4px 6px -2px rgba(12, 16, 34, 0.12);
+
             /* Scrollbar */
-            --scrollbar-track: #f1f5f9;
-            --scrollbar-thumb: #cbd5e1;
-            --scrollbar-thumb-hover: #94a3b8;
-            
+            --scrollbar-track: #eef0f7;
+            --scrollbar-thumb: #c4cae0;
+            --scrollbar-thumb-hover: #9aa3c0;
+
             /* Status colors */
             --success-color: #10b981;
             --warning-color: #f59e0b;
@@ -63,41 +76,47 @@
            THEME VARIABLES - DARK MODE
            ============================================ */
         [data-theme="dark"] {
-            --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            --primary-dark: #0f172a;
-            --primary-medium: #1e293b;
-            --primary-light: #334155;
-            --accent-color: #00d4aa;
-            
-            /* Background colors */
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --bg-card-header: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
-            --bg-table-header: linear-gradient(135deg, #1e293b, #334155);
-            --bg-table-stripe: rgba(255, 255, 255, 0.02);
-            --bg-table-hover: #334155;
-            --bg-input: #1e293b;
-            --bg-code: #0f172a;
-            
+            --primary-gradient: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+            --primary-dark: #0c1022;
+            --primary-medium: #11162e;
+            --primary-light: #28304f;
+            --accent-color: #e3a44a;
+
+            /* Brand tokens (landing identity) */
+            --brass: #e3a44a;
+            --brass-soft: #f0c98c;
+            --tick: #7fb4ff;
+            --night: #0c1022;
+
+            /* Background colors - the landing "night sky" */
+            --bg-body: #0c1022;
+            --bg-card: #11162e;
+            --bg-card-header: linear-gradient(135deg, #11162e 0%, #181f3d 50%, #11162e 100%);
+            --bg-table-header: linear-gradient(135deg, #11162e, #181f3d);
+            --bg-table-stripe: rgba(127, 180, 255, 0.03);
+            --bg-table-hover: #181f3d;
+            --bg-input: #11162e;
+            --bg-code: #0c1022;
+
             /* Text colors */
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --text-on-primary: #ffffff;
-            --text-link: #60a5fa;
-            
+            --text-primary: #eef0f8;
+            --text-secondary: #9aa3c0;
+            --text-muted: #5a6488;
+            --text-on-primary: #eef0f8;
+            --text-link: #f0c98c;             /* brass-soft links */
+
             /* Border colors */
-            --border-color: #334155;
-            --border-light: #1e293b;
-            
+            --border-color: #28304f;
+            --border-light: #181f3d;
+
             /* Shadow */
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-            --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-            
+            --card-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+            --card-shadow-hover: 0 14px 32px -10px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+
             /* Scrollbar */
-            --scrollbar-track: #1e293b;
-            --scrollbar-thumb: #475569;
-            --scrollbar-thumb-hover: #64748b;
+            --scrollbar-track: #11162e;
+            --scrollbar-thumb: #28304f;
+            --scrollbar-thumb-hover: #3a4570;
         }
         
         /* ============================================
@@ -105,6 +124,21 @@
            ============================================ */
         * {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* v2.2: landing-identity type hierarchy.
+           Body/UI stays Inter (best for dense dashboards); page headings
+           adopt Instrument Serif and data/metrics adopt Spline Sans Mono,
+           mirroring the landing page's character. */
+        h1, h2, h3, .navbar-brand,
+        .card-header h1, .card-header h2, .card-header h3,
+        .card-header .h5, .card-header h5 {
+            font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif !important;
+            letter-spacing: 0.01em;
+        }
+        code, pre, kbd, samp, .font-mono, .metric-value,
+        .stat-number, .badge.text-monospace {
+            font-family: 'Spline Sans Mono', 'SF Mono', 'Consolas', monospace !important;
         }
         
         body {
@@ -125,9 +159,9 @@
         }
         
         .navbar-brand {
-            font-weight: 600;
-            font-size: 1.3rem;
-            letter-spacing: -0.5px;
+            font-weight: 400;
+            font-size: 1.55rem;
+            letter-spacing: 0.01em;
         }
         
         .navbar-brand i {
@@ -151,6 +185,31 @@
             margin-right: 6px;
         }
         
+        /* HA role badge (navbar, every page for logged-in users) */
+        .ha-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Spline Sans Mono', 'SF Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            padding: 0.3rem 0.65rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            text-transform: uppercase;
+        }
+        .ha-role-badge.ha-role-primary {
+            color: var(--brass-soft);
+            background: rgba(227, 164, 74, 0.14);
+            border-color: rgba(227, 164, 74, 0.45);
+        }
+        .ha-role-badge.ha-role-secondary {
+            color: #c4cae0;
+            background: rgba(127, 180, 255, 0.10);
+            border-color: rgba(127, 180, 255, 0.30);
+        }
+
         /* Theme Toggle Button */
         .theme-toggle {
             background: rgba(255, 255, 255, 0.1);
@@ -949,6 +1008,16 @@
                             <i class="bi bi-sun-fill"></i>
                         </button>
                     </li>
+                    {% if session.username and ha_role %}
+                    <!-- v2.2: HA role visible on every page for logged-in users -->
+                    <li class="nav-item">
+                        <span class="ha-role-badge ha-role-{{ ha_role|lower }} me-3"
+                              title="This instance's high-availability role">
+                            <i class="bi {{ 'bi-broadcast-pin' if ha_role == 'PRIMARY' else 'bi-pause-circle' }}"></i>
+                            {{ ha_role }}
+                        </span>
+                    </li>
+                    {% endif %}
                     {% if session.username %}
                     <li class="nav-item">
                         <span class="navbar-text me-3">
@@ -1004,17 +1073,17 @@
         </div>
     </footer>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <!-- Prism.js for syntax highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-properties.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/prism.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-json.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-python.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-java.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-bash.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-yaml.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-javascript.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/prism/components/prism-properties.min.js') }}"></script>
     
     <script>
     // ============================================

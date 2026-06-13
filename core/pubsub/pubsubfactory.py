@@ -90,8 +90,11 @@ def create_publisher(name, config):
         from core.pubsub.activemq_datapubsub import ActiveMQDataPublisher
         return ActiveMQDataPublisher(name, destination, config)
 
-    # gRPC
+    # gRPC (set "resilient": true in config for retry/buffer/reconnect)
     elif destination.startswith('grpc://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_grpc import ResilientGRPCDataPublisher
+            return ResilientGRPCDataPublisher(name, destination, config)
         from core.pubsub.grpc_datapubsub import GRPCDataPublisher
         return GRPCDataPublisher(name, destination, config)
 
@@ -119,13 +122,19 @@ def create_publisher(name, config):
         from core.pubsub.websphere_datapubsub import WebSphereMQDataPublisher
         return WebSphereMQDataPublisher(name, destination, config)
 
-    # SQL Database
+    # SQL Database (set "resilient": true for retry/buffer/reconnect)
     elif destination.startswith('sql://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_sql import ResilientSQLDataPublisher
+            return ResilientSQLDataPublisher(name, destination, config)
         from core.pubsub.sql_datapubsub import SQLDataPublisher
         return SQLDataPublisher(name, destination, config)
 
-    # REST API
+    # REST API (set "resilient": true for retry/buffer/recovery)
     elif destination.startswith('rest://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_rest import ResilientRESTDataPublisher
+            return ResilientRESTDataPublisher(name, destination, config)
         from core.pubsub.rest_datapubsub import RESTDataPublisher
         return RESTDataPublisher(name, destination, config)
 
@@ -137,8 +146,11 @@ def create_publisher(name, config):
         from core.pubsub.redis_datapubsub import RedisChannelDataPublisher
         return RedisChannelDataPublisher(name, destination, config)
 
-    # Aerospike
+    # Aerospike (set "resilient": true for retry/buffer/reconnect)
     elif destination.startswith('aerospike://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_aerospike import ResilientAerospikeDataPublisher
+            return ResilientAerospikeDataPublisher(name, destination, config)
         from core.pubsub.aerospike_datapubsub import AerospikeDataPublisher
         return AerospikeDataPublisher(name, destination, config)
 
@@ -151,6 +163,56 @@ def create_publisher(name, config):
     elif destination == 'metronome':
         from core.pubsub.metronome_datapubsub import MetronomeDataPublisher
         return MetronomeDataPublisher(name, destination, config)
+
+    # Cloud object stores (v2.0.0)
+    elif destination.startswith('s3://'):
+        from core.pubsub.s3_datapubsub import S3DataPublisher
+        return S3DataPublisher(name, destination, config)
+    elif destination.startswith('azureblob://'):
+        from core.pubsub.azureblob_datapubsub import AzureBlobDataPublisher
+        return AzureBlobDataPublisher(name, destination, config)
+    elif destination.startswith('gcs://'):
+        from core.pubsub.gcs_datapubsub import GCSDataPublisher
+        return GCSDataPublisher(name, destination, config)
+
+    # AWS managed messaging (v2.2; "resilient": true wraps with retry/buffer)
+    elif destination.startswith('sqs://'):
+        from core.pubsub.sqs_datapubsub import SQSDataPublisher
+        inner = lambda: SQSDataPublisher(name, destination, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataPublisherWrapper
+            return ResilientDataPublisherWrapper(name, destination, config, inner)
+        return inner()
+    elif destination.startswith('kinesis://'):
+        from core.pubsub.kinesis_datapubsub import KinesisDataPublisher
+        inner = lambda: KinesisDataPublisher(name, destination, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataPublisherWrapper
+            return ResilientDataPublisherWrapper(name, destination, config, inner)
+        return inner()
+    elif destination.startswith('sns://'):
+        from core.pubsub.sns_datapubsub import SNSDataPublisher
+        inner = lambda: SNSDataPublisher(name, destination, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataPublisherWrapper
+            return ResilientDataPublisherWrapper(name, destination, config, inner)
+        return inner()
+
+    # Azure managed messaging (v2.2)
+    elif destination.startswith('servicebus://'):
+        from core.pubsub.servicebus_datapubsub import ServiceBusDataPublisher
+        inner = lambda: ServiceBusDataPublisher(name, destination, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataPublisherWrapper
+            return ResilientDataPublisherWrapper(name, destination, config, inner)
+        return inner()
+    elif destination.startswith('eventhubs://'):
+        from core.pubsub.eventhubs_datapubsub import EventHubsDataPublisher
+        inner = lambda: EventHubsDataPublisher(name, destination, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataPublisherWrapper
+            return ResilientDataPublisherWrapper(name, destination, config, inner)
+        return inner()
 
     # LMDB (v1.5.2) - for cross-process communication
     elif destination.startswith('lmdb://'):
@@ -256,8 +318,11 @@ def create_subscriber(name, config):
         from core.pubsub.activemq_datapubsub import ActiveMQDataSubscriber
         return ActiveMQDataSubscriber(name, source, config)
 
-    # gRPC
+    # gRPC (set "resilient": true in config for backoff/reconnect)
     elif source.startswith('grpc://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_grpc import ResilientGRPCDataSubscriber
+            return ResilientGRPCDataSubscriber(name, source, config)
         from core.pubsub.grpc_datapubsub import GRPCDataSubscriber
         return GRPCDataSubscriber(name, source, config)
 
@@ -285,13 +350,19 @@ def create_subscriber(name, config):
         from core.pubsub.websphere_datapubsub import WebSphereMQDataSubscriber
         return WebSphereMQDataSubscriber(name, source, config)
 
-    # SQL Database
+    # SQL Database (set "resilient": true for backoff/reconnect)
     elif source.startswith('sql://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_sql import ResilientSQLDataSubscriber
+            return ResilientSQLDataSubscriber(name, source, config)
         from core.pubsub.sql_datapubsub import SQLDataSubscriber
         return SQLDataSubscriber(name, source, config)
 
-    # REST API
+    # REST API (set "resilient": true for backoff/recovery)
     elif source.startswith('rest://'):
+        if config.get('resilient', False):
+            from core.pubsub.resilient_rest import ResilientRESTDataSubscriber
+            return ResilientRESTDataSubscriber(name, source, config)
         from core.pubsub.rest_datapubsub import RESTDataSubscriber
         return RESTDataSubscriber(name, source, config)
 
@@ -309,6 +380,51 @@ def create_subscriber(name, config):
     elif source == 'metronome':
         from core.pubsub.metronome_datapubsub import MetronomeDataSubscriber
         return MetronomeDataSubscriber(name, source, config)
+
+    # Cloud object stores (v2.0.0)
+    elif source.startswith('s3://'):
+        from core.pubsub.s3_datapubsub import S3DataSubscriber
+        return S3DataSubscriber(name, source, config)
+    elif source.startswith('azureblob://'):
+        from core.pubsub.azureblob_datapubsub import AzureBlobDataSubscriber
+        return AzureBlobDataSubscriber(name, source, config)
+    elif source.startswith('gcs://'):
+        from core.pubsub.gcs_datapubsub import GCSDataSubscriber
+        return GCSDataSubscriber(name, source, config)
+
+    # AWS managed messaging (v2.2; "resilient": true wraps with backoff/reconnect).
+    # Note: SNS is publish-only (fan-out); consume via an SQS queue subscribed
+    # to the topic, using an sqs:// source.
+    elif source.startswith('sqs://'):
+        from core.pubsub.sqs_datapubsub import SQSDataSubscriber
+        inner = lambda: SQSDataSubscriber(name, source, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataSubscriberWrapper
+            return ResilientDataSubscriberWrapper(name, source, config, inner)
+        return inner()
+    elif source.startswith('kinesis://'):
+        from core.pubsub.kinesis_datapubsub import KinesisDataSubscriber
+        inner = lambda: KinesisDataSubscriber(name, source, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataSubscriberWrapper
+            return ResilientDataSubscriberWrapper(name, source, config, inner)
+        return inner()
+
+    # Azure managed messaging (v2.2)
+    elif source.startswith('servicebus://'):
+        from core.pubsub.servicebus_datapubsub import ServiceBusDataSubscriber
+        inner = lambda: ServiceBusDataSubscriber(name, source, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataSubscriberWrapper
+            return ResilientDataSubscriberWrapper(name, source, config, inner)
+        return inner()
+    elif source.startswith('eventhubs://'):
+        from core.pubsub.eventhubs_datapubsub import EventHubsDataSubscriber
+        inner = lambda: EventHubsDataSubscriber(name, source, config)
+        if config.get('resilient', False):
+            from core.pubsub.resilient_base import ResilientDataSubscriberWrapper
+            return ResilientDataSubscriberWrapper(name, source, config, inner)
+        return inner()
 
     # LMDB (v1.5.2) - for cross-process communication
     elif source.startswith('lmdb://'):

@@ -45,7 +45,7 @@ class PublisherSinkNode(Node):
             self_graph = self._graph
             for data in edge_data_collection:
                 for publisher_name in self.publishers:
-                    local_publisher = self_graph.get_publiisher_by_name(publisher_name)
+                    local_publisher = self_graph.get_publisher_by_name(publisher_name)
                     local_publisher.publish(data)
             #self.increment_compute_count()
             return True

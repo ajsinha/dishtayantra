@@ -282,6 +282,28 @@ data = subscriber.get_data(block_time=5)
 print(data)  # {'event': 'user_login', 'user_id': 123}
 ```
 
+## SSL/TLS Security
+
+Enable a secure channel with `"use_ssl": true`. By default the connector uses
+the system trust roots; supply certificates for custom CAs or mutual TLS.
+
+| Key | Purpose |
+| --- | --- |
+| `use_ssl` | Use a secure channel (`true`/`false`, default `false`) |
+| `ssl_root_certs` | PEM-encoded root CA(s) to verify the server (optional) |
+| `ssl_certfile` | Client certificate (mutual TLS, optional) |
+| `ssl_keyfile` | Client private key (mutual TLS, optional) |
+
+```json
+{
+  "source": "grpc://data.internal:443/StreamService",
+  "use_ssl": true,
+  "ssl_root_certs": "/certs/ca.pem"
+}
+```
+
+When `use_ssl` is false the connector uses an insecure channel — appropriate
+only for trusted internal networks.
 
 ## Copyright Notice
 

@@ -1,12 +1,14 @@
 """
 Non-authenticated routes module - accessible without login
 
-Version: 1.6.0
+Version: 2.0.0 (FastAPI)
 """
 import os
 import logging
-from flask import render_template, abort, request
+from fastapi import FastAPI, HTTPException, Request
 from markupsafe import Markup
+
+from web.fastapi_compat import render
 
 logger = logging.getLogger(__name__)
 
@@ -127,71 +129,111 @@ def render_markdown_to_html(markdown_text):
 
 
 class NoAuthRoutes:
-    """Handles routes that don't require authentication"""
-    
-    def __init__(self, app):
+    """Routes accessible without login: about, help pages, user guides,
+    research paper.  Markdown documents are rendered just-in-time.
+
+    v2.0.0: FastAPI registration; route names match the legacy Flask
+    endpoint names so templates keep working unchanged.  Static help pages
+    are generated from a single declarative table instead of one method per
+    page (same URLs, names, and templates as before, far less duplication).
+    """
+
+    # (url_path, endpoint_name, template) - one row per static help page.
+    STATIC_HELP_PAGES = [
+        ('/help/getting-started', 'help_getting_started', 'help/getting_started.html'),
+        ('/help/dag-configuration', 'help_dag_configuration', 'help/dag_configuration.html'),
+        ('/help/pubsub', 'help_pubsub', 'help/pubsub.html'),
+        ('/help/calculators', 'help_calculators', 'help/calculators.html'),
+        ('/help/transformers', 'help_transformers', 'help/transformers.html'),
+        ('/help/time-windows', 'help_time_windows', 'help/time_windows.html'),
+        ('/help/autoclone', 'help_autoclone', 'help/autoclone.html'),
+        ('/help/dag-designer', 'help_dag_designer', 'help/dag_designer.html'),
+        ('/help/cache', 'help_cache', 'help/cache.html'),
+        ('/help/sample-dags', 'help_sample_dags', 'help/sample_dags.html'),
+        ('/help/api-reference', 'help_api_reference', 'help/api_reference.html'),
+        ('/help/glossary', 'help_glossary', 'help/glossary.html'),
+        ('/help/free-threading', 'help_free_threading', 'help/parallelism.html'),
+        ('/help/parallelism', 'help_parallelism', 'help/parallelism.html'),
+        ('/help/py4j-integration', 'help_py4j_integration', 'help/py4j_integration.html'),
+        ('/help/pybind11-integration', 'help_pybind11_integration', 'help/pybind11_integration.html'),
+        ('/help/rust-integration', 'help_rust_integration', 'help/rust_integration.html'),
+        ('/help/rest-integration', 'help_rest_integration', 'help/rest_integration.html'),
+        ('/help/architecture', 'help_architecture', 'help/architecture.html'),
+        ('/help/lmdb-integration', 'help_lmdb_integration', 'help/lmdb_integration.html'),
+        ('/help/kafka-integration', 'help_kafka_integration', 'help/kafka_integration.html'),
+        ('/help/rabbitmq-integration', 'help_rabbitmq_integration', 'help/rabbitmq_integration.html'),
+        ('/help/activemq-integration', 'help_activemq_integration', 'help/activemq_integration.html'),
+        ('/help/redis-integration', 'help_redis_integration', 'help/redis_integration.html'),
+        ('/help/tibco-integration', 'help_tibco_integration', 'help/tibco_integration.html'),
+        ('/help/ibmmq-integration', 'help_ibmmq_integration', 'help/ibmmq_integration.html'),
+        ('/help/inmemory-integration', 'help_inmemory_integration', 'help/inmemory_integration.html'),
+        ('/help/subgraph', 'help_subgraph', 'help/subgraph.html'),
+        ('/help/prometheus-monitoring', 'help_prometheus_monitoring', 'help/prometheus_monitoring.html'),
+        ('/help/worker-pool', 'help_worker_pool', 'help/parallelism.html'),
+        ('/help/configuration', 'help_configuration', 'help/configuration.html'),
+        # New in v2.0.0
+        ('/help/storage', 'help_storage', 'help/storage.html'),
+        ('/help/ha', 'help_ha', 'help/ha.html'),
+        ('/help/cloud-pubsub', 'help_cloud_pubsub', 'help/cloud_pubsub.html'),
+        ('/help/database', 'help_database', 'help/database.html'),
+        ('/help/scheduling', 'help_scheduling', 'help/scheduling.html'),
+        # Tutorials (v2.2): step-by-step guides with full code
+        ('/help/tutorial-1', 'help_tutorial_1', 'help/tutorial_1_basic.html'),
+        ('/help/tutorial-2', 'help_tutorial_2', 'help/tutorial_2_pipeline.html'),
+        ('/help/tutorial-3', 'help_tutorial_3', 'help/tutorial_3_advanced.html'),
+        ('/help/tutorial-4', 'help_tutorial_4', 'help/tutorial_4_enterprise.html'),
+    ]
+
+    def __init__(self, app: FastAPI):
         self.app = app
         self._register_routes()
-    
+
     def _register_routes(self):
-        """Register all non-authenticated routes"""
-        self.app.add_url_rule('/about', 'about', self.about)
-        self.app.add_url_rule('/help', 'help', self.help_index)
-        self.app.add_url_rule('/help/getting-started', 'help_getting_started', self.help_getting_started)
-        self.app.add_url_rule('/help/dag-configuration', 'help_dag_configuration', self.help_dag_configuration)
-        self.app.add_url_rule('/help/pubsub', 'help_pubsub', self.help_pubsub)
-        self.app.add_url_rule('/help/calculators', 'help_calculators', self.help_calculators)
-        self.app.add_url_rule('/help/transformers', 'help_transformers', self.help_transformers)
-        self.app.add_url_rule('/help/time-windows', 'help_time_windows', self.help_time_windows)
-        self.app.add_url_rule('/help/autoclone', 'help_autoclone', self.help_autoclone)
-        self.app.add_url_rule('/help/dag-designer', 'help_dag_designer', self.help_dag_designer)
-        self.app.add_url_rule('/help/cache', 'help_cache', self.help_cache)
-        self.app.add_url_rule('/help/sample-dags', 'help_sample_dags', self.help_sample_dags)
-        self.app.add_url_rule('/help/api-reference', 'help_api_reference', self.help_api_reference)
-        self.app.add_url_rule('/help/glossary', 'help_glossary', self.help_glossary)
-        self.app.add_url_rule('/help/free-threading', 'help_free_threading', self.help_parallelism)
-        self.app.add_url_rule('/help/parallelism', 'help_parallelism', self.help_parallelism)
-        self.app.add_url_rule('/help/py4j-integration', 'help_py4j_integration', self.help_py4j_integration)
-        self.app.add_url_rule('/help/pybind11-integration', 'help_pybind11_integration', self.help_pybind11_integration)
-        self.app.add_url_rule('/help/rust-integration', 'help_rust_integration', self.help_rust_integration)
-        self.app.add_url_rule('/help/rest-integration', 'help_rest_integration', self.help_rest_integration)
-        self.app.add_url_rule('/help/architecture', 'help_architecture', self.help_architecture)
-        self.app.add_url_rule('/help/lmdb-integration', 'help_lmdb_integration', self.help_lmdb_integration)
-        self.app.add_url_rule('/help/kafka-integration', 'help_kafka_integration', self.help_kafka_integration)
-        self.app.add_url_rule('/help/rabbitmq-integration', 'help_rabbitmq_integration', self.help_rabbitmq_integration)
-        self.app.add_url_rule('/help/activemq-integration', 'help_activemq_integration', self.help_activemq_integration)
-        self.app.add_url_rule('/help/redis-integration', 'help_redis_integration', self.help_redis_integration)
-        self.app.add_url_rule('/help/tibco-integration', 'help_tibco_integration', self.help_tibco_integration)
-        self.app.add_url_rule('/help/ibmmq-integration', 'help_ibmmq_integration', self.help_ibmmq_integration)
-        self.app.add_url_rule('/help/inmemory-integration', 'help_inmemory_integration', self.help_inmemory_integration)
-        self.app.add_url_rule('/help/subgraph', 'help_subgraph', self.help_subgraph)
-        self.app.add_url_rule('/help/prometheus-monitoring', 'help_prometheus_monitoring', self.help_prometheus_monitoring)
-        self.app.add_url_rule('/help/worker-pool', 'help_worker_pool', self.help_parallelism)
-        self.app.add_url_rule('/help/configuration', 'help_configuration', self.help_configuration)
-        
+        """Register all non-authenticated routes."""
+        add = self.app.add_api_route
+        add('/about', self.about, methods=['GET'], name='about',
+            include_in_schema=False)
+        add('/help', self.help_index, methods=['GET'], name='help',
+            include_in_schema=False)
+
+        for path, name, template in self.STATIC_HELP_PAGES:
+            add(path, self._make_static_page_handler(template),
+                methods=['GET'], name=name, include_in_schema=False)
+
         # v1.5.2: User Guides (Markdown) routes
-        self.app.add_url_rule('/help/userguides', 'help_userguides', self.help_userguides)
-        self.app.add_url_rule('/help/userguides/<path:filename>', 'help_userguide_view', self.help_userguide_view)
-        
+        add('/help/userguides', self.help_userguides, methods=['GET'],
+            name='help_userguides', include_in_schema=False)
+        add('/help/userguides/{filename:path}', self.help_userguide_view,
+            methods=['GET'], name='help_userguide_view',
+            include_in_schema=False)
+
         # v1.7.0: Research Paper route
-        self.app.add_url_rule('/help/research', 'help_research', self.help_research)
-    
-    def about(self):
-        """About page"""
-        return render_template('about.html')
-    
-    def help_index(self):
-        """Help index page"""
-        return render_template('help/index.html')
-    
-    def help_userguides(self):
+        add('/help/research', self.help_research, methods=['GET'],
+            name='help_research', include_in_schema=False)
+
+    def _make_static_page_handler(self, template: str):
+        """Build a handler closure rendering one static help template."""
+        def handler(request: Request):
+            return render(request, template)
+        return handler
+
+    def about(self, request: Request):
+        """About page."""
+        return render(request, 'about.html')
+
+    def help_index(self, request: Request):
+        """Help index page."""
+        return render(request, 'help/index.html')
+
+    def help_userguides(self, request: Request):
         """
         List all available user guides (markdown files).
         v1.5.2: Just-in-time markdown rendering.
         """
-        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                 'docs')
         userguides_path = os.path.join(docs_path, 'userguides')
-        
+
         guides = []
         categories = {
             'pubsub': [],      # PubSub integrations
@@ -200,40 +242,46 @@ class NoAuthRoutes:
             'admin': [],       # Admin/System
             'other': []        # Other guides
         }
-        
+
         # Scan for markdown files
         if os.path.exists(userguides_path):
             for filename in sorted(os.listdir(userguides_path)):
                 if filename.endswith('.md'):
                     filepath = os.path.join(userguides_path, filename)
-                    title = filename.replace('.md', '').replace('-', ' ').replace('_', ' ')
-                    
-                    # Get file size and modification time
+                    title = filename.replace('.md', '').replace('-', ' ') \
+                        .replace('_', ' ')
                     stat = os.stat(filepath)
-                    size_kb = stat.st_size / 1024
-                    
                     guide_info = {
                         'filename': filename,
                         'title': title,
-                        'size_kb': round(size_kb, 1),
+                        'size_kb': round(stat.st_size / 1024, 1),
                         'path': f'userguides/{filename}'
                     }
-                    
-                    # Categorize
                     lower_title = title.lower()
-                    if any(x in lower_title for x in ['kafka', 'rabbit', 'redis', 'activemq', 'tibco', 'websphere', 'grpc', 'rest', 'file', 'inmemory', 'sql', 'aerospike', 'metronome', 'pubsub', 'subscriber', 'publisher']):
+                    if any(x in lower_title for x in
+                           ['kafka', 'rabbit', 'redis', 'activemq', 'tibco',
+                            'websphere', 'grpc', 'rest', 'file', 'inmemory',
+                            'sql', 'aerospike', 'metronome', 'pubsub',
+                            'subscriber', 'publisher', 's3', 'azure', 'gcs',
+                            'cloud']):
                         categories['pubsub'].append(guide_info)
-                    elif any(x in lower_title for x in ['calculator', 'py4j', 'pybind', 'rust', 'java', 'c++']):
+                    elif any(x in lower_title for x in
+                             ['calculator', 'py4j', 'pybind', 'rust', 'java',
+                              'c++']):
                         categories['calculator'].append(guide_info)
-                    elif any(x in lower_title for x in ['admin', 'user', 'monitor', 'prometheus', 'log']):
+                    elif any(x in lower_title for x in
+                             ['admin', 'user', 'monitor', 'prometheus',
+                              'log']):
                         categories['admin'].append(guide_info)
-                    elif any(x in lower_title for x in ['subgraph', 'autoclone', 'cache', 'lmdb', 'router', 'packaging', 'resilient']):
+                    elif any(x in lower_title for x in
+                             ['subgraph', 'autoclone', 'cache', 'lmdb',
+                              'router', 'packaging', 'resilient', 'storage',
+                              'ha', 'database']):
                         categories['feature'].append(guide_info)
                     else:
                         categories['other'].append(guide_info)
-                    
                     guides.append(guide_info)
-        
+
         # Also check docs root for ARCHITECTURE.md etc
         root_docs = []
         if os.path.exists(docs_path):
@@ -241,7 +289,8 @@ class NoAuthRoutes:
                 if filename.endswith('.md'):
                     filepath = os.path.join(docs_path, filename)
                     if os.path.isfile(filepath):
-                        title = filename.replace('.md', '').replace('-', ' ').replace('_', ' ')
+                        title = filename.replace('.md', '').replace('-', ' ') \
+                            .replace('_', ' ')
                         stat = os.stat(filepath)
                         root_docs.append({
                             'filename': filename,
@@ -249,208 +298,85 @@ class NoAuthRoutes:
                             'size_kb': round(stat.st_size / 1024, 1),
                             'path': filename
                         })
-        
-        return render_template(
-            'help/userguides.html',
-            guides=guides,
-            categories=categories,
-            root_docs=root_docs,
-            total_count=len(guides) + len(root_docs)
-        )
-    
-    def help_userguide_view(self, filename):
+
+        return render(request, 'help/userguides.html',
+                      guides=guides,
+                      categories=categories,
+                      root_docs=root_docs,
+                      total_count=len(guides) + len(root_docs))
+
+    def help_userguide_view(self, request: Request, filename: str):
         """
         Render a single markdown file as HTML.
         v1.5.2: Just-in-time rendering with syntax highlighting.
         """
-        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
-        
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                 'docs')
+
         # Security: Prevent directory traversal
         filename = os.path.basename(filename)
         if '..' in filename or filename.startswith('/'):
-            abort(403)
-        
+            raise HTTPException(status_code=403, detail='Forbidden')
+
         # Check if it's in userguides or root docs
         filepath = os.path.join(docs_path, 'userguides', filename)
         if not os.path.exists(filepath):
             filepath = os.path.join(docs_path, filename)
-        
+
         if not os.path.exists(filepath) or not filepath.endswith('.md'):
-            abort(404)
-        
+            raise HTTPException(status_code=404, detail='Document not found')
+
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 markdown_content = f.read()
-            
-            # Convert markdown to HTML
+
             html_content = render_markdown_to_html(markdown_content)
-            
+
             # Get title from first heading or filename
-            title = filename.replace('.md', '').replace('-', ' ').replace('_', ' ')
+            title = filename.replace('.md', '').replace('-', ' ') \
+                .replace('_', ' ')
             if markdown_content.startswith('# '):
                 first_line = markdown_content.split('\n')[0]
                 title = first_line.replace('# ', '').strip()
-            
-            return render_template(
-                'help/userguide_view.html',
-                title=title,
-                filename=filename,
-                content=Markup(html_content)
-            )
+
+            return render(request, 'help/userguide_view.html',
+                          title=title,
+                          filename=filename,
+                          content=Markup(html_content))
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Error rendering markdown file {filename}: {e}")
-            abort(500)
-    
-    def help_research(self):
+            import traceback
+            logger.error(traceback.format_exc())
+            raise HTTPException(status_code=500,
+                                detail=f'Error rendering {filename}')
+
+    def help_research(self, request: Request):
         """
         Render the research paper markdown file.
         v1.7.0: Just-in-time rendering with syntax highlighting.
         """
-        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
-        filepath = os.path.join(docs_path, 'research', 'dishtayantra_paper.md')
-        
+        docs_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                 'docs')
+        filepath = os.path.join(docs_path, 'research',
+                                'dishtayantra_paper.md')
+
         if not os.path.exists(filepath):
-            abort(404)
-        
+            raise HTTPException(status_code=404,
+                                detail='Research paper not found')
+
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 markdown_content = f.read()
-            
-            # Convert markdown to HTML
+
             html_content = render_markdown_to_html(markdown_content)
-            
-            # Title from the paper
-            title = "DishtaYantra Research Paper"
-            
-            return render_template(
-                'help/research.html',
-                title=title,
-                content=Markup(html_content)
-            )
+            return render(request, 'help/research.html',
+                          title="DishtaYantra Research Paper",
+                          content=Markup(html_content))
         except Exception as e:
             logger.error(f"Error rendering research paper: {e}")
-            abort(500)
-    
-    def help_getting_started(self):
-        """Getting started help page"""
-        return render_template('help/getting_started.html')
-    
-    def help_dag_configuration(self):
-        """DAG configuration help page"""
-        return render_template('help/dag_configuration.html')
-    
-    def help_pubsub(self):
-        """Publishers and Subscribers help page"""
-        return render_template('help/pubsub.html')
-    
-    def help_calculators(self):
-        """Calculators help page"""
-        return render_template('help/calculators.html')
-    
-    def help_transformers(self):
-        """Transformers help page"""
-        return render_template('help/transformers.html')
-    
-    def help_time_windows(self):
-        """Time windows help page"""
-        return render_template('help/time_windows.html')
-    
-    def help_autoclone(self):
-        """AutoClone feature help page"""
-        return render_template('help/autoclone.html')
-    
-    def help_dag_designer(self):
-        """DAG Designer help page"""
-        return render_template('help/dag_designer.html')
-    
-    def help_cache(self):
-        """Cache management help page"""
-        return render_template('help/cache.html')
-    
-    def help_sample_dags(self):
-        """Sample DAGs help page"""
-        return render_template('help/sample_dags.html')
-    
-    def help_api_reference(self):
-        """API Reference help page"""
-        return render_template('help/api_reference.html')
-    
-    def help_glossary(self):
-        """Glossary help page"""
-        return render_template('help/glossary.html')
-    
-    def help_parallelism(self):
-        """Parallelism Guide - Worker Pool & Free-Threading help page (v1.5.2)"""
-        return render_template('help/parallelism.html')
-    
-    def help_free_threading(self):
-        """Free-threading Python help page - redirects to parallelism guide"""
-        return render_template('help/parallelism.html')
-    
-    def help_py4j_integration(self):
-        """Py4J Java integration help page"""
-        return render_template('help/py4j_integration.html')
-    
-    def help_pybind11_integration(self):
-        """pybind11 C++ integration help page"""
-        return render_template('help/pybind11_integration.html')
-    
-    def help_rust_integration(self):
-        """Rust PyO3 integration help page"""
-        return render_template('help/rust_integration.html')
-    
-    def help_rest_integration(self):
-        """REST API calculator integration help page"""
-        return render_template('help/rest_integration.html')
-    
-    def help_architecture(self):
-        """System architecture help page"""
-        return render_template('help/architecture.html')
-    
-    def help_lmdb_integration(self):
-        """LMDB zero-copy data exchange help page"""
-        return render_template('help/lmdb_integration.html')
-    
-    def help_kafka_integration(self):
-        """Kafka integration with dual library support help page"""
-        return render_template('help/kafka_integration.html')
-    
-    def help_rabbitmq_integration(self):
-        """RabbitMQ integration help page"""
-        return render_template('help/rabbitmq_integration.html')
-    
-    def help_activemq_integration(self):
-        """ActiveMQ integration help page"""
-        return render_template('help/activemq_integration.html')
-    
-    def help_redis_integration(self):
-        """Redis integration help page"""
-        return render_template('help/redis_integration.html')
-    
-    def help_tibco_integration(self):
-        """TIBCO EMS integration help page"""
-        return render_template('help/tibco_integration.html')
-    
-    def help_ibmmq_integration(self):
-        """IBM MQ integration help page"""
-        return render_template('help/ibmmq_integration.html')
-    
-    def help_inmemory_integration(self):
-        """In-Memory Pub/Sub integration help page"""
-        return render_template('help/inmemory_integration.html')
-    
-    def help_subgraph(self):
-        """Subgraph feature help page"""
-        return render_template('help/subgraph.html')
-    
-    def help_prometheus_monitoring(self):
-        """Prometheus monitoring integration help page"""
-        return render_template('help/prometheus_monitoring.html')
-    
-    def help_worker_pool(self):
-        """Worker Pool & DAG Affinity help page - redirects to parallelism guide (v1.5.2)"""
-        return render_template('help/parallelism.html')
-    
-    def help_configuration(self):
-        """Configuration files reference (v1.5.2)"""
-        return render_template('help/configuration.html')
+            import traceback
+            logger.error(traceback.format_exc())
+            raise HTTPException(status_code=500,
+                                detail='Error rendering research paper')

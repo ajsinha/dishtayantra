@@ -46,7 +46,7 @@ class TradeDiscriminatorNode(CalculationNode):
                     try:
                         logger.debug(f"publishing: {d_payload}")
                         self_graph = self._graph
-                        local_publisher = self_graph.get_publiisher_by_name(publisher_name)
+                        local_publisher = self_graph.get_publisher_by_name(publisher_name)
                         local_publisher.publish(d_payload)
                         #self_graph.publish(d_payload)
                         #publisher.publish(d_payload)

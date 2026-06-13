@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-nav {
-        background: #f8fafc;
+        background: var(--bg-body);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -33,7 +33,7 @@
         border-left: 4px solid #64748b;
     }
     .library-card {
-        border: 2px solid #e2e8f0;
+        border: 2px solid var(--border-color);
         border-radius: 12px;
         padding: 1.5rem;
         height: 100%;
@@ -70,14 +70,14 @@
         transition: width 0.5s ease;
     }
     .tip-box {
-        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        background: color-mix(in srgb, var(--success-color) 12%, var(--bg-card));
         border-left: 4px solid #10b981;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
         margin: 1rem 0;
     }
     .warning-box {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card));
         border-left: 4px solid #f59e0b;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
@@ -103,8 +103,8 @@
         color: #231f20;
     }
     .arch-box {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
+        background: var(--bg-body);
+        border: 2px solid var(--border-color);
         border-radius: 8px;
         padding: 1rem;
         text-align: center;
@@ -115,7 +115,7 @@
         color: #64748b;
     }
     .config-section {
-        background: #f8fafc;
+        background: var(--bg-body);
         border-radius: 8px;
         padding: 1rem;
         margin: 1rem 0;
@@ -374,10 +374,10 @@ subscriber.stop()</pre>
             <strong><i class="bi bi-lightbulb"></i> Pro Tip:</strong> Use <code>kafka_library: 'confluent-kafka'</code> for production workloads to achieve 10x better performance!
         </div>
 
-        <!-- Smart Deserialize - NEW in v1.7.6 -->
+        <!-- Smart Deserialize - Smart Deserialization -->
         <div class="card mt-4" style="border: 2px solid #238636;">
             <div class="card-header" style="background: linear-gradient(135deg, #238636, #2ea043); color: white;">
-                <h6 class="mb-0"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-light text-dark ms-2">NEW in v1.7.6</span></h6>
+                <h6 class="mb-0"><i class="bi bi-magic"></i> Smart Message Deserialization <span class="badge bg-light text-dark ms-2">Smart Deserialization</span></h6>
             </div>
             <div class="card-body">
                 <p>Kafka subscribers automatically handle <strong>both JSON and non-JSON messages</strong>. No configuration needed!</p>
@@ -405,7 +405,7 @@ echo '{"symbol": "AAPL"}' | kafka-console-producer --topic my_topic --bootstrap-
                     </div>
                     <div class="col-md-6">
                         <div class="alert alert-info mb-0">
-                            <i class="bi bi-info-circle"></i> <strong>v1.7.6 Defaults:</strong>
+                            <i class="bi bi-info-circle"></i> <strong>Defaults:</strong>
                             <ul class="mb-0 mt-2">
                                 <li><code>auto.offset.reset=earliest</code></li>
                                 <li>Poll-based message retrieval</li>

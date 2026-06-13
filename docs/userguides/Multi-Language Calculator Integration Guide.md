@@ -1,14 +1,13 @@
 # Multi-Language Calculator Integration Guide
 
-## Version 1.1.0+
-
+## Applies to: current release
 © 2025-2030 Ashutosh Sinha
 
 ---
 
 ## Overview
 
-DishtaYantra v1.5.0 introduces support for calculators written in multiple programming languages, enabling you to leverage the strengths of each language for different use cases.
+DishtaYantra provides support for calculators written in multiple programming languages, enabling you to leverage the strengths of each language for different use cases.
 
 | Language | Technology | Performance | Best For |
 |----------|------------|-------------|----------|
@@ -562,4 +561,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha

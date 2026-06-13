@@ -1,457 +1,307 @@
 """
-User Registry for managing users with auto-reload capability
+User Registry - Database-Backed Authentication and RBAC (v2.0.0)
+================================================================
+
+Facade over :class:`core.db.dao.UserDAO` / :class:`core.db.dao.ApiKeyDAO`
+that preserves the public API of the legacy JSON-file registry so that the
+web layer and any external automation keep working unchanged.
+
+What changed in v2.0.0:
+    - Users, roles, and API keys live in a relational database (SQLite by
+      default; switch to PostgreSQL purely via configuration - see
+      core/db/database_manager.py).
+    - Passwords are stored as PBKDF2-SHA256 hashes, never in clear text.
+    - A one-time migration imports the legacy ``config/users.json`` (when it
+      exists and the users table is empty), hashing every password.
+    - API keys: issue / verify / revoke programmatic keys per user.
+
+All database interaction is delegated to the DAO layer in :mod:`core.db.dao`;
+this module contains no SQL whatsoever.
+
+Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
+
 import json
+import logging
 import os
 import threading
-import time
-import logging
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+import traceback
+from typing import Any, Dict, List, Optional, Tuple
+
+from core.db.dao import ApiKeyDAO, UserDAO
 
 logger = logging.getLogger(__name__)
 
 
 class UserRegistry:
     """
-    Singleton thread-safe class for managing users from a JSON file.
-    Supports auto-reload of user data at configured intervals.
+    Singleton registry of users, roles, and API keys backed by the database.
+
+    The constructor signature keeps the legacy ``users_file`` argument: it is
+    now used ONLY as the source for the one-time JSON -> database migration.
     """
+
     _instance = None
     _lock = threading.Lock()
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
+        if cls._instance is None:
             with cls._lock:
-                if not cls._instance:
+                if cls._instance is None:
                     cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, users_file: str = 'config/users.json', reload_interval: int = 600):
+    def __init__(self, users_file: str = 'config/users.json',
+                 reload_interval: int = 600):
         """
-        Initialize the UserRegistry
-
         Args:
-            users_file: Path to the users JSON file (default: config/users.json)
-            reload_interval: Interval in seconds for auto-reload (default: 600 seconds = 10 minutes)
+            users_file: Legacy JSON file. Used only for the one-time migration
+                        into the database when the users table is empty.
+            reload_interval: Retained for API compatibility (unused - the
+                        database is always the live source of truth).
         """
-        if hasattr(self, '_initialized'):
+        if self._initialized:
             return
-
+        self.users_file = users_file
+        self.user_dao = UserDAO()
+        self.api_key_dao = ApiKeyDAO()
+        self.user_dao.ensure_default_roles()
+        self._migrate_legacy_json_if_needed()
+        self._ensure_bootstrap_admin()
         self._initialized = True
-        self._users_file = users_file
-        self._reload_interval = reload_interval
-        self._users: Dict[str, Dict[str, Any]] = {}
-        self._users_lock = threading.RLock()
-        self._stop_reload = threading.Event()
-        self._file_timestamp: float = 0
+        logger.info("UserRegistry initialized (database-backed, %d users)",
+                    self.user_dao.count_users())
 
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(self._users_file), exist_ok=True)
+    @classmethod
+    def reset_instance(cls):
+        """Drop the singleton (used by tests)."""
+        with cls._lock:
+            cls._instance = None
 
-        # Create default users file if it doesn't exist
-        if not os.path.exists(self._users_file):
-            self._create_default_users_file()
+    # ------------------------------------------------------------------ #
+    # Bootstrap / migration
+    # ------------------------------------------------------------------ #
 
-        # Initial load
-        self._load_users()
-
-        # Start auto-reload thread
-        self._reload_thread = threading.Thread(target=self._auto_reload_worker, daemon=True)
-        self._reload_thread.start()
-
-        logger.info(f"UserRegistry initialized with file: {self._users_file}, reload interval: {self._reload_interval}s")
-
-    def _create_default_users_file(self):
-        """Create default users file with admin user"""
-        default_users = {
-            "admin": {
-                "password": "admin123",
-                "full_name": "System Administrator",
-                "roles": ["admin", "user"],
-                "created_at": datetime.now().isoformat(),
-                "created_by": "system"
-            }
-        }
+    def _migrate_legacy_json_if_needed(self) -> None:
+        """
+        One-time migration: if the users table is empty and the legacy JSON
+        file exists, import every user (hashing the clear-text passwords).
+        The JSON file is renamed to ``<file>.migrated`` afterwards so the
+        clear-text passwords no longer linger on disk.
+        """
+        if self.user_dao.count_users() > 0:
+            return
+        if not self.users_file or not os.path.exists(self.users_file):
+            return
         try:
-            with open(self._users_file, 'w') as f:
-                json.dump(default_users, f, indent=2)
-            logger.info(f"Created default users file: {self._users_file}")
-        except Exception as e:
-            logger.error(f"Error creating default users file: {str(e)}")
+            with open(self.users_file, 'r', encoding='utf-8') as fh:
+                legacy = json.load(fh)
+            migrated = 0
+            for username, data in legacy.items():
+                password = data.get('password')
+                if not password:
+                    logger.error(
+                        "Legacy user '%s' has no password - skipped during "
+                        "migration", username)
+                    continue
+                self.user_dao.create_user(
+                    username=username,
+                    password=password,
+                    full_name=data.get('full_name', username),
+                    roles=data.get('roles', ['user']),
+                    created_by='legacy-json-migration',
+                )
+                migrated += 1
+            os.rename(self.users_file, self.users_file + '.migrated')
+            logger.info(
+                "Migrated %d users from legacy %s into the database; the "
+                "JSON file was renamed to %s.migrated",
+                migrated, self.users_file, self.users_file)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Legacy users.json migration failed: %s", exc)
+            logger.error("Full stack trace:\n%s", traceback.format_exc())
+            raise
 
-    def _load_users(self):
-        """Load users from JSON file"""
-        with self._users_lock:
-            try:
-                if not os.path.exists(self._users_file):
-                    logger.warning(f"Users file not found: {self._users_file}")
-                    self._users = {}
-                    return
+    def _ensure_bootstrap_admin(self) -> None:
+        """
+        Guarantee at least one admin exists.  On a pristine database the
+        well-known ``admin/admin123`` bootstrap account is created (matching
+        the documented default credentials); operators must change it.
+        """
+        if self.user_dao.count_admins() == 0:
+            if not self.user_dao.user_exists('admin'):
+                self.user_dao.create_user(
+                    username='admin',
+                    password='admin123',
+                    full_name='System Administrator',
+                    roles=['admin', 'user'],
+                    created_by='bootstrap',
+                )
+                logger.warning(
+                    "Bootstrap 'admin' account created with the documented "
+                    "default password - CHANGE IT IMMEDIATELY in production.")
+            else:
+                self.user_dao.add_role('admin', 'admin', 'bootstrap')
 
-                # Track file modification time
-                self._file_timestamp = os.path.getmtime(self._users_file)
-
-                with open(self._users_file, 'r', encoding='utf-8') as f:
-                    self._users = json.load(f)
-
-                logger.info(f"Loaded {len(self._users)} users from {self._users_file}")
-            except json.JSONDecodeError as e:
-                logger.error(f"Error parsing users file: {str(e)}")
-                self._users = {}
-            except Exception as e:
-                logger.error(f"Error loading users: {str(e)}")
-                self._users = {}
-
-    def _save_users(self):
-        """Save users to JSON file"""
-        with self._users_lock:
-            try:
-                # Write to a temporary file first
-                temp_file = self._users_file + '.tmp'
-                with open(temp_file, 'w', encoding='utf-8') as f:
-                    json.dump(self._users, f, indent=2)
-
-                # Rename to actual file (atomic operation on most systems)
-                os.replace(temp_file, self._users_file)
-
-                # Update timestamp
-                self._file_timestamp = os.path.getmtime(self._users_file)
-
-                logger.info(f"Saved {len(self._users)} users to {self._users_file}")
-                return True
-            except Exception as e:
-                logger.error(f"Error saving users: {str(e)}")
-                return False
-
-    def _auto_reload_worker(self):
-        """Worker thread for auto-reloading users"""
-        while not self._stop_reload.wait(self._reload_interval):
-            try:
-                # Check if file has been modified
-                if os.path.exists(self._users_file):
-                    current_mtime = os.path.getmtime(self._users_file)
-                    if current_mtime > self._file_timestamp:
-                        logger.info("Users file modified, reloading...")
-                        self._load_users()
-            except Exception as e:
-                logger.error(f"Error in auto-reload: {str(e)}")
+    # ------------------------------------------------------------------ #
+    # Authentication / roles (legacy-compatible API)
+    # ------------------------------------------------------------------ #
 
     def authenticate(self, username: str, password: str) -> Optional[Dict[str, Any]]:
-        """
-        Authenticate a user
+        """Verify credentials; returns the user dict on success else None."""
+        try:
+            return self.user_dao.authenticate(username, password)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Authentication error for '%s': %s", username, exc)
+            logger.error("Full stack trace:\n%s", traceback.format_exc())
+            raise
 
-        Args:
-            username: Username
-            password: Password
-
-        Returns:
-            User data dictionary if authentication successful, None otherwise
-        """
-        with self._users_lock:
-            user = self._users.get(username)
-            if user and user.get('password') == password:
-                # Return user data without password
-                user_data = user.copy()
-                user_data.pop('password', None)
-                user_data['username'] = username
-                return user_data
-            return None
+    def authenticate_api_key(self, clear_key: str) -> Optional[Dict[str, Any]]:
+        """Verify an API key; returns the owning user dict on success."""
+        return self.api_key_dao.verify_api_key(clear_key)
 
     def has_role(self, username: str, role: str) -> bool:
-        """
-        Check if a user has a specific role
-
-        Args:
-            username: Username
-            role: Role to check
-
-        Returns:
-            True if user has the role, False otherwise
-        """
-        with self._users_lock:
-            user = self._users.get(username)
-            if user:
-                roles = user.get('roles', [])
-                return role in roles
+        """True when ``username`` holds ``role``."""
+        if not username:
             return False
+        user = self.user_dao.get_user(username)
+        return bool(user) and role in user.get('roles', [])
 
     def has_any_role(self, username: str, roles: List[str]) -> bool:
-        """
-        Check if a user has any of the specified roles
-
-        Args:
-            username: Username
-            roles: List of roles to check
-
-        Returns:
-            True if user has any of the roles, False otherwise
-        """
-        with self._users_lock:
-            user = self._users.get(username)
-            if user:
-                user_roles = user.get('roles', [])
-                return any(role in user_roles for role in roles)
+        """True when ``username`` holds at least one role in ``roles``."""
+        if not username:
             return False
+        user = self.user_dao.get_user(username)
+        if not user:
+            return False
+        return any(r in user.get('roles', []) for r in roles)
 
     def get_all_roles(self, username: str) -> List[str]:
+        """All roles held by ``username`` (empty list when absent)."""
+        user = self.user_dao.get_user(username)
+        return user.get('roles', []) if user else []
+
+    def list_role_catalogue(self) -> List[dict]:
+        """The full role catalogue from the database."""
+        return self.user_dao.list_roles()
+
+    # ------------------------------------------------------------------ #
+    # User CRUD (legacy-compatible API)
+    # ------------------------------------------------------------------ #
+
+    def create_user(self, username: str, user_data: Dict[str, Any],
+                    created_by: str) -> bool:
         """
-        Get all roles for a user
-
-        Args:
-            username: Username
-
-        Returns:
-            List of roles, empty list if user not found
+        Create a user from the legacy dict shape
+        ``{'password': ..., 'full_name': ..., 'roles': [...]}``.
+        Returns True on success; raises on database failure.
         """
-        with self._users_lock:
-            user = self._users.get(username)
-            if user:
-                return user.get('roles', []).copy()
-            return []
+        password = user_data.get('password')
+        if not password:
+            raise ValueError("user_data must include a 'password'")
+        self.user_dao.create_user(
+            username=username,
+            password=password,
+            full_name=user_data.get('full_name', username),
+            roles=user_data.get('roles', ['user']),
+            created_by=created_by,
+        )
+        return True
 
-    def add_role(self, username: str, role: str, modified_by: str) -> bool:
-        """
-        Add a role to a user
-
-        Args:
-            username: Username
-            role: Role to add
-            modified_by: Username of the person making the change
-
-        Returns:
-            True if successful, False otherwise
-        """
-        with self._users_lock:
-            user = self._users.get(username)
-            if not user:
-                logger.warning(f"User not found: {username}")
-                return False
-
-            roles = user.get('roles', [])
-            if role not in roles:
-                roles.append(role)
-                user['roles'] = roles
-                user['modified_at'] = datetime.now().isoformat()
-                user['modified_by'] = modified_by
-                self._save_users()
-                logger.info(f"Added role '{role}' to user '{username}' by '{modified_by}'")
-                return True
-            else:
-                logger.info(f"User '{username}' already has role '{role}'")
-                return False
-
-    def revoke_role(self, username: str, role: str, modified_by: str) -> bool:
-        """
-        Revoke a role from a user
-
-        Args:
-            username: Username
-            role: Role to revoke
-            modified_by: Username of the person making the change
-
-        Returns:
-            True if successful, False otherwise
-        """
-        with self._users_lock:
-            user = self._users.get(username)
-            if not user:
-                logger.warning(f"User not found: {username}")
-                return False
-
-            roles = user.get('roles', [])
-            if role in roles:
-                roles.remove(role)
-                user['roles'] = roles
-                user['modified_at'] = datetime.now().isoformat()
-                user['modified_by'] = modified_by
-                self._save_users()
-                logger.info(f"Revoked role '{role}' from user '{username}' by '{modified_by}'")
-                return True
-            else:
-                logger.info(f"User '{username}' does not have role '{role}'")
-                return False
-
-    def create_user(self, username: str, user_data: Dict[str, Any], created_by: str) -> bool:
-        """
-        Create a new user
-
-        Args:
-            username: Username
-            user_data: User data dictionary (must include 'password', optionally 'full_name', 'roles')
-            created_by: Username of the person creating the user
-
-        Returns:
-            True if successful, False otherwise
-        """
-        with self._users_lock:
-            if username in self._users:
-                logger.warning(f"User already exists: {username}")
-                return False
-
-            if 'password' not in user_data:
-                logger.error("Password is required for user creation")
-                return False
-
-            # Create user with default values
-            new_user = {
-                'password': user_data['password'],
-                'full_name': user_data.get('full_name', username),
-                'roles': user_data.get('roles', ['user']),
-                'created_at': datetime.now().isoformat(),
-                'created_by': created_by
-            }
-
-            self._users[username] = new_user
-            self._save_users()
-            logger.info(f"Created user '{username}' by '{created_by}'")
-            return True
-
-    def modify_user(self, username: str, user_data: Dict[str, Any], modified_by: str) -> bool:
-        """
-        Modify an existing user
-
-        Args:
-            username: Username
-            user_data: User data dictionary (can include 'password', 'full_name', 'roles')
-            modified_by: Username of the person modifying the user
-
-        Returns:
-            True if successful, False otherwise
-        """
-        with self._users_lock:
-            if username not in self._users:
-                logger.warning(f"User not found: {username}")
-                return False
-
-            user = self._users[username]
-
-            # Update fields
-            if 'password' in user_data:
-                user['password'] = user_data['password']
-            if 'full_name' in user_data:
-                user['full_name'] = user_data['full_name']
-            if 'roles' in user_data:
-                user['roles'] = user_data['roles']
-
-            user['modified_at'] = datetime.now().isoformat()
-            user['modified_by'] = modified_by
-
-            self._save_users()
-            logger.info(f"Modified user '{username}' by '{modified_by}'")
-            return True
+    def modify_user(self, username: str, user_data: Dict[str, Any],
+                    modified_by: str) -> bool:
+        """Update password / full_name / roles. Returns True on success."""
+        self.user_dao.update_user(
+            username=username,
+            password=user_data.get('password'),
+            full_name=user_data.get('full_name'),
+            roles=user_data.get('roles'),
+            modified_by=modified_by,
+        )
+        return True
 
     def delete_user(self, username: str, deleted_by: str) -> bool:
         """
-        Delete a user
-
-        Args:
-            username: Username
-            deleted_by: Username of the person deleting the user
-
-        Returns:
-            True if successful, False otherwise
+        Delete a user.  Refuses (returns False) to delete the last remaining
+        admin, mirroring legacy behaviour.
         """
-        with self._users_lock:
-            if username not in self._users:
-                logger.warning(f"User not found: {username}")
-                return False
+        if self.has_role(username, 'admin') and self.user_dao.count_admins() <= 1:
+            logger.warning("Refusing to delete '%s': last remaining admin",
+                           username)
+            return False
+        self.user_dao.delete_user(username, deleted_by)
+        return True
 
-            # Prevent deleting the last admin
-            if self.has_role(username, 'admin'):
-                admin_count = sum(1 for user in self._users.values() if 'admin' in user.get('roles', []))
-                if admin_count <= 1:
-                    logger.error("Cannot delete the last admin user")
-                    return False
+    def add_role(self, username: str, role: str, modified_by: str) -> bool:
+        """Grant a role. Returns True on success."""
+        self.user_dao.add_role(username, role, modified_by)
+        return True
 
-            del self._users[username]
-            self._save_users()
-            logger.info(f"Deleted user '{username}' by '{deleted_by}'")
-            return True
-
-    def get_user(self, username: str, include_password: bool = False) -> Optional[Dict[str, Any]]:
+    def revoke_role(self, username: str, role: str, modified_by: str) -> bool:
         """
-        Get user data
-
-        Args:
-            username: Username
-            include_password: Whether to include password in returned data
-
-        Returns:
-            User data dictionary or None if not found
+        Revoke a role.  Refuses (returns False) to strip 'admin' from the
+        last remaining admin.
         """
-        with self._users_lock:
-            user = self._users.get(username)
-            if user:
-                user_data = user.copy()
-                if not include_password:
-                    user_data.pop('password', None)
-                user_data['username'] = username
-                return user_data
-            return None
+        if role == 'admin' and self.has_role(username, 'admin') \
+                and self.user_dao.count_admins() <= 1:
+            logger.warning("Refusing to revoke admin from '%s': last admin",
+                           username)
+            return False
+        self.user_dao.revoke_role(username, role, modified_by)
+        return True
+
+    def get_user(self, username: str,
+                 include_password: bool = False) -> Optional[Dict[str, Any]]:
+        """
+        Fetch a user dict.  ``include_password`` is accepted for backward
+        compatibility but clear passwords no longer exist - only hashes are
+        stored and they are never exposed.
+        """
+        return self.user_dao.get_user(username)
 
     def list_all_users(self, include_passwords: bool = False) -> Dict[str, Dict[str, Any]]:
-        """
-        Get all users
-
-        Args:
-            include_passwords: Whether to include passwords in returned data
-
-        Returns:
-            Dictionary of all users
-        """
-        with self._users_lock:
-            if include_passwords:
-                return {username: data.copy() for username, data in self._users.items()}
-            else:
-                result = {}
-                for username, data in self._users.items():
-                    user_data = data.copy()
-                    user_data.pop('password', None)
-                    result[username] = user_data
-                return result
+        """All users keyed by username. Passwords are never exposed."""
+        return self.user_dao.list_users()
 
     def get_user_count(self) -> int:
-        """
-        Get total number of users
-
-        Returns:
-            Number of users
-        """
-        with self._users_lock:
-            return len(self._users)
+        """Total user count."""
+        return self.user_dao.count_users()
 
     def user_exists(self, username: str) -> bool:
-        """
-        Check if a user exists
+        """True when the username exists."""
+        return self.user_dao.user_exists(username)
 
-        Args:
-            username: Username
+    # ------------------------------------------------------------------ #
+    # API keys (new in v2.0.0)
+    # ------------------------------------------------------------------ #
 
-        Returns:
-            True if user exists, False otherwise
-        """
-        with self._users_lock:
-            return username in self._users
+    def create_api_key(self, username: str, key_name: str,
+                       created_by: str) -> Tuple[str, dict]:
+        """Issue a new API key; returns (clear_key_shown_once, record)."""
+        return self.api_key_dao.create_api_key(username, key_name, created_by)
+
+    def list_api_keys(self, username: str) -> List[dict]:
+        """List API key records for a user (hashes are never exposed)."""
+        return self.api_key_dao.list_api_keys(username)
+
+    def revoke_api_key(self, key_id: int, revoked_by: str) -> None:
+        """Deactivate an API key."""
+        self.api_key_dao.revoke_api_key(key_id, revoked_by)
+
+    def delete_api_key(self, key_id: int, deleted_by: str) -> None:
+        """Permanently delete an API key."""
+        self.api_key_dao.delete_api_key(key_id, deleted_by)
+
+    # ------------------------------------------------------------------ #
+    # Legacy no-op shims
+    # ------------------------------------------------------------------ #
 
     def force_reload(self) -> bool:
-        """
-        Force an immediate reload of users from the file
+        """Legacy shim: the database is always live, nothing to reload."""
+        logger.info("force_reload requested - database registry is always "
+                    "current; no action required")
+        return True
 
-        Returns:
-            True if reload was successful, False otherwise
-        """
-        try:
-            logger.info("Force reload triggered")
-            self._load_users()
-            return True
-        except Exception as e:
-            logger.error(f"Error in force reload: {str(e)}")
-            return False
-
-    def stop_reload(self):
-        """Stop the auto-reload thread"""
-        self._stop_reload.set()
-        if hasattr(self, '_reload_thread'):
-            self._reload_thread.join(timeout=5)
-        logger.info("UserRegistry auto-reload stopped")
+    def stop_reload(self) -> None:
+        """Legacy shim: there is no background reload thread anymore."""

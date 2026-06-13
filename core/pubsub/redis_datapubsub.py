@@ -17,6 +17,33 @@ import queue
 logger = logging.getLogger(__name__)
 
 
+def _redis_ssl_kwargs(config):
+    """Return redis-py SSL kwargs for the given config.
+
+    Enable TLS with ``"use_ssl": true`` (rediss://). Optional keys:
+
+        ssl_ca_certs : CA bundle to verify the server
+        ssl_certfile : client certificate (for mutual TLS)
+        ssl_keyfile  : client private key (for mutual TLS)
+        ssl_cert_reqs: 'required' (default) | 'optional' | 'none'
+
+    Returns an empty dict when TLS is not enabled, so callers can splat it
+    unconditionally.
+    """
+    if not config.get('use_ssl', False):
+        return {}
+    kwargs = {'ssl': True,
+              'ssl_cert_reqs': config.get('ssl_cert_reqs', 'required')}
+    if config.get('ssl_ca_certs'):
+        kwargs['ssl_ca_certs'] = config['ssl_ca_certs']
+    if config.get('ssl_certfile'):
+        kwargs['ssl_certfile'] = config['ssl_certfile']
+    if config.get('ssl_keyfile'):
+        kwargs['ssl_keyfile'] = config['ssl_keyfile']
+    return kwargs
+
+
+
 class RedisDataPublisher(DataPublisher):
     """Publisher that sets data in Redis with v1.7.6 connection resilience."""
 
@@ -55,7 +82,8 @@ class RedisDataPublisher(DataPublisher):
                     password=self.password,
                     decode_responses=True,
                     socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_timeout=5,
+                    **_redis_ssl_kwargs(self.config)
                 )
                 # Test connection
                 self.redis_client.ping()
@@ -194,7 +222,8 @@ class RedisChannelDataPublisher(DataPublisher):
                     password=self.password,
                     decode_responses=True,
                     socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_timeout=5,
+                    **_redis_ssl_kwargs(self.config)
                 )
                 # Test connection
                 self.redis_client.ping()
@@ -321,7 +350,8 @@ class RedisChannelDataSubscriber(DataSubscriber):
                     password=self.password,
                     decode_responses=True,
                     socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_timeout=5,
+                    **_redis_ssl_kwargs(self.config)
                 )
                 # Test connection
                 self.redis_client.ping()

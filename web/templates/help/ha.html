@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}High Availability - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: var(--bg-body);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-shield-check" style="color: #4a90c2;"></i> High Availability Manager (v2.0.0)</h2>
+<p class="lead">Run multiple DishtaYantra instances with automatic primary election and failover - the coordination backend is chosen by configuration.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5></div>
+    <div class="card-body">
+        <p>The HA Manager elects exactly one <strong>primary</strong> instance; all others stand by as
+        <strong>secondaries</strong>. On election the new primary resumes the DAGs that were suspended; on demotion the
+        instance suspends its running DAGs. Five providers are available via <code>ha.provider</code>:</p>
+        <ul class="mb-0">
+            <li><strong>none</strong> (default) - standalone; this instance is always primary</li>
+            <li><strong>zookeeper</strong> - leader election through an ephemeral-sequential znode (kazoo)</li>
+            <li><strong>redis</strong> - expiring lock key acting as a renewable lease</li>
+            <li><strong>s3</strong> - lease object in a bucket with timestamp-based takeover</li>
+            <li><strong>socket</strong> - exclusive TCP port bind; whoever holds the port is primary</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5></div>
+    <div class="card-body">
+        <h6>Standalone (default)</h6>
+        <div class="code-block">ha.provider=none</div>
+        <h6 class="mt-3">Zookeeper</h6>
+        <div class="code-block">ha.provider=zookeeper
+ha.zookeeper.hosts=zk1:2181,zk2:2181,zk3:2181
+ha.zookeeper.election_path=/dishtayantra/election</div>
+        <h6 class="mt-3">Redis lease</h6>
+        <div class="code-block">ha.provider=redis
+ha.redis.host=localhost
+ha.redis.port=6379
+ha.redis.lock_key=dishtayantra:ha:lock
+ha.redis.lease_seconds=10</div>
+        <h6 class="mt-3">S3 lease</h6>
+        <div class="code-block">ha.provider=s3
+ha.s3.bucket=my-dishtayantra-bucket
+ha.s3.lease_key=dishtayantra/ha/lease.json
+ha.s3.region=us-east-1
+ha.s3.lease_seconds=15</div>
+        <h6 class="mt-3">Socket (exclusive bind)</h6>
+        <div class="code-block">ha.provider=socket
+ha.socket.host=0.0.0.0
+ha.socket.port=5599
+ha.socket.retry_seconds=3</div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Failover behaviour</h5></div>
+    <div class="card-body">
+        <ul>
+            <li><strong>Elected →</strong> the instance becomes primary and resumes the DAGs it suspended while standing by.</li>
+            <li><strong>Demoted →</strong> the instance suspends all running DAGs and waits to be re-elected.</li>
+            <li>Connecting to the socket provider's port returns a one-line status banner, handy for probes:</li>
+        </ul>
+        <div class="code-block">$ nc primary-host 5599
+DishtaYantra v2.0.0 HA primary on prod-node-1</div>
+        <div class="alert alert-warning mt-3 mb-0"><i class="bi bi-exclamation-triangle"></i>
+        Pair HA with a <strong>shared storage provider</strong> (S3/Azure/GCS - see
+        <a href="{{ url_for('help_storage') }}">Storage Abstraction</a>) so every instance sees the same DAG
+        definitions.</div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-tools"></i> Choosing a provider</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><strong>zookeeper</strong> - strongest guarantees; pick when a ZK ensemble already exists.</li>
+            <li><strong>redis</strong> - lightweight and fast when Redis is already deployed.</li>
+            <li><strong>s3</strong> - no extra infrastructure when running in AWS; slightly slower failover.</li>
+            <li><strong>socket</strong> - zero dependencies for two instances on one network; the legacy
+            "spocket" mechanism formalized.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

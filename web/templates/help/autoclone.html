@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-nav {
-        background: #f8fafc;
+        background: var(--bg-body);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -29,7 +29,7 @@
     .phase-active { border-color: #2563eb; }
     .phase-rampdown { border-color: #f59e0b; }
     .warning-box {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card));
         border-left: 4px solid #f59e0b;
         padding: 1rem;
         border-radius: 0 8px 8px 0;

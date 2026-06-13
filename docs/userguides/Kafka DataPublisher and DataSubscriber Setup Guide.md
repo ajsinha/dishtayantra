@@ -2,8 +2,7 @@
 
 ## © 2025-2030 Ashutosh Sinha
 
-**Version 1.1.2** 
-
+**Applies to: current release**
 ---
 
 ## Overview
@@ -19,7 +18,7 @@ The implementation uses a **factory pattern** allowing you to switch between lib
 
 ---
 
-## What's New in v1.1.2
+## Dual Kafka Library Support
 
 ### Dual Library Support 
 
@@ -158,7 +157,7 @@ config = {
 }
 ```
 
-### application.properties
+### Configuration (application.yaml or application.properties)
 
 ```properties
 # Kafka library selection
@@ -690,7 +689,48 @@ thread.join(timeout=30)
 
 ## Legal Information
 
-### Copyright Notice
+#
+
+## SSL/TLS and SASL Security
+
+Kafka security options are passed straight through to the underlying client,
+so any option the library supports works. Nest them under `producer_config`
+(publishers) or `consumer_config` (subscribers) for the **kafka-python**
+library, or under `confluent_config` for the **confluent-kafka** library.
+
+**kafka-python (underscore keys):**
+
+| Key | Purpose |
+| --- | --- |
+| `security_protocol` | `SSL` or `SASL_SSL` |
+| `ssl_cafile` | CA bundle to verify the broker |
+| `ssl_certfile` | Client certificate (mutual TLS) |
+| `ssl_keyfile` | Client private key (mutual TLS) |
+| `sasl_mechanism` | e.g. `PLAIN`, `SCRAM-SHA-256` (with `SASL_SSL`) |
+| `sasl_plain_username` / `sasl_plain_password` | SASL credentials |
+
+```json
+{
+  "source": "kafka://topic/orders",
+  "bootstrap_servers": ["broker1:9093"],
+  "consumer_config": {
+    "security_protocol": "SASL_SSL",
+    "ssl_cafile": "/certs/ca.pem",
+    "sasl_mechanism": "SCRAM-SHA-256",
+    "sasl_plain_username": "svc_orders",
+    "sasl_plain_password": "${KAFKA_PASSWORD}"
+  }
+}
+```
+
+**confluent-kafka (dotted keys):** use `confluent_config` with
+`security.protocol`, `ssl.ca.location`, `ssl.certificate.location`,
+`ssl.key.location`, `sasl.mechanisms`, `sasl.username`, `sasl.password`.
+
+The standard Kafka TLS port is **9093**. Combine with `"resilient": true` for
+reconnection during broker failover.
+
+## Copyright Notice
 
 Copyright © 2025-2030 Ashutosh Sinha. All rights reserved.
 
@@ -700,4 +740,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha

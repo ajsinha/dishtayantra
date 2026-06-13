@@ -1,0 +1,113 @@
+{
+  "name": "scheduled_heartbeat",
+  "start_time": "1103",
+
+  "subscribers": [
+    {
+      "name": "sched_hb_subscriber_1",
+      "config": {
+        "source": "metronome",
+        "message": "heartbeat",
+        "interval": 120
+      }
+    },
+    {
+      "name": "sched_hb_subscriber_2",
+      "config": {
+        "source": "metronome",
+        "message": "heartbeat",
+        "interval": 60
+      }
+    },
+    {
+      "name": "sched_hb_subscriber_3",
+      "config": {
+        "source": "metronome",
+        "message": "heartbeat",
+        "interval": 30
+      }
+    },
+    {
+      "name": "composite_sched_hb_subscriber",
+      "config": {
+        "source": "fanin://sched_hb_subscriber_1,sched_hb_subscriber_2,sched_hb_subscriber_3"
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "sched_hb_publisher",
+      "config": {
+        "destination": "mem://topic/sched_hb_topic"
+      }
+    },
+    {
+      "name": "heartbeat_log",
+      "config": {
+        "destination": "file:///tmp/log/dagserver/heartbeat.jsonl"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "heartbeat_enrichment",
+      "type": "ApplyDefaultsCalculator",
+      "config": {
+        "defaults": {
+          "dag_name": "heartbeat_monitor",
+          "status": "healthy"
+        }
+      }
+    },
+    {
+      "name": "random_calculator",
+      "type": "core.calculator.random_calculator.RandomCalculator",
+      "config": {}
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "metronome_node",
+      "type": "MetronomeNode",
+      "config": {
+        "interval": 10
+      },
+      "subscriber": "sched_hb_subscriber_3",
+      "publishers": [
+        "sched_hb_publisher",
+        "heartbeat_log"
+      ],
+      "calculator": "heartbeat_enrichment"
+    },
+    {
+      "name": "random_calculator_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "random_calculator"
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "metronome_node",
+      "to_node": "random_calculator_node"
+    }
+  ],
+  "schedule": {
+    "days_of_week": [
+      "sun",
+      "mon",
+      "tue",
+      "wed",
+      "thu",
+      "fri",
+      "sat"
+    ],
+    "holiday_calendars": [
+      "USA",
+      "CANADA"
+    ],
+    "timezone": "America/New_York"
+  },
+  "duration": "1h00m"
+}

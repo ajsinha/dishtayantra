@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Market-Aware Scheduling - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: var(--bg-body);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-calendar-week" style="color: #4a90c2;"></i> Market-Aware Scheduling (v2.1.0)</h2>
+<p class="lead">Run DAGs only on chosen weekdays and never on market holidays - composed per DAG from one or more holiday calendars, with intraday edits honored automatically within five minutes.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5></div>
+    <div class="card-body">
+        <p>Add an optional <code>schedule</code> block to any DAG. All keys are optional; a DAG without one behaves exactly as before:</p>
+        <div class="code-block">{
+  "name": "us_equities_session",
+  "start_time": "0930",
+  "duration": "6h30m",
+  "schedule": {
+    "days_of_week": ["mon", "tue", "wed", "thu", "fri"],
+    "exclude_days_of_week": [],
+    "holiday_calendars": ["USA", "CANADA"]
+  }
+}</div>
+        <p class="mt-3">A DAG is <strong>active</strong> only when ALL of these hold:</p>
+        <ul class="mb-0">
+            <li>The time window matches (wrap-around-aware - <code>2200</code>-<code>0600</code> works) or no window is configured.</li>
+            <li><code>days_of_week</code> (allowlist): today is in the list. Accepts <code>mon</code>/<code>tuesday</code>/etc., case-insensitive.</li>
+            <li><code>exclude_days_of_week</code> (denylist, applied after the allowlist): today is not in the list.</li>
+            <li><code>holiday_calendars</code>: today is not a holiday in <strong>ANY</strong> listed calendar - union semantics, so a cross-listed strategy following <code>USA</code> and <code>CANADA</code> stands down whenever either market closes.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-calendar-check"></i> Holiday calendars</h5></div>
+    <div class="card-body">
+        <p>Calendars are plain JSON files under the storage prefix <code>holidays.prefix</code> (default <code>config/holidays/</code>):</p>
+        <div class="code-block">{
+  "name": "USA",
+  "description": "United States market holidays (NYSE-observed set)",
+  "holidays": {
+    "2026-01-01": "New Year's Day",
+    "2026-11-26": "Thanksgiving Day"
+  }
+}</div>
+        <ul class="mt-3">
+            <li><strong>Baked in:</strong> <code>usa.json</code> (NYSE set) and <code>canada.json</code> (TSX set), 150 holidays each covering <strong>2026-2040</strong>, with observed-date rules and computus-derived Good Friday.</li>
+            <li><strong>Regenerate or extend:</strong> <code>python scripts/generate_holiday_calendars.py 2026 2055</code></li>
+            <li><strong>Add your own:</strong> drop <code>myexchange.json</code> into the prefix and reference <code>"MYEXCHANGE"</code> - names are case-insensitive.</li>
+            <li><strong>Fail fast:</strong> a DAG referencing a calendar that cannot be loaded refuses to load, with the exact file named in the error.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Intraday updates (&lt; 5 minutes)</h5></div>
+    <div class="card-body">
+        <p>Both the calendar files and each DAG's <code>schedule</code> block can be edited while the server runs - no restart:</p>
+        <ul>
+            <li><strong>Calendar edits</strong> (e.g. declaring an ad-hoc market closure) reload on a TTL of <code>holidays.reload_seconds</code> (default 180, hard-capped at 300).</li>
+            <li><strong>DAG schedule edits</strong> are re-read from storage every <code>schedule.refresh_seconds</code> (default 240, hard-capped at 240) and applied to the live DAG with a boxed log entry.</li>
+            <li>Combined with the 60-second schedule monitor, the worst-case reaction time is <strong>under five minutes</strong>.</li>
+            <li>A <strong>broken edit is rejected</strong> - the error is logged with a full stack trace and the last good rules stay in force, so a typo never flips a trading DAG on.</li>
+        </ul>
+        <div class="alert alert-info mb-0"><i class="bi bi-info-circle"></i>
+        DAGs suspended or resumed by the scheduler log boxed <code>DAG SCHEDULE: AUTO-SUSPEND / AUTO-RESUME</code> entries
+        including the reason (e.g. <code>holiday - USA: Good Friday</code>); the dashboard and DAG details show the
+        schedule and its current evaluation.</div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-graph-up"></i> Worked example</h5></div>
+    <div class="card-body">
+        <p>See <code>config/dags/examples/us_equities_trading_session.json.sample</code> - a complete trading-session DAG
+        (09:30-16:00 weekdays, USA + CANADA calendars). Copy it into <code>config/dags/</code> (dropping the
+        <code>.sample</code> suffix) to activate it.</p>
+        <p class="mb-0">Related: <a href="{{ url_for('help_time_windows') }}">Time Windows</a> ·
+        <a href="{{ url_for('help_storage') }}">Storage Abstraction</a> (calendars flow through it too).</p>
+    </div>
+</div>
+{% endblock %}

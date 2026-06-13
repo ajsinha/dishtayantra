@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <h1 class="mb-0">System Architecture</h1>
-                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v1.5.2</p>
+                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v2.2</p>
                 </div>
             </div>
         </div>
@@ -87,14 +87,14 @@
                         <div class="col-md-6 col-lg-2">
                             <div class="text-center p-3 bg-info bg-opacity-10 rounded border border-info">
                                 <i class="bi bi-cpu text-info" style="font-size: 2.5rem;"></i>
-                                <h6 class="mt-2 mb-1">Worker Pool <span class="badge bg-info" style="font-size: 0.6rem;">v1.5.2</span></h6>
+                                <h6 class="mt-2 mb-1">Worker Pool</h6>
                                 <small class="text-muted">Multiprocess parallelism bypassing GIL</small>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-2">
                             <div class="text-center p-3 bg-warning bg-opacity-10 rounded border border-warning">
                                 <i class="bi bi-lightning-charge-fill text-warning" style="font-size: 2.5rem;"></i>
-                                <h6 class="mt-2 mb-1">LMDB PubSub <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">v1.5.2</span></h6>
+                                <h6 class="mt-2 mb-1">LMDB PubSub</h6>
                                 <small class="text-muted">Zero-copy cross-process messaging</small>
                             </div>
                         </div>
@@ -121,7 +121,7 @@
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └─────────────────┘  │
 │         │                 │                 │                               │
 │  ┌──────┴─────────────────┴─────────────────┴─────────────────────────────┐ │
-│  │                      Flask Application Layer                            │ │
+│  │                     FastAPI Application Layer                           │ │
 │  │            (Routes, Authentication, Session Management)                 │ │
 │  └────────────────────────────────┬────────────────────────────────────────┘ │
 │                                   │                                          │
@@ -184,7 +184,7 @@
                                         </tr>
                                         <tr>
                                             <td><span class="badge bg-info">2. Application</span></td>
-                                            <td>Flask App, Authentication, Route Handlers</td>
+                                            <td>FastAPI App, Authentication, Route Handlers</td>
                                         </tr>
                                         <tr>
                                             <td><span class="badge bg-success">3. Business Logic</span></td>
@@ -208,7 +208,7 @@
 ┌─────────────────────────────────┐
 │    Presentation Layer           │  Web UI, APIs
 ├─────────────────────────────────┤
-│    Application Layer            │  Flask, Auth
+│    Application Layer            │  FastAPI, Auth
 ├─────────────────────────────────┤
 │    Business Logic Layer         │  DAG Engine
 ├─────────────────────────────────┤
@@ -423,7 +423,7 @@ Timeline:
     <div class="row mb-4" id="subgraphs">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);">
                     <h5 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Subgraph Architecture (Graph-as-a-Node)</h5>
                 </div>
                 <div class="card-body">
@@ -1109,7 +1109,7 @@ DishtaYantra          │ External Service
                             <div class="card h-100 border-warning">
                                 <div class="card-body p-2 text-center">
                                     <i class="bi bi-lightning-charge-fill text-warning" style="font-size: 1.5rem;"></i>
-                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">LMDB <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">v1.5.2</span></h6>
+                                    <h6 class="mt-2 mb-1" style="font-size: 0.85rem;">LMDB</h6>
                                     <code class="small">lmdb://channel</code>
                                 </div>
                             </div>
@@ -1144,7 +1144,7 @@ DishtaYantra          │ External Service
                     </div>
 
                     <!-- Smart Deserialize - NEW in v1.7.6 -->
-                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-magic me-2"></i>Smart Message Deserialization <span class="badge bg-success ms-2">v1.7.6</span></h6>
+                    <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-magic me-2"></i>Smart Message Deserialization</h6>
                     <div class="row mt-3">
                         <div class="col-md-12">
                             <p>All subscribers automatically handle <strong>both JSON and non-JSON messages</strong> using the <code>smart_deserialize()</code> function. DAG calculators always receive dict format regardless of source message format.</p>
@@ -1194,7 +1194,7 @@ DishtaYantra          │ External Service
                         <div class="col-md-6">
                             <div class="card border-info">
                                 <div class="card-header bg-info text-white py-2">
-                                    <strong><i class="bi bi-journal-check"></i> Enhanced Logging (v1.7.6)</strong>
+                                    <strong><i class="bi bi-journal-check"></i> Enhanced Logging</strong>
                                 </div>
                                 <div class="card-body p-2">
                                     <ul class="mb-0 small">
@@ -1217,10 +1217,10 @@ DishtaYantra          │ External Service
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>Worker Pool & Massive Parallelism <span class="badge bg-warning text-dark ms-2">v1.5.2</span></h5>
+                    <h5 class="mb-0"><i class="bi bi-cpu me-2"></i>Worker Pool & Massive Parallelism</h5>
                 </div>
                 <div class="card-body">
-                    <p class="lead">DishtaYantra v1.5.2 introduces a <strong>multiprocessing worker pool</strong> that enables true CPU parallelism by distributing DAGs across multiple worker processes, bypassing Python's GIL limitation.</p>
+                    <p class="lead">DishtaYantra provides a <strong>multiprocessing worker pool</strong> that enables true CPU parallelism by distributing DAGs across multiple worker processes, bypassing Python's GIL limitation.</p>
                     
                     <!-- Architecture Diagram -->
                     <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-diagram-3 me-2"></i>Worker Pool Architecture</h6>
@@ -1230,7 +1230,7 @@ DishtaYantra          │ External Service
 │                        MAIN PROCESS (Orchestrator)                           │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────────────────┐  │
 │  │ Web Server  │  │ DAG Manager │  │ WorkerPoolManager                   │  │
-│  │ (Flask)     │  │ (Config)    │  │ ├─ AffinityManager (DAG assignment) │  │
+│  │ (FastAPI)   │  │ (Config)    │  │ ├─ AffinityManager (DAG assignment) │  │
 │  └─────────────┘  └─────────────┘  │ ├─ HealthMonitor (crash detection)  │  │
 │                                     │ └─ StatusProcessor (heartbeats)    │  │
 │                                     └─────────────────────────────────────┘  │
@@ -1412,14 +1412,14 @@ DishtaYantra          │ External Service
                 <div class="card-body">
                     <div class="row">
                         <div class="col-lg-6">
-                            <h6 class="border-bottom pb-2"><i class="bi bi-diagram-2 me-2"></i>Flask Application</h6>
+                            <h6 class="border-bottom pb-2"><i class="bi bi-diagram-2 me-2"></i>FastAPI Application</h6>
                             <div class="bg-dark text-light p-3 rounded mb-3" style="font-family: monospace; font-size: 0.75rem;">
 <pre class="mb-0" style="color: #00ff00;">
 ┌────────────────────────────────────────┐
 │         DishtaYantraWebApp             │
 ├────────────────────────────────────────┤
 │  ┌──────────┐  ┌──────────┐            │
-│  │Flask App │  │Components│            │
+│  │FastAPI   │  │Components│            │
 │  │- Config  │  │- DAGSrv  │            │
 │  │- Sessions│  │- UserReg │            │
 │  └──────────┘  └──────────┘            │
@@ -1788,7 +1788,7 @@ Failover Sequence:
                         <div class="col-lg-6">
                             <h6 class="border-bottom pb-2"><i class="bi bi-shield-lock me-2"></i>Security Features</h6>
                             <ul>
-                                <li>Flask sessions with secure cookies</li>
+                                <li>Signed-cookie sessions (Starlette) with secure cookies</li>
                                 <li>Configurable session timeout</li>
                                 <li>CSRF protection</li>
                                 <li>Input validation on all forms</li>
@@ -1819,7 +1819,7 @@ Failover Sequence:
                             <div class="bg-dark text-light p-3 rounded" style="font-family: monospace; font-size: 0.7rem;">
 <pre class="mb-0" style="color: #00ff00;">
 Main Thread
-└── Flask WSGI Server
+└── uvicorn ASGI Server
 
 DAG Executor Threads (per DAG)
 ├── DAG-1 Executor

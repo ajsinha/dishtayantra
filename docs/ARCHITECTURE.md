@@ -1,6 +1,6 @@
 # DishtaYantra Architecture Document
 
-## Version 1.6.0
+## Version 2.2
 
 © 2025-2030 Ashutosh Sinha
 
@@ -43,7 +43,7 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
 │         │                 │                 │                  │        │
 │  ┌──────┴─────────────────┴─────────────────┴──────────────────┴──────┐ │
-│  │                      Flask Application Layer                        │ │
+│  │                      FastAPI Application Layer                        │ │
 │  │            (Routes, Authentication, Session Management)             │ │
 │  └────────────────────────────────┬────────────────────────────────────┘ │
 │                                   │                                      │
@@ -103,13 +103,13 @@ DishtaYantra is a high-performance, multi-threaded DAG (Directed Acyclic Graph) 
 ## Architecture Layers
 
 ### Layer 1: Presentation Layer
-- **Web UI**: Flask templates with Bootstrap 5
+- **Web UI**: FastAPI + Jinja2 templates with Bootstrap 5 (vendored locally), light/dark theming
 - **REST API**: JSON endpoints for programmatic access
 - **Admin Interface**: System monitoring, logs, user management
 - **Help Center**: Documentation and guides
 
 ### Layer 2: Application Layer
-- **Flask Application**: Request routing, session management
+- **FastAPI Application**: Request routing, session management, SSE streaming
 - **Authentication**: Role-based access control (RBAC)
 - **Route Handlers**: Modular route organization
 
@@ -860,7 +860,7 @@ class LMDBDataExchange:
 
 ### Configuration
 
-#### application.properties
+#### application.yaml / application.properties
 
 ```properties
 # LMDB Zero-Copy Data Exchange Configuration
@@ -1090,7 +1090,7 @@ This architecture represents a **high-performance innovation** not found in any 
 
 ## Web Application Architecture
 
-### Flask Application Structure
+### FastAPI Application Structure
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1100,7 +1100,7 @@ This architecture represents a **high-performance innovation** not found in any 
 │  Singleton Pattern with Thread Safety                            │
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
-│  │  Flask App   │  │  Components  │  │   Routes     │           │
+│  │ FastAPI App  │  │  Components  │  │   Routes     │           │
 │  ├──────────────┤  ├──────────────┤  ├──────────────┤           │
 │  │ - Config     │  │ - DAGServer  │  │ - AuthRoutes │           │
 │  │ - Sessions   │  │ - UserReg    │  │ - Dashboard  │           │
@@ -1375,14 +1375,11 @@ class MyCalculator:
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │                    UserRegistry                          │    │
 │  │  ┌─────────────────────────────────────────────────┐    │    │
-│  │  │  users.json                                      │    │    │
-│  │  │  {                                               │    │    │
-│  │  │    "admin": {                                    │    │    │
-│  │  │      "password": "...",                          │    │    │
-│  │  │      "roles": ["admin", "user"],                 │    │    │
-│  │  │      "full_name": "..."                          │    │    │
-│  │  │    }                                             │    │    │
-│  │  │  }                                               │    │    │
+│  │  │  Database (SQLite default / PostgreSQL)          │    │    │
+│  │  │   tables: users, roles, api_keys                 │    │    │
+│  │  │   passwords: PBKDF2-SHA256 hashes                │    │    │
+│  │  │   (legacy users.json migrated once, then         │    │    │
+│  │  │    renamed users.json.migrated)                  │    │    │
 │  │  └─────────────────────────────────────────────────┘    │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                  │
@@ -1395,7 +1392,7 @@ class MyCalculator:
 │  └─────────────┴──────────────────────────────────────────┘     │
 │                                                                  │
 │  Session Management:                                             │
-│  - Flask sessions with secure cookies                            │
+│  - Starlette sessions with secure cookies                        │
 │  - Configurable session timeout                                  │
 │  - CSRF protection                                               │
 │                                                                  │
@@ -1414,7 +1411,7 @@ class MyCalculator:
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Main Thread                                                     │
-│  └── Flask WSGI Server                                           │
+│  └── uvicorn ASGI Server                                         │
 │                                                                  │
 │  DAG Executor Threads (per DAG)                                  │
 │  ├── DAG-1 Executor                                              │
@@ -1548,7 +1545,7 @@ services:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| Flask | 3.1.2 | Web framework |
+| FastAPI + uvicorn | current | Web framework (ASGI) |
 | psutil | 6.1.0 | System monitoring |
 | py4j | 0.10.9.7 | Java integration |
 | requests | 2.32.3 | REST integration |
@@ -1574,4 +1571,4 @@ This document contains proprietary and confidential information. Unauthorized co
 
 ---
 
-**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha

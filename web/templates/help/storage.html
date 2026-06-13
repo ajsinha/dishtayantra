@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Storage Abstraction - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: var(--bg-body);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-cloud-arrow-up" style="color: #4a90c2;"></i> Storage Abstraction (v2.0.0)</h2>
+<p class="lead">Store DAG configurations on the local filesystem, Amazon S3, Azure Blob Storage, or Google Cloud Storage - switchable purely through configuration.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5></div>
+    <div class="card-body">
+        <p>In v2.0.0 the server never touches DAG configuration files directly. All reads and writes flow through a
+        <code>StorageProvider</code> selected by <code>storage.provider</code> in
+        <code>config/application.properties</code>:</p>
+        <ul>
+            <li><strong>filesystem</strong> (default) - local directory tree, drop-in compatible with v1.x layouts</li>
+            <li><strong>s3</strong> - Amazon S3 or any S3-compatible store (MinIO, LocalStack) via <code>boto3</code></li>
+            <li><strong>azureblob</strong> - Azure Blob Storage via <code>azure-storage-blob</code></li>
+            <li><strong>gcs</strong> - Google Cloud Storage via <code>google-cloud-storage</code></li>
+        </ul>
+        <p>The logical location of DAG configs is <code>storage.dags.prefix</code> (default <code>config/dags</code>).
+        Only direct children of this prefix are auto-loaded - sub-prefixes such as
+        <code>config/dags/examples/</code> hold samples that are not started automatically.</p>
+        <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle"></i>
+        Missing configuration is a <strong>fatal error</strong>: the server refuses to start and logs exactly which
+        property is absent. Nothing is silently defaulted.</div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5></div>
+    <div class="card-body">
+        <h6>Filesystem (default)</h6>
+        <div class="code-block">storage.provider=filesystem
+storage.filesystem.root=./
+storage.dags.prefix=config/dags</div>
+        <h6 class="mt-3">Amazon S3</h6>
+        <div class="code-block">storage.provider=s3
+storage.s3.bucket=my-dishtayantra-bucket
+storage.s3.prefix=dishtayantra
+storage.s3.region=us-east-1
+# Optional - custom endpoint (MinIO / LocalStack) and explicit credentials:
+#storage.s3.endpoint_url=http://localhost:9000
+#storage.s3.access_key_id=${AWS_ACCESS_KEY_ID:}
+#storage.s3.secret_access_key=${AWS_SECRET_ACCESS_KEY:}</div>
+        <h6 class="mt-3">Azure Blob Storage</h6>
+        <div class="code-block">storage.provider=azureblob
+storage.azureblob.connection_string=${AZURE_STORAGE_CONNECTION_STRING:}
+storage.azureblob.container=dishtayantra
+storage.azureblob.prefix=dishtayantra</div>
+        <h6 class="mt-3">Google Cloud Storage</h6>
+        <div class="code-block">storage.provider=gcs
+storage.gcs.bucket=my-dishtayantra-bucket
+storage.gcs.prefix=dishtayantra
+storage.gcs.credentials_file=/etc/gcp/service-account.json</div>
+        <p class="mt-3 mb-0">Install the matching optional dependency: <code>boto3</code>,
+        <code>azure-storage-blob</code>, or <code>google-cloud-storage</code> (see
+        <code>requirements.txt</code>).</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-diagram-3"></i> What flows through storage</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li>Loading all DAG configurations at startup</li>
+            <li>Saving new DAGs created in the DAG Designer or via the API</li>
+            <li>Reading DAG configs for clone / subgraph resolution</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-lightbulb"></i> Operational notes</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li>With a cloud provider, multiple server instances share one set of DAG definitions - pair this with the
+                <a href="{{ url_for('help_ha') }}">HA Manager</a> for active/standby deployments.</li>
+            <li>Paths are validated - traversal outside the configured root/prefix is rejected.</li>
+            <li>All storage failures are logged with full stack traces; nothing is swallowed.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

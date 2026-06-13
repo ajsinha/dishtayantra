@@ -1,14 +1,13 @@
 # Admin & System Monitoring Guide
 
-## Version 1.1.1
-
+## Applies to: current release
 © 2025-2030 Ashutosh Sinha
 
 ---
 
 ## Overview
 
-DishtaYantra v1.5.0 introduces comprehensive admin features including real-time system monitoring, log viewing, and enhanced navigation. These features are accessible only to users with the **admin** role.
+DishtaYantra provides comprehensive admin features including real-time system monitoring, log viewing, and enhanced navigation. These features are accessible only to users with the **admin** role.
 
 ---
 
@@ -149,7 +148,7 @@ Shows availability of multi-language calculator support:
 | Metric | Description |
 |--------|-------------|
 | Python Version | e.g., 3.13.1 |
-| Flask Version | e.g., 3.1.2 |
+| FastAPI Version | e.g., current |
 | Free-Threading | Enabled/Disabled |
 | GIL Status | Enabled/Disabled |
 | Executable | Python path |

@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorial 1: Your First DAG - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: var(--bg-body);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .tut-hero {
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+        color: #eef0f8;
+        padding: 2rem;
+        border-radius: 14px;
+        margin-bottom: 1.5rem;
+    }
+    .tut-hero h2 { color: #eef0f8; }
+    .tut-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #1f8a4c;
+        color: #fff;
+        letter-spacing: 0.04em;
+    }
+    .file-label {
+        font-family: 'Spline Sans Mono', monospace;
+        font-size: 0.85rem;
+        background: color-mix(in srgb, var(--brass) 18%, var(--bg-card));
+        color: var(--text-primary);
+        border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+        padding: 2px 10px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-bottom: 0.4rem;
+    }
+    .step-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: var(--brass);
+        color: #1a1207;
+        font-weight: 700;
+        margin-right: 8px;
+    }
+    pre[class*="language-"] { border-radius: 10px; font-size: 0.84rem; }
+    .callout {
+        border-left: 4px solid var(--info-color);
+        background: color-mix(in srgb, var(--info-color) 10%, var(--bg-card));
+        padding: 0.9rem 1.1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<div class="tut-hero">
+    <span class="tut-badge">BEGINNER</span>
+    <h2 class="mt-2"><i class="bi bi-1-circle"></i> Tutorial 1: Your First DAG</h2>
+    <p class="mb-0">Build a self-contained pipeline that emits a tick every few seconds,
+    stamps it with a custom calculator, and writes the result to a log file.
+    No brokers or external services required.</p>
+</div>
+
+<h4>What you will build</h4>
+<p>A single-node DAG driven by a <code>MetronomeNode</code> (an internal timer).
+On every tick it runs a small Python calculator that adds a timestamp and a
+sequence number, then publishes the enriched record to a file sink. This is
+the simplest useful shape: <strong>source &rarr; calculator &rarr; sink</strong>,
+all inside one node.</p>
+
+<div class="callout">
+    <strong>Concepts introduced:</strong> the five DAG element types, the
+    <code>MetronomeNode</code> timer source, writing a custom Python calculator
+    by subclassing <code>DataCalculator</code>, and the <code>file://</code>
+    publisher.
+</div>
+
+<hr>
+
+<h4><span class="step-num">1</span> Write the calculator</h4>
+<p>Create a Python file for a custom calculator. A calculator subclasses
+<code>DataCalculator</code> and implements one method, <code>calculate(self, data)</code>,
+which receives the incoming record (a dict) and returns the processed record.
+The base class gives you <code>self.name</code> and <code>self.config</code>
+(the <code>config</code> block from the DAG JSON).</p>
+
+<div class="file-label">core/calculator/tutorial/heartbeat_calculator.py</div>
+<pre><code class="language-python">"""
+Tutorial 1 calculator: stamp each heartbeat with a timestamp and a
+monotonically increasing sequence number.
+"""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class HeartbeatCalculator(DataCalculator):
+    """Adds `seq`, `emitted_at`, and a configurable `source_label`.
+
+    Config keys (all optional):
+        source_label : str  - label written into every record (default "heartbeat")
+        start_seq    : int  - first sequence number to use (default 1)
+    """
+
+    def __init__(self, name, config):
+        # Always call the base constructor - it sets self.name / self.config.
+        super().__init__(name, config)
+        self._seq = int(self.config.get("start_seq", 1))
+        self._label = self.config.get("source_label", "heartbeat")
+
+    def calculate(self, data):
+        # Book-keeping the base class exposes via details() / the UI.
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+
+        # `data` may be None or a dict depending on the upstream node; be safe.
+        record = dict(data) if isinstance(data, dict) else {}
+
+        record["source_label"] = self._label
+        record["seq"] = self._seq
+        record["emitted_at"] = datetime.now(timezone.utc).isoformat()
+
+        self._seq += 1
+        return record
+</code></pre>
+
+<div class="callout">
+    <strong>Why this signature?</strong> When the DAG references a calculator by
+    dotted path, the engine imports the module and constructs the class as
+    <code>HeartbeatCalculator(name=&lt;name&gt;, config=&lt;config&gt;)</code>.
+    Matching <code>__init__(self, name, config)</code> is therefore required.
+    Make sure an <code>__init__.py</code> exists in
+    <code>core/calculator/tutorial/</code> so the package is importable.
+</div>
+
+<h4><span class="step-num">2</span> Write the DAG</h4>
+<p>A DAG is a JSON file in <code>config/dags/</code>. It declares the named
+building blocks (subscribers, publishers, calculators, transformers) and then
+wires them together with nodes and edges. Here we have no subscriber (the
+metronome is the source), one calculator, and one file publisher.</p>
+
+<div class="file-label">config/dags/tutorial_1_heartbeat.json</div>
+<pre><code class="language-json">{
+  "name": "tutorial_1_heartbeat",
+
+  "subscribers": [],
+
+  "publishers": [
+    {
+      "name": "heartbeat_log",
+      "config": { "destination": "file:///tmp/dishtayantra/tutorial1.jsonl" }
+    }
+  ],
+
+  "calculators": [
+    {
+      "name": "stamp",
+      "type": "core.calculator.tutorial.heartbeat_calculator.HeartbeatCalculator",
+      "config": { "source_label": "tutorial-1", "start_seq": 1 }
+    }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    {
+      "name": "tick",
+      "type": "MetronomeNode",
+      "config": { "interval": 5 },
+      "calculator": "stamp",
+      "publishers": ["heartbeat_log"]
+    }
+  ],
+
+  "edges": []
+}
+</code></pre>
+
+<p>Field by field:</p>
+<ul>
+    <li><code>name</code> &mdash; unique DAG name, also its handle in the UI.</li>
+    <li><code>publishers[].config.destination</code> &mdash; a <code>file://</code>
+        URI. Each published record is appended as one JSON line (<code>.jsonl</code>).</li>
+    <li><code>calculators[].type</code> &mdash; the dotted import path to the class
+        from step 1. (Built-ins like <code>ApplyDefaultsCalculator</code> are
+        referenced by bare name; anything with a dot is imported as a custom class.)</li>
+    <li><code>nodes[]</code> &mdash; one <code>MetronomeNode</code> firing every
+        <code>interval</code> seconds. <code>calculator</code> and
+        <code>publishers</code> reference the named blocks above.</li>
+    <li><code>edges</code> &mdash; empty here, because everything happens inside the
+        single node. Edges only matter once you have more than one node (Tutorial 2).</li>
+</ul>
+
+<h4><span class="step-num">3</span> Run it</h4>
+<pre><code class="language-bash"># 1. Make the tutorial package importable (once):
+mkdir -p core/calculator/tutorial
+touch core/calculator/tutorial/__init__.py
+# (place heartbeat_calculator.py inside that folder)
+
+# 2. Drop tutorial_1_heartbeat.json into config/dags/
+
+# 3. Start the server and open the dashboard
+export SECRET_KEY="change-me"
+python run_server.py
+# visit http://localhost:5002/dashboard  ->  Start "tutorial_1_heartbeat"
+
+# 4. Watch the output
+tail -f /tmp/dishtayantra/tutorial1.jsonl
+</code></pre>
+
+<p>Every five seconds a new line appears:</p>
+<pre><code class="language-json">{"source_label": "tutorial-1", "seq": 1, "emitted_at": "2026-06-12T14:03:21.004+00:00"}
+{"source_label": "tutorial-1", "seq": 2, "emitted_at": "2026-06-12T14:03:26.010+00:00"}
+</code></pre>
+
+<div class="callout">
+    <strong>What just happened.</strong> The DAG's single compute thread ran its
+    loop: the metronome node marked itself dirty on each interval, the engine
+    called <code>compute()</code>, which ran your <code>calculate()</code> and
+    handed the result to the file publisher. You can <strong>Suspend</strong>,
+    <strong>Resume</strong>, or <strong>Stop</strong> it from the dashboard.
+</div>
+
+<h4>Next steps</h4>
+<p>You have the basic shape. In <a href="{{ url_for('help_tutorial_2') }}">Tutorial 2</a>
+you will split logic across multiple nodes, connect them with edges, and read
+from / write to a real message broker.</p>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Help</a>
+    <a href="{{ url_for('help_tutorial_2') }}" class="btn btn-primary">
+        Tutorial 2: Multi-Node Pipeline <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

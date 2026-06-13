@@ -717,6 +717,29 @@ All implementations follow the same simple pattern for easy switching between me
 
 The WebSphere MQ implementation is production-ready and follows the same pattern as ActiveMQ, RabbitMQ, and TIBCO EMS!
 
+## SSL/TLS Security
+
+IBM MQ has first-class TLS support. Enable it with `"use_ssl": true` and
+supply the cipher specification and key repository expected by your queue
+manager.
+
+| Key | Purpose |
+| --- | --- |
+| `use_ssl` | Enable TLS (`true`/`false`, default `false`) |
+| `ssl_cipher_spec` | MQ CipherSpec, e.g. `TLS_RSA_WITH_AES_256_CBC_SHA256` |
+| `ssl_key_repository` | Path to the client key repository (without the `.kdb` suffix) |
+
+```json
+{
+  "destination": "websphere://queue/ORDERS",
+  "queue_manager_name": "QM1",
+  "channel": "SVC.SVRCONN",
+  "connection_info": "mq.internal(1414)",
+  "use_ssl": true,
+  "ssl_cipher_spec": "TLS_RSA_WITH_AES_256_CBC_SHA256",
+  "ssl_key_repository": "/var/mqm/ssl/client"
+}
+```
 
 ## Copyright Notice
 

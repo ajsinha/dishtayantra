@@ -1,0 +1,9 @@
+/* Landing page fonts (self-hosted, vendored from @fontsource) */
+@font-face{font-family:'Instrument Serif';font-style:normal;font-weight:400;font-display:swap;src:url('./files/instrument-serif-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'Instrument Serif';font-style:italic;font-weight:400;font-display:swap;src:url('./files/instrument-serif-latin-400-italic.woff2') format('woff2');}
+@font-face{font-family:'Archivo';font-style:normal;font-weight:400;font-display:swap;src:url('./files/archivo-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'Archivo';font-style:normal;font-weight:500;font-display:swap;src:url('./files/archivo-latin-500-normal.woff2') format('woff2');}
+@font-face{font-family:'Archivo';font-style:normal;font-weight:600;font-display:swap;src:url('./files/archivo-latin-600-normal.woff2') format('woff2');}
+@font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('./files/archivo-latin-700-normal.woff2') format('woff2');}
+@font-face{font-family:'Spline Sans Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./files/spline-sans-mono-latin-400-normal.woff2') format('woff2');}
+@font-face{font-family:'Spline Sans Mono';font-style:normal;font-weight:500;font-display:swap;src:url('./files/spline-sans-mono-latin-500-normal.woff2') format('woff2');}

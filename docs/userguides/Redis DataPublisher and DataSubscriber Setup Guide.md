@@ -1579,3 +1579,28 @@ PROD_CONFIG = {
 **Version:** 1.0  
 **Last Updated:** October 22, 2025  
 **Author:** DAG Server Development Team
+
+## SSL/TLS Security
+
+Enable TLS (the `rediss://` equivalent) with `"use_ssl": true`. Certificate
+options are paths to PEM files.
+
+| Key | Purpose |
+| --- | --- |
+| `use_ssl` | Enable TLS (`true`/`false`, default `false`) |
+| `ssl_ca_certs` | CA bundle to verify the server |
+| `ssl_certfile` | Client certificate (mutual TLS) |
+| `ssl_keyfile` | Client private key (mutual TLS) |
+| `ssl_cert_reqs` | `required` (default), `optional`, or `none` |
+
+```json
+{
+  "destination": "redis://orders_channel",
+  "host": "redis.internal",
+  "port": 6380,
+  "password": "${REDIS_PASSWORD}",
+  "use_ssl": true,
+  "ssl_ca_certs": "/certs/ca.pem",
+  "ssl_cert_reqs": "required"
+}
+```

@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-nav {
-        background: #f8fafc;
+        background: var(--bg-body);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -36,28 +36,28 @@
         border-left: 4px solid #10b981;
     }
     .tip-box {
-        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        background: color-mix(in srgb, var(--success-color) 12%, var(--bg-card));
         border-left: 4px solid #10b981;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
         margin: 1rem 0;
     }
     .warning-box {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card));
         border-left: 4px solid #f59e0b;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
         margin: 1rem 0;
     }
     .info-box {
-        background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+        background: color-mix(in srgb, var(--info-color) 12%, var(--bg-card));
         border-left: 4px solid #0ea5e9;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
         margin: 1rem 0;
     }
     .danger-box {
-        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        background: color-mix(in srgb, var(--danger-color) 12%, var(--bg-card));
         border-left: 4px solid #ef4444;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
@@ -71,7 +71,7 @@
         margin: 1rem 0;
     }
     .performance-card h5 {
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
         margin-bottom: 1rem;
     }
     .performance-metric {
@@ -87,12 +87,12 @@
         color: rgba(255,255,255,0.8);
     }
     .metric-value {
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
         font-weight: 600;
     }
     .arch-diagram {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
+        background: var(--bg-body);
+        border: 2px solid var(--border-color);
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;

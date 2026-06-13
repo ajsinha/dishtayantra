@@ -1,0 +1,61 @@
+{
+  "name": "us_equities_trading_session",
+  "description": "Example stock-trading DAG (v2.1.0 scheduling): runs 09:30-16:00 on weekdays only, and never on a USA or CANADA market holiday. Drop this file into config/dags/ to activate it. Schedule edits to this file are picked up automatically within 5 minutes while the server runs.",
+  "start_time": "0930",
+  "duration": "6h30m",
+  "schedule": {
+    "days_of_week": ["mon", "tue", "wed", "thu", "fri"],
+    "holiday_calendars": ["USA", "CANADA"]
+  },
+  "subscribers": [
+    {
+      "name": "market_tick_source",
+      "config": {
+        "source": "metronome://market_ticks",
+        "interval": 5
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "session_log",
+      "config": {
+        "destination": "log://us_equities_trading_session"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "passthrough",
+      "type": "NullCalculator",
+      "config": {}
+    }
+  ],
+  "nodes": [
+    {
+      "name": "tick_in",
+      "type": "SubscriptionNode",
+      "config": {
+        "subscribers": ["market_tick_source"]
+      }
+    },
+    {
+      "name": "process_tick",
+      "type": "CalculationNode",
+      "config": {
+        "calculator": "passthrough"
+      }
+    },
+    {
+      "name": "tick_out",
+      "type": "PublicationNode",
+      "config": {
+        "publishers": ["session_log"]
+      }
+    }
+  ],
+  "edges": [
+    {"from_node": "tick_in", "to_node": "process_tick"},
+    {"from_node": "process_tick", "to_node": "tick_out"}
+  ]
+}

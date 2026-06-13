@@ -1088,6 +1088,33 @@ print("\n✓ Example 5 completed!")
 
 The ActiveMQ implementation provides a solid foundation for traditional message broker patterns with excellent ease of use!
 
+## SSL/TLS Security
+
+Enable STOMP-over-TLS with `"use_ssl": true`. The standard ActiveMQ STOMP+SSL
+port is **61614** (set `port` accordingly). Certificate options are paths to
+PEM files.
+
+| Key | Purpose |
+| --- | --- |
+| `use_ssl` | Enable TLS (`true`/`false`, default `false`) |
+| `ssl_ca_certs` | CA bundle to verify the broker |
+| `ssl_certfile` | Client certificate (mutual TLS) |
+| `ssl_keyfile` | Client private key (mutual TLS) |
+| `ssl_version` | Optional explicit TLS protocol version |
+
+```json
+{
+  "source": "activemq://queue/orders",
+  "host": "mq.internal",
+  "port": 61614,
+  "username": "svc_orders",
+  "password": "${ACTIVEMQ_PASSWORD}",
+  "use_ssl": true,
+  "ssl_ca_certs": "/certs/ca.pem",
+  "ssl_certfile": "/certs/client.pem",
+  "ssl_keyfile": "/certs/client.key"
+}
+```
 
 ## Copyright Notice
 

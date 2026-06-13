@@ -6,73 +6,33 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-1.7.6-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-2.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
 ---
 
-## What's New in Version 1.7.6
+## Highlights
 
-### Kafka Connection Resilience (NEW)
-- **Connection Retry with Backoff**: Configurable retry attempts (default: 5) with delay between attempts
-- **Automatic Reconnection**: Broken connections are detected and recovered automatically
-- **Both Libraries Enhanced**: kafka-python and confluent-kafka wrappers with full retry/recovery support
-- **Configurable via Properties**: `kafka.connection.max_retries`, `kafka.connection.retry_delay`, `kafka.connection.auto_reconnect`
+DishtaYantra is an enterprise DAG compute engine for real-time data
+pipelines: polyglot calculators wired to twenty-plus message brokers and
+cloud services, supervised with high availability and market-aware
+schedule management. Recent capabilities include:
 
-### Template Properties Injection (NEW)
-- **Centralized Configuration**: Author email, copyright, GitHub repo now in `application.properties`
-- **Dynamic Templates**: All HTML pages pull values from configuration
-- **Easy Customization**: Change branding in one place, reflected everywhere
-
-### Smart Message Deserialization
-- **Universal Smart Deserializer**: Auto-packages non-JSON messages into dict format
-- **Works Across All Brokers**: Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, WebSphere MQ, Redis, gRPC
-- **No Configuration Required**: Automatic handling of plain text, JSON, arrays, and binary data
-- **Consistent Output**: DAG calculators always receive dict format regardless of source message format
-
-### Enhanced Logging Policy
-- **Message Tracking**: Every publish and receive is logged with source, type, and preview
-- **Full Stack Traces**: All exceptions now include complete stack traces for easier debugging
-- **Consistent Format**: Same logging pattern across all pubsub implementations
-
-### Kafka Consumer Improvements
-- **Poll-based Retrieval**: More reliable message consumption with external producers
-- **Default `auto.offset.reset=earliest`**: New consumer groups read all messages from beginning
-- **Both Libraries Updated**: kafka-python and confluent-kafka implementations enhanced
-
-### Live Logs Streaming
-- **Real-Time Log Viewer**: Server-Sent Events (SSE) for live log streaming
-- **Auto-Reconnect**: Automatic reconnection on connection drops
-- **Level & Source Filtering**: Filter by DEBUG, INFO, WARNING, ERROR, CRITICAL and source
-- **Search**: Real-time search through log messages
-- **Pause/Resume**: Control the stream without losing connection
-- **Statistics Bar**: Total count, errors, warnings, log rate, buffer size
-- **Connection Status**: Visual indicators for connection state
-
-### Research Documentation
-- **Comprehensive Research Paper**: 22-page technical paper with architecture diagrams
-- **Multiple Formats**: Available in PDF, LaTeX, and Markdown
-- **Web Integration**: Research section in help system with runtime rendering
-- **Download Support**: Direct download links for all formats
-
-### Version 1.7.0/1.7.1 Features
-
-#### CPP Manager & pybind11 Integration (MAJOR)
-- **Centralized C++ Management**: Web UI for C++ module administration
-- **Pre-configured Calculators**: MathCalculator, StatisticsCalculator, TradePricingCalculator, RiskMetricsCalculator
-- **Hot Module Loading**: Load/unload C++ modules without restart
-- **Calculator Discovery**: Automatic discovery of available calculators
-- **Health Monitoring**: Real-time status of C++ modules
-
-#### Rust Manager & PyO3 Integration (MAJOR)
-- **Centralized Rust Management**: Web UI for Rust module administration
-- **Pre-configured Calculators**: MathCalculator, StatisticsCalculator, TradePricingCalculator
-- **Hot Module Loading**: Dynamic Rust module management
-- **LMDB Integration**: Zero-copy transport for Rust calculators
-- **Thread-Safe Execution**: Leverages Rust's memory safety guarantees
-
----
+- **Format-agnostic configuration** - YAML (recommended) or classic
+  `.properties`, with `${VAR:default}` resolution, nested references, and
+  environment / command-line overrides
+- **AWS & Azure managed messaging** - SQS, Kinesis, SNS, Azure Service Bus,
+  and Event Hubs, alongside the existing Kafka/RabbitMQ/ActiveMQ/TIBCO/MQ
+  and cloud object-store transports
+- **Market-aware scheduling** - time windows with duration syntax
+  (e.g. `09:30` + `6h30m`), day-of-week allow/deny lists, and USA/Canada
+  market-holiday calendars, with intraday edits honored within five minutes
+- **FastAPI web layer** with full light/dark theming and self-hosted
+  front-end assets (renders fully in air-gapped deployments)
+- **Pluggable storage** (filesystem, S3, Azure Blob, GCS), database-backed
+  users with roles and API keys, and a configurable high-availability
+  manager (Zookeeper, Redis, S3-lease, or socket)
 
 ## Features
 
@@ -81,11 +41,14 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 - **Worker Pool**: Multiprocessing with DAG affinity for true CPU parallelism (bypasses GIL)
 - **Subgraph Support**: Modular graph-as-a-node pattern with dynamic light up/down control
 - **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory, LMDB
+- **AWS & Azure Messaging**: SQS, Kinesis, SNS, Azure Service Bus, Event Hubs
+- **Cloud Object-Store Pub/Sub**: Amazon S3, Azure Blob Storage, Google Cloud Storage
 - **Various Data Sources**: File, SQL databases, Aerospike, Redis, REST, gRPC, custom implementations
-- **Web UI**: Professional Flask-based dashboard with role-based access control
-- **High Availability**: Zookeeper-based leader election for primary/failover setup
-- **Time-windowed Execution**: Configure DAGs to run only during specific time windows
-- **Dynamic Cloning**: Clone DAGs with different configurations at runtime
+- **Web UI**: Professional FastAPI-based dashboard with role-based access control and light/dark theming
+- **High Availability**: Configurable primary election and failover (Zookeeper, Redis, S3-lease, or socket)
+- **Market-Aware Scheduling**: Time windows with duration syntax, day-of-week allow/deny lists, and USA/Canada market-holiday calendars; intraday edits honored within five minutes
+- **Format-Agnostic Configuration**: YAML or `.properties`, with `${VAR:default}` resolution and env/command-line overrides
+- **Dynamic Cloning**: Clone DAGs with different time windows at runtime (day/holiday schedule inherited)
 - **AutoClone**: Automatic DAG duplication with configurable intervals
 
 ### Multi-Language Calculators
@@ -103,7 +66,7 @@ A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph)
 - **Zero-Copy I/O**: Native calculators access data directly via memory-mapped files
 - **Multi-Language Support**: Works with Java (lmdbjava), C++ (liblmdb), Rust (lmdb-rs)
 - **Automatic Threshold Detection**: Seamlessly switches based on payload size
-- **Configurable**: Path and settings via application.properties
+- **Configurable**: Path and settings via application.yaml (or .properties)
 
 ### Admin Features
 - **System Monitoring Dashboard**: Real-time CPU, memory, disk, and network monitoring
@@ -165,7 +128,7 @@ dishtayantra/
 │   ├── rust_routes.py              # Rust management
 │   └── noauth_routes.py            # Public routes (help, about)
 ├── web/
-│   ├── dishtyantra_webapp.py       # Flask application
+│   ├── dishtayantra_webapp.py      # FastAPI application
 │   ├── static/
 │   │   └── research/               # Research paper files (PDF, LaTeX, MD)
 │   └── templates/
@@ -192,7 +155,8 @@ dishtayantra/
 ├── rust/                           # Rust calculator sources
 │   └── src/
 ├── config/
-│   ├── users.json                  # User credentials
+│   ├── application.yaml             # Main config (or application.properties)
+│   ├── users.json                  # Legacy users, migrated to DB on first boot
 │   ├── worker_config.json          # Worker pool configuration
 │   ├── cpp_config.json             # C++ module configuration
 │   ├── rust_config.json            # Rust module configuration
@@ -204,7 +168,6 @@ dishtayantra/
 ├── logs/                           # Application logs
 ├── requirements.txt
 ├── QUICKSTART.md
-├── QUICKSTART_v1.7.0.md
 └── README.md
 ```
 
@@ -243,6 +206,11 @@ Open http://localhost:5000 in your browser.
 ---
 
 ## Quick Start
+
+> For the complete, comprehensive walkthrough - install, configuration,
+> the web console, building DAGs, all calculators and brokers, storage, HA,
+> scheduling, cloning, users, monitoring, and troubleshooting - see
+> **[QUICKSTART.md](QUICKSTART.md)**. The example below is a brief taste.
 
 ### 1. Create a Simple DAG
 
@@ -413,63 +381,20 @@ status = server.get_server_status()
 ### Log Locations
 - Application: `logs/dagserver.log`
 - Errors: `logs/error.log`
-- Web access: Flask console output
+- Web access: uvicorn / FastAPI console output
 
 ---
 
-## Changelog
+## Version & History
 
-### Version 1.7.6 (Current)
-- **Kafka Connection Resilience**: Retry with configurable attempts and automatic reconnection
-- **Template Properties Injection**: Author, copyright, GitHub from application.properties
-- **Smart Message Deserialization**: Auto-packages non-JSON messages into dict format
-- **Universal Broker Support**: Works across Kafka, ActiveMQ, RabbitMQ, TIBCO EMS, IBM MQ, Redis, gRPC
-- **Enhanced Logging Policy**: Every message logged on publish/receive with full stack traces
-- **Kafka Improvements**: Poll-based retrieval, default `auto.offset.reset=earliest`
-- Live Logs streaming with Server-Sent Events (SSE)
-- Real-time log viewer with filtering and search
-- Auto-reconnect and connection status indicators
-- Research documentation web integration
-- Version synchronization across all documentation
+Current version: **2.2**. DishtaYantra is developed as a continuously
+evolving system; rather than a release-by-release changelog, the current
+capabilities are described in the **Highlights** and **Features** sections
+above. For details on specific subsystems see:
 
-### Version 1.7.1
-- Research paper expansion to 22 pages
-- Comprehensive legal disclaimer
-- ASCII architecture diagrams
-- Workload descriptions (W1, W2)
-- PDF and LaTeX generation
-
-### Version 1.7.0
-- CPP Manager for C++ module administration
-- Rust Manager for Rust module administration
-- Pre-configured calculators for C++ and Rust
-- Web UI for language integration management
-- Hot module loading support
-
-### Version 1.6.0
-- Worker Pool with multiprocessing
-- DAG affinity scheduling
-- LMDB cross-process pub/sub
-- Health monitoring and auto-restart
-
-### Version 1.5.x
-- Subgraph feature (graph-as-a-node)
-- Light up/down dynamic control
-- Extended in-memory URI support
-
-### Version 1.1.x
-- LMDB zero-copy data exchange
-- System monitoring dashboard
-- Multi-language calculator support
-- Python 3.13+ free-threading
-
-### Version 1.0.0
-- Initial release
-- Multi-broker support
-- Flask web UI
-- Zookeeper HA
-
----
+- `docs/CONFIG_AND_CLOUD_v2.2.md` - YAML configuration and AWS/Azure messaging
+- `docs/ARCHITECTURE.md` - system architecture
+- The in-app **Help** and **About** pages
 
 ## Security Considerations
 
@@ -514,4 +439,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha

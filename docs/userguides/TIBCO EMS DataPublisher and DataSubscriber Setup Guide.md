@@ -723,6 +723,32 @@ All implementations follow the same simple pattern for easy switching between me
 
 The TIBCO EMS implementation is production-ready and follows the same pattern as ActiveMQ and RabbitMQ!
 
+## SSL/TLS Security
+
+Enable TLS with `"use_ssl": true`. When enabled, the connector uses an
+`ssl://` server URL (the default becomes `ssl://host:port`); you may also
+supply an explicit `server_url`.
+
+| Key | Purpose |
+| --- | --- |
+| `use_ssl` | Enable TLS (`true`/`false`, default `false`) |
+| `server_url` | Explicit `ssl://host:port` (optional; derived when omitted) |
+
+```json
+{
+  "source": "tibcoems://topic/orders",
+  "host": "ems.internal",
+  "port": 7243,
+  "username": "svc_orders",
+  "password": "${TIBCO_PASSWORD}",
+  "use_ssl": true
+}
+```
+
+For client-certificate / trust-store options beyond enabling TLS, configure
+them in your TIBCO EMS client environment (e.g. the `tibemsd`/client SSL
+settings), as these are handled by the EMS client library rather than by
+DishtaYantra.
 
 ## Copyright Notice
 

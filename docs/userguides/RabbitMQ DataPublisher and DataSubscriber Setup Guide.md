@@ -577,6 +577,33 @@ Both implementations follow the same pattern for easy switching between message 
 
 The RabbitMQ implementation is production-ready and follows the same simple pattern as your ActiveMQ implementation!
 
+## SSL/TLS Security
+
+Enable AMQPS with `"use_ssl": true`. The standard TLS port is **5671** (set
+`port` accordingly). Certificate options are paths to PEM files.
+
+| Key | Purpose |
+| --- | --- |
+| `use_ssl` | Enable TLS (`true`/`false`, default `false`) |
+| `ssl_ca_certs` | CA bundle to verify the broker |
+| `ssl_certfile` | Client certificate (mutual TLS) |
+| `ssl_keyfile` | Client private key (mutual TLS) |
+| `ssl_server_hostname` | Hostname to verify / SNI (defaults to `host`) |
+| `ssl_no_verify` | Disable verification — testing only, never in production |
+
+```json
+{
+  "destination": "rabbitmq://queue/orders",
+  "host": "mq.internal",
+  "port": 5671,
+  "username": "svc_orders",
+  "password": "${RABBITMQ_PASSWORD}",
+  "use_ssl": true,
+  "ssl_ca_certs": "/certs/ca.pem",
+  "ssl_certfile": "/certs/client.pem",
+  "ssl_keyfile": "/certs/client.key"
+}
+```
 
 ## Copyright Notice
 

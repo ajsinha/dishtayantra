@@ -28,6 +28,45 @@ class RabbitMQConnectionError(Exception):
     """Custom exception for RabbitMQ connection issues"""
     pass
 
+
+def _build_rabbitmq_parameters(host, port, virtual_host, username, password,
+                               config):
+    """Build pika ConnectionParameters with optional TLS.
+
+    TLS is enabled with ``"use_ssl": true``. The standard AMQPS port is 5671;
+    set ``port`` accordingly. Optional TLS keys (all paths to PEM files):
+
+        ssl_ca_certs   : CA bundle to verify the broker (server auth)
+        ssl_certfile   : client certificate (for mutual TLS)
+        ssl_keyfile    : client private key (for mutual TLS)
+        ssl_server_hostname : SNI / hostname to verify (defaults to ``host``)
+        ssl_no_verify  : when true, disable cert verification (NOT for prod)
+    """
+    credentials = pika.PlainCredentials(username, password)
+    ssl_options = None
+    if config.get('use_ssl', False):
+        import ssl as _ssl
+        context = _ssl.create_default_context(cafile=config.get('ssl_ca_certs'))
+        certfile = config.get('ssl_certfile')
+        keyfile = config.get('ssl_keyfile')
+        if certfile:
+            context.load_cert_chain(certfile=certfile, keyfile=keyfile)
+        if config.get('ssl_no_verify', False):
+            context.check_hostname = False
+            context.verify_mode = _ssl.CERT_NONE
+        server_hostname = config.get('ssl_server_hostname', host)
+        ssl_options = pika.SSLOptions(context, server_hostname=server_hostname)
+
+    return pika.ConnectionParameters(
+        host=host,
+        port=port,
+        virtual_host=virtual_host,
+        credentials=credentials,
+        heartbeat=600,
+        blocked_connection_timeout=300,
+        ssl_options=ssl_options,
+    )
+
 class RabbitMQDataPublisher(DataPublisher):
     """Publisher for RabbitMQ queues and topics with v1.7.6 connection resilience."""
 
@@ -81,15 +120,9 @@ class RabbitMQDataPublisher(DataPublisher):
 
     def _do_connect(self):
         """Establish connection to RabbitMQ"""
-        credentials = pika.PlainCredentials(self.username, self.password)
-        parameters = pika.ConnectionParameters(
-            host=self.host,
-            port=self.port,
-            virtual_host=self.virtual_host,
-            credentials=credentials,
-            heartbeat=600,
-            blocked_connection_timeout=300
-        )
+        parameters = _build_rabbitmq_parameters(
+            self.host, self.port, self.virtual_host,
+            self.username, self.password, self.config)
 
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()
@@ -300,15 +333,9 @@ class RabbitMQDataSubscriber(DataSubscriber):
 
     def _do_connect(self):
         """Establish connection to RabbitMQ"""
-        credentials = pika.PlainCredentials(self.username, self.password)
-        parameters = pika.ConnectionParameters(
-            host=self.host,
-            port=self.port,
-            virtual_host=self.virtual_host,
-            credentials=credentials,
-            heartbeat=600,
-            blocked_connection_timeout=300
-        )
+        parameters = _build_rabbitmq_parameters(
+            self.host, self.port, self.virtual_host,
+            self.username, self.password, self.config)
 
         self.connection = pika.BlockingConnection(parameters)
         self.channel = self.connection.channel()

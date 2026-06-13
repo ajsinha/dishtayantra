@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorial 4: Enterprise Pipeline - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: var(--bg-body); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .tut-hero {
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+        color: #eef0f8; padding: 2rem; border-radius: 14px; margin-bottom: 1.5rem;
+    }
+    .tut-hero h2 { color: #eef0f8; }
+    .tut-badge {
+        display: inline-block; padding: 4px 12px; border-radius: 999px;
+        font-size: 0.75rem; font-weight: 600; background: #6b2d8a; color: #fff; letter-spacing: 0.04em;
+    }
+    .file-label {
+        font-family: 'Spline Sans Mono', monospace; font-size: 0.85rem;
+        background: color-mix(in srgb, var(--brass) 18%, var(--bg-card));
+        color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+        padding: 2px 10px; border-radius: 6px; display: inline-block; margin-bottom: 0.4rem;
+    }
+    .step-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 50%; background: var(--brass);
+        color: #1a1207; font-weight: 700; margin-right: 8px;
+    }
+    pre[class*="language-"] { border-radius: 10px; font-size: 0.82rem; }
+    .callout {
+        border-left: 4px solid var(--info-color);
+        background: color-mix(in srgb, var(--info-color) 10%, var(--bg-card));
+        padding: 0.9rem 1.1rem; border-radius: 8px; margin: 1rem 0;
+    }
+    .callout.warn { border-left-color: var(--warning-color);
+        background: color-mix(in srgb, var(--warning-color) 10%, var(--bg-card)); }
+    .flow {
+        font-family: 'Spline Sans Mono', monospace; font-size: 0.82rem;
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        border-radius: 8px; padding: 1rem; margin: 1rem 0; white-space: pre; overflow-x: auto;
+    }
+    .feature-pills span {
+        display: inline-block; font-size: 0.72rem; font-weight: 600;
+        background: color-mix(in srgb, var(--brass) 16%, var(--bg-card));
+        border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+        color: var(--text-primary); padding: 3px 10px; border-radius: 999px; margin: 3px;
+    }
+    .layer-table td, .layer-table th { font-size: 0.86rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<div class="tut-hero">
+    <span class="tut-badge">ENTERPRISE</span>
+    <h2 class="mt-2"><i class="bi bi-4-circle"></i> Tutorial 4: An Enterprise Data Pipeline</h2>
+    <p class="mb-0">A large, layered pipeline that ingests from many sources,
+    converges them through complex multi-input merge nodes, processes in stages,
+    and fans out to multiple destinations. This is the shape of a real
+    production graph &mdash; and it shows how the model scales to dozens of nodes.</p>
+</div>
+
+<div class="feature-pills mb-3">
+    <span>Many sources</span><span>Kafka + File + Metronome inputs</span>
+    <span>Complex merge nodes (5+ edges)</span><span>Layered processing</span>
+    <span>Multi-destination output</span><span>Time-windowed</span>
+    <span>Resilient connectors</span>
+</div>
+
+<h4>What you will build</h4>
+<p>A complete, runnable pipeline that follows the classic enterprise shape: a
+wide set of inputs at the top, a <strong>diamond</strong> convergence through
+heavy multi-input merge nodes in the middle, and a wide fan-out to outputs at
+the bottom. The example below is built at a readable scale (about a dozen
+nodes) that exercises <em>every</em> pattern; the final section explains
+exactly how to grow it to 50+ nodes without changing the model.</p>
+
+<div class="flow">  transactions (kafka) ─┐
+  customers   (kafka) ─┤
+  products    (kafka) ─┼─► [ingest_*] ─► [validate_*] ─┐
+  reference   (file)  ─┤                                ├─► [central_merge] ◄── 5 inputs ★
+  heartbeat   (timer) ─┘                                │        │
+                                                        │        ▼
+                                              [enrich] ─► [risk_assessment] ◄── (merge) ★
+                                                                 │
+                                                                 ▼
+                                                        [final_check] ─┬─► kafka://processed
+                                                                       ├─► kafka://alerts
+                                                                       └─► file://audit
+</div>
+
+<div class="callout">
+    <strong>Concepts combined:</strong> everything from Tutorials 1&ndash;3, plus
+    <strong>heterogeneous inputs</strong> (Kafka + file + metronome in one DAG),
+    <strong>complex merge nodes</strong> that take five or more incoming edges,
+    a multi-layer topology, and a wide multi-destination fan-out &mdash; all
+    inside a single time-windowed DAG.
+</div>
+
+<hr>
+
+<h4><span class="step-num">1</span> The calculators</h4>
+<p>Three small calculators cover the pipeline's logic. They follow the same
+<code>DataCalculator</code> contract as the earlier tutorials.</p>
+
+<p><strong>Tagging calculator</strong> &mdash; stamps each record with its source
+so the merge node can tell inputs apart.</p>
+
+<div class="file-label">core/calculator/tutorial/tag_source_calculator.py</div>
+<pre><code class="language-python">"""Tutorial 4: tag a record with the source it arrived from."""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class TagSourceCalculator(DataCalculator):
+    """Adds a `source` label (from config) and an ingest timestamp.
+
+    Config keys:
+        source_name : str - label to stamp onto each record (required)
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._source_name = self.config.get("source_name", name)
+
+    def calculate(self, data):
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+        record = dict(data) if isinstance(data, dict) else {"value": data}
+        record["source"] = self._source_name
+        record["ingested_at"] = datetime.now(timezone.utc).isoformat()
+        return record
+</code></pre>
+
+<p><strong>Merge calculator</strong> &mdash; the heart of a complex node. It runs
+on a node with many incoming edges and combines the per-source records into a
+single consolidated record. Because the engine packages multi-edge input as a
+dict keyed by edge <code>pname</code>, the calculator can address each source
+by name.</p>
+
+<div class="file-label">core/calculator/tutorial/merge_calculator.py</div>
+<pre><code class="language-python">"""Tutorial 4: consolidate multiple upstream sources into one record.
+
+When a node has several incoming edges that carry a `pname`, the engine
+hands this calculator a dict shaped like:
+
+    { "transactions": {...}, "customers": {...}, "reference": {...}, ... }
+
+We flatten the pieces we care about into a single consolidated record and
+record which sources were present on this compute sweep.
+"""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class MergeCalculator(DataCalculator):
+    """Merge named upstream inputs into one record.
+
+    Config keys:
+        keep_sources : list[str] - source pnames to copy through
+                        (default: copy everything received)
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._keep = self.config.get("keep_sources")
+
+    def calculate(self, data):
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+
+        merged = {"merged_at": datetime.now(timezone.utc).isoformat(),
+                  "present_sources": []}
+
+        if isinstance(data, dict):
+            for pname, payload in data.items():
+                if self._keep and pname not in self._keep:
+                    continue
+                merged["present_sources"].append(pname)
+                # Namespace each source's fields to avoid collisions.
+                if isinstance(payload, dict):
+                    for k, v in payload.items():
+                        merged[f"{pname}.{k}"] = v
+                else:
+                    merged[pname] = payload
+        else:
+            merged["value"] = data
+
+        merged["source_count"] = len(merged["present_sources"])
+        return merged
+</code></pre>
+
+<p><strong>Risk / gate calculator</strong> &mdash; a decision node that scores the
+consolidated record and sets a routing flag used downstream.</p>
+
+<div class="file-label">core/calculator/tutorial/gate_calculator.py</div>
+<pre><code class="language-python">"""Tutorial 4: score a consolidated record and set a routing decision."""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class GateCalculator(DataCalculator):
+    """Sets `decision` (PASS / ALERT) from a completeness threshold.
+
+    Config keys:
+        min_sources : int - minimum distinct sources required to PASS (default 3)
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._min_sources = int(self.config.get("min_sources", 3))
+
+    def calculate(self, data):
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+        record = dict(data) if isinstance(data, dict) else {}
+        present = int(record.get("source_count", 0))
+        record["decision"] = "PASS" if present >= self._min_sources else "ALERT"
+        record["evaluated_at"] = datetime.now(timezone.utc).isoformat()
+        return record
+</code></pre>
+
+<h4><span class="step-num">2</span> The pipeline DAG</h4>
+<p>The DAG wires heterogeneous inputs through tagging and validation into a
+<strong>central merge node with five incoming edges</strong> (each labelled with a
+<code>pname</code> so the merge calculator can address them), then through a
+gate, and out to three destinations. It runs only during business hours.</p>
+
+<div class="file-label">config/dags/tutorial_4_enterprise.json</div>
+<pre><code class="language-json">{
+  "name": "tutorial_4_enterprise",
+
+  "start_time": "0600",
+  "duration": "17h",
+  "schedule": {
+    "days_of_week": ["mon", "tue", "wed", "thu", "fri"],
+    "holiday_calendars": ["USA"]
+  },
+
+  "subscribers": [
+    { "name": "transactions", "config": { "source": "kafka://topic/transactions", "resilient": true } },
+    { "name": "customers",    "config": { "source": "kafka://topic/customers",    "resilient": true } },
+    { "name": "products",     "config": { "source": "kafka://topic/products",     "resilient": true } },
+    { "name": "reference",    "config": { "source": "file:///data/reference/master_data.json", "watch_seconds": 300 } },
+    { "name": "heartbeat",    "config": { "source": "metronome", "interval": 30 } }
+  ],
+
+  "publishers": [
+    { "name": "processed_out", "config": { "destination": "kafka://topic/processed_data", "resilient": true } },
+    { "name": "alerts_out",    "config": { "destination": "kafka://topic/alerts",         "resilient": true } },
+    { "name": "audit_out",     "config": { "destination": "file:///logs/audit.jsonl" } }
+  ],
+
+  "calculators": [
+    { "name": "tag_tx",   "type": "core.calculator.tutorial.tag_source_calculator.TagSourceCalculator", "config": { "source_name": "transactions" } },
+    { "name": "tag_cust", "type": "core.calculator.tutorial.tag_source_calculator.TagSourceCalculator", "config": { "source_name": "customers" } },
+    { "name": "tag_prod", "type": "core.calculator.tutorial.tag_source_calculator.TagSourceCalculator", "config": { "source_name": "products" } },
+    { "name": "tag_ref",  "type": "core.calculator.tutorial.tag_source_calculator.TagSourceCalculator", "config": { "source_name": "reference" } },
+    { "name": "tag_hb",   "type": "core.calculator.tutorial.tag_source_calculator.TagSourceCalculator", "config": { "source_name": "heartbeat" } },
+    { "name": "merge",    "type": "core.calculator.tutorial.merge_calculator.MergeCalculator", "config": {} },
+    { "name": "gate",     "type": "core.calculator.tutorial.gate_calculator.GateCalculator", "config": { "min_sources": 3 } }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "in_tx",   "type": "SubscriptionNode", "subscriber": "transactions" },
+    { "name": "in_cust", "type": "SubscriptionNode", "subscriber": "customers" },
+    { "name": "in_prod", "type": "SubscriptionNode", "subscriber": "products" },
+    { "name": "in_ref",  "type": "SubscriptionNode", "subscriber": "reference" },
+    { "name": "in_hb",   "type": "SubscriptionNode", "subscriber": "heartbeat" },
+
+    { "name": "tag_tx",   "type": "CalculationNode", "calculator": "tag_tx" },
+    { "name": "tag_cust", "type": "CalculationNode", "calculator": "tag_cust" },
+    { "name": "tag_prod", "type": "CalculationNode", "calculator": "tag_prod" },
+    { "name": "tag_ref",  "type": "CalculationNode", "calculator": "tag_ref" },
+    { "name": "tag_hb",   "type": "CalculationNode", "calculator": "tag_hb" },
+
+    { "name": "central_merge", "type": "CalculationNode", "calculator": "merge" },
+    { "name": "gate",          "type": "CalculationNode", "calculator": "gate" },
+
+    { "name": "publish", "type": "PublisherSinkNode",
+      "config": { "publishers": ["processed_out", "alerts_out", "audit_out"] } }
+  ],
+
+  "edges": [
+    { "from_node": "in_tx",   "to_node": "tag_tx" },
+    { "from_node": "in_cust", "to_node": "tag_cust" },
+    { "from_node": "in_prod", "to_node": "tag_prod" },
+    { "from_node": "in_ref",  "to_node": "tag_ref" },
+    { "from_node": "in_hb",   "to_node": "tag_hb" },
+
+    { "from_node": "tag_tx",   "to_node": "central_merge", "pname": "transactions" },
+    { "from_node": "tag_cust", "to_node": "central_merge", "pname": "customers" },
+    { "from_node": "tag_prod", "to_node": "central_merge", "pname": "products" },
+    { "from_node": "tag_ref",  "to_node": "central_merge", "pname": "reference" },
+    { "from_node": "tag_hb",   "to_node": "central_merge", "pname": "heartbeat" },
+
+    { "from_node": "central_merge", "to_node": "gate" },
+    { "from_node": "gate",          "to_node": "publish" }
+  ]
+}
+</code></pre>
+
+<div class="callout">
+    <strong>The complex node.</strong> <code>central_merge</code> has five
+    incoming edges, each with a distinct <code>pname</code>. That is exactly
+    how DishtaYantra models a node that must consolidate many upstream sources:
+    give every inbound edge a <code>pname</code> and let the merge calculator
+    address each source by name. Nodes like this are the convergence points of
+    the &ldquo;diamond&rdquo; &mdash; the spec this tutorial is based on had six
+    such nodes (the heaviest with seven inputs).
+</div>
+
+<h4><span class="step-num">3</span> The layered topology</h4>
+<p>The engine computes a topological order and runs nodes layer by layer. This
+pipeline has four logical layers:</p>
+
+<table class="table table-sm layer-table">
+    <thead><tr><th>Layer</th><th>Nodes</th><th>Role</th></tr></thead>
+    <tbody>
+        <tr><td>1 - Ingest</td><td><code>in_tx</code>, <code>in_cust</code>, <code>in_prod</code>, <code>in_ref</code>, <code>in_hb</code></td><td>Pull from 5 heterogeneous sources (Kafka, file, timer)</td></tr>
+        <tr><td>2 - Tag</td><td><code>tag_*</code></td><td>Stamp each record with its source</td></tr>
+        <tr><td>3 - Merge</td><td><code>central_merge</code></td><td>Consolidate 5 inputs into one record (complex node)</td></tr>
+        <tr><td>4 - Decide &amp; publish</td><td><code>gate</code>, <code>publish</code></td><td>Score, then fan out to 3 destinations</td></tr>
+    </tbody>
+</table>
+
+<p>Open the DAG's <strong>Details</strong> page and the new <strong>Graph View</strong>
+renders this exact structure &mdash; the five inputs on the left converging on
+the merge node, then flowing out to the publisher.</p>
+
+<h4><span class="step-num">4</span> Run it</h4>
+<pre><code class="language-bash"># Package layout for the custom code:
+#   core/calculator/tutorial/__init__.py
+#   core/calculator/tutorial/tag_source_calculator.py
+#   core/calculator/tutorial/merge_calculator.py
+#   core/calculator/tutorial/gate_calculator.py
+#   config/dags/tutorial_4_enterprise.json
+
+# Kafka + file inputs are configured above; resilient connectors need the
+# broker reachable (or buffer until it is). Then:
+export SECRET_KEY="change-me"
+python run_server.py
+# Dashboard -> Start "tutorial_4_enterprise"  (overrides the 06:00-23:00
+# window for manual testing; left alone it runs only in business hours)
+</code></pre>
+
+<h4><span class="step-num">5</span> Scaling to 50+ nodes</h4>
+<p>The pattern above is the whole story; a 50-node enterprise pipeline is just
+<em>more of the same</em>. To grow it:</p>
+<ul>
+    <li><strong>Add more inputs</strong> &mdash; declare additional subscribers
+        (more Kafka topics, more files, more metronome timers) and an ingest +
+        tag node for each.</li>
+    <li><strong>Add intermediate layers</strong> &mdash; insert
+        validation/enrichment/calculation nodes between tag and merge, or
+        between merge and gate. Each is a <code>CalculationNode</code> wired by
+        edges, so the engine slots it into the topological order automatically.</li>
+    <li><strong>Add more complex merge nodes</strong> &mdash; a realistic graph
+        has several convergence points (e.g. a central merge with seven inputs,
+        an analytics aggregation with six, a comprehensive validation with six).
+        Each is built exactly like <code>central_merge</code>: many incoming
+        edges, each with a <code>pname</code>, feeding a merge-style calculator.</li>
+    <li><strong>Widen the output fan-out</strong> &mdash; add publishers and route
+        to them from one or more <code>PublisherSinkNode</code>s (e.g. four Kafka
+        topics + five file outputs).</li>
+    <li><strong>Encapsulate sub-pipelines</strong> &mdash; when a region of the
+        graph becomes a unit (say, a risk-scoring cluster), wrap it in a
+        <a href="{{ url_for('help_subgraph') }}">subgraph</a> and reference it as
+        a single <code>SubgraphNode</code> in the parent. This keeps a 50-node
+        graph readable.</li>
+</ul>
+
+<div class="callout warn">
+    <strong>Practical limits.</strong> A single DAG runs on one compute thread,
+    so a very large graph is still sequential per sweep. For CPU-heavy
+    50-node pipelines, assign the DAG to the
+    <a href="{{ url_for('help_worker_pool') }}">worker pool</a>, or split the
+    graph into several DAGs connected by broker topics. The
+    <strong>Graph View</strong> on the Details page is the fastest way to sanity-check
+    a large topology &mdash; the complex merge nodes stand out immediately as the
+    points where many edges converge.
+</div>
+
+<h4>You have completed the tutorials</h4>
+<p>From a single timer node (Tutorial 1) to a layered, multi-source enterprise
+pipeline (this one), you have now seen the whole model. For depth on any
+feature used here, see <a href="{{ url_for('help_scheduling') }}">Scheduling</a>,
+<a href="{{ url_for('help_subgraph') }}">Subgraphs</a>,
+<a href="{{ url_for('help_worker_pool') }}">Worker Pool</a>, and the per-broker
+setup guides under <a href="{{ url_for('help_userguides') }}">User Guides</a>.</p>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_tutorial_3') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Tutorial 3</a>
+    <a href="{{ url_for('help') }}" class="btn btn-primary">
+        Back to Help <i class="bi bi-grid"></i></a>
+</div>
+{% endblock %}

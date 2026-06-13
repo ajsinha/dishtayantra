@@ -1,7 +1,6 @@
 # DataSubscriber Non-Dictionary Message Packaging Guide
 
-**DishtaYantra v1.5.2**
-
+**Applies to: DishtaYantra current release**
 **Author:** Ashutosh Sinha  
 **Email:** ajsinha@gmail.com  
 **Date:** January 2025
@@ -24,7 +23,7 @@
 
 ## Overview
 
-DishtaYantra v1.5.2 introduces **automatic packaging of non-dictionary messages** in the DataSubscriber class. This enhancement ensures consistent data format for downstream calculators regardless of the original message format from external sources like Kafka, RabbitMQ, REST APIs, and other message brokers.
+DishtaYantra provides **automatic packaging of non-dictionary messages** in the DataSubscriber class. This enhancement ensures consistent data format for downstream calculators regardless of the original message format from external sources like Kafka, RabbitMQ, REST APIs, and other message brokers.
 
 ---
 
@@ -490,7 +489,7 @@ The `details()` method now includes packaging statistics:
 
 ## Conclusion
 
-The non-dictionary message packaging feature in DishtaYantra v1.5.2 provides:
+The non-dictionary message packaging feature provides:
 
 - **Consistency**: All calculators receive dictionary format
 - **Traceability**: Metadata tracks message origin

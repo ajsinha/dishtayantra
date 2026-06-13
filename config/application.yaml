@@ -1,0 +1,162 @@
+# ==========================================================================
+# DishtaYantra Compute Server - Configuration (v2.2)
+# ==========================================================================
+# This YAML file is the recommended configuration format. The classic
+# application.properties is still fully supported - pick either by passing
+# its path to the configuration loader (auto-detected by extension).
+#
+# ${VAR} and ${VAR:default} substitution works here exactly as in
+# .properties files: values resolve against other keys, environment
+# variables, and command-line --key=value overrides, with nested
+# references supported. Values are read as strings and coerced on access
+# (get_int / get_bool / get_list), so "port: 5002" and
+# "port: \"${PORT:5002}\"" behave identically.
+# ==========================================================================
+
+app:
+  name: DishtaYantra
+  version: "2.2"
+  author:
+    name: Ashutosh Sinha
+    email: ajsinha@gmail.com
+  copyright:
+    years: "2025-2030"
+    holder: Ashutosh Sinha
+  github:
+    repo: https://github.com/ajsinha/dishtayantra
+  trademark:
+    notice: "DishtaYantra(TM) is a trademark of Ashutosh Sinha"
+  # Session signing secret. REQUIRED - the server refuses to start without
+  # it. Override via the SECRET_KEY env var in production.
+  secret_key: "${SECRET_KEY:default_secret_key_change_in_production}"
+
+server:
+  host: 0.0.0.0
+  port: 5002
+  debug: false
+
+# ==========================================================================
+# Storage Abstraction
+# ==========================================================================
+# Provider for ALL stored objects (DAG configs, holiday calendars, etc.).
+# Supported: filesystem | s3 | azureblob | gcs
+storage:
+  provider: filesystem
+  filesystem:
+    root: ./
+  dags:
+    prefix: config/dags
+  # --- S3 example ---
+  # provider: s3
+  # s3:
+  #   bucket: my-dishtayantra-bucket
+  #   prefix: dishtayantra
+  #   region: us-east-1
+  #   endpoint_url: http://localhost:9000        # MinIO/localstack (optional)
+  #   access_key_id: "${AWS_ACCESS_KEY_ID:}"
+  #   secret_access_key: "${AWS_SECRET_ACCESS_KEY:}"
+  # --- Azure Blob example ---
+  # provider: azureblob
+  # azureblob:
+  #   connection_string: "${AZURE_STORAGE_CONNECTION_STRING:}"
+  #   container: dishtayantra
+  #   prefix: dishtayantra
+  # --- GCS example ---
+  # provider: gcs
+  # gcs:
+  #   bucket: my-dishtayantra-bucket
+  #   prefix: dishtayantra
+  #   credentials_file: /etc/gcp/service-account.json
+
+# ==========================================================================
+# Database - users, roles, API keys
+# ==========================================================================
+# Engine: sqlite | postgresql
+db:
+  engine: sqlite
+  sqlite:
+    path: data/dishtayantra.db
+  # --- PostgreSQL example (apply config/schema/schema_postgres.sql once) ---
+  # engine: postgresql
+  # postgres:
+  #   host: localhost
+  #   port: 5432
+  #   database: dishtayantra
+  #   user: "${POSTGRES_USER:dishtayantra}"
+  #   password: "${POSTGRES_PASSWORD:}"
+
+# ==========================================================================
+# High Availability Manager
+# ==========================================================================
+# Provider: none | zookeeper | redis | s3 | socket
+ha:
+  provider: none
+  # zookeeper:
+  #   hosts: localhost:2181
+  #   election_path: /dishtayantra/election
+  # redis:
+  #   host: localhost
+  #   port: 6379
+  #   lock_key: dishtayantra:ha:lock
+  #   lease_seconds: 10
+  # s3:
+  #   bucket: my-dishtayantra-bucket
+  #   lease_key: dishtayantra/ha/lease.json
+  #   region: us-east-1
+  #   lease_seconds: 15
+  # socket:
+  #   host: 0.0.0.0
+  #   port: 5599
+  #   retry_seconds: 3
+
+# ==========================================================================
+# DAG Scheduling - day-of-week + holiday calendars
+# ==========================================================================
+holidays:
+  prefix: config/holidays
+  reload_seconds: 180
+schedule:
+  refresh_seconds: 240
+
+# ==========================================================================
+# External module paths (custom calculator/transformer plugins)
+# ==========================================================================
+external:
+  module:
+    path:
+      "1": /opt/custom_modules
+      "2": "${HOME}/my_plugins"
+      analytics: /opt/analytics
+
+# ==========================================================================
+# User registry
+# ==========================================================================
+user:
+  registry:
+    reload_interval: 600
+
+# ==========================================================================
+# Kafka connection tuning
+# ==========================================================================
+kafka:
+  connection:
+    max_retries: 5
+    retry_delay: 3
+    auto_reconnect: true
+    health_check_interval: 30
+
+# ==========================================================================
+# LMDB transport
+# ==========================================================================
+lmdb:
+  db:
+    path: "${LMDB_DB_PATH:/tmp/dishtayantra_lmdb}"
+  map:
+    size: 1073741824
+  max:
+    dbs: 100
+    readers: 126
+  ttl:
+    seconds: 300
+  cleanup:
+    interval: 60

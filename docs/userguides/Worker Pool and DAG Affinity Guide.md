@@ -1,12 +1,11 @@
 # Worker Pool and DAG Affinity Guide
 
-**DishtaYantra v1.5.2**
-
+**Applies to: DishtaYantra current release**
 ---
 
 ## Overview
 
-DishtaYantra v1.5.2 introduces a **multiprocessing worker pool** that enables true CPU parallelism by distributing DAGs across multiple worker processes. Each worker process runs in its own Python interpreter, bypassing the GIL (Global Interpreter Lock) limitation.
+DishtaYantra provides a **multiprocessing worker pool** that enables true CPU parallelism by distributing DAGs across multiple worker processes. Each worker process runs in its own Python interpreter, bypassing the GIL (Global Interpreter Lock) limitation.
 
 ### Key Benefits
 

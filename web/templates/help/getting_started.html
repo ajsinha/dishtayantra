@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-nav {
-        background: #f8fafc;
+        background: var(--bg-body);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -33,14 +33,14 @@
         overflow-x: auto;
     }
     .tip-box {
-        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        background: color-mix(in srgb, var(--success-color) 12%, var(--bg-card));
         border-left: 4px solid #10b981;
         padding: 1rem;
         border-radius: 0 8px 8px 0;
         margin: 1rem 0;
     }
     .warning-box {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card));
         border-left: 4px solid #f59e0b;
         padding: 1rem;
         border-radius: 0 8px 8px 0;

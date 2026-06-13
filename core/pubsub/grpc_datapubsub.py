@@ -55,6 +55,34 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _create_grpc_channel(host_port, config):
+    """Create a gRPC channel, secure when ``use_ssl`` is set.
+
+    With ``use_ssl`` and no certs supplied, the system trust roots are used.
+    Optional keys enable custom CAs and mutual TLS (paths to PEM files):
+
+        ssl_root_certs : root CA(s) to verify the server
+        ssl_certfile   : client certificate (mutual TLS)
+        ssl_keyfile    : client private key (mutual TLS)
+    """
+    if not config.get('use_ssl', False):
+        return grpc.insecure_channel(host_port)
+
+    def _read(path):
+        if not path:
+            return None
+        with open(path, 'rb') as fh:
+            return fh.read()
+
+    credentials = grpc.ssl_channel_credentials(
+        root_certificates=_read(config.get('ssl_root_certs')),
+        private_key=_read(config.get('ssl_keyfile')),
+        certificate_chain=_read(config.get('ssl_certfile')),
+    )
+    return grpc.secure_channel(host_port, credentials)
+
+
+
 class GRPCDataPublisher(DataPublisher):
     """Publisher for gRPC streams with v1.7.6 connection resilience."""
 
@@ -87,12 +115,8 @@ class GRPCDataPublisher(DataPublisher):
         logger.info(f"gRPC publisher created for topic {self.topic} at {self.host_port}")
 
     def _create_channel(self):
-        """Create gRPC channel"""
-        if self.use_ssl:
-            credentials = grpc.ssl_channel_credentials()
-            return grpc.secure_channel(self.host_port, credentials)
-        else:
-            return grpc.insecure_channel(self.host_port)
+        """Create gRPC channel (secure when use_ssl is set)."""
+        return _create_grpc_channel(self.host_port, self.config)
 
     def _connect_with_retry(self):
         """v1.7.6: Establish gRPC connection with retry logic."""
@@ -259,12 +283,8 @@ class GRPCDataSubscriber(DataSubscriber):
         logger.info(f"gRPC subscriber created for topic {self.topic} at {self.host_port}")
 
     def _create_channel(self):
-        """Create gRPC channel"""
-        if self.use_ssl:
-            credentials = grpc.ssl_channel_credentials()
-            return grpc.secure_channel(self.host_port, credentials)
-        else:
-            return grpc.insecure_channel(self.host_port)
+        """Create gRPC channel (secure when use_ssl is set)."""
+        return _create_grpc_channel(self.host_port, self.config)
 
     def _connect_with_retry(self):
         """v1.7.6: Establish gRPC connection with retry logic."""

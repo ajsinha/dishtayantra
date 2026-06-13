@@ -43,8 +43,9 @@
     }
     .page-btn {
         padding: 6px 12px;
-        border: 2px solid #e2e8f0;
-        background: white;
+        border: 2px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
         cursor: pointer;
         border-radius: 6px;
         font-weight: 500;
@@ -64,10 +65,11 @@
         align-items: center;
         gap: 12px;
         padding: 12px 18px;
-        background: white;
+        background: var(--bg-card);
+        color: var(--text-primary);
         border-radius: 10px;
-        border: 2px solid #e2e8f0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 2px solid var(--border-color);
+        box-shadow: var(--card-shadow);
     }
     .form-check-input:checked {
         background-color: #10b981;
@@ -260,6 +262,33 @@
     .autoclone-badge i {
         margin-right: 3px;
     }
+    /* v2.2: schedule meta badges in the Time Window column */
+    .schedule-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .schedule-meta .badge {
+        font-weight: 500;
+        font-size: 0.66rem;
+        letter-spacing: 0.02em;
+        text-transform: capitalize;
+    }
+    .schedule-days {
+        background: color-mix(in srgb, var(--info-color) 16%, var(--bg-card));
+        color: var(--text-primary);
+        border: 1px solid color-mix(in srgb, var(--info-color) 40%, transparent);
+    }
+    .schedule-exclude {
+        background: color-mix(in srgb, var(--danger-color) 14%, var(--bg-card));
+        color: var(--text-primary);
+        border: 1px solid color-mix(in srgb, var(--danger-color) 35%, transparent);
+    }
+    .schedule-holidays {
+        background: color-mix(in srgb, var(--brass) 16%, var(--bg-card));
+        color: var(--text-primary);
+        border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+    }
 </style>
 {% endblock %}
 
@@ -273,6 +302,16 @@
                     {{ 'PRIMARY' if server_status.is_primary else 'STANDBY' }}
                 </span>
                 {% if is_admin %}
+                {% if server_status.is_primary %}
+                <form method="POST" action="{{ url_for('reload_dags') }}"
+                      class="d-inline"
+                      onsubmit="return confirm('Reload DAGs from storage?\n\nThis adds DAGs for any new JSON files in the config prefix and STOPS &amp; REMOVES DAGs whose source files were deleted. In-memory DAGs (designer/clones) are left untouched.');">
+                    <button type="submit" class="btn btn-outline-secondary ms-2"
+                            title="Re-scan the DAG storage prefix: add new files, remove deleted ones">
+                        <i class="bi bi-arrow-repeat"></i> Reload DAGs
+                    </button>
+                </form>
+                {% endif %}
                 <a href="{{ url_for('create_dag') }}" class="btn btn-primary ms-2">
                     <i class="bi bi-plus-circle"></i> Create DAG
                 </a>
@@ -376,7 +415,10 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
-                                <!-- UPDATED: Time Window Column - Shows Duration Instead of End Time -->
+                                <!-- v2.2: Time Window column now also shows
+                                     the day-of-week and holiday-calendar
+                                     schedule, so the full activity policy is
+                                     visible at a glance. -->
                                 <td class="text-nowrap">
                                     {% if dag.start_time %}
                                         <div>
@@ -398,15 +440,56 @@
                                     {% else %}
                                         <span class="text-muted"><i class="bi bi-infinity"></i> Always Active</span>
                                     {% endif %}
+                                    {% if dag.schedule %}
+                                        <div class="schedule-meta mt-1">
+                                            {% if dag.schedule.days_of_week %}
+                                            <span class="badge schedule-days" title="Active days of week">
+                                                <i class="bi bi-calendar-week"></i> {{ dag.schedule.days_of_week }}
+                                            </span>
+                                            {% endif %}
+                                            {% if dag.schedule.exclude_days_of_week %}
+                                            <span class="badge schedule-exclude" title="Excluded days">
+                                                <i class="bi bi-calendar-x"></i> not {{ dag.schedule.exclude_days_of_week }}
+                                            </span>
+                                            {% endif %}
+                                            {% if dag.schedule.holiday_calendars %}
+                                            <span class="badge schedule-holidays" title="Holiday calendars observed (skips market holidays)">
+                                                <i class="bi bi-flag"></i> {{ dag.schedule.holiday_calendars|join(', ') }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
                                 </td>
                                 <td>
-                                    {% if dag.start_time and dag.end_time %}
+                                    {% if dag.start_time and dag.end_time or dag.schedule %}
                                         {% if dag.in_time_window %}
-                                        <span class="badge bg-success">In Window</span>
-                                        <span class="time-window-indicator time-window-active" title="Within time window"></span>
+                                        <span class="badge bg-success" title="Schedule is currently active">In Window</span>
+                                        <span class="time-window-indicator time-window-active" title="Schedule active"></span>
                                         {% else %}
-                                        <span class="badge bg-danger">Outside Window</span>
-                                        <span class="time-window-indicator time-window-inactive" title="Outside time window"></span>
+                                        <span class="badge bg-danger" title="{{ dag.schedule_reason or 'Outside scheduled window' }}">Outside Schedule</span>
+                                        <span class="time-window-indicator time-window-inactive" title="{{ dag.schedule_reason or 'Outside scheduled window' }}"></span>
+                                        {% if dag.is_running and not dag.is_suspended and dag.ui_override %}
+                                        <span class="badge bg-warning text-dark ms-1" title="Running now because it was started manually, overriding the schedule. It will follow the schedule again once inside the window.">
+                                            <i class="bi bi-hand-index"></i> Manual override
+                                        </span>
+                                        {% endif %}
+                                        {% if dag.schedule_reason %}
+                                        <div class="window-reason mt-1">
+                                            {% set kind = dag.schedule_reason_kind %}
+                                            {% if kind == 'time_window' %}
+                                            <span class="text-danger small"><i class="bi bi-clock-history"></i> Outside time window</span>
+                                            {% elif kind == 'day' %}
+                                            <span class="text-danger small"><i class="bi bi-calendar-x"></i> Not a scheduled day</span>
+                                            {% elif kind == 'excluded_day' %}
+                                            <span class="text-danger small"><i class="bi bi-calendar-x"></i> Excluded day</span>
+                                            {% elif kind == 'holiday' %}
+                                            <span class="text-danger small"><i class="bi bi-flag-fill"></i> Market holiday</span>
+                                            {% else %}
+                                            <span class="text-danger small"><i class="bi bi-exclamation-circle"></i> Outside schedule</span>
+                                            {% endif %}
+                                            <div class="text-danger small ms-3" style="opacity:0.95;">{{ dag.schedule_reason }}</div>
+                                        </div>
+                                        {% endif %}
                                         {% endif %}
                                     {% else %}
                                     <span class="text-muted">N/A</span>

@@ -15,12 +15,22 @@ from core.dag.subgraph import (
     ExecutionMode, load_subgraph_from_config, SubgraphConfigError
 )
 from core.core_utils import instantiate_module
-from core.dag.time_window_utils import calculate_end_time, get_time_window_info
+from core.dag.time_window_utils import calculate_end_time, get_time_window_info, is_within_time_window
+from core.schedule.dag_schedule import DagSchedule, is_schedule_active
 from core.properties_configurator import PropertiesConfigurator
 logger = logging.getLogger(__name__)
 
 
-class ComputeGraph:
+from core.dag.compute_graph_builders import ComponentBuilderMixin
+from core.dag.compute_graph_support import (
+    GraphAlgorithmsMixin,
+    GraphIntrospectionMixin,
+    TimeWindowMixin,
+)
+
+
+class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
+                   TimeWindowMixin, GraphIntrospectionMixin):
     """Compute graph for DAG execution"""
 
     def __init__(self, config, lazy_init=False):
@@ -85,6 +95,14 @@ class ComputeGraph:
             self.duration = None
             logger.info(f"DAG {self.name}: No start_time provided, running perpetually")
 
+        # v2.1.0: optional day-of-week + holiday-calendar schedule. Parsed
+        # and validated eagerly (fail fast: a trading DAG must not load
+        # with a broken holiday configuration). None = legacy behaviour.
+        self.schedule = DagSchedule.from_config(config.get('schedule'))
+        if self.schedule is not None:
+            logger.info(f"DAG {self.name}: schedule configured "
+                        f"{self.schedule.to_dict()}")
+
         self.subscribers = {}
         self.publishers = {}
         self.calculators = {}
@@ -95,7 +113,11 @@ class ComputeGraph:
         # Subgraph support
         self.subgraph_nodes = {}  # name -> SubgraphNode
         self.subgraph_supervisor = None
-        self._config_base_path = None  # For resolving subgraph file paths
+        # BUGFIX v2.0.0: only initialize when not already set from a file
+        # path above - the unconditional assignment previously clobbered the
+        # base path and broke relative subgraph file resolution.
+        if not hasattr(self, '_config_base_path'):
+            self._config_base_path = None  # For resolving subgraph file paths
 
         self._compute_thread = None
         self._stop_event = threading.Event()
@@ -128,75 +150,31 @@ class ComputeGraph:
 
         logger.info(f"ComputeGraph {self.name} initialized")
 
-    def _build_components(self):
-        """Build all components from config"""
-        # Build subscribers
-        for sub_config in self.config.get('subscribers', []):
-            name = sub_config['name']
-            config = sub_config['config']
-            self.subscribers[name] = create_subscriber(name, config)
-            logger.info(f"Created subscriber: {name}")
-
-        # Now look for composite subscribers and adjust it.
-        for sub_name in self.subscribers.keys():
-            sub_object = self.subscribers.get(sub_name)
-            if sub_object.is_composite():
-                component_names = [x.strip() for x in sub_object.source.split(',')]
-                for component_name in component_names:
-                    component_sub_object = self.subscribers[component_name]
-                    sub_object.add_data_subscriber(component_sub_object)
-        #
-        # Build publishers
-        for pub_config in self.config.get('publishers', []):
-            name = pub_config['name']
-            config = pub_config['config']
-            self.publishers[name] = create_publisher(name, config)
-            logger.info(f"Created publisher: {name}")
-
-        # Build calculators
-        for calc_config in self.config.get('calculators', []):
-            name = calc_config['name']
-            calc_type = calc_config.get('type', 'NullCalculator')
-            config = calc_config.get('config', {})
-
-            # Check if it's a known calculator
-            if calc_type in globals():
-                self.calculators[name] = globals()[calc_type](name, config)
-            else:
-                # Custom calculator
-                parts = calc_type.rsplit('.', 1)
-                module_path = parts[0]
-                class_name = parts[1] if len(parts) > 1 else calc_type
-                self.calculators[name]: DataCalculatorLike = instantiate_module(module_path, class_name, {'name': name, 'config': config})
-
-            logger.info(f"Created calculator: {name}")
-
-        # Build transformers
-        for trans_config in self.config.get('transformers', []):
-            name = trans_config['name']
-            trans_type = trans_config.get('type', 'NullDataTransformer')
-            config = trans_config.get('config', {})
-
-            # Check if it's a known transformer
-            if trans_type in globals():
-                self.transformers[name] = globals()[trans_type](name, config)
-            else:
-                # Custom transformer
-                parts = trans_type.rsplit('.', 1)
-                module_path = parts[0]
-                class_name = parts[1] if len(parts) > 1 else trans_type
-                self.transformers[name] = instantiate_module(module_path, class_name, {'name': name, 'config': config})
-
-            logger.info(f"Created transformer: {name}")
-
     def subscriber_by_name(self, sub_name):
         return self.subscribers[sub_name]
 
+    def get_publisher_by_name(self, publisher_name):
+        """Return the named publisher (v2.0.0 - correctly spelled)."""
+        return self.publishers[publisher_name]
+
     def publisher_by_name(self, pub_name):
-        return self.subscribers[pub_name]
+        """Return the named publisher.
+
+        v2.0.0 BUGFIX: this previously returned from ``self.subscribers``
+        (the wrong dictionary), so callers always received a subscriber or
+        a KeyError. No in-repo callers existed, confirming the bug was
+        latent; it now correctly reads from ``self.publishers``.
+        """
+        return self.publishers[pub_name]
 
     def get_publiisher_by_name(self, publisher_name):
-        return self.publishers[publisher_name]
+        """DEPRECATED misspelled alias (double 'i') kept for backward
+        compatibility with external DAG calculator code. Use
+        :meth:`get_publisher_by_name` instead."""
+        logger.warning(
+            "get_publiisher_by_name() is a deprecated misspelling - "
+            "update callers to get_publisher_by_name()")
+        return self.get_publisher_by_name(publisher_name)
 
     def publish(self, publisher_name, data_to_send):
         self.publishers[publisher_name].publish(data_to_send)
@@ -287,131 +265,9 @@ class ComputeGraph:
 
         logger.info(f"DAG built successfully with {len(self.nodes)} nodes and {len(self.edges)} edges")
 
-    def _build_subgraph_node(self, node_config: dict) -> SubgraphNode:
-        """
-        Build a SubgraphNode from configuration.
-        
-        Supports hybrid loading (inline or external file).
-        """
-        name = node_config['name']
-        config = node_config.get('config', {})
-        
-        # Create SubgraphNode
-        subgraph_node = SubgraphNode(name=name, config=config, parent_graph=self)
-        
-        # Determine subgraph source (hybrid approach)
-        subgraph_file = config.get('subgraph_file')
-        inline_subgraph = node_config.get('subgraph')
-        
-        # Load subgraph
-        subgraph_node.load_subgraph(
-            subgraph_config=inline_subgraph,
-            subgraph_file=subgraph_file,
-            base_path=self._config_base_path,
-            depth=1  # Parent graph is depth 0
-        )
-        
-        # Bind to parent graph
-        subgraph_node.bind_to_parent(self)
-        
-        # Track in subgraph_nodes dict
-        self.subgraph_nodes[name] = subgraph_node
-        
-        # Create a wrapper node for graph compatibility
-        wrapper = SubgraphWrapperNode(name, config, subgraph_node)
-        wrapper.set_graph(self)
-        
-        logger.info(f"Created SubgraphNode: {name} with {subgraph_node.subgraph.node_count} internal nodes")
-        
-        return wrapper
-
     def get_node(self, name: str):
         """Get a node by name."""
         return self.nodes.get(name)
-
-    def _has_cycle(self):
-        """Check if graph has a cycle using DFS"""
-        visited = set()
-        rec_stack = set()
-
-        def dfs(node):
-            visited.add(node.name)
-            rec_stack.add(node.name)
-
-            for edge in node._outgoing_edges:
-                child = edge.to_node
-                if child.name not in visited:
-                    if dfs(child):
-                        return True
-                elif child.name in rec_stack:
-                    return True
-
-            rec_stack.remove(node.name)
-            return False
-
-        for node in self.nodes.values():
-            if node.name not in visited:
-                if dfs(node):
-                    return True
-
-        return False
-
-    def _find_cycle(self):
-        """Find a cycle in the graph for error reporting"""
-        visited = set()
-        rec_stack = set()
-        path = []
-
-        def dfs(node):
-            visited.add(node.name)
-            rec_stack.add(node.name)
-            path.append(node.name)
-
-            for edge in node._outgoing_edges:
-                child = edge.to_node
-                if child.name not in visited:
-                    if dfs(child):
-                        return True
-                elif child.name in rec_stack:
-                    # Found cycle - find start of cycle in path
-                    cycle_start = path.index(child.name)
-                    path.append(child.name)
-                    return path[cycle_start:]
-
-            rec_stack.remove(node.name)
-            path.pop()
-            return False
-
-        for node in self.nodes.values():
-            if node.name not in visited:
-                result = dfs(node)
-                if result:
-                    return result
-
-        return []
-
-    def topological_sort(self):
-        """Return nodes in topological order"""
-        in_degree = {name: 0 for name in self.nodes}
-
-        for node in self.nodes.values():
-            for edge in node._outgoing_edges:
-                in_degree[edge.to_node.name] += 1
-
-        queue = deque([name for name, degree in in_degree.items() if degree == 0])
-        sorted_nodes = []
-
-        while queue:
-            node_name = queue.popleft()
-            sorted_nodes.append(self.nodes[node_name])
-
-            for edge in self.nodes[node_name]._outgoing_edges:
-                child_name = edge.to_node.name
-                in_degree[child_name] -= 1
-                if in_degree[child_name] == 0:
-                    queue.append(child_name)
-
-        return sorted_nodes
 
     def start(self, force=False):
         """Start the compute graph
@@ -428,16 +284,20 @@ class ComputeGraph:
             self.build_dag()
             self._components_built = True
         
-        # Check if we're starting outside the time window
-        if self.start_time and self.end_time:
-            if not self.is_in_time_window():
-                # Starting outside time window - set UI override to prevent auto-suspend
+        # Check if we're starting outside the active schedule (time window
+        # + day-of-week + holidays in v2.1.0)
+        if (self.start_time and self.end_time) or self.schedule is not None:
+            active, reason = self.is_within_schedule()
+            if not active:
+                # Starting outside schedule - set UI override to prevent auto-suspend
                 self._ui_override = True
-                logger.info(f"DAG {self.name}: Started outside time window - UI override enabled, auto-suspend disabled")
+                logger.info(f"DAG {self.name}: Started outside schedule "
+                            f"({reason}) - UI override enabled, "
+                            f"auto-suspend disabled")
             else:
-                # Starting within time window - clear UI override (normal behavior)
+                # Starting within schedule - clear UI override (normal behavior)
                 self._ui_override = False
-                logger.info(f"DAG {self.name}: Started within time window - normal scheduling")
+                logger.info(f"DAG {self.name}: Started within schedule - normal scheduling")
         
         # CRITICAL: Ensure DAG is in running state (not suspended)
         self._suspend_event.set()
@@ -459,92 +319,18 @@ class ComputeGraph:
             self._compute_thread = threading.Thread(target=self.do_compute, daemon=True)
             self._compute_thread.start()
 
-        # Start time window check thread if time window is configured
-        if self.start_time and self.end_time:
+        # Start the schedule monitor thread when a time window OR a
+        # day-of-week/holiday schedule is configured (v2.1.0: the loop
+        # evaluates the full schedule, not just the time window).
+        if (self.start_time and self.end_time) or self.schedule is not None:
             if not self._time_check_thread or not self._time_check_thread.is_alive():
                 self._time_check_thread = threading.Thread(target=self._time_window_check, daemon=True)
                 self._time_check_thread.start()
-                logger.info(f"DAG {self.name}: Time window monitor started ({self.start_time}-{self.end_time})")
+                logger.info(f"DAG {self.name}: Schedule monitor started "
+                            f"(window={self.start_time}-{self.end_time}, "
+                            f"schedule={self.schedule.to_dict() if self.schedule else None})")
 
         logger.info(f"ComputeGraph {self.name} started")
-
-    def _time_window_check(self):
-        """Check if current time is within configured window"""
-        logger.info(f"DAG {self.name}: Time window checker started")
-
-        while not self._stop_event.is_set():
-            if not self.start_time or not self.end_time:
-                # No time window configured, skip
-                time.sleep(60)
-                continue
-
-            now = datetime.now()
-            current_time = now.strftime('%H%M')
-            current_time_int = int(current_time)
-            start_time_int = int(self.start_time)
-            end_time_int = int(self.end_time)
-
-            in_window = start_time_int <= current_time_int <= end_time_int
-
-            logger.debug(
-                f"DAG {self.name} time check: current={current_time_int}, start={start_time_int}, end={end_time_int}, in_window={in_window}, ui_override={self._ui_override}, ui_suspended={self._ui_suspended}")
-
-            if in_window:
-                # Within time window - should be running
-                # Clear UI override flag when entering time window (normal behavior resumes)
-                if self._ui_override:
-                    self._ui_override = False
-                    logger.info(f"DAG {self.name}: Entered time window - UI override cleared, normal scheduling resumes")
-                
-                # Only auto-resume if NOT UI-suspended
-                if self._ui_suspended:
-                    logger.debug(f"DAG {self.name}: In time window but UI-suspended, not auto-resuming")
-                elif not self._suspend_event.is_set():
-                    logger.info("")
-                    logger.info("█" * 70)
-                    logger.info(f"█  DAG TIME WINDOW: AUTO-RESUME")
-                    logger.info(f"█  DAG: {self.name}")
-                    logger.info(f"█  Window: {self.start_time} - {self.end_time}")
-                    logger.info(f"█  Current Time: {current_time}")
-                    logger.info(f"█  Action: Resuming DAG (entered time window)")
-                    logger.info("█" * 70)
-                    logger.info("")
-                    self.resume()
-            else:
-                # Outside time window
-                # Only auto-suspend if NOT UI-overridden
-                if self._ui_override:
-                    # UI override active: don't auto-suspend, just log at debug level
-                    logger.debug(f"DAG {self.name}: Outside time window but UI override active, not suspending")
-                else:
-                    # Normal mode: auto-suspend when outside window
-                    if self._suspend_event.is_set():
-                        logger.info("")
-                        logger.info("█" * 70)
-                        logger.info(f"█  DAG TIME WINDOW: AUTO-SUSPEND")
-                        logger.info(f"█  DAG: {self.name}")
-                        logger.info(f"█  Window: {self.start_time} - {self.end_time}")
-                        logger.info(f"█  Current Time: {current_time}")
-                        logger.info(f"█  Action: Suspending DAG (left time window)")
-                        logger.info("█" * 70)
-                        logger.info("")
-                        self.suspend()
-
-            time.sleep(60)  # Check every minute
-
-        logger.info(f"DAG {self.name}: Time window checker stopped")
-
-    def is_in_time_window(self):
-        """Check if current time is within the configured window"""
-        if not self.start_time or not self.end_time:
-            return True  # Always active if no window configured
-
-        now = datetime.now()
-        current_time_int = int(now.strftime('%H%M'))
-        start_time_int = int(self.start_time)
-        end_time_int = int(self.end_time)
-
-        return start_time_int <= current_time_int <= end_time_int
 
     def suspend(self, ui_driven=False):
         """Suspend the compute graph
@@ -694,159 +480,3 @@ class ComputeGraph:
 
         return cloned_dag
 
-    def show_json(self):
-        """Return configuration as JSON string"""
-        return json.dumps(self.config, indent=2)
-
-    def details(self):
-        """Return details of the compute graph
-        
-        v1.5.2: Updated to work with lazy-initialized DAGs. When components aren't
-        built, returns info from config instead of empty dictionaries.
-        """
-        # v1.5.2: Get subscriber/publisher info from config if lazy-initialized
-        if not self._components_built:
-            # Extract info from config for lazy-initialized DAGs
-            subscribers_info = {}
-            for sub_cfg in self.config.get('subscribers', []):
-                name = sub_cfg.get('name')
-                config = sub_cfg.get('config', {})
-                subscribers_info[name] = {
-                    'name': name,
-                    'type': sub_cfg.get('type', 'Unknown'),
-                    'source': config.get('source', 'N/A'),
-                    'config': config,
-                    'queue_depth': 0,
-                    'status': 'not_started (lazy init)'
-                }
-            
-            publishers_info = {}
-            for pub_cfg in self.config.get('publishers', []):
-                name = pub_cfg.get('name')
-                config = pub_cfg.get('config', {})
-                publishers_info[name] = {
-                    'name': name,
-                    'type': pub_cfg.get('type', 'Unknown'),
-                    'destination': config.get('destination', 'N/A'),
-                    'config': config,
-                    'status': 'not_started (lazy init)'
-                }
-            
-            calculators_info = {}
-            for calc_cfg in self.config.get('calculators', []):
-                name = calc_cfg.get('name')
-                calculators_info[name] = {
-                    'name': name,
-                    'type': calc_cfg.get('type', 'Unknown'),
-                    'config': calc_cfg.get('config', {}),
-                    'status': 'not_started (lazy init)'
-                }
-            
-            transformers_info = {}
-            for trans_cfg in self.config.get('transformers', []):
-                name = trans_cfg.get('name')
-                transformers_info[name] = {
-                    'name': name,
-                    'type': trans_cfg.get('type', 'Unknown'),
-                    'config': trans_cfg.get('config', {}),
-                    'status': 'not_started (lazy init)'
-                }
-            
-            nodes_info = {}
-            for node_cfg in self.config.get('nodes', []):
-                name = node_cfg.get('name')
-                nodes_info[name] = {
-                    'name': name,
-                    'type': node_cfg.get('type', 'Unknown'),
-                    'config': node_cfg.get('config', {}),
-                    'status': 'not_started (lazy init)'
-                }
-            
-            edges_info = []
-            for edge_cfg in self.config.get('edges', []):
-                edges_info.append({
-                    'from_node': edge_cfg.get('from_node'),
-                    'to_node': edge_cfg.get('to_node')
-                })
-            
-            return {
-                'name': self.name,
-                'start_time': self.start_time,
-                'end_time': self.end_time,
-                'duration': self.duration,
-                'is_running': False,  # Can't be running if lazy-initialized
-                'is_suspended': False,
-                'ui_override': self._ui_override,
-                'ui_suspended': self._ui_suspended,
-                'lazy_init': True,
-                'nodes': nodes_info,
-                'edges': edges_info,
-                'subscribers': subscribers_info,
-                'publishers': publishers_info,
-                'calculators': calculators_info,
-                'transformers': transformers_info
-            }
-        
-        # Normal path - components are built
-        result = {
-            'name': self.name,
-            'start_time': self.start_time,
-            'end_time': self.end_time,
-            'duration': self.duration,
-            'is_running': self._compute_thread and self._compute_thread.is_alive(),
-            'is_suspended': not self._suspend_event.is_set(),
-            'ui_override': self._ui_override,
-            'ui_suspended': self._ui_suspended,
-            'lazy_init': False,
-            'nodes': {name: node.details() for name, node in self.nodes.items()},
-            'edges': [edge.details() for edge in self.edges],
-            'subscribers': {name: sub.details() for name, sub in self.subscribers.items()},
-            'publishers': {name: pub.details() for name, pub in self.publishers.items()},
-            'calculators': {name: calc.details() for name, calc in self.calculators.items()},
-            'transformers': {name: trans.details() for name, trans in self.transformers.items()}
-        }
-        
-        # Add subgraph information
-        if self.subgraph_nodes:
-            result['subgraphs'] = {
-                name: sg_node.to_dict() for name, sg_node in self.subgraph_nodes.items()
-            }
-            result['subgraph_count'] = len(self.subgraph_nodes)
-        
-        # Add supervisor status
-        if self.subgraph_supervisor:
-            result['subgraph_supervisor'] = self.subgraph_supervisor.to_dict()
-        
-        return result
-    
-    # Subgraph control methods
-    
-    def light_up_subgraph(self, subgraph_name: str, reason: str = None):
-        """Activate a subgraph."""
-        if self.subgraph_supervisor:
-            self.subgraph_supervisor.light_up(subgraph_name, reason)
-        elif subgraph_name in self.subgraph_nodes:
-            self.subgraph_nodes[subgraph_name].light_up(reason)
-    
-    def light_down_subgraph(self, subgraph_name: str, reason: str = None):
-        """Suspend a subgraph."""
-        if self.subgraph_supervisor:
-            self.subgraph_supervisor.light_down(subgraph_name, reason)
-        elif subgraph_name in self.subgraph_nodes:
-            self.subgraph_nodes[subgraph_name].light_down(reason)
-    
-    def light_up_all_subgraphs(self, reason: str = None):
-        """Activate all subgraphs."""
-        if self.subgraph_supervisor:
-            self.subgraph_supervisor.light_up_all(reason)
-    
-    def light_down_all_subgraphs(self, reason: str = None):
-        """Suspend all subgraphs."""
-        if self.subgraph_supervisor:
-            self.subgraph_supervisor.light_down_all(reason)
-    
-    def get_subgraph_status(self) -> dict:
-        """Get status of all subgraphs."""
-        if self.subgraph_supervisor:
-            return self.subgraph_supervisor.get_status()
-        return {}

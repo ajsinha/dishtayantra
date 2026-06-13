@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Cloud Pub/Sub &amp; Resilience - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: var(--bg-body);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-cloud-arrow-up-fill" style="color: #4a90c2;"></i> Cloud Pub/Sub &amp; Resilient Connectors (v2.0.0)</h2>
+<p class="lead">Publish to and subscribe from S3, Azure Blob, and Google Cloud Storage; wrap fragile connections in retry/buffer/reconnect logic with one config flag.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-box-arrow-up"></i> Object-store pub/sub</h5></div>
+    <div class="card-body">
+        <p>Three new URI schemes work anywhere a <code>kafka://</code> or <code>rest://</code> source/destination does:</p>
+        <ul>
+            <li><code>s3://bucket/prefix</code> - Amazon S3 (or MinIO/LocalStack via <code>endpoint_url</code>)</li>
+            <li><code>azureblob://container/prefix</code> - Azure Blob Storage (requires <code>connection_string</code>)</li>
+            <li><code>gcs://bucket/prefix</code> - Google Cloud Storage (optional <code>credentials_file</code>)</li>
+        </ul>
+        <p>Each published message becomes one JSON object named
+        <code>prefix/msg-&lt;timestamp_ns&gt;-&lt;uuid&gt;.json</code>; subscribers poll the prefix in order and (by
+        default) delete objects after reading.</p>
+        <h6>Example DAG nodes</h6>
+        <div class="code-block">"publishers": {
+    "s3_out": {
+        "destination": "s3://my-bucket/dag-output",
+        "region": "us-east-1"
+    }
+},
+"subscribers": {
+    "gcs_in": {
+        "source": "gcs://my-bucket/dag-input",
+        "poll_interval": 2,
+        "delete_on_read": true
+    }
+}</div>
+        <table class="table table-sm mt-3 mb-0">
+            <thead><tr><th>Config key</th><th>Default</th><th>Meaning</th></tr></thead>
+            <tbody>
+                <tr><td><code>poll_interval</code></td><td>2</td><td>Seconds between prefix listings (subscriber)</td></tr>
+                <tr><td><code>delete_on_read</code></td><td>true</td><td>Delete objects after consumption</td></tr>
+                <tr><td><code>region</code> / <code>endpoint_url</code></td><td>-</td><td>S3 only</td></tr>
+                <tr><td><code>connection_string</code></td><td>required</td><td>Azure Blob only</td></tr>
+                <tr><td><code>credentials_file</code></td><td>ADC</td><td>GCS only</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Resilient connectors</h5></div>
+    <div class="card-body">
+        <p>Add <code>"resilient": true</code> to any <code>aerospike://</code>, <code>sql://</code>,
+        <code>rest://</code>, or <code>grpc://</code> publisher/subscriber to wrap it with:</p>
+        <ul>
+            <li><strong>Retry with exponential backoff</strong> - <code>retry_max</code> attempts (default 5),
+                starting at <code>retry_backoff_seconds</code> (default 2) and doubling</li>
+            <li><strong>Outage buffering</strong> (publishers) - up to <code>buffer_max_messages</code>
+                (default 10,000) messages are held in FIFO order and drained on recovery; new messages never
+                overtake buffered ones</li>
+            <li><strong>Automatic reconnection</strong> - the inner connection is rebuilt between retries and after
+                receive errors</li>
+        </ul>
+        <h6>Example</h6>
+        <div class="code-block">"publishers": {
+    "orders_db": {
+        "destination": "sql://orders_table",
+        "resilient": true,
+        "retry_max": 8,
+        "retry_backoff_seconds": 1,
+        "buffer_max_messages": 50000,
+        "db_url": "postgresql://user:pass@db:5432/orders"
+    }
+}</div>
+        <p class="mt-3 mb-0">Every failure is logged with a full stack trace; wrapper state (buffer depth,
+        consecutive errors) is visible in each pub/sub's <code>details()</code> on the DAG details page.</p>
+    </div>
+</div>
+{% endblock %}

@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
         color: white;
         padding: 3rem 2rem;
         border-radius: 16px;
@@ -75,7 +75,7 @@
 {% block content %}
 <!-- Hero Section -->
 <div class="help-hero">
-    <i class="bi bi-book" style="font-size: 3rem; color: #00d4aa; display: block; margin-bottom: 1rem;"></i>
+    <i class="bi bi-book" style="font-size: 3rem; color: var(--brass, #e3a44a); display: block; margin-bottom: 1rem;"></i>
     <h1>Help & Documentation</h1>
     <p>Comprehensive guides to help you get the most out of DishtaYantra</p>
 </div>
@@ -90,7 +90,171 @@
     </a>
 </div>
 
+<!-- Tutorials Section (v2.2) -->
+<h3 class="section-title"><i class="bi bi-mortarboard"></i> Tutorials</h3>
+<p class="text-muted mb-3">Step-by-step, hands-on guides &mdash; each with the
+complete DAG JSON, the Python calculator/transformer source, and a line-by-line
+explanation. Start at Tutorial 1 and build up.</p>
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #1f8a4c;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-1-circle" style="color: #1f8a4c;"></i> Your First DAG
+                    <span class="badge text-white ms-2" style="background: #1f8a4c;">BEGINNER</span></h5>
+                <p class="card-text">A self-contained timer pipeline with one custom
+                Python calculator and a file sink. Learn the five element types,
+                the metronome source, and how to write a calculator.</p>
+                <ul class="small text-muted mb-3">
+                    <li>MetronomeNode timer source</li>
+                    <li>Custom DataCalculator subclass</li>
+                    <li>file:// publisher</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_1') }}" class="btn btn-sm text-white" style="background: #1f8a4c;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #b8791f;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-2-circle" style="color: #b8791f;"></i> Multi-Node Pipeline
+                    <span class="badge text-white ms-2" style="background: #b8791f;">INTERMEDIATE</span></h5>
+                <p class="card-text">Ingest from a broker, validate and price across
+                several nodes wired by edges, reshape on an edge with a transformer,
+                and publish &mdash; with a one-line swap to Kafka.</p>
+                <ul class="small text-muted mb-3">
+                    <li>SubscriptionNode + PublisherSinkNode</li>
+                    <li>Edges and an edge data_transformer</li>
+                    <li>In-memory broker, then Kafka</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_2') }}" class="btn btn-sm text-white" style="background: #b8791f;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #9a3b3b;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-3-circle" style="color: #9a3b3b;"></i> Full-Feature Pipeline
+                    <span class="badge text-white ms-2" style="background: #9a3b3b;">ADVANCED</span></h5>
+                <p class="card-text">A market-data pipeline using nearly every feature:
+                fan-in, a chain of calculators, a risk subgraph, market-aware
+                scheduling, resilient Kafka input, and a cloud SQS output.</p>
+                <ul class="small text-muted mb-3">
+                    <li>fanin:// + SubgraphNode</li>
+                    <li>Schedule + holiday calendars</li>
+                    <li>Resilient Kafka in, SQS + file out</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_3') }}" class="btn btn-sm text-white" style="background: #9a3b3b;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6b2d8a;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-4-circle" style="color: #6b2d8a;"></i> Enterprise Pipeline
+                    <span class="badge text-white ms-2" style="background: #6b2d8a;">ENTERPRISE</span></h5>
+                <p class="card-text">A large, layered pipeline: many heterogeneous
+                inputs converging through complex multi-input merge nodes, then a
+                wide fan-out &mdash; and how it scales to 50+ nodes.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Kafka + File + Metronome inputs</li>
+                    <li>Complex merge nodes (5+ edges)</li>
+                    <li>Layered topology, multi-output</li>
+                </ul>
+                <a href="{{ url_for('help_tutorial_4') }}" class="btn btn-sm text-white" style="background: #6b2d8a;">
+                    <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Getting Started Section -->
+<h3 class="section-title"><i class="bi bi-stars"></i> Platform &amp; Infrastructure</h3>
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-cloud-arrow-up" style="color: #6f42c1;"></i> Storage Abstraction
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">2.0.0</span></h5>
+                <p class="card-text">Keep DAG configurations on the local filesystem, Amazon S3, Azure Blob Storage, or Google Cloud Storage - switch with a single property.</p>
+                <ul class="small text-muted mb-3">
+                    <li>filesystem | s3 | azureblob | gcs providers</li>
+                    <li>Shared definitions for multi-instance deployments</li>
+                    <li>Fail-fast configuration validation</li>
+                </ul>
+                <a href="{{ url_for('help_storage') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                    <i class="bi bi-cloud-arrow-up"></i> Learn More <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-shield-check" style="color: #6f42c1;"></i> High Availability Manager
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">2.0.0</span></h5>
+                <p class="card-text">Primary election and automatic failover across Zookeeper, Redis, S3-lease, or exclusive-socket backends.</p>
+                <ul class="small text-muted mb-3">
+                    <li>Automatic DAG suspend/resume on demotion/election</li>
+                    <li>Status banner served on the HA socket</li>
+                    <li>Configurable lease/retry timings</li>
+                </ul>
+                <a href="{{ url_for('help_ha') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                    <i class="bi bi-shield-check"></i> Learn More <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-box-arrow-up" style="color: #6f42c1;"></i> Cloud Pub/Sub &amp; Resilience
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">2.0.0</span></h5>
+                <p class="card-text">s3://, azureblob://, and gcs:// publishers &amp; subscribers, plus retry/buffer/reconnect wrappers for aerospike, sql, rest, and grpc.</p>
+                <ul class="small text-muted mb-3">
+                    <li>One JSON object per message, ordered polling</li>
+                    <li>FIFO outage buffering up to 10K messages</li>
+                    <li>Enable with <code>"resilient": true</code></li>
+                </ul>
+                <a href="{{ url_for('help_cloud_pubsub') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                    <i class="bi bi-box-arrow-up"></i> Learn More <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-database-lock" style="color: #6f42c1;"></i> User Database &amp; API Keys
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">2.0.0</span></h5>
+                <p class="card-text">Users, roles, and API keys in SQLite or PostgreSQL with PBKDF2-hashed passwords; one-time migration from users.json.</p>
+                <ul class="small text-muted mb-3">
+                    <li>SQLAlchemy DAO layer, auto-created SQLite schema</li>
+                    <li>dyk_ API keys: shown once, stored hashed</li>
+                    <li>Last-admin protections preserved</li>
+                </ul>
+                <a href="{{ url_for('help_database') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                    <i class="bi bi-database-lock"></i> Learn More <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-calendar-week" style="color: #6f42c1;"></i> Market-Aware Scheduling
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">2.1.0</span></h5>
+                <p class="card-text">Run DAGs on chosen weekdays only and never on market holidays - NYSE &amp; TSX calendars for 2026-2040 baked in, intraday edits live in under five minutes.</p>
+                <ul class="small text-muted mb-3">
+                    <li>days_of_week allow/deny lists</li>
+                    <li>Multiple holiday calendars per DAG (union)</li>
+                    <li>Broken edits rejected, last good rules kept</li>
+                </ul>
+                <a href="{{ url_for('help_scheduling') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                    <i class="bi bi-calendar-week"></i> Learn More <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <h3 class="section-title"><i class="bi bi-rocket-takeoff"></i> Getting Started</h3>
 <div class="row mb-5">
     <div class="col-md-6 col-lg-4 mb-3">
@@ -125,9 +289,8 @@
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="bi bi-gear-wide-connected" style="color: #1e3a5f;"></i> Configuration Files
-                    <span class="badge text-white ms-2" style="background: #1e3a5f;">1.5.2</span>
                 </h5>
-                <p class="card-text">Complete reference for application.properties, worker_config.json, users.json and DAG configuration files.</p>
+                <p class="card-text">Complete reference for application.yaml / application.properties, worker_config.json, the user database, and DAG configuration files.</p>
                 <a href="{{ url_for('help_configuration') }}" class="btn btn-sm text-white" style="background: #1e3a5f;">
                     View Reference <i class="bi bi-arrow-right"></i>
                 </a>
@@ -149,16 +312,16 @@
     </div>
 </div>
 
-<!-- User Guides Section (v1.5.2) -->
+<!-- User Guides Section -->
 <h3 class="section-title"><i class="bi bi-journal-richtext"></i> User Guides & Documentation <span class="badge bg-success ms-2">NEW</span></h3>
 <div class="row mb-5">
     <div class="col-12">
-        <div class="card" style="border: 2px solid #00d4aa; background: linear-gradient(135deg, #f0fdf9, #ecfdf5);">
+        <div class="card" style="border: 2px solid var(--brass, #e3a44a); background: color-mix(in srgb, var(--success-color) 10%, var(--bg-card));">
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h5 class="card-title mb-3">
-                            <i class="bi bi-collection" style="color: #00d4aa; font-size: 1.8rem;"></i>
+                            <i class="bi bi-collection" style="color: var(--brass, #e3a44a); font-size: 1.8rem;"></i>
                             <span class="ms-2">40+ Comprehensive User Guides</span>
                         </h5>
                         <p class="card-text mb-3">
@@ -171,12 +334,12 @@
                             <span class="badge bg-success"><i class="bi bi-stars"></i> Feature Guides</span>
                             <span class="badge bg-warning text-dark"><i class="bi bi-shield-check"></i> Admin Guides</span>
                         </div>
-                        <a href="{{ url_for('help_userguides') }}" class="btn text-white" style="background: linear-gradient(135deg, #00d4aa, #059669);">
+                        <a href="{{ url_for('help_userguides') }}" class="btn text-white" style="background: linear-gradient(135deg, var(--brass, #e3a44a), #059669);">
                             <i class="bi bi-book"></i> Browse All User Guides <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                     <div class="col-md-4 text-center d-none d-md-block">
-                        <i class="bi bi-file-earmark-text" style="font-size: 6rem; color: #00d4aa; opacity: 0.5;"></i>
+                        <i class="bi bi-file-earmark-text" style="font-size: 6rem; color: var(--brass, #e3a44a); opacity: 0.5;"></i>
                     </div>
                 </div>
             </div>
@@ -270,10 +433,10 @@
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="bi bi-diagram-2" style="color: #667eea;"></i> Subgraphs
-                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">NEW</span>
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);">NEW</span>
                 </h5>
                 <p class="card-text">Modular graph-as-a-node pattern with dynamic light up/down control. Build reusable computation units.</p>
-                <a href="{{ url_for('help_subgraph') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <a href="{{ url_for('help_subgraph') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);">
                     Learn More <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -620,7 +783,7 @@
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="bi bi-cpu" style="color: #0ea5e9;"></i> Worker Pool & DAG Affinity
-                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">1.5.2</span>
+                    
                 </h5>
                 <p class="card-text">Multiprocessing worker pool for true CPU parallelism. DAG affinity keeps related DAGs together for cache locality.</p>
                 <ul class="small text-muted mb-3">
@@ -728,7 +891,7 @@
                         <h6>Key Directories</h6>
                         <ul class="list-unstyled">
                             <li><code>config/dags/</code> - DAG configs</li>
-                            <li><code>config/users.json</code> - User data</li>
+                            <li>User database (SQLite/PostgreSQL) - accounts, roles, API keys</li>
                             <li><code>logs/</code> - Log files</li>
                         </ul>
                     </div>

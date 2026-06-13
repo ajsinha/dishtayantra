@@ -21,6 +21,8 @@ import time
 import json
 import logging
 
+import pytest
+
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -104,7 +106,9 @@ def test_affinity_manager():
 
 
 def test_lmdb_pubsub():
-    """Test LMDB-based pub/sub"""
+    """Test LMDB-based pub/sub (skipped when the optional lmdb native
+    module is not installed)."""
+    pytest.importorskip("lmdb", reason="optional lmdb module not installed")
     print("\n" + "="*60)
     print("TEST: LMDB DataPublisher/DataSubscriber")
     print("="*60)

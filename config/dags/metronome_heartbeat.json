@@ -1,6 +1,6 @@
 {
   "name": "heartbeat_monitor",
-  "start_time": null,
+  "start_time": "0930",
   "end_time": null,
   "subscribers": [
     {
@@ -62,8 +62,7 @@
     {
       "name": "random_calculator",
       "type": "core.calculator.random_calculator.RandomCalculator",
-      "config": {
-      }
+      "config": {}
     }
   ],
   "transformers": [],
@@ -75,7 +74,10 @@
         "interval": 10
       },
       "subscriber": "heartbeat_subscriber_3",
-      "publishers": ["heartbeat_publisher", "heartbeat_log"],
+      "publishers": [
+        "heartbeat_publisher",
+        "heartbeat_log"
+      ],
       "calculator": "heartbeat_enrichment"
     },
     {
@@ -83,10 +85,27 @@
       "type": "CalculationNode",
       "config": {},
       "calculator": "random_calculator"
-
     }
   ],
   "edges": [
-    {"from_node": "metronome_node", "to_node": "random_calculator_node"}
-  ]
+    {
+      "from_node": "metronome_node",
+      "to_node": "random_calculator_node"
+    }
+  ],
+  "duration": "6h30m",
+  "schedule": {
+    "days_of_week": [
+      "mon",
+      "tue",
+      "wed",
+      "thu",
+      "fri"
+    ],
+    "holiday_calendars": [
+      "USA",
+      "CANADA"
+    ],
+    "timezone": "America/New_York"
+  }
 }

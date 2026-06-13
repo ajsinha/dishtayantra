@@ -10,6 +10,34 @@ import queue
 logger = logging.getLogger(__name__)
 
 
+def _build_activemq_connection(host, port, config):
+    """Create a stomp.Connection with optional TLS.
+
+    Enable TLS with ``"use_ssl": true``. Optional keys:
+
+        ssl_ca_certs : CA bundle to verify the broker
+        ssl_certfile : client certificate (for mutual TLS)
+        ssl_keyfile  : client private key (for mutual TLS)
+        ssl_version  : ssl protocol version (defaults to library default)
+
+    The standard ActiveMQ STOMP+SSL port is 61614; set ``port`` accordingly.
+    """
+    connection = stomp.Connection([(host, port)])
+    if config.get('use_ssl', False):
+        ssl_kwargs = {'for_hosts': [(host, port)]}
+        if config.get('ssl_ca_certs'):
+            ssl_kwargs['ca_certs'] = config['ssl_ca_certs']
+        if config.get('ssl_certfile'):
+            ssl_kwargs['cert_file'] = config['ssl_certfile']
+        if config.get('ssl_keyfile'):
+            ssl_kwargs['key_file'] = config['ssl_keyfile']
+        if config.get('ssl_version') is not None:
+            ssl_kwargs['ssl_version'] = config['ssl_version']
+        connection.set_ssl(**ssl_kwargs)
+    return connection
+
+
+
 class ActiveMQDataPublisher(DataPublisher):
     """Publisher for ActiveMQ queues and topics with retry and recovery support."""
 
@@ -44,7 +72,7 @@ class ActiveMQDataPublisher(DataPublisher):
             try:
                 logger.info(f"ActiveMQ publisher connection attempt {attempt}/{self._max_retries} to {self.host}:{self.port}")
                 
-                self.connection = stomp.Connection([(self.host, self.port)])
+                self.connection = _build_activemq_connection(self.host, self.port, self.config)
                 self.connection.connect(self._username, self._password, wait=True)
                 
                 self._connected = True
@@ -241,7 +269,7 @@ class ActiveMQDataSubscriber(DataSubscriber):
             try:
                 logger.info(f"ActiveMQ subscriber connection attempt {attempt}/{self._max_retries} to {self.host}:{self.port}")
                 
-                self.connection = stomp.Connection([(self.host, self.port)])
+                self.connection = _build_activemq_connection(self.host, self.port, self.config)
                 self._listener = ActiveMQListener(self)
                 self.connection.set_listener('', self._listener)
                 self.connection.connect(self._username, self._password, wait=True)

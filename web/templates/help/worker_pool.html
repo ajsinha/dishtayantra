@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-hero {
-        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);
         color: white;
         padding: 3rem 2rem;
         border-radius: 16px;
@@ -48,8 +48,8 @@
         font-weight: 600;
     }
     .architecture-diagram {
-        background: #f8fafc;
-        border: 2px solid #e2e8f0;
+        background: var(--bg-body);
+        border: 2px solid var(--border-color);
         border-radius: 12px;
         padding: 1.5rem;
         font-family: 'Monaco', monospace;
@@ -81,7 +81,7 @@
             <h1><i class="bi bi-cpu"></i> Worker Pool & DAG Affinity</h1>
             <p class="lead mb-0 opacity-90">Multiprocessing for True CPU Parallelism</p>
         </div>
-        <span class="badge bg-white text-primary">v1.5.2</span>
+        
     </div>
     <div class="nav-buttons">
         <a href="{{ url_for('help') }}" class="btn btn-outline-light">

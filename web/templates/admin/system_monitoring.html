@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .monitoring-card {
-        background: white;
+        background: var(--bg-card);
         border-radius: 12px;
         box-shadow: var(--card-shadow);
         overflow: hidden;
@@ -210,13 +210,13 @@
     }
     
     .health-check.healthy {
-        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-        color: #065f46;
+        background: color-mix(in srgb, var(--success-color) 12%, var(--bg-card));
+        color: var(--text-primary);
     }
     
     .health-check.unhealthy {
-        background: linear-gradient(135deg, #fef2f2, #fecaca);
-        color: #991b1b;
+        background: color-mix(in srgb, var(--danger-color) 10%, var(--bg-card));
+        color: var(--text-primary);
     }
     
     .health-check.unknown {
@@ -580,8 +580,8 @@
                     <span class="metric-value">{{ python_version }}</span>
                 </div>
                 <div class="metric-row">
-                    <span class="metric-label">Flask Version</span>
-                    <span class="metric-value">{{ flask_version }}</span>
+                    <span class="metric-label">FastAPI Version</span>
+                    <span class="metric-value">{{ fastapi_version }}</span>
                 </div>
                 <div class="metric-row">
                     <span class="metric-label">Free-Threading</span>

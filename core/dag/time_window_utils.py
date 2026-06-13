@@ -116,6 +116,91 @@ def calculate_end_time(start_time, duration=None):
     return end_time
 
 
+def hhmm_to_minutes(time_str):
+    """
+    Normalize an HHMM / HH:MM string to minutes since midnight.
+
+    Args:
+        time_str: String like "0600", "06:00", "2230".
+
+    Returns:
+        int: Minutes since midnight (0-1439).
+
+    Raises:
+        ValueError: when the input is not a valid HHMM time.
+
+    Examples:
+        >>> hhmm_to_minutes("0600")
+        360
+        >>> hhmm_to_minutes("22:30")
+        1350
+    """
+    if time_str is None:
+        raise ValueError("time_str must not be None")
+    cleaned = str(time_str).replace(':', '').strip()
+    if len(cleaned) != 4 or not cleaned.isdigit():
+        raise ValueError(
+            f"Invalid time format: {time_str!r}. Expected HHMM or HH:MM")
+    hour, minute = int(cleaned[:2]), int(cleaned[2:])
+    if hour > 23 or minute > 59:
+        raise ValueError(
+            f"Invalid time: {time_str!r}. Hour must be 0-23, "
+            f"minute must be 0-59")
+    return hour * 60 + minute
+
+
+def is_within_time_window(start_time, end_time, now=None):
+    """
+    True when *now* falls inside the [start_time, end_time] window,
+    correctly handling windows that wrap across midnight.
+
+    v2.0.0 BUGFIX: the legacy comparison was performed on integer HHMM
+    values (``start <= now <= end``), so an overnight window such as
+    2200-0600 could NEVER match. Times are now normalized to
+    minutes-since-midnight with an explicit wrap-around branch:
+
+        - start <= end  -> normal same-day window: start <= now <= end
+        - start >  end  -> overnight window:       now >= start OR now <= end
+
+    Both boundaries are inclusive, matching the legacy ``<=`` semantics.
+    A window where start == end matches only that exact minute.
+
+    Args:
+        start_time: Window start, HHMM or HH:MM (None -> always inside).
+        end_time:   Window end,   HHMM or HH:MM (None -> always inside).
+        now:        Optional datetime for testing (default: datetime.now()).
+
+    Returns:
+        bool
+
+    Examples:
+        >>> from datetime import datetime
+        >>> is_within_time_window("0900", "1700", datetime(2026, 1, 1, 12, 0))
+        True
+        >>> is_within_time_window("2200", "0600", datetime(2026, 1, 1, 23, 30))
+        True
+        >>> is_within_time_window("2200", "0600", datetime(2026, 1, 1, 3, 0))
+        True
+        >>> is_within_time_window("2200", "0600", datetime(2026, 1, 1, 12, 0))
+        False
+    """
+    if not start_time or not end_time:
+        # No window configured: always active (legacy behaviour).
+        return True
+
+    start_minutes = hhmm_to_minutes(start_time)
+    end_minutes = hhmm_to_minutes(end_time)
+    if now is None:
+        now = datetime.now()
+    now_minutes = now.hour * 60 + now.minute
+
+    if start_minutes <= end_minutes:
+        # Same-day window, e.g. 0900-1700.
+        return start_minutes <= now_minutes <= end_minutes
+    # Overnight window, e.g. 2200-0600: inside before midnight OR after.
+    return now_minutes >= start_minutes or now_minutes <= end_minutes
+
+
 def format_time_display(time_str):
     """
     Format time string for display (HH:MM).

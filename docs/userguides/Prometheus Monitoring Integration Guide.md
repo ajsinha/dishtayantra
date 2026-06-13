@@ -1,7 +1,6 @@
 # Prometheus Monitoring Integration Guide
 
-**DishtaYantra v1.5.0**
-
+**Applies to: DishtaYantra current release**
 **Author:** Ashutosh Sinha  
 **Email:** ajsinha@gmail.com  
 **Date:** December 2025
@@ -42,7 +41,7 @@ DishtaYantra provides comprehensive Prometheus metrics for monitoring DAG execut
 
 ### Required
 
-- DishtaYantra v1.5.0 or later
+- DishtaYantra (current release)
 - Python 3.8+
 
 ### Optional (for full monitoring stack)

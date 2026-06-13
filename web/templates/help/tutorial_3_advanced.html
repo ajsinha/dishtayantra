@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorial 3: Full-Feature Pipeline - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav { background: var(--bg-body); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+    .tut-hero {
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+        color: #eef0f8; padding: 2rem; border-radius: 14px; margin-bottom: 1.5rem;
+    }
+    .tut-hero h2 { color: #eef0f8; }
+    .tut-badge {
+        display: inline-block; padding: 4px 12px; border-radius: 999px;
+        font-size: 0.75rem; font-weight: 600; background: #9a3b3b; color: #fff; letter-spacing: 0.04em;
+    }
+    .file-label {
+        font-family: 'Spline Sans Mono', monospace; font-size: 0.85rem;
+        background: color-mix(in srgb, var(--brass) 18%, var(--bg-card));
+        color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+        padding: 2px 10px; border-radius: 6px; display: inline-block; margin-bottom: 0.4rem;
+    }
+    .step-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 50%; background: var(--brass);
+        color: #1a1207; font-weight: 700; margin-right: 8px;
+    }
+    pre[class*="language-"] { border-radius: 10px; font-size: 0.83rem; }
+    .callout {
+        border-left: 4px solid var(--info-color);
+        background: color-mix(in srgb, var(--info-color) 10%, var(--bg-card));
+        padding: 0.9rem 1.1rem; border-radius: 8px; margin: 1rem 0;
+    }
+    .callout.warn { border-left-color: var(--warning-color);
+        background: color-mix(in srgb, var(--warning-color) 10%, var(--bg-card)); }
+    .flow {
+        font-family: 'Spline Sans Mono', monospace; font-size: 0.85rem;
+        background: var(--bg-body); border: 1px solid var(--border-color);
+        border-radius: 8px; padding: 1rem; margin: 1rem 0; white-space: pre; overflow-x: auto;
+    }
+    .feature-pills span {
+        display: inline-block; font-size: 0.72rem; font-weight: 600;
+        background: color-mix(in srgb, var(--brass) 16%, var(--bg-card));
+        border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+        color: var(--text-primary); padding: 3px 10px; border-radius: 999px; margin: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<div class="tut-hero">
+    <span class="tut-badge">ADVANCED</span>
+    <h2 class="mt-2"><i class="bi bi-3-circle"></i> Tutorial 3: A Full-Feature Trading Pipeline</h2>
+    <p class="mb-0">A realistic market-data pipeline that exercises nearly every
+    capability: fan-in from multiple feeds, a chain of calculators (including a
+    risk subgraph), market-aware scheduling, resilient broker input, and a
+    cloud-queue output.</p>
+</div>
+
+<div class="feature-pills mb-3">
+    <span>Fan-in</span><span>Multiple calculators</span><span>Edge transformers</span>
+    <span>Subgraph</span><span>Market-aware schedule</span><span>Holiday calendars</span>
+    <span>Resilient Kafka in</span><span>SQS out</span><span>File audit</span>
+</div>
+
+<h4>Architecture</h4>
+<div class="flow">  feed_a (kafka) --\
+  feed_b (kafka) ---+--> [ingest] --> [normalize] --> [enrich] --> [risk:subgraph] --(to_wire)--> [publish]
+  feed_c (kafka) --/                                                                                |
+                                                                              priced_topic + sqs + audit_log
+</div>
+
+<p>Three Kafka feeds are merged with <code>fanin://</code> into a single
+subscriber. The pipeline then normalizes symbols, enriches with reference data,
+runs a risk calculation encapsulated as a <strong>subgraph</strong>, projects the
+record for the wire, and fans the result out to a Kafka topic, an AWS SQS queue,
+and a local audit file. The whole DAG only runs during US market hours on
+non-holiday weekdays.</p>
+
+<div class="callout">
+    <strong>Concepts combined:</strong> everything from Tutorials 1&ndash;2 plus
+    <code>fanin://</code> multi-source merge, a <code>SubgraphNode</code>,
+    market-aware scheduling (time window + days + holiday calendars), resilient
+    connectors, and multi-destination publishing across broker + cloud + file.
+</div>
+
+<hr>
+
+<h4><span class="step-num">1</span> The calculators</h4>
+
+<p><strong>Normalizer</strong> &mdash; uppercases the symbol and coerces numeric
+fields, so downstream stages can assume clean types.</p>
+
+<div class="file-label">core/calculator/tutorial/normalize_calculator.py</div>
+<pre><code class="language-python">"""Tutorial 3: normalize incoming market records."""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class NormalizeCalculator(DataCalculator):
+    """Uppercases `symbol`, coerces `price`/`quantity` to float.
+
+    Config keys:
+        symbol_field : str - field holding the instrument symbol (default "symbol")
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._symbol_field = self.config.get("symbol_field", "symbol")
+
+    def calculate(self, data):
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+
+        record = dict(data) if isinstance(data, dict) else {}
+        sym = record.get(self._symbol_field)
+        if isinstance(sym, str):
+            record[self._symbol_field] = sym.strip().upper()
+        for f in ("price", "quantity"):
+            if f in record:
+                try:
+                    record[f] = float(record[f])
+                except (TypeError, ValueError):
+                    record[f] = None
+        return record
+</code></pre>
+
+<p><strong>Enricher</strong> &mdash; joins static reference data (sector, currency)
+from the calculator's own config, demonstrating config-driven lookup tables.</p>
+
+<div class="file-label">core/calculator/tutorial/enrich_calculator.py</div>
+<pre><code class="language-python">"""Tutorial 3: enrich a record with reference data from config."""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class EnrichCalculator(DataCalculator):
+    """Looks up reference attributes for the record's symbol.
+
+    Config keys:
+        reference : dict[str, dict] - symbol -> {sector, currency, ...}
+        default_currency : str - fallback currency (default "USD")
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._reference = self.config.get("reference", {})
+        self._default_ccy = self.config.get("default_currency", "USD")
+
+    def calculate(self, data):
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+
+        record = dict(data) if isinstance(data, dict) else {}
+        ref = self._reference.get(record.get("symbol"), {})
+        record["sector"] = ref.get("sector", "UNKNOWN")
+        record["currency"] = ref.get("currency", self._default_ccy)
+        return record
+</code></pre>
+
+<p><strong>Risk scorer</strong> &mdash; lives inside the subgraph (step 3). It
+computes notional and a simple risk band.</p>
+
+<div class="file-label">core/calculator/tutorial/risk_calculator.py</div>
+<pre><code class="language-python">"""Tutorial 3: compute notional and a risk band (used inside the subgraph)."""
+from datetime import datetime, timezone
+from core.calculator.core_calculator import DataCalculator
+
+
+class RiskCalculator(DataCalculator):
+    """Adds `notional` and a `risk_band` of LOW / MEDIUM / HIGH.
+
+    Config keys:
+        medium_threshold : float - notional above which risk is MEDIUM (default 100000)
+        high_threshold   : float - notional above which risk is HIGH   (default 1000000)
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._medium = float(self.config.get("medium_threshold", 100_000))
+        self._high = float(self.config.get("high_threshold", 1_000_000))
+
+    def calculate(self, data):
+        self._calculation_count += 1
+        self._last_calculation = datetime.now(timezone.utc).isoformat()
+
+        record = dict(data) if isinstance(data, dict) else {}
+        price = record.get("price") or 0.0
+        qty = record.get("quantity") or 0.0
+        notional = round(float(price) * float(qty), 2)
+        record["notional"] = notional
+
+        if notional >= self._high:
+            record["risk_band"] = "HIGH"
+        elif notional >= self._medium:
+            record["risk_band"] = "MEDIUM"
+        else:
+            record["risk_band"] = "LOW"
+        return record
+</code></pre>
+
+<h4><span class="step-num">2</span> The wire transformer</h4>
+<p>Same idea as Tutorial 2 &mdash; project to the public field set as data leaves
+the pipeline.</p>
+
+<div class="file-label">core/transformer/tutorial/trade_wire.py</div>
+<pre><code class="language-python">"""Tutorial 3: project the enriched/scored record to the output schema."""
+from datetime import datetime, timezone
+from core.transformer.core_transformer import DataTransformer
+
+
+class TradeWireTransformer(DataTransformer):
+    """Keeps the public output fields and stamps a publish time."""
+
+    DEFAULT_FIELDS = ["symbol", "sector", "currency", "notional", "risk_band"]
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        self._fields = self.config.get("fields", self.DEFAULT_FIELDS)
+
+    def transform(self, data):
+        self._transform_count += 1
+        self._last_transform = datetime.now(timezone.utc).isoformat()
+
+        record = dict(data) if isinstance(data, dict) else {}
+        out = {k: record.get(k) for k in self._fields}
+        out["published_at"] = datetime.now(timezone.utc).isoformat()
+        return out
+</code></pre>
+
+<h4><span class="step-num">3</span> The risk subgraph</h4>
+<p>A subgraph is a complete DAG embedded as a single node in the parent. Here it
+wraps the risk calculation so it can be developed, tested, suspended, and reused
+independently. Define it as its own file:</p>
+
+<div class="file-label">config/dags/subgraphs/risk_subgraph.json</div>
+<pre><code class="language-json">{
+  "name": "risk_subgraph",
+  "subscribers": [],
+  "publishers": [],
+  "calculators": [
+    { "name": "risk",
+      "type": "core.calculator.tutorial.risk_calculator.RiskCalculator",
+      "config": { "medium_threshold": 100000, "high_threshold": 1000000 } }
+  ],
+  "transformers": [],
+  "nodes": [
+    { "name": "score", "type": "CalculationNode", "calculator": "risk" }
+  ],
+  "edges": []
+}
+</code></pre>
+
+<p>The parent references it with a <code>SubgraphNode</code> that points at the
+file. <code>entry_connection</code> / <code>exit_connections</code> name the
+internal nodes that receive input and produce output. See
+<a href="{{ url_for('help_subgraph') }}">Subgraphs</a> for the full model
+(including inline definitions and dynamic light up/down).</p>
+
+<h4><span class="step-num">4</span> The full DAG</h4>
+<p>Note the top-level <code>start_time</code> / <code>duration</code> /
+<code>schedule</code> block: this DAG is active only 09:30&ndash;16:00 on
+weekdays that are not USA/CANADA market holidays.</p>
+
+<div class="file-label">config/dags/tutorial_3_trading.json</div>
+<pre><code class="language-json">{
+  "name": "tutorial_3_trading",
+
+  "start_time": "0930",
+  "duration": "6h30m",
+  "schedule": {
+    "days_of_week": ["mon", "tue", "wed", "thu", "fri"],
+    "holiday_calendars": ["USA", "CANADA"]
+  },
+
+  "subscribers": [
+    { "name": "feed_a", "config": { "source": "kafka://topic/feed_a", "resilient": true } },
+    { "name": "feed_b", "config": { "source": "kafka://topic/feed_b", "resilient": true } },
+    { "name": "feed_c", "config": { "source": "kafka://topic/feed_c", "resilient": true } },
+    { "name": "merged_feed", "config": { "source": "fanin://feed_a,feed_b,feed_c" } }
+  ],
+
+  "publishers": [
+    { "name": "priced_topic",
+      "config": { "destination": "kafka://topic/priced_trades", "resilient": true } },
+    { "name": "risk_queue",
+      "config": { "destination": "sqs://trade-risk", "region": "us-east-1", "resilient": true } },
+    { "name": "audit_log",
+      "config": { "destination": "file:///tmp/dishtayantra/tutorial3.jsonl" } }
+  ],
+
+  "calculators": [
+    { "name": "normalize",
+      "type": "core.calculator.tutorial.normalize_calculator.NormalizeCalculator",
+      "config": { "symbol_field": "symbol" } },
+    { "name": "enrich",
+      "type": "core.calculator.tutorial.enrich_calculator.EnrichCalculator",
+      "config": {
+        "default_currency": "USD",
+        "reference": {
+          "ACME":    { "sector": "Industrials", "currency": "USD" },
+          "GLOBEX":  { "sector": "Technology",  "currency": "USD" },
+          "INITECH": { "sector": "Technology",  "currency": "CAD" }
+        }
+      } }
+  ],
+
+  "transformers": [
+    { "name": "to_wire",
+      "type": "core.transformer.tutorial.trade_wire.TradeWireTransformer",
+      "config": { "fields": ["symbol", "sector", "currency", "notional", "risk_band"] } }
+  ],
+
+  "nodes": [
+    { "name": "ingest",    "type": "SubscriptionNode", "subscriber": "merged_feed" },
+    { "name": "normalize", "type": "CalculationNode",   "calculator": "normalize" },
+    { "name": "enrich",    "type": "CalculationNode",   "calculator": "enrich" },
+
+    { "name": "risk", "type": "SubgraphNode",
+      "config": {
+        "subgraph_file": "subgraphs/risk_subgraph.json",
+        "entry_connection": "score",
+        "exit_connections": ["score"]
+      } },
+
+    { "name": "publish", "type": "PublisherSinkNode",
+      "config": { "publishers": ["priced_topic", "risk_queue", "audit_log"] } }
+  ],
+
+  "edges": [
+    { "from_node": "ingest",    "to_node": "normalize" },
+    { "from_node": "normalize", "to_node": "enrich" },
+    { "from_node": "enrich",    "to_node": "risk" },
+    { "from_node": "risk",      "to_node": "publish", "data_transformer": "to_wire", "pname": "wire" }
+  ]
+}
+</code></pre>
+
+<h4><span class="step-num">5</span> Walkthrough of one record</h4>
+<p>Suppose <code>{"symbol": "globex", "price": "4200.0", "quantity": "300"}</code>
+arrives on <code>feed_b</code>:</p>
+<ol>
+    <li><strong>fan-in</strong> delivers it through <code>merged_feed</code> to
+        <code>ingest</code>.</li>
+    <li><strong>normalize</strong> &rarr; <code>symbol: "GLOBEX"</code>,
+        <code>price: 4200.0</code>, <code>quantity: 300.0</code>.</li>
+    <li><strong>enrich</strong> &rarr; adds <code>sector: "Technology"</code>,
+        <code>currency: "USD"</code>.</li>
+    <li><strong>risk subgraph</strong> &rarr; <code>notional: 1260000.0</code>,
+        <code>risk_band: "HIGH"</code>.</li>
+    <li>the <strong>to_wire</strong> edge transformer projects to the output schema
+        and stamps <code>published_at</code>.</li>
+    <li><strong>publish</strong> sends the result to the Kafka topic, the SQS
+        queue, and the audit file simultaneously.</li>
+</ol>
+
+<pre><code class="language-json">{"symbol": "GLOBEX", "sector": "Technology", "currency": "USD",
+ "notional": 1260000.0, "risk_band": "HIGH",
+ "published_at": "2026-06-12T14:31:07.512+00:00"}
+</code></pre>
+
+<h4><span class="step-num">6</span> Run, schedule, and scale</h4>
+<pre><code class="language-bash"># Package layout for the custom code:
+#   core/calculator/tutorial/__init__.py
+#   core/calculator/tutorial/normalize_calculator.py
+#   core/calculator/tutorial/enrich_calculator.py
+#   core/calculator/tutorial/risk_calculator.py
+#   core/transformer/tutorial/__init__.py
+#   core/transformer/tutorial/trade_wire.py
+#   config/dags/subgraphs/risk_subgraph.json
+#   config/dags/tutorial_3_trading.json
+
+# SQS output needs boto3 + AWS credentials in the environment:
+pip install boto3
+export AWS_REGION=us-east-1   # plus your standard AWS credential chain
+
+export SECRET_KEY="change-me"
+python run_server.py
+# Dashboard -> Start "tutorial_3_trading"
+</code></pre>
+
+<div class="callout warn">
+    <strong>Outside market hours?</strong> If you start the DAG when the schedule
+    is not active, the dashboard shows <em>Outside Window</em>. A UI-initiated
+    Start overrides scheduling so you can test any time; left to itself, the
+    engine only runs the DAG 09:30&ndash;16:00 on non-holiday weekdays and
+    re-reads schedule edits within five minutes.
+</div>
+
+<div class="callout">
+    <strong>Scaling out.</strong> Assign this DAG to the worker pool
+    (<a href="{{ url_for('help_worker_pool') }}">Worker Pool</a>) for true
+    multi-core execution, or <strong>Clone</strong> it from the dashboard to run a
+    second instance over different feeds &mdash; the clone inherits the day/holiday
+    schedule automatically and lets you set a new time window.
+</div>
+
+<h4>Where to go next</h4>
+<ul>
+    <li><a href="{{ url_for('help_calculators') }}">Calculators</a> &mdash; built-ins and the C++/Rust/Java options for hot paths.</li>
+    <li><a href="{{ url_for('help_subgraph') }}">Subgraphs</a> &mdash; inline definitions and dynamic light up/down.</li>
+    <li><a href="{{ url_for('help_scheduling') }}">Scheduling</a> &amp; <a href="{{ url_for('help_cloud_pubsub') }}">Cloud Pub/Sub</a> &mdash; the full options for the features used here.</li>
+</ul>
+
+<div class="d-flex justify-content-between mt-4">
+    <a href="{{ url_for('help_tutorial_2') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Tutorial 2</a>
+    <a href="{{ url_for('help_tutorial_4') }}" class="btn btn-primary">
+        Tutorial 4: Enterprise Pipeline <i class="bi bi-arrow-right"></i></a>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}User Database - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-database-lock" style="color: #4a90c2;"></i> User Database (v2.0.0)</h2>
+<p class="lead">Users, roles, and API keys now live in a relational database (SQLite by default, PostgreSQL by configuration) with PBKDF2-hashed passwords - replacing the plaintext <code>users.json</code> file.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5></div>
+    <div class="card-body">
+        <ul>
+            <li><strong>SQLAlchemy + DAO layer</strong> - <code>users</code>, <code>roles</code>,
+                <code>user_roles</code>, and <code>api_keys</code> tables</li>
+            <li><strong>Hashed credentials</strong> - PBKDF2-SHA256 with per-user salt; clear passwords are never
+                stored or exposed by any API</li>
+            <li><strong>API keys</strong> - issued per user (<code>dyk_...</code>), shown once, stored hashed,
+                with optional expiry, revocation, and last-used tracking</li>
+            <li><strong>Safety rails preserved</strong> - the last remaining admin can be neither deleted nor
+                stripped of the admin role</li>
+        </ul>
+        <div class="alert alert-info mb-0"><i class="bi bi-arrow-left-right"></i>
+        <strong>One-time migration:</strong> on first start, an existing <code>config/users.json</code> is imported
+        into the database (passwords are hashed during import) and the file is renamed
+        <code>users.json.migrated</code> so the import never repeats. With no legacy file and an empty database, a
+        bootstrap <code>admin / admin123</code> account is created - <strong>change its password immediately</strong>.</div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5></div>
+    <div class="card-body">
+        <h6>SQLite (default)</h6>
+        <div class="code-block">db.engine=sqlite
+db.sqlite.path=data/dishtayantra.db</div>
+        <p>The schema is created automatically on first start from
+        <code>config/schema/schema_sqlite.sql</code>. There are no migrations to run.</p>
+        <h6 class="mt-3">PostgreSQL</h6>
+        <div class="code-block">db.engine=postgresql
+db.postgres.host=localhost
+db.postgres.port=5432
+db.postgres.database=dishtayantra
+db.postgres.user=${POSTGRES_USER:dishtayantra}
+db.postgres.password=${POSTGRES_PASSWORD:}</div>
+        <p class="mb-0">Apply <code>config/schema/schema_postgres.sql</code> once before the first start
+        (<code>psql -f config/schema/schema_postgres.sql</code>). The server validates connectivity at startup and
+        fails fast with a detailed error if any <code>db.*</code> property is missing - nothing is defaulted
+        silently.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-key"></i> API keys</h5></div>
+    <div class="card-body">
+        <p>Manage keys from the <a href="{{ url_for('user_management') }}">User Management</a> page or the
+        <code>/users/api/...</code> endpoints. The clear key is displayed exactly once at creation:</p>
+        <div class="code-block">dyk_Z8f3kQ...   # save it now - only its hash is stored</div>
+        <p class="mb-0">Revoked or expired keys are rejected immediately; <code>last_used_at</code> is stamped on
+        every successful verification.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-lock"></i> Security notes</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li>Set a real session secret: <code>app.secret_key</code> (or the <code>SECRET_KEY</code> env var). The
+                server refuses to start without one.</li>
+            <li>Database files under <code>data/</code> should be excluded from backups containing secrets only if
+                your policy requires it - they contain hashes, not passwords.</li>
+            <li>All database errors surface with full stack traces in the logs; UI operations show a flash message
+                and log the trace.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

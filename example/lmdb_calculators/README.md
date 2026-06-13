@@ -211,4 +211,4 @@ DishtaYantra™ is a trademark of Ashutosh Sinha.
 
 ---
 
-**DishtaYantra v1.7.6** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha

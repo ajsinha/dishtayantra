@@ -24,7 +24,7 @@
     .page-btn {
         padding: 5px 10px;
         border: 1px solid #dee2e6;
-        background: white;
+        background: var(--bg-card);
         cursor: pointer;
         border-radius: 4px;
     }
@@ -53,7 +53,7 @@
         padding: 4px 8px;
     }
     .worker-info-banner {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);
         color: white;
         padding: 15px 20px;
         border-radius: 8px;
@@ -95,7 +95,7 @@
             </p>
         </div>
         {% elif is_lazy_init and worker_id is not none %}
-        <div class="worker-info-banner" style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+        <div class="worker-info-banner" style="background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);">
             <i class="bi bi-cpu"></i> <strong>Running in Worker {{ worker_id }}</strong>
             <span class="badge bg-warning text-dark ms-2"><i class="bi bi-clock"></i> Config Only</span>
             <p class="mb-0 mt-2" style="font-size: 0.9em;">

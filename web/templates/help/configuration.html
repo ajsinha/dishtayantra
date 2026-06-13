@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .help-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);
         color: white;
         padding: 3rem 2rem;
         border-radius: 16px;
@@ -88,7 +88,7 @@
             <h1><i class="bi bi-gear-wide-connected"></i> Configuration Files</h1>
             <p class="lead mb-0 opacity-90">Complete Reference for DishtaYantra Configuration</p>
         </div>
-        <span class="badge bg-white text-primary">v1.5.2</span>
+        
     </div>
     <div class="nav-buttons">
         <a href="{{ url_for('help') }}" class="btn btn-outline-light">
@@ -107,7 +107,7 @@
             <div class="card-body p-2">
                 <a href="#application-properties" class="toc-link">application.properties</a>
                 <a href="#worker-config" class="toc-link">worker_config.json</a>
-                <a href="#users-json" class="toc-link">users.json</a>
+                <a href="#users-json" class="toc-link">User Database</a>
                 <a href="#dag-config" class="toc-link">DAG Configuration</a>
             </div>
         </div>
@@ -133,9 +133,9 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code>application.properties</code></td>
-                                <td>Server, Flask, LMDB settings</td>
-                                <td>Properties (key=value)</td>
+                                <td><code>application.yaml</code> or <code>application.properties</code></td>
+                                <td>Server, app, storage, database, HA, schedule, LMDB settings</td>
+                                <td>YAML or Properties (auto-detected)</td>
                             </tr>
                             <tr>
                                 <td><code>worker_config.json</code></td>
@@ -143,9 +143,9 @@
                                 <td>JSON</td>
                             </tr>
                             <tr>
-                                <td><code>users.json</code></td>
-                                <td>User accounts and roles</td>
-                                <td>JSON</td>
+                                <td>Database (SQLite/PostgreSQL)</td>
+                                <td>User accounts, roles, API keys</td>
+                                <td>Relational (DAO-managed)</td>
                             </tr>
                             <tr>
                                 <td><code>dags/*.json</code></td>
@@ -167,27 +167,38 @@
                 </h5>
             </div>
             <div class="card-body">
-                <p>Main application configuration for server, Flask, and LMDB settings.</p>
-                <p><strong>Location:</strong> <code>config/application.properties</code></p>
+                <p>Main application configuration. Provide either
+                <code>application.yaml</code> (recommended) or
+                <code>application.properties</code> — the loader auto-detects the
+                format and resolves <code>${VAR:default}</code> placeholders.</p>
+                <p><strong>Location:</strong> <code>config/application.yaml</code> or <code>config/application.properties</code></p>
                 
                 <pre class="code-block">
-<span class="comment"># MCP Server Configuration</span>
+<span class="comment"># Application</span>
 <span class="prop-key">app.name</span>=DishtaYantra
-<span class="prop-key">app.version</span>=1.5.2
+<span class="prop-key">app.version</span>=2.2
 
 <span class="prop-key">server.host</span>=0.0.0.0
 <span class="prop-key">server.port</span>=5002
-<span class="prop-key">server.debug</span>=False
 
-<span class="comment"># Flask Configuration</span>
-<span class="prop-key">flask.secret_key</span>=${FLASK_SECRET_KEY:default_secret_key}
+<span class="comment"># Session secret - REQUIRED (or export SECRET_KEY)</span>
+<span class="prop-key">app.secret_key</span>=${SECRET_KEY:default_secret_key_change_in_production}
 
-<span class="comment"># External Module Paths</span>
-<span class="prop-key">external.module.path.1</span>=/opt/custom_modules
-<span class="prop-key">external.module.path.2</span>=${HOME}/my_plugins
+<span class="comment"># Storage abstraction (filesystem | s3 | azureblob | gcs)</span>
+<span class="prop-key">storage.provider</span>=filesystem
+<span class="prop-key">storage.filesystem.root</span>=./
+<span class="prop-key">storage.dags.prefix</span>=config/dags
 
-<span class="comment"># User Registry Configuration</span>
-<span class="prop-key">user.registry.reload_interval</span>=600
+<span class="comment"># User database (sqlite | postgresql)</span>
+<span class="prop-key">db.engine</span>=sqlite
+<span class="prop-key">db.sqlite.path</span>=data/dishtayantra.db
+
+<span class="comment"># High availability (none | zookeeper | redis | s3 | socket)</span>
+<span class="prop-key">ha.provider</span>=none
+
+<span class="comment"># Scheduling and holiday calendars</span>
+<span class="prop-key">holidays.prefix</span>=config/holidays
+<span class="prop-key">schedule.refresh_seconds</span>=240
 
 <span class="comment"># LMDB Zero-Copy Data Exchange</span>
 <span class="prop-key">lmdb.db.path</span>=${LMDB_DB_PATH:/tmp/dishtayantra_lmdb}
@@ -225,14 +236,24 @@
                                 <td>Server port number</td>
                             </tr>
                             <tr>
-                                <td><code>flask.secret_key</code></td>
+                                <td><code>app.secret_key</code></td>
                                 <td>-</td>
-                                <td>Flask session secret (change in production!)</td>
+                                <td>Session secret, also via SECRET_KEY env (change in production!)</td>
                             </tr>
                             <tr>
-                                <td><code>user.registry.reload_interval</code></td>
-                                <td>600</td>
-                                <td>Seconds between users.json reloads</td>
+                                <td><code>storage.provider</code></td>
+                                <td>filesystem</td>
+                                <td>Storage backend: filesystem, s3, azureblob, gcs</td>
+                            </tr>
+                            <tr>
+                                <td><code>db.engine</code></td>
+                                <td>sqlite</td>
+                                <td>User database engine: sqlite or postgresql</td>
+                            </tr>
+                            <tr>
+                                <td><code>ha.provider</code></td>
+                                <td>none</td>
+                                <td>HA election backend: none, zookeeper, redis, s3, socket</td>
                             </tr>
                             <tr>
                                 <td><code>lmdb.db.path</code></td>
@@ -259,7 +280,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-cpu"></i> worker_config.json
-                    <span class="badge file-badge ms-2" style="background: #0ea5e9;">v1.5.2</span>
+                    
                 </h5>
             </div>
             <div class="card-body">
@@ -535,32 +556,42 @@
             </div>
         </div>
 
-        <!-- users.json -->
+        <!-- User Database -->
         <div id="users-json" class="card section-card config-file-card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <i class="bi bi-people"></i> users.json
-                    <span class="badge bg-secondary file-badge ms-2">JSON Format</span>
+                    <i class="bi bi-people"></i> User Database
+                    <span class="badge bg-secondary file-badge ms-2">SQLite / PostgreSQL</span>
                 </h5>
             </div>
             <div class="card-body">
-                <p>User accounts, roles, and permissions.</p>
-                <p><strong>Location:</strong> <code>config/users.json</code></p>
-                
+                <p>User accounts, roles, and API keys are stored in a relational
+                database, not a flat file. Passwords are hashed with
+                PBKDF2-SHA256. Configure the engine in
+                <code>application.yaml</code>:</p>
+
                 <pre class="code-block">
-{
-    <span class="key">"users"</span>: [
-        {
-            <span class="key">"username"</span>: <span class="string">"admin"</span>,
-            <span class="key">"password_hash"</span>: <span class="string">"..."</span>,
-            <span class="key">"role"</span>: <span class="string">"admin"</span>,
-            <span class="key">"email"</span>: <span class="string">"admin@example.com"</span>,
-            <span class="key">"active"</span>: <span class="value">true</span>
-        }
-    ]
-}
+<span class="comment"># SQLite (default)</span>
+<span class="prop-key">db.engine</span>=sqlite
+<span class="prop-key">db.sqlite.path</span>=data/dishtayantra.db
+
+<span class="comment"># or PostgreSQL</span>
+<span class="prop-key">db.engine</span>=postgresql
+<span class="prop-key">db.postgresql.host</span>=localhost
+<span class="prop-key">db.postgresql.database</span>=dishtayantra
+<span class="prop-key">db.postgresql.user</span>=dishtayantra
+<span class="prop-key">db.postgresql.password</span>=${DB_PASSWORD}
                 </pre>
-                
+
+                <p>The schema is created automatically for SQLite; for
+                PostgreSQL apply <code>config/schema/schema_postgres.sql</code>
+                once. On a fresh install a bootstrap <code>admin / admin123</code>
+                account is created — change it immediately. A legacy
+                <code>config/users.json</code> is migrated into the database on
+                first boot and then renamed <code>.migrated</code>. Manage
+                accounts on the <strong>Users</strong> page; see the
+                <em>User Management Architecture</em> guide for full detail.</p>
+
                 <h6 class="mt-4">User Roles</h6>
                 <div class="table-responsive">
                     <table class="table table-bordered">
@@ -573,7 +604,7 @@
                         <tbody>
                             <tr>
                                 <td><code>admin</code></td>
-                                <td>Full access: manage users, DAGs, system settings</td>
+                                <td>Full access: manage users, DAGs, system settings, native modules</td>
                             </tr>
                             <tr>
                                 <td><code>operator</code></td>

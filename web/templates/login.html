@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     body {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
         min-height: 100vh;
     }
     .login-container {
@@ -15,7 +15,7 @@
         justify-content: center;
     }
     .login-card {
-        background: white;
+        background: var(--bg-card);
         border-radius: 16px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
         overflow: hidden;
@@ -23,7 +23,7 @@
         width: 100%;
     }
     .login-header {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%);
         padding: 2.5rem 2rem;
         text-align: center;
     }
@@ -34,7 +34,7 @@
         font-size: 1.5rem;
     }
     .login-header i {
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
         font-size: 2.5rem;
         display: block;
         margin-bottom: 1rem;
@@ -65,7 +65,7 @@
         color: rgba(255, 255, 255, 0.7) !important;
     }
     .footer a {
-        color: #00d4aa !important;
+        color: var(--brass, #e3a44a) !important;
     }
 </style>
 {% endblock %}

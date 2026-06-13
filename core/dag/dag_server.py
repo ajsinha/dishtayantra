@@ -2,31 +2,60 @@ import json
 import logging
 import os
 import threading
+import traceback
 from datetime import datetime
-from kazoo.client import KazooClient
-from kazoo.recipe.election import Election
 from core.dag.compute_graph import ComputeGraph
+from core.dag.dag_server_autoclone import DAGAutoCloneMixin
+from core.dag.dag_server_support import DAGLoaderMixin, DAGMonitorMixin
 from core.dag.time_window_utils import parse_duration, calculate_end_time
+from core.ha import create_ha_provider
+from core.properties_configurator import PropertiesConfigurator
+from core.storage import get_storage_provider
 
 logger = logging.getLogger(__name__)
 
 
-class DAGComputeServer:
-    """Server for managing multiple DAG compute graphs
-    
-    v1.5.2: Now accepts worker_pool directly from run_server.py for early initialization.
+class DAGComputeServer(DAGLoaderMixin, DAGMonitorMixin, DAGAutoCloneMixin):
+    """Server for managing multiple DAG compute graphs.
+
+    v2.0.0 changes:
+        - DAG configuration files are read/written through the pluggable
+          storage abstraction (core.storage). The logical prefix under which
+          DAG JSONs live is configured by the 'storage.dags.prefix' property.
+        - Leader election is delegated to the configurable HA Manager
+          (core.ha): ha.provider = none | zookeeper | redis | s3 | socket.
+          The legacy 'zookeeper_hosts' constructor argument is retained for
+          API compatibility but is ignored - HA is fully property-driven.
+    v1.5.2: Accepts worker_pool directly from run_server.py.
     """
 
     def __init__(self, dag_config_folder, zookeeper_hosts='localhost:2181', worker_pool=None):
         """
         Initialize DAGComputeServer.
-        
+
         Args:
-            dag_config_folder: Path to folder containing DAG JSON configs
-            zookeeper_hosts: Zookeeper connection string for leader election
-            worker_pool: WorkerPoolManager instance for multiprocess execution (v1.5.2)
+            dag_config_folder: Legacy local folder path. Used only when the
+                'storage.dags.prefix' property is absent (backward
+                compatibility with pre-2.0 callers).
+            zookeeper_hosts: DEPRECATED - ignored. Configure HA via the
+                ha.* properties instead (see core/ha/ha_manager.py).
+            worker_pool: WorkerPoolManager instance for multiprocess
+                execution (v1.5.2).
         """
-        self.dag_config_folder = dag_config_folder
+        self._props = PropertiesConfigurator()
+        self._storage = get_storage_provider(self._props)
+        # Logical prefix (relative to the storage root) for DAG JSON files.
+        configured_prefix = self._props.get('storage.dags.prefix')
+        if configured_prefix is not None:
+            self.dag_config_prefix = configured_prefix.strip().strip('/')
+        else:
+            # Backward compatibility with the legacy constructor argument.
+            self.dag_config_prefix = dag_config_folder.lstrip('./').strip('/')
+            logger.warning(
+                "Property 'storage.dags.prefix' is not set - falling back to "
+                "legacy folder argument '%s'. Please define the property.",
+                self.dag_config_prefix)
+        self.dag_config_folder = dag_config_folder  # retained for legacy callers
         self.dags = {}
         self._lock = threading.Lock()
         self._auto_started = False  # v1.5.2: Track if auto-start was already done
@@ -45,10 +74,33 @@ class DAGComputeServer:
         self._time_window_monitor_thread = None
         self._time_window_stop_event = threading.Event()
 
-        # Zookeeper setup
-        self.zk_client = None
-        self.is_primary = True  # Default to primary
-        self.election = None
+        # v2.1.0: intraday schedule refresh - re-reads each DAG's schedule
+        # from storage so edits take effect automatically within 5 minutes
+        # (refresh <=240s + 60s monitor cycle = 300s worst case).
+        self._schedule_refresh_thread = None
+        refresh = int(self._props.get('schedule.refresh_seconds', 240))
+        if refresh > 240:
+            logger.warning("schedule.refresh_seconds=%d exceeds the 240s "
+                           "cap required for the 5-minute intraday-update "
+                           "guarantee - capping.", refresh)
+            refresh = 240
+        self._schedule_refresh_seconds = max(30, refresh)
+
+        # HA Manager setup (v2.0.0): provider chosen by 'ha.provider'.
+        # 'is_primary' is kept as a plain attribute for backward compatibility
+        # with code/templates that read it directly; the HA provider keeps it
+        # in sync via the elected/demoted callbacks below.
+        self.is_primary = False
+        self.ha_provider = None
+        try:
+            self.ha_provider = create_ha_provider(self._props)
+            self.ha_provider.on_elected(self._on_elected)
+            self.ha_provider.on_demoted(self._on_demoted)
+            self.ha_provider.start()
+        except Exception as e:
+            logger.error(f"Error starting HA provider: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise
 
         logger.info("Initializing DAGComputeServer...")
         self._load_dags()
@@ -59,271 +111,12 @@ class DAGComputeServer:
         # Start time window monitor thread
         self._start_time_window_monitor()
 
-        # Setup Zookeeper in background
-        try:
-            zk_thread = threading.Thread(
-                target=self._setup_leader_election_async,
-                args=(zookeeper_hosts,),
-                daemon=True
-            )
-            zk_thread.start()
-        except Exception as e:
-            logger.error(f"Error starting Zookeeper thread: {str(e)}")
-
         logger.info(f"DAGComputeServer initialized with {len(self.dags)} DAG(s)")
         
         # v1.5.2: Auto-start eligible DAGs
         # Worker pool is already initialized and ready (passed from run_server.py)
         self._auto_start_eligible_dags()
         self._auto_started = True
-
-    def _load_dags(self):
-        """Load all DAG configurations from folder
-        
-        v1.5.2: When worker pool is enabled, DAGs are loaded with lazy_init=True
-        to prevent creating duplicate subscribers in the main process.
-        Components are only created when the DAG is dispatched to a worker.
-        """
-        # Create folder if it doesn't exist
-        if not os.path.exists(self.dag_config_folder):
-            logger.warning(f"DAG config folder {self.dag_config_folder} does not exist, creating it...")
-            try:
-                os.makedirs(self.dag_config_folder)
-                logger.info(f"Created DAG config folder: {self.dag_config_folder}")
-            except Exception as e:
-                logger.error(f"Error creating DAG config folder: {str(e)}")
-                return
-
-        # List files in directory
-        files = os.listdir(self.dag_config_folder)
-        json_files = [f for f in files if f.endswith('.json')]
-
-        if not json_files:
-            logger.warning(f"No JSON configuration files found in {self.dag_config_folder}")
-            logger.info("You can add DAG configurations via the web UI or place JSON files in the config folder")
-            return
-
-        logger.info(f"Found {len(json_files)} DAG configuration file(s)")
-        
-        # v1.5.2: Use lazy initialization when worker pool is enabled
-        # This prevents creating duplicate Kafka consumers in main process
-        use_lazy_init = self._worker_pool is not None
-        if use_lazy_init:
-            logger.info("Worker pool enabled - DAGs will be loaded with lazy initialization")
-
-        for filename in json_files:
-            filepath = os.path.join(self.dag_config_folder, filename)
-            try:
-                logger.info(f"Loading DAG from: {filepath}")
-                dag = ComputeGraph(filepath, lazy_init=use_lazy_init)
-                with self._lock:
-                    self.dags[dag.name] = dag
-                logger.info(f"Successfully loaded DAG: {dag.name}")
-            except Exception as e:
-                logger.error(f"Error loading DAG from {filepath}: {str(e)}")
-                import traceback
-                logger.error(traceback.format_exc())
-                raise
-
-    def _auto_start_eligible_dags(self):
-        """
-        Auto-start DAGs that should be running on system startup.
-        
-        A DAG should be auto-started if:
-        1. It has no time window (perpetual/always active), OR
-        2. Current time is within its configured time window
-        
-        DAGs are started one by one with a 5 second pause between each.
-        """
-        import time
-        
-        logger.info("=" * 70)
-        logger.info("AUTO-START: Checking which DAGs should be started on system startup")
-        logger.info("=" * 70)
-        
-        dags_to_start = []
-        
-        with self._lock:
-            for dag_name, dag in self.dags.items():
-                # Check if DAG is perpetual (no time window)
-                is_perpetual = (dag.start_time is None or dag.end_time is None)
-                
-                if is_perpetual:
-                    dags_to_start.append((dag_name, 'PERPETUAL (no time window)'))
-                    logger.info(f"AUTO-START: DAG '{dag_name}' is PERPETUAL - will be started")
-                elif dag.is_in_time_window():
-                    dags_to_start.append((dag_name, f'WITHIN TIME WINDOW ({dag.start_time}-{dag.end_time})'))
-                    logger.info(f"AUTO-START: DAG '{dag_name}' is WITHIN TIME WINDOW ({dag.start_time}-{dag.end_time}) - will be started")
-                else:
-                    logger.info(f"AUTO-START: DAG '{dag_name}' is OUTSIDE time window ({dag.start_time}-{dag.end_time}) - will NOT be started")
-        
-        if not dags_to_start:
-            logger.info("AUTO-START: No DAGs eligible for auto-start at this time")
-            logger.info("=" * 70)
-            return
-        
-        logger.info(f"AUTO-START: {len(dags_to_start)} DAG(s) will be started with 5 second intervals")
-        logger.info("-" * 70)
-        
-        for i, (dag_name, reason) in enumerate(dags_to_start):
-            try:
-                logger.info("")
-                logger.info("*" * 70)
-                logger.info(f"*  AUTO-START: STARTING DAG '{dag_name}'")
-                logger.info(f"*  Reason: {reason}")
-                logger.info(f"*  Progress: {i + 1} of {len(dags_to_start)}")
-                logger.info("*" * 70)
-                
-                self.start(dag_name)
-                
-                logger.info(f"AUTO-START: Successfully started DAG '{dag_name}'")
-                
-                # Pause between starts (except after the last one)
-                if i < len(dags_to_start) - 1:
-                    logger.info(f"AUTO-START: Pausing 5 seconds before starting next DAG...")
-                    time.sleep(5)
-                    
-            except Exception as e:
-                logger.error(f"AUTO-START: Failed to start DAG '{dag_name}': {str(e)}")
-                import traceback
-                logger.error(traceback.format_exc())
-        
-        logger.info("")
-        logger.info("=" * 70)
-        logger.info(f"AUTO-START: Completed - {len(dags_to_start)} DAG(s) processed")
-        logger.info("=" * 70)
-
-    def _start_time_window_monitor(self):
-        """Start the time window monitor thread to check DAGs outside their window"""
-        if self._time_window_monitor_thread and self._time_window_monitor_thread.is_alive():
-            return
-
-        self._time_window_stop_event.clear()
-        self._time_window_monitor_thread = threading.Thread(
-            target=self._time_window_monitor_loop,
-            daemon=True
-        )
-        self._time_window_monitor_thread.start()
-        logger.info("Time window monitor thread started (checks every 60 seconds)")
-
-    def _time_window_monitor_loop(self):
-        """
-        Monitor DAGs that are outside their time window and start them when they enter.
-        
-        This runs every 60 seconds and checks:
-        1. DAGs that have a time window configured
-        2. Are not currently running
-        3. Have now entered their time window
-        
-        v1.5.2: Uses self.start() to properly dispatch to worker pool
-        """
-        import time as time_module
-        
-        logger.info("Time window monitor: Starting monitoring loop")
-        
-        # v1.5.2: Brief initial wait to let auto-start complete first
-        self._time_window_stop_event.wait(5)
-        
-        if self._time_window_stop_event.is_set():
-            logger.info("Time window monitor: Stopped during initialization wait")
-            return
-        
-        logger.info("Time window monitor: Beginning DAG monitoring")
-        
-        while not self._time_window_stop_event.is_set():
-            try:
-                # Collect DAGs to start (don't hold lock while starting)
-                dags_to_start = []
-                
-                with self._lock:
-                    for dag_name, dag in self.dags.items():
-                        # Skip if no time window configured (perpetual DAGs)
-                        if dag.start_time is None or dag.end_time is None:
-                            continue
-                        
-                        # Skip if already running in main process
-                        if dag._compute_thread and dag._compute_thread.is_alive():
-                            continue
-                        
-                        # v1.5.2: Skip if already assigned to a worker
-                        if self._worker_pool and self._worker_pool.is_running():
-                            if self._worker_pool.get_dag_assignment(dag_name) is not None:
-                                continue
-                        
-                        # Check if now within time window
-                        if dag.is_in_time_window():
-                            dags_to_start.append((dag_name, dag.start_time, dag.end_time))
-                
-                # Start DAGs outside the lock
-                for dag_name, start_time, end_time in dags_to_start:
-                    logger.info("")
-                    logger.info("!" * 70)
-                    logger.info("!  TIME WINDOW MONITOR: DAG ENTERING TIME WINDOW")
-                    logger.info(f"!  DAG: {dag_name}")
-                    logger.info(f"!  Window: {start_time} - {end_time}")
-                    logger.info("!  ACTION: Starting DAG automatically")
-                    logger.info("!" * 70)
-                    
-                    try:
-                        # v1.5.2: Use self.start() to properly dispatch to worker pool
-                        self.start(dag_name)
-                    except Exception as e:
-                        logger.error(f"Time window monitor: Failed to start DAG '{dag_name}': {e}")
-                            
-            except Exception as e:
-                logger.error(f"Time window monitor error: {e}")
-            
-            # Sleep for 60 seconds before next check
-            self._time_window_stop_event.wait(60)
-        
-        logger.info("Time window monitor: Stopped")
-
-    def _log_dag_state_change(self, dag_name, state, reason=None):
-        """Log DAG state changes with prominent formatting"""
-        logger.info("")
-        logger.info("█" * 70)
-        logger.info(f"█  DAG STATE CHANGE: {state}")
-        logger.info(f"█  DAG Name: {dag_name}")
-        if reason:
-            logger.info(f"█  Reason: {reason}")
-        logger.info(f"█  Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info("█" * 70)
-        logger.info("")
-
-    def _setup_leader_election_async(self, zookeeper_hosts):
-        """Setup Zookeeper leader election asynchronously"""
-        try:
-            logger.info(f"Connecting to Zookeeper at {zookeeper_hosts}...")
-            self.zk_client = KazooClient(hosts=zookeeper_hosts)
-            self.zk_client.start(timeout=5)
-
-            logger.info("Connected to Zookeeper, starting election...")
-            self.election = Election(self.zk_client, "/dag_server_election")
-            self.election.run(self._on_elected)
-
-        except Exception as e:
-            logger.warning(f"Zookeeper not available: {str(e)}")
-            logger.info("Continuing as PRIMARY without Zookeeper")
-            self.is_primary = True
-
-    def _on_elected(self):
-        """Callback when elected as leader"""
-        logger.info("Elected as primary DAG server")
-        self.is_primary = True
-
-        # Resume all suspended DAGs
-        with self._lock:
-            for dag in self.dags.values():
-                if dag._suspend_event.is_set():
-                    try:
-                        dag.resume()
-                    except:
-                        pass
-
-    def _check_primary(self):
-        """Check if this instance is primary"""
-        if not self.is_primary:
-            raise PermissionError("This instance is not primary. Operation not allowed.")
 
     def add_dag(self, config_data, config_filename=None):
         """Add a new DAG from configuration
@@ -344,11 +137,16 @@ class DAGComputeServer:
             if dag_name in self.dags:
                 raise ValueError(f"DAG with name {dag_name} already exists")
 
-            # Save config to file if filename provided
+            # Save config via the storage abstraction if filename provided
             if config_filename:
-                filepath = os.path.join(self.dag_config_folder, config_filename)
-                with open(filepath, 'w') as f:
-                    json.dump(config, f, indent=2)
+                object_path = self._dag_object_path(config_filename)
+                self._storage.write_text(object_path,
+                                         json.dumps(config, indent=2))
+                logger.info(f"Saved DAG configuration to storage object "
+                            f"'{object_path}' (provider: {self._storage.name})")
+                # v2.1.0: remember the source object name so the intraday
+                # schedule-refresh loop can re-read this DAG's config.
+                config['config_filename'] = config_filename
 
             # v1.5.2: Use lazy init when worker pool is enabled
             use_lazy_init = self._worker_pool is not None
@@ -552,7 +350,26 @@ class DAGComputeServer:
                     is_running_worker = worker_id is not None
                 
                 is_running = is_running_main or is_running_worker
-                in_time_window = dag.is_in_time_window()
+                # v2.1.0: schedule-aware activity (time window AND
+                # day-of-week AND holiday calendars). The key name
+                # 'in_time_window' is kept for template compatibility.
+                in_time_window, schedule_reason = dag.is_within_schedule()
+                from core.schedule.dag_schedule import classify_schedule_reason
+                schedule_reason_kind = classify_schedule_reason(
+                    schedule_reason)
+
+                # v2.1.0 BUGFIX (completes bug #1): list_dags never emitted
+                # a 'state' key, so the monitoring dashboard counters stayed
+                # at zero even after _get_dag_stats was pointed at 'state'.
+                # Derive it explicitly here.
+                is_suspended = (not dag._suspend_event.is_set()
+                                if dag._compute_thread else False)
+                if is_running and is_suspended:
+                    state = 'suspended'
+                elif is_running:
+                    state = 'running'
+                else:
+                    state = 'stopped'
 
                 # Check if this is an autocloned DAG
                 parent_dag = self.is_autocloned_dag(dag_name)
@@ -572,11 +389,17 @@ class DAGComputeServer:
                 
                 dag_list.append({
                     'name': dag_name,
+                    'state': state,  # v2.1.0: running | suspended | stopped
                     'is_running': is_running,
-                    'is_suspended': not dag._suspend_event.is_set() if dag._compute_thread else False,
+                    'is_suspended': is_suspended,
                     'start_time': dag.start_time,
                     'end_time': dag.end_time,
                     'duration': dag.duration,  # Add duration field
+                    'schedule': dag.schedule.to_dict()
+                    if getattr(dag, 'schedule', None) else None,
+                    'schedule_reason': schedule_reason,
+                    'schedule_reason_kind': schedule_reason_kind,
+                    'ui_override': getattr(dag, '_ui_override', False),
                     'node_count': node_count,
                     'in_time_window': in_time_window,
                     'is_autocloned': parent_dag is not None,
@@ -641,335 +464,6 @@ class DAGComputeServer:
             'dags': self.list_dags()
         }
 
-    def _is_autoclone_enabled(self, dag_config):
-        """Check if autoclone is enabled for a DAG configuration
-
-        New format (preferred):
-            "autoclone": {
-                "ramp_up_time": "1255",
-                "duration": "1h30m",  # Optional, defaults to "8h"
-                "ramp_count": 10
-            }
-
-        Legacy format (still supported):
-            "autoclone": {
-                "ramp_up_time": "1255",
-                "ramp_down_time": "1310",
-                "ramp_count": 10
-            }
-        """
-        if 'autoclone' not in dag_config:
-            return False
-
-        autoclone = dag_config['autoclone']
-
-        # Check required keys
-        if 'ramp_up_time' not in autoclone or not autoclone['ramp_up_time']:
-            return False
-
-        if 'ramp_count' not in autoclone or not autoclone['ramp_count']:
-            return False
-
-        # Must have either duration (new) or ramp_down_time (legacy)
-        has_duration = 'duration' in autoclone and autoclone['duration']
-        has_ramp_down = 'ramp_down_time' in autoclone and autoclone['ramp_down_time']
-
-        if not has_duration and not has_ramp_down:
-            # Neither provided - use default duration of 8h
-            # This is valid, we'll use default
-            pass
-
-        try:
-            # Validate ramp_count is a positive integer
-            if int(autoclone['ramp_count']) <= 0:
-                return False
-
-            # Validate duration if provided (new format)
-            if has_duration:
-                duration_minutes = parse_duration(autoclone['duration'])
-                if duration_minutes is None or duration_minutes <= 0:
-                    logger.warning(f"Invalid autoclone duration: {autoclone['duration']}")
-                    return False
-
-            return True
-        except (ValueError, TypeError):
-            return False
-
-    def _start_autoclone_manager(self):
-        """Start the autoclone management thread"""
-        self._autoclone_thread = threading.Thread(
-            target=self._autoclone_manager_loop,
-            daemon=True,
-            name="AutoCloneManager"
-        )
-        self._autoclone_thread.start()
-        logger.info("AutoClone manager thread started")
-
-    def _autoclone_manager_loop(self):
-        """Background thread that manages autoclone operations"""
-        from datetime import datetime
-        import time
-
-        logger.info("AutoClone manager loop started")
-
-        while not self._autoclone_stop_event.is_set():
-            try:
-                # Run every 10 seconds
-                self._autoclone_stop_event.wait(10)
-
-                if not self.is_primary:
-                    continue
-
-                current_time = datetime.now().strftime('%H%M')
-
-                # Collect work to do without holding the lock for long
-                dags_to_process = []
-                clones_to_delete = []
-                dags_to_cleanup = []
-
-                with self._lock:
-                    # Quickly scan all DAGs to determine what work needs to be done
-                    for dag_name, dag in list(self.dags.items()):
-                        # Skip if this is an autocloned DAG itself
-                        if dag_name in [clone for info in self.autoclone_info.values() for clone in
-                                        info.get('clones', [])]:
-                            continue
-
-                        if not self._is_autoclone_enabled(dag.config):
-                            # Clean up any existing autoclone info if config was removed
-                            if dag_name in self.autoclone_info:
-                                dags_to_cleanup.append(dag_name)
-                            continue
-
-                        autoclone_config = dag.config['autoclone']
-                        ramp_up_time = autoclone_config['ramp_up_time']
-
-                        # NEW: Support duration instead of ramp_down_time
-                        # Calculate ramp_down_time from ramp_up_time + duration
-                        if 'duration' in autoclone_config and autoclone_config['duration']:
-                            # New format with duration
-                            duration = autoclone_config['duration']
-                            ramp_down_time = calculate_end_time(ramp_up_time, duration)
-                            logger.debug(
-                                f"AutoClone {dag_name}: Using duration {duration}, ramp_down_time={ramp_down_time}")
-                        elif 'ramp_down_time' in autoclone_config and autoclone_config['ramp_down_time']:
-                            # Legacy format with explicit ramp_down_time
-                            ramp_down_time = autoclone_config['ramp_down_time']
-                            logger.debug(f"AutoClone {dag_name}: Using legacy ramp_down_time={ramp_down_time}")
-                        else:
-                            # No duration or ramp_down_time provided - use default 8h
-                            ramp_down_time = calculate_end_time(ramp_up_time, "8h")
-                            logger.debug(
-                                f"AutoClone {dag_name}: No duration/ramp_down_time, using default 8h, ramp_down_time={ramp_down_time}")
-
-                        ramp_count = int(autoclone_config['ramp_count'])
-
-                        # Initialize autoclone info if not exists
-                        if dag_name not in self.autoclone_info:
-                            self.autoclone_info[dag_name] = {
-                                'clones': [],
-                                'config': autoclone_config,
-                                'status': 'idle',
-                                'last_clone_time': None,
-                                'ramp_up_completed': False,
-                                'ramp_down_started': False
-                            }
-
-                        info = self.autoclone_info[dag_name]
-
-                        # RAMP UP: Determine if we should create a clone
-                        if current_time >= ramp_up_time and current_time < ramp_down_time:
-                            if not info['ramp_up_completed'] and len(info['clones']) < ramp_count:
-                                # Check if we should create a new clone (1 minute interval)
-                                should_create = False
-
-                                if info['last_clone_time'] is None:
-                                    should_create = True
-                                else:
-                                    time_since_last = (datetime.now() - info['last_clone_time']).total_seconds()
-                                    if time_since_last >= 60:  # 1 minute
-                                        should_create = True
-
-                                if should_create:
-                                    dags_to_process.append((dag_name, ramp_count, 'create'))
-
-                        # RAMP DOWN: Determine if we should delete a clone
-                        elif current_time >= ramp_down_time or current_time < ramp_up_time:
-                            if info['clones'] and not info['ramp_down_started']:
-                                info['ramp_down_started'] = True
-                                info['status'] = 'ramping_down'
-                                logger.info(f"AutoClone: Starting ramp down for {dag_name}")
-
-                            if info['clones']:
-                                # Stop and delete one clone per minute
-                                should_delete = False
-
-                                if info['last_clone_time'] is None:
-                                    should_delete = True
-                                else:
-                                    time_since_last = (datetime.now() - info['last_clone_time']).total_seconds()
-                                    if time_since_last >= 60:  # 1 minute
-                                        should_delete = True
-
-                                if should_delete:
-                                    # Just mark for deletion, we'll do it outside the lock
-                                    clone_name = info['clones'][0]  # Peek at first clone
-                                    clones_to_delete.append((dag_name, clone_name))
-
-                # Now do the actual work outside the lock
-
-                # Handle cleanup
-                for dag_name in dags_to_cleanup:
-                    logger.info(f"AutoClone disabled for {dag_name}, cleaning up")
-                    self._cleanup_autoclones(dag_name)
-
-                # Handle creating clones
-                for dag_name, ramp_count, action in dags_to_process:
-                    try:
-                        # Create clone with no time window (always active)
-                        clone_name = self._create_autoclone_unlocked(dag_name)
-
-                        # Update info with lock
-                        with self._lock:
-                            if dag_name in self.autoclone_info:
-                                info = self.autoclone_info[dag_name]
-                                info['clones'].append(clone_name)
-                                info['last_clone_time'] = datetime.now()
-                                info['status'] = f'ramping_up ({len(info["clones"])}/{ramp_count})'
-
-                                logger.info(
-                                    f"AutoClone: Created {clone_name} for {dag_name} ({len(info['clones'])}/{ramp_count})")
-
-                                if len(info['clones']) >= ramp_count:
-                                    info['ramp_up_completed'] = True
-                                    info['status'] = 'active'
-                                    logger.info(f"AutoClone: Ramp up completed for {dag_name}")
-
-                        # Start the clone (outside lock)
-                        self.start(clone_name)
-
-                    except Exception as e:
-                        logger.error(f"AutoClone: Error creating clone for {dag_name}: {str(e)}")
-
-                # Handle deleting clones
-                for dag_name, clone_name in clones_to_delete:
-                    try:
-                        logger.info(f"AutoClone: Stopping and deleting {clone_name}")
-
-                        # Stop the clone (outside lock)
-                        with self._lock:
-                            if clone_name in self.dags:
-                                exists = True
-                            else:
-                                exists = False
-
-                        if exists:
-                            self.stop(clone_name)
-                            # Wait a bit for it to stop
-                            time.sleep(2)
-                            # Delete it
-                            self.delete(clone_name)
-
-                        # Update info with lock
-                        with self._lock:
-                            if dag_name in self.autoclone_info:
-                                info = self.autoclone_info[dag_name]
-                                # Remove from list
-                                if clone_name in info['clones']:
-                                    info['clones'].remove(clone_name)
-
-                                info['last_clone_time'] = datetime.now()
-                                info['status'] = f'ramping_down ({len(info["clones"])} remaining)'
-
-                                if not info['clones']:
-                                    info['ramp_up_completed'] = False
-                                    info['ramp_down_started'] = False
-                                    info['status'] = 'idle'
-                                    logger.info(f"AutoClone: Ramp down completed for {dag_name}")
-
-                    except Exception as e:
-                        logger.error(f"AutoClone: Error deleting clone: {str(e)}")
-
-            except Exception as e:
-                logger.error(f"Error in autoclone manager loop: {str(e)}")
-                import traceback
-                logger.error(traceback.format_exc())
-
-    def _create_autoclone(self, parent_dag_name):
-        """Create an autoclone of a DAG with no time window"""
-        from datetime import datetime
-
-        if parent_dag_name not in self.dags:
-            raise ValueError(f"Parent DAG {parent_dag_name} not found")
-
-        parent_dag = self.dags[parent_dag_name]
-
-        # Clone with empty time window (None, None makes it always active)
-        cloned_dag = parent_dag.clone(None, None)
-
-        # Add to dags dictionary
-        self.dags[cloned_dag.name] = cloned_dag
-
-        return cloned_dag.name
-
-    def _create_autoclone_unlocked(self, parent_dag_name):
-        """Create an autoclone of a DAG without holding the main lock for the entire operation"""
-        from datetime import datetime
-
-        # Get parent DAG with lock
-        with self._lock:
-            if parent_dag_name not in self.dags:
-                raise ValueError(f"Parent DAG {parent_dag_name} not found")
-            parent_dag = self.dags[parent_dag_name]
-
-        # Clone without lock (this can take time)
-        cloned_dag = parent_dag.clone(None, None)
-
-        # Add to dags dictionary with lock
-        with self._lock:
-            self.dags[cloned_dag.name] = cloned_dag
-
-        return cloned_dag.name
-
-    def _cleanup_autoclones(self, dag_name):
-        """Clean up all autoclones for a DAG"""
-        # Get list of clones to delete
-        with self._lock:
-            if dag_name not in self.autoclone_info:
-                return
-
-            info = self.autoclone_info[dag_name]
-            clones_to_delete = list(info['clones'])
-
-        # Stop and delete clones outside the lock
-        for clone_name in clones_to_delete:
-            try:
-                if clone_name in self.dags:
-                    self.stop(clone_name)
-                    self.delete(clone_name)
-                    logger.info(f"AutoClone: Cleaned up {clone_name}")
-            except Exception as e:
-                logger.error(f"AutoClone: Error cleaning up {clone_name}: {str(e)}")
-
-        # Remove the autoclone info
-        with self._lock:
-            if dag_name in self.autoclone_info:
-                del self.autoclone_info[dag_name]
-
-    def get_autoclone_status(self, dag_name):
-        """Get autoclone status for a DAG"""
-        if dag_name not in self.autoclone_info:
-            return None
-
-        return self.autoclone_info[dag_name]
-
-    def is_autocloned_dag(self, dag_name):
-        """Check if a DAG is an autocloned instance"""
-        for parent_name, info in self.autoclone_info.items():
-            if dag_name in info.get('clones', []):
-                return parent_name
-        return None
-
     def shutdown(self):
         """Shutdown the server"""
         logger.info("Shutting down DishtaYantra DAG Server")
@@ -982,8 +476,11 @@ class DAGComputeServer:
 
         self.stop_all()
 
-        if self.zk_client:
-            self.zk_client.stop()
-            self.zk_client.close()
+        if self.ha_provider:
+            try:
+                self.ha_provider.stop()
+            except Exception as e:
+                logger.error(f"Error stopping HA provider: {str(e)}")
+                logger.error(traceback.format_exc())
 
         logger.info("DishtaYantra DAG Server shutdown complete")

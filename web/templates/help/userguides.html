@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
     .guides-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #1e3a5f 100%);
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
         color: white;
         padding: 2.5rem 2rem;
         border-radius: 16px;
@@ -25,8 +25,8 @@
     }
     .guide-count {
         background: rgba(0, 212, 170, 0.2);
-        border: 2px solid #00d4aa;
-        color: #00d4aa;
+        border: 2px solid var(--brass, #e3a44a);
+        color: var(--brass, #e3a44a);
         padding: 0.4rem 1rem;
         border-radius: 50px;
         font-weight: 600;
@@ -54,14 +54,14 @@
     
     .guide-card {
         transition: all 0.2s ease;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-color);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: white;
+        background: var(--bg-card);
     }
     .guide-card:hover {
         border-color: #4a90c2;
@@ -91,12 +91,12 @@
         margin-right: 1rem;
     }
     .guide-icon i {
-        color: #00d4aa;
+        color: var(--brass, #e3a44a);
         font-size: 1.1rem;
     }
     
     .search-box {
-        background: white;
+        background: var(--bg-card);
         border-radius: 50px;
         padding: 0.75rem 1.5rem;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
@@ -110,7 +110,7 @@
     }
     
     .root-docs {
-        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        background: color-mix(in srgb, var(--info-color) 10%, var(--bg-card));
         border-radius: 12px;
         padding: 1.5rem;
         margin-bottom: 2rem;
@@ -128,7 +128,7 @@
 {% block content %}
 <!-- Hero Section -->
 <div class="guides-hero">
-    <i class="bi bi-journal-richtext" style="font-size: 2.5rem; color: #00d4aa; display: block; margin-bottom: 0.75rem;"></i>
+    <i class="bi bi-journal-richtext" style="font-size: 2.5rem; color: var(--brass, #e3a44a); display: block; margin-bottom: 0.75rem;"></i>
     <h1>User Guides & Documentation</h1>
     <p>Comprehensive markdown documentation for DishtaYantra features</p>
     <div class="guide-count">

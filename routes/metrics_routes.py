@@ -1,272 +1,248 @@
 """
-Metrics Routes for Prometheus Integration
-==========================================
+Metrics Routes for Prometheus Integration (FastAPI, v2.0.0)
+===========================================================
 
-Provides endpoints for Prometheus metrics scraping and health checks.
+Endpoints for Prometheus scraping and health probes.  These routes do NOT
+require authentication so Prometheus and load balancers can scrape and
+probe freely.
 
 Endpoints:
-    /metrics          - Prometheus metrics endpoint
-    /health           - Health check endpoint
-    /health/live      - Liveness probe
-    /health/ready     - Readiness probe
-    /metrics/json     - Metrics in JSON format
+    /metrics          - Prometheus metrics (text exposition format)
+    /health           - Combined health check (200 healthy / 503 otherwise)
+    /health/live      - Kubernetes liveness probe
+    /health/ready     - Kubernetes readiness probe
+    /metrics/json     - Key metrics in JSON for debugging
 
-Author: Ashutosh Sinha
-Email: ajsinha@gmail.com
-Version: 1.5.0
-Date: December 2025
+v2.0.0: the hardcoded version string '1.5.0' is replaced by
+:data:`core.version.VERSION`; metric-update failures are logged with full
+stack traces instead of being silently downgraded.
+
+Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-import time
 import logging
-from datetime import datetime
-from flask import Response, jsonify
+import time
+import traceback
+from datetime import datetime, timezone
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, Response
 
 from core.metrics import metrics, update_system_metrics
+from core.version import VERSION
 
 logger = logging.getLogger(__name__)
 
 
 class MetricsRoutes:
-    """
-    Route handler for Prometheus metrics and health endpoints.
-    
-    These routes do NOT require authentication to allow Prometheus
-    and load balancers to scrape metrics and perform health checks.
-    """
-    
-    def __init__(self, app, dag_server=None, redis_cache=None):
+    """Route handler for Prometheus metrics and health endpoints."""
+
+    def __init__(self, app: FastAPI, dag_server=None, redis_cache=None):
         """
-        Initialize metrics routes.
-        
         Args:
-            app: Flask application instance
-            dag_server: DAGComputeServer instance (optional)
-            redis_cache: InMemoryRedisClone instance (optional)
+            app: FastAPI application instance.
+            dag_server: DAGComputeServer instance (optional).
+            redis_cache: InMemoryRedisClone instance (optional).
         """
         self.app = app
         self.dag_server = dag_server
         self.redis_cache = redis_cache
         self._start_time = time.time()
-        
         self._register_routes()
         logger.info("Metrics routes initialized")
-    
-    def _register_routes(self):
-        """Register all metrics endpoints."""
-        
-        @self.app.route('/metrics')
-        def prometheus_metrics():
-            """
-            Prometheus metrics endpoint.
-            
-            Returns metrics in Prometheus text format for scraping.
-            """
-            try:
-                # Update system metrics before returning
-                update_system_metrics()
-                
-                # Update uptime
-                metrics.uptime_seconds.set(time.time() - self._start_time)
-                
-                # Update DAG metrics if dag_server available
-                if self.dag_server:
-                    self._update_dag_metrics()
-                
-                # Update cache metrics if redis_cache available
-                if self.redis_cache:
-                    self._update_cache_metrics()
-                
-                # Generate and return metrics
-                output = metrics.generate_latest()
-                return Response(
-                    output,
-                    mimetype=metrics.get_content_type()
-                )
-            except Exception as e:
-                logger.error(f"Error generating metrics: {e}")
-                return Response(
-                    f"# Error generating metrics: {e}\n",
-                    mimetype='text/plain',
-                    status=500
-                )
-        
-        @self.app.route('/health')
-        def health_check():
-            """
-            Combined health check endpoint.
-            
-            Returns overall system health status.
-            """
-            health = self._get_health_status()
-            status_code = 200 if health['status'] == 'healthy' else 503
-            return jsonify(health), status_code
-        
-        @self.app.route('/health/live')
-        def liveness_probe():
-            """
-            Kubernetes liveness probe endpoint.
-            
-            Returns 200 if the application is running.
-            """
-            return jsonify({
-                'status': 'alive',
-                'timestamp': datetime.utcnow().isoformat()
-            }), 200
-        
-        @self.app.route('/health/ready')
-        def readiness_probe():
-            """
-            Kubernetes readiness probe endpoint.
-            
-            Returns 200 if the application is ready to receive traffic.
-            """
-            ready = True
-            checks = {}
-            
-            # Check DAG server
+
+    def _register_routes(self) -> None:
+        add = self.app.add_api_route
+        add('/metrics', self.prometheus_metrics, methods=['GET'],
+            name='prometheus_metrics', include_in_schema=False)
+        add('/health', self.health_check, methods=['GET'],
+            name='health_check')
+        add('/health/live', self.liveness_probe, methods=['GET'],
+            name='liveness_probe')
+        add('/health/ready', self.readiness_probe, methods=['GET'],
+            name='readiness_probe')
+        add('/metrics/json', self.metrics_json, methods=['GET'],
+            name='metrics_json')
+
+    # ------------------------------------------------------------------ #
+    # Routes
+    # ------------------------------------------------------------------ #
+
+    def prometheus_metrics(self, request: Request):
+        """Prometheus metrics endpoint (text exposition format)."""
+        try:
+            update_system_metrics()
+            metrics.uptime_seconds.set(time.time() - self._start_time)
             if self.dag_server:
-                dag_ready = hasattr(self.dag_server, 'dags')
-                checks['dag_server'] = 'ready' if dag_ready else 'not_ready'
-                ready = ready and dag_ready
-            
-            # Check cache
+                self._update_dag_metrics()
             if self.redis_cache:
-                cache_ready = True  # InMemory is always ready
-                checks['cache'] = 'ready' if cache_ready else 'not_ready'
-                ready = ready and cache_ready
-            
-            status_code = 200 if ready else 503
-            return jsonify({
-                'status': 'ready' if ready else 'not_ready',
-                'checks': checks,
-                'timestamp': datetime.utcnow().isoformat()
-            }), status_code
-        
-        @self.app.route('/metrics/json')
-        def metrics_json():
-            """
-            Metrics in JSON format for debugging.
-            
-            Returns a subset of key metrics in JSON format.
-            """
-            try:
-                update_system_metrics()
-                
-                json_metrics = {
-                    'application': {
-                        'name': 'DishtaYantra',
-                        'version': '1.5.0',
-                        'uptime_seconds': time.time() - self._start_time
-                    },
-                    'dags': {},
-                    'cache': {},
-                    'system': {}
-                }
-                
-                # Add DAG metrics
-                if self.dag_server:
-                    try:
-                        json_metrics['dags'] = {
-                            'loaded': len(getattr(self.dag_server, 'dags', {})),
-                            'running': len([d for d in getattr(self.dag_server, 'dags', {}).values() 
-                                          if getattr(d, 'is_running', False)])
-                        }
-                    except:
-                        json_metrics['dags'] = {'error': 'Unable to fetch DAG stats'}
-                
-                # Add cache metrics
-                if self.redis_cache:
-                    try:
-                        json_metrics['cache'] = {
-                            'keys': len(getattr(self.redis_cache, 'data', {}))
-                        }
-                    except:
-                        json_metrics['cache'] = {'error': 'Unable to fetch cache stats'}
-                
-                # Add system metrics
+                self._update_cache_metrics()
+            output = metrics.generate_latest()
+            return Response(content=output,
+                            media_type=metrics.get_content_type())
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error generating metrics: {e}")
+            logger.error(traceback.format_exc())
+            return Response(content=f"# Error generating metrics: {e}\n",
+                            media_type='text/plain', status_code=500)
+
+    def health_check(self, request: Request):
+        """Combined health check endpoint (200 healthy / 503 unhealthy)."""
+        health = self._get_health_status()
+        status_code = 200 if health['status'] == 'healthy' else 503
+        return JSONResponse(health, status_code=status_code)
+
+    def liveness_probe(self, request: Request):
+        """Kubernetes liveness probe: 200 while the process is running."""
+        return JSONResponse({
+            'status': 'alive',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+
+    def readiness_probe(self, request: Request):
+        """Kubernetes readiness probe: 200 when ready to receive traffic."""
+        ready = True
+        checks = {}
+
+        if self.dag_server:
+            dag_ready = hasattr(self.dag_server, 'dags')
+            checks['dag_server'] = 'ready' if dag_ready else 'not_ready'
+            ready = ready and dag_ready
+
+        if self.redis_cache:
+            cache_ready = True  # InMemory is always ready
+            checks['cache'] = 'ready' if cache_ready else 'not_ready'
+            ready = ready and cache_ready
+
+        status_code = 200 if ready else 503
+        return JSONResponse({
+            'status': 'ready' if ready else 'not_ready',
+            'checks': checks,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }, status_code=status_code)
+
+    def metrics_json(self, request: Request):
+        """A subset of key metrics in JSON format for debugging."""
+        try:
+            update_system_metrics()
+            json_metrics = {
+                'application': {
+                    'name': 'DishtaYantra',
+                    'version': VERSION,
+                    'uptime_seconds': time.time() - self._start_time
+                },
+                'dags': {},
+                'cache': {},
+                'system': {}
+            }
+
+            if self.dag_server:
                 try:
-                    import psutil
-                    json_metrics['system'] = {
-                        'cpu_percent': psutil.cpu_percent(),
-                        'memory_percent': psutil.virtual_memory().percent
+                    dags = getattr(self.dag_server, 'dags', {})
+                    json_metrics['dags'] = {
+                        'loaded': len(dags),
+                        'running': len([d for d in dags.values()
+                                        if getattr(d, 'is_running', False)])
                     }
-                except ImportError:
-                    json_metrics['system'] = {'note': 'psutil not installed'}
-                
-                return jsonify(json_metrics)
-                
-            except Exception as e:
-                logger.error(f"Error generating JSON metrics: {e}")
-                return jsonify({'error': str(e)}), 500
-    
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"Unable to fetch DAG stats: {e}")
+                    logger.error(traceback.format_exc())
+                    json_metrics['dags'] = {'error': 'Unable to fetch DAG '
+                                                     'stats'}
+
+            if self.redis_cache:
+                try:
+                    json_metrics['cache'] = {
+                        'keys': len(getattr(self.redis_cache, 'data', {}))
+                    }
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"Unable to fetch cache stats: {e}")
+                    logger.error(traceback.format_exc())
+                    json_metrics['cache'] = {'error': 'Unable to fetch '
+                                                      'cache stats'}
+
+            try:
+                import psutil
+                json_metrics['system'] = {
+                    'cpu_percent': psutil.cpu_percent(),
+                    'memory_percent': psutil.virtual_memory().percent
+                }
+            except ImportError:
+                json_metrics['system'] = {'note': 'psutil not installed'}
+
+            return JSONResponse(json_metrics)
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error generating JSON metrics: {e}")
+            logger.error(traceback.format_exc())
+            return JSONResponse({'error': str(e)}, status_code=500)
+
+    # ------------------------------------------------------------------ #
+    # Metric refresh helpers
+    # ------------------------------------------------------------------ #
+
     def _update_dag_metrics(self):
-        """Update DAG-related metrics."""
+        """Update DAG-related gauges (per-DAG nodes/edges + active count)."""
         try:
             if not self.dag_server:
                 return
-            
             dags = getattr(self.dag_server, 'dags', {})
             active_count = 0
-            
             for dag_name, dag in dags.items():
                 try:
-                    # Count nodes and edges
                     nodes = len(getattr(dag, 'nodes', []))
                     edges = len(getattr(dag, 'edges', []))
-                    
-                    metrics.dag_nodes_total.labels(dag_name=dag_name).set(nodes)
-                    metrics.dag_edges_total.labels(dag_name=dag_name).set(edges)
-                    
-                    # Check if running
+                    metrics.dag_nodes_total.labels(dag_name=dag_name) \
+                        .set(nodes)
+                    metrics.dag_edges_total.labels(dag_name=dag_name) \
+                        .set(edges)
                     if getattr(dag, 'is_running', False):
                         active_count += 1
-                except Exception as e:
-                    logger.debug(f"Error updating metrics for DAG {dag_name}: {e}")
-            
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f"Error updating metrics for DAG "
+                                 f"{dag_name}: {e}")
+                    logger.error(traceback.format_exc())
             metrics.active_dags.set(active_count)
-            
-        except Exception as e:
-            logger.debug(f"Error updating DAG metrics: {e}")
-    
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error updating DAG metrics: {e}")
+            logger.error(traceback.format_exc())
+
     def _update_cache_metrics(self):
-        """Update cache-related metrics."""
+        """Update cache-related gauges."""
         try:
             if not self.redis_cache:
                 return
-            
-            # Get cache size
             data = getattr(self.redis_cache, 'data', {})
             metrics.cache_size.labels(cache_name='inmemory').set(len(data))
-            
-        except Exception as e:
-            logger.debug(f"Error updating cache metrics: {e}")
-    
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"Error updating cache metrics: {e}")
+            logger.error(traceback.format_exc())
+
     def _get_health_status(self):
-        """Get overall health status."""
+        """Build the combined health document and refresh gauges."""
         health = {
             'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
-            'version': '1.5.0',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'version': VERSION,
             'uptime_seconds': time.time() - self._start_time,
             'components': {}
         }
-        
-        # Check DAG server
+
         if self.dag_server:
             try:
-                dag_status = 'healthy' if hasattr(self.dag_server, 'dags') else 'unhealthy'
+                dag_status = 'healthy' if hasattr(self.dag_server, 'dags') \
+                    else 'unhealthy'
                 health['components']['dag_server'] = {
                     'status': dag_status,
                     'dags_loaded': len(getattr(self.dag_server, 'dags', {}))
                 }
                 if dag_status == 'unhealthy':
                     health['status'] = 'unhealthy'
-            except:
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Health check error (dag_server): {e}")
+                logger.error(traceback.format_exc())
                 health['components']['dag_server'] = {'status': 'error'}
                 health['status'] = 'unhealthy'
-        
-        # Check cache
+
         if self.redis_cache:
             try:
                 health['components']['cache'] = {
@@ -274,13 +250,14 @@ class MetricsRoutes:
                     'type': 'inmemory',
                     'keys': len(getattr(self.redis_cache, 'data', {}))
                 }
-            except:
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Health check error (cache): {e}")
+                logger.error(traceback.format_exc())
                 health['components']['cache'] = {'status': 'error'}
                 health['status'] = 'unhealthy'
-        
-        # Update health check metrics
+
         for component, status in health['components'].items():
             value = 1 if status.get('status') == 'healthy' else 0
-            metrics.health_check_status.labels(component=component).set(value)
-        
+            metrics.health_check_status.labels(component=component) \
+                .set(value)
         return health

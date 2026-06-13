@@ -384,7 +384,7 @@ When disabled:
 
 ```
 DAGComputeServer
-├── Main Thread (Flask)
+├── Main Thread (FastAPI/uvicorn)
 ├── Zookeeper Thread (Leader Election)
 └── AutoClone Manager Thread
     └── Runs every 10 seconds
@@ -420,3 +420,147 @@ AutoClone provides:
 - ✅ Log monitoring
 
 Perfect for peak hour scaling, scheduled processing, and temporary capacity needs!
+
+## Visual Reference
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                       DishtaYantra Compute Server                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌───────────────┐      ┌────────────────────────────────────┐    │
+│  │  FastAPI App  │      │   AutoClone Manager Thread         │    │
+│  │  (Main)       │      │   (Runs every 10 seconds)          │    │
+│  └───────────────┘      └────────────────────────────────────┘    │
+│                                       │                             │
+│                                       │                             │
+│  ┌────────────────────────────────────▼──────────────────────┐    │
+│  │                                                             │    │
+│  │           DAG Dictionary (self.dags)                       │    │
+│  │                                                             │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │    │
+│  │  │  Parent DAG  │  │  Clone #1    │  │  Clone #2    │    │    │
+│  │  │  (Original)  │  │ (AutoClone)  │  │ (AutoClone)  │    │    │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘    │    │
+│  │                                                             │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │        AutoClone Info Dictionary                            │    │
+│  │                                                             │    │
+│  │  parent_dag_name: {                                        │    │
+│  │    clones: ['clone1', 'clone2'],                          │    │
+│  │    status: 'active',                                       │    │
+│  │    ramp_up_completed: True                                │    │
+│  │  }                                                          │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+## State Machine Diagram
+
+```
+                    ┌──────────────────┐
+                    │                  │
+                    │      IDLE        │
+                    │  No clones       │
+                    │                  │
+                    └────────┬─────────┘
+                             │
+            Time reaches     │
+            ramp_up_time     │
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │                  │
+        ┌──────────►│   RAMPING UP     │
+        │           │  Creating clones │
+        │           │  (1 per minute)  │
+        │           │                  │
+        │           └────────┬─────────┘
+        │                    │
+        │    All clones      │
+        │    created         │
+        │                    │
+        │                    ▼
+        │           ┌──────────────────┐
+        │           │                  │
+        │           │     ACTIVE       │
+        │           │  All clones run  │
+        │           │                  │
+        │           └────────┬─────────┘
+        │                    │
+        │    Time reaches    │
+        │    ramp_down_time  │
+        │                    │
+        │                    ▼
+        │           ┌──────────────────┐
+        │           │                  │
+        │           │  RAMPING DOWN    │
+        │           │ Deleting clones  │
+        │           │  (1 per minute)  │
+        │           │                  │
+        │           └────────┬─────────┘
+        │                    │
+        │    All clones      │
+        │    deleted         │
+        │                    │
+        └────────────────────┘
+```
+
+## Configuration Decision Tree
+
+```
+                    Read DAG Config
+                          │
+                          ▼
+              ┌─────────────────────┐
+              │ Has 'autoclone'     │
+              │ section?            │
+              └──────┬──────────────┘
+                     │
+          ┌──────────┴──────────┐
+         NO                    YES
+          │                     │
+          ▼                     ▼
+    ┌──────────┐    ┌─────────────────────┐
+    │ AutoClone│    │ Check required      │
+    │ DISABLED │    │ fields:             │
+    └──────────┘    │ - ramp_up_time      │
+                    │ - ramp_down_time    │
+                    │ - ramp_count        │
+                    └──────┬──────────────┘
+                           │
+                ┌──────────┴──────────┐
+               ALL                  MISSING
+              PRESENT             OR EMPTY
+                │                     │
+                ▼                     ▼
+    ┌──────────────────┐    ┌──────────────┐
+    │ Validate         │    │ AutoClone    │
+    │ ramp_count > 0   │    │ DISABLED     │
+    └──────┬───────────┘    └──────────────┘
+           │
+    ┌──────┴──────┐
+   YES           NO
+    │             │
+    ▼             ▼
+┌─────────┐  ┌──────────┐
+│AutoClone│  │AutoClone │
+│ ENABLED │  │ DISABLED │
+└─────────┘  └──────────┘
+```
+
+## Key Takeaways
+
+1. **Automatic Management** - No manual intervention needed
+2. **Gradual Scaling** - 1 clone per minute (gentle ramp)
+3. **Time-Based** - Follows configured schedule
+4. **Always Active Clones** - No time window restrictions
+5. **Visual Feedback** - Clear dashboard indication
+6. **Safe Operations** - Auto-clones cannot be manually modified
+
+Perfect for peak hour scaling! 🚀

@@ -10,7 +10,7 @@ ajsinha@gmail.com
 
 ## Abstract
 
-Real-time data processing systems face fundamental challenges in achieving low-latency computation while supporting heterogeneous computational workloads across multiple programming languages. We present **DishtaYantra**, a novel high-performance Directed Acyclic Graph (DAG) compute framework that addresses these challenges through three key innovations: (1) an LMDB-based zero-copy data exchange mechanism achieving 100-1000× performance improvements over traditional serialization for inter-language communication, (2) a unified multi-language calculator framework supporting Python, Java (Py4J), C++ (pybind11), Rust (PyO3), and REST endpoints with sub-microsecond invocation overhead, and (3) a multiprocessing worker pool architecture with DAG affinity scheduling that bypasses Python's Global Interpreter Lock (GIL) for true CPU parallelism. Our experimental evaluation on consumer hardware (AMD Ryzen, 64GB RAM, Ubuntu 24.04) demonstrates that DishtaYantra achieves median latencies of 5μs for large payload transfers (compared to 500μs with JSON serialization), processes over 100,000 messages per second per worker, and maintains 90% parallel efficiency up to 12 concurrent workers.
+Real-time data processing systems face fundamental challenges in achieving low-latency computation while supporting heterogeneous computational workloads across multiple programming languages. We present **DishtaYantra**, a novel high-performance Directed Acyclic Graph (DAG) compute framework that addresses these challenges through three key innovations: (1) an LMDB-based zero-copy data exchange mechanism achieving 100-1000× performance improvements over traditional serialization for inter-language communication, (2) a unified multi-language calculator framework supporting Python, Java (Py4J), C++ (pybind11), Rust (PyO3), and REST endpoints with sub-microsecond invocation overhead, and (3) a multiprocessing worker pool architecture with DAG affinity scheduling that bypasses Python's Global Interpreter Lock (GIL) for true CPU parallelism. Our experimental evaluation on consumer hardware (AMD Ryzen, 64GB RAM, Ubuntu 24.04) demonstrates that DishtaYantra achieves median latencies of 5μs for large payload transfers (compared to 500μs with JSON serialization), processes over 100,000 messages per second per worker, and maintains 90% parallel efficiency up to 12 concurrent workers. Around this compute core, DishtaYantra provides a complete operational layer — a pluggable storage abstraction, database-backed authentication, configurable high-availability with automatic failover, and market-aware scheduling — that allows the same dataflow definitions to run as a production service.
 
 **Keywords:** Dataflow processing, DAG execution, Zero-copy communication, Multi-language integration, LMDB, Real-time systems, High-performance computing
 
@@ -42,9 +42,10 @@ We present **DishtaYantra**¹, a novel dataflow framework that addresses these l
 
 This paper makes the following contributions:
 
-- **DishtaYantra Framework:** An open-source high-performance DAG compute framework supporting five programming languages with unified configuration (§3)
+- **DishtaYantra Framework:** A high-performance DAG compute framework supporting five programming languages with unified, format-agnostic configuration (§3)
 - **LMDB Zero-Copy Protocol:** A novel data exchange mechanism reducing latency by 100-1000× compared to JSON serialization (§6)
 - **Worker Pool Architecture:** DAG affinity scheduling with fault tolerance and automatic recovery (§7)
+- **Enterprise Operational Model:** A pluggable storage abstraction, database-backed authentication and authorization, configurable high-availability with automatic failover, and market-aware scheduling that together let the same dataflow run as a production service (§7A)
 - **Comprehensive Evaluation:** Performance characterization on consumer hardware (§9)
 
 ---
@@ -126,7 +127,7 @@ DishtaYantra is architected as a layered system with clear separation of concern
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           DishtaYantra v1.7.6                                │
+│                           DishtaYantra v2.2                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  PRESENTATION LAYER                                                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
@@ -136,7 +137,7 @@ DishtaYantra is architected as a layered system with clear separation of concern
 ├─────────┴──────────────────┴──────────────────┴─────────────────┴───────────┤
 │  APPLICATION LAYER                                                           │
 │  ┌─────────────────────────────────────────────────────────────────────────┐ │
-│  │  Flask Application  │  Routes  │  Authentication  │  Session Mgmt      │ │
+│  │  FastAPI Application │  Routes  │  Authentication  │  Session Mgmt      │ │
 │  └─────────────────────────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ORCHESTRATION LAYER                                                         │
@@ -306,22 +307,41 @@ DishtaYantra provides a unified publish/subscribe abstraction supporting multipl
 │ │Kafka ││Rabbit││Redis ││ ActiveMQ ││TIBCO ││IBM MQ││ InMemory │   │
 │ └──────┘└──────┘└──────┘└──────────┘└──────┘└──────┘└──────────┘   │
 │                                                                      │
-│ Additional: file://, rest://, lmdb://                                │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                    DataPublisher / DataSubscriber               ││
+│  │                         (Abstract Interface)                    ││
+│  └───────────────────────────────┬─────────────────────────────────┘│
+│                                  │                                   │
+│  Brokers:  kafka  rabbitmq  activemq  tibcoems  websphere  redis     │
+│  Cloud:    AWS (sqs, kinesis, sns)   Azure (servicebus, eventhubs)   │
+│  Stores:   s3  azureblob  gcs   Other: file, sql, aerospike, grpc    │
+│  Local:    inmemory/mem, lmdb (zero-copy)   Compose: fanin, custom   │
+│  Wrapping: any of the above with "resilient": true                   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-**Supported Backends:**
+**Representative backends** (latencies are indicative, consumer hardware):
 
 | Protocol | Backend | Use Case | Latency |
 |----------|---------|----------|---------|
 | `kafka://` | Apache Kafka | High-throughput streaming | ~5ms |
 | `rabbitmq://` | RabbitMQ | Enterprise messaging | ~1ms |
-| `redis://` | Redis Pub/Sub | Low-latency caching | ~100μs |
 | `activemq://` | ActiveMQ | JMS compatibility | ~2ms |
-| `tibco://` | TIBCO EMS | Enterprise integration | ~1ms |
-| `ibmmq://` | IBM MQ | Mainframe connectivity | ~5ms |
-| `lmdb://` | LMDB | Cross-process IPC | ~5μs |
-| `inmemory://` | In-Memory | Testing/Development | ~1μs |
+| `tibcoems://` | TIBCO EMS | Enterprise integration | ~1ms |
+| `websphere://` | IBM MQ | Mainframe connectivity | ~5ms |
+| `redis://`, `redischannel://` | Redis | Low-latency caching/pub-sub | ~100μs |
+| `sqs://`, `kinesis://`, `sns://` | AWS managed messaging | Cloud-native streaming/queues | network-bound |
+| `servicebus://`, `eventhubs://` | Azure managed messaging | Cloud-native messaging | network-bound |
+| `s3://`, `azureblob://`, `gcs://` | Cloud object stores | Durable polling pub/sub | network-bound |
+| `sql://`, `aerospike://`, `grpc://` | Database / KV / RPC | Integration sources/sinks | varies |
+| `file://` | Filesystem | Durable local I/O | disk-bound |
+| `lmdb://` | LMDB | Cross-process IPC (zero-copy) | ~5μs |
+| `inmemory://`, `mem://` | In-Memory | Testing/Development | ~1μs |
+| `fanin://` | Composite | Merge several subscribers | n/a |
+
+Any broker/cloud backend can be wrapped with a **resilient** variant
+(`"resilient": true`) that adds automatic reconnection, message buffering
+during outages, and subscription/state restoration on reconnect.
 
 ### 3.4 Backpressure Management
 
@@ -780,6 +800,70 @@ DishtaYantra's worker pool enables true CPU parallelism by running DAGs in separ
 │  ...     Max backoff: 60s                                            │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 7A. Enterprise Operational Model
+
+A dataflow engine is only useful in production if it can be deployed, secured,
+made highly available, and operated. DishtaYantra layers four operational
+subsystems over the compute core, each pluggable and configuration-driven.
+
+### 7A.1 Pluggable Storage Abstraction
+
+DAG definitions, holiday calendars, and other persisted artifacts are read and
+written through a `StorageProvider` interface rather than direct filesystem
+calls. Four providers ship: local filesystem (default), Amazon S3, Azure Blob
+Storage, and Google Cloud Storage. Switching providers is purely a
+configuration change; the compute core is unaware of where its definitions
+live, which enables shared definitions across a horizontally-scaled fleet.
+
+### 7A.2 Authentication and Authorization
+
+Users, roles, and API keys are stored in a relational database (SQLite by
+default, PostgreSQL optionally) via a DAO layer. Passwords are hashed with
+PBKDF2-SHA256; clear text is never persisted. Interactive sessions use signed
+cookies; programmatic clients authenticate with API keys. Role checks
+(`admin` versus standard) gate administrative operations. A legacy flat-file
+user store is migrated once into the database and then retired.
+
+### 7A.3 High Availability
+
+A configurable HA manager elects a single PRIMARY instance across a fleet,
+with automatic failover. Four election backends are provided — ZooKeeper
+(znode election), Redis (lease key with TTL), an S3-object lease, and an
+exclusive-socket mechanism requiring no external dependency. On demotion an
+instance suspends its DAGs; on election it resumes them. The active role is
+surfaced in the operator console on every page.
+
+```
+┌──────────────┐   election    ┌──────────────┐
+│  Instance A  │◄────────────► │  Instance B  │
+│  PRIMARY     │   (zk/redis/  │  SECONDARY   │
+│  runs DAGs   │    s3/socket) │  DAGs paused │
+└──────┬───────┘               └──────┬───────┘
+       │  failure                     │ promote on
+       └──────────────────────────────┘ PRIMARY loss
+```
+
+### 7A.4 Market-Aware Scheduling
+
+Beyond simple time windows, each DAG may carry a schedule comprising a start
+time plus a duration (e.g. `09:30` + `6h30m`), a day-of-week allow/deny list,
+and one or more holiday calendars (e.g. USA, Canada market calendars). A DAG
+is active only when the time window matches, the weekday is permitted, and the
+date is not a holiday in any followed calendar. Time windows that wrap past
+midnight are handled correctly. Schedule edits — to a DAG's config or to the
+calendar files — are honored by the running system within five minutes,
+without a restart.
+
+### 7A.5 Format-Agnostic Configuration
+
+System configuration is read from either YAML or Java-style properties; the
+loader auto-detects the format and resolves `${VAR:default}` placeholders
+against other keys, environment variables, and command-line overrides, in that
+precedence order. Missing required properties cause a fail-fast startup error
+that names the exact missing key rather than silently defaulting.
 
 ---
 

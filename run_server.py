@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 DishtaYantra Compute Server - Main Entry Point
-Version: 1.7.6
+Version: 2.0.0
 
 IMPORTANT: This script must be run with `python run_server.py` 
 The multiprocessing worker pool requires the __main__ guard.
@@ -22,9 +22,8 @@ from datetime import datetime
 # Suppress LMDB GIL warnings (Python 3.13+ free-threading mode)
 warnings.filterwarnings("ignore", message=".*GIL.*lmdb.*", category=RuntimeWarning)
 
-# Version information
-VERSION = "1.7.6"
-BUILD_DATE = "2025-02-21"
+# Version information (single source of truth: core/version.py)
+from core.version import VERSION, BUILD_DATE
 
 # CRITICAL: Set start method at module level before any other multiprocessing usage
 def _setup_multiprocessing():
@@ -514,14 +513,16 @@ def main():
     print("└──────────────────────────────────────────────────────────────────────┘")
     
     # Import webapp here (after multiprocessing setup)
-    from web.dishtyantra_webapp import DishtaYantraWebApp
+    from web.dishtayantra_webapp import DishtaYantraWebApp
 
     try:
         # Load application properties
         print("\n┌─ Application Properties ─────────────────────────────────────────────┐")
-        logger.info("Loading application properties...")
-        props = PropertiesConfigurator(['config/application.properties'])
-        _log_component_status("Application Properties", "OK", "Loaded from config/application.properties")
+        logger.info("Loading application configuration...")
+        from core.config_parsers import find_default_config
+        config_file = find_default_config('config')
+        props = PropertiesConfigurator([config_file])
+        _log_component_status("Application Configuration", "OK", f"Loaded from {config_file}")
         print("└──────────────────────────────────────────────────────────────────────┘")
 
         # Load external module paths
@@ -555,7 +556,7 @@ def main():
         print("\n┌─ Web Application Initialization ────────────────────────────────────┐")
         logger.info("Initializing DishtaYantra Web Application...")
         _webapp = DishtaYantraWebApp.get_instance(worker_pool=_worker_pool)
-        _log_component_status("Web Application", "OK", "Flask application initialized")
+        _log_component_status("Web Application", "OK", "FastAPI application initialized")
         logger.info("DishtaYantra Web Application initialized successfully")
         print("└──────────────────────────────────────────────────────────────────────┘")
 
