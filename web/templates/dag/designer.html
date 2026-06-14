@@ -1643,7 +1643,9 @@ function initializeCanvas() {
         style: [
             { selector: 'node', style: {
                 'shape': 'round-rectangle',
-                'width': 'label', 'height': 38, 'padding': '12px',
+                // Size width to the label (replaces the deprecated width:'label').
+                'width': function (ele) { var s = String(ele.data('name') || ''); return Math.max(40, Math.min(s.length * 7.5, 160)); },
+                'height': 38, 'padding': '12px',
                 'background-color': '#475569',
                 'label': 'data(name)', 'color': '#ffffff',
                 'font-size': 12, 'font-weight': 600,

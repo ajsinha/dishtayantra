@@ -1022,7 +1022,9 @@ function buildDagGraph() {
                 'border-width': 2,
                 'shape': 'round-rectangle',
                 'label': 'data(label)',
-                'width': 'label', 'height': 46,
+                // Size width to the label (replaces the deprecated width:'label').
+                'width': function (ele) { var s = String(ele.data('label') || ''); return Math.max(40, Math.min(s.length * 7.5, 150)); },
+                'height': 46,
                 'padding': '12px',
                 'text-valign': 'center', 'text-halign': 'center',
                 'text-wrap': 'wrap', 'text-max-width': '150px',

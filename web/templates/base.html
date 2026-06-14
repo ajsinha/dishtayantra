@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -117,6 +117,32 @@
             --scrollbar-track: #11162e;
             --scrollbar-thumb: #28304f;
             --scrollbar-thumb-hover: #3a4570;
+
+            /* ----------------------------------------------------------------
+               Bootstrap 5.3 token bridge. data-bs-theme="dark" turns on
+               Bootstrap's native dark mode; these remap its colour tokens onto
+               the app's "night sky" navy palette so its components (tables,
+               dropdowns, modals, list groups, forms, accordions, alerts,
+               badges) match the rest of the UI without per-component overrides.
+               ---------------------------------------------------------------- */
+            --bs-body-bg: var(--bg-body);
+            --bs-body-bg-rgb: 12, 16, 34;
+            --bs-body-color: var(--text-primary);
+            --bs-body-color-rgb: 238, 240, 248;
+            --bs-emphasis-color: var(--text-primary);
+            --bs-emphasis-color-rgb: 238, 240, 248;
+            --bs-secondary-color: var(--text-secondary);
+            --bs-secondary-bg: var(--bg-card);
+            --bs-tertiary-color: var(--text-muted);
+            --bs-tertiary-bg: #181f3d;
+            --bs-border-color: var(--border-color);
+            --bs-border-color-translucent: rgba(255, 255, 255, 0.12);
+            --bs-heading-color: var(--text-primary);
+            --bs-link-color: var(--text-link);
+            --bs-link-color-rgb: 240, 201, 140;
+            --bs-link-hover-color: #ffd9a3;
+            --bs-code-color: #e685b5;
+            --bs-highlight-bg: #3a2d12;
         }
         
         /* ============================================
@@ -536,26 +562,6 @@
             border-radius: 8px;
         }
         
-        [data-theme="dark"] .alert-info {
-            background: rgba(6, 182, 212, 0.15);
-            color: #67e8f9;
-        }
-        
-        [data-theme="dark"] .alert-warning {
-            background: rgba(245, 158, 11, 0.15);
-            color: #fcd34d;
-        }
-        
-        [data-theme="dark"] .alert-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-        }
-        
-        [data-theme="dark"] .alert-success {
-            background: rgba(16, 185, 129, 0.15);
-            color: #6ee7b7;
-        }
-        
         /* ============================================
            MODAL STYLING
            ============================================ */
@@ -645,14 +651,6 @@
         /* ============================================
            TOOLTIP & POPOVER STYLING
            ============================================ */
-        [data-theme="dark"] .tooltip-inner {
-            background: #475569;
-        }
-        
-        [data-theme="dark"] .bs-tooltip-top .tooltip-arrow::before {
-            border-top-color: #475569;
-        }
-        
         /* ============================================
            FOOTER STYLING
            ============================================ */
@@ -790,47 +788,14 @@
         /* ============================================
            DARK MODE SPECIFIC OVERRIDES
            ============================================ */
-        [data-theme="dark"] .text-muted {
-            color: var(--text-muted) !important;
-        }
-        
-        [data-theme="dark"] .text-secondary {
-            color: var(--text-secondary) !important;
-        }
-        
+        /* .bg-light is a fixed-light utility (not theme-aware even in 5.3),
+           so it still needs re-colouring on the dark surface. */
         [data-theme="dark"] .bg-light {
             background: var(--bg-card) !important;
         }
         
         [data-theme="dark"] .border {
             border-color: var(--border-color) !important;
-        }
-        
-        [data-theme="dark"] hr {
-            border-color: var(--border-color);
-            opacity: 0.5;
-        }
-        
-        [data-theme="dark"] a:not(.btn):not(.nav-link):not(.dropdown-item):not(.navbar-brand) {
-            color: var(--text-link);
-        }
-        
-        [data-theme="dark"] a:not(.btn):not(.nav-link):not(.dropdown-item):not(.navbar-brand):hover {
-            color: #93c5fd;
-        }
-        
-        /* Dark mode dropdown for non-navbar dropdowns */
-        [data-theme="dark"] .dropdown-menu:not(.dropdown-menu-dark) {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-        }
-        
-        [data-theme="dark"] .dropdown-menu:not(.dropdown-menu-dark) .dropdown-item {
-            color: var(--text-primary);
-        }
-        
-        [data-theme="dark"] .dropdown-menu:not(.dropdown-menu-dark) .dropdown-item:hover {
-            background: var(--bg-table-hover);
         }
 
         /* ============================================
@@ -858,18 +823,9 @@
             color: var(--text-primary) !important;
         }
 
-        /* Bootstrap 5.1 sets fixed dark table colour variables (incl.
-           --bs-table-striped-color: #212529) whose striped/hover selectors
-           out-specify the app's table colour, so odd striped rows rendered
-           dark-on-dark. Remap the variables for dark mode. */
-        [data-theme="dark"] .table {
-            --bs-table-color: var(--text-primary);
-            --bs-table-striped-color: var(--text-primary);
-            --bs-table-active-color: var(--text-primary);
-            --bs-table-hover-color: var(--text-primary);
-        }
-        /* Contextual row/cell tints ship as light pastels; re-tint for dark
-           mode so their (now light) text stays legible. */
+        /* Bootstrap 5.3 themes table text natively via data-bs-theme; only the
+           contextual row/cell tints ship as fixed light pastels, so re-tint
+           those for dark mode (their text is light via --bs-table-color). */
         [data-theme="dark"] .table-success { --bs-table-bg: rgba(16, 185, 129, 0.18); }
         [data-theme="dark"] .table-danger  { --bs-table-bg: rgba(239, 68, 68, 0.18); }
         [data-theme="dark"] .table-warning { --bs-table-bg: rgba(245, 158, 11, 0.18); }
@@ -898,70 +854,6 @@
             background: #7fb4ff;
         }
 
-        /* Contextual alerts ship with light backgrounds + dark text; in dark
-           mode the background stays light while inherited text turns light
-           (light-on-light). Re-theme them as translucent tinted panels. */
-        [data-theme="dark"] .alert-success {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: rgba(16, 185, 129, 0.45);
-            color: var(--text-primary);
-        }
-        [data-theme="dark"] .alert-info {
-            background: rgba(6, 182, 212, 0.15);
-            border-color: rgba(6, 182, 212, 0.45);
-            color: var(--text-primary);
-        }
-        [data-theme="dark"] .alert-warning {
-            background: rgba(245, 158, 11, 0.15);
-            border-color: rgba(245, 158, 11, 0.45);
-            color: var(--text-primary);
-        }
-        [data-theme="dark"] .alert-primary {
-            background: rgba(127, 180, 255, 0.15);
-            border-color: rgba(127, 180, 255, 0.45);
-            color: var(--text-primary);
-        }
-        [data-theme="dark"] .alert-danger {
-            background: rgba(239, 68, 68, 0.15);
-            border-color: rgba(239, 68, 68, 0.45);
-            color: var(--text-primary);
-        }
-        [data-theme="dark"] .alert-secondary,
-        [data-theme="dark"] .alert-light {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-            color: var(--text-primary);
-        }
-        [data-theme="dark"] .alert-success strong,
-        [data-theme="dark"] .alert-info strong,
-        [data-theme="dark"] .alert-warning strong,
-        [data-theme="dark"] .alert-primary strong,
-        [data-theme="dark"] .alert-danger strong,
-        [data-theme="dark"] .alert-light strong,
-        [data-theme="dark"] .alert-secondary strong {
-            color: var(--text-primary);
-        }
-
-        /* Accordion in dark mode */
-        [data-theme="dark"] .accordion-item {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-        }
-        
-        [data-theme="dark"] .accordion-button {
-            background: var(--bg-card);
-            color: var(--text-primary);
-        }
-        
-        [data-theme="dark"] .accordion-button:not(.collapsed) {
-            background: var(--bg-table-hover);
-            color: var(--text-primary);
-        }
-        
-        [data-theme="dark"] .accordion-button::after {
-            filter: invert(1);
-        }
-        
         /* ============================================
            BOOTSTRAP TEXT COLOR PRESERVATION
            Ensure Bootstrap text utility classes work
@@ -1224,6 +1116,7 @@
         // Apply theme
         function setTheme(theme) {
             html.setAttribute('data-theme', theme);
+            html.setAttribute('data-bs-theme', theme);
             localStorage.setItem(THEME_KEY, theme);
             
             // Update toggle button title
