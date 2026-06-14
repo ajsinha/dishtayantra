@@ -218,7 +218,11 @@ class DishtaYantraWebApp:
         """
         fastapi_compat.APP_TEMPLATE_PROPS.update({
             'app_name': self.app_name,
-            'app_version': self.props.get('app.version', VERSION),
+            # Single source of truth: the running version always comes from
+            # core.version.VERSION, never from a config value that can drift
+            # (a stale app.version in config once made the About page show an
+            # old release). config app.version is kept only as documentation.
+            'app_version': VERSION,
             'author_name': self.props.get('app.author.name',
                                           'Ashutosh Sinha'),
             'author_email': self.props.get('app.author.email',

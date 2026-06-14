@@ -27,6 +27,21 @@
         --component-transformer: #0891b2;
     }
 
+    /* v3.1.0: honor the app-wide dark theme. The designer defines its own
+       canvas/panel vars (above) for the light default; in dark mode we flip
+       them so the canvas, panels, and text match the rest of the app instead
+       of forcing a light island. Node/component accent swatches stay vivid in
+       both themes for contrast. */
+    [data-theme="dark"] {
+        --canvas-bg: #0c1022;
+        --canvas-grid: #1e2746;
+        --panel-bg: #11162e;
+        --panel-border: #232c4d;
+        --text-primary: #e6e9f5;
+        --text-secondary: #aab2d5;
+        --text-muted: #7681a8;
+    }
+
     body {
         background: var(--canvas-bg);
         overflow: hidden;
@@ -53,7 +68,7 @@
     .palette-header {
         padding: 12px 15px;
         border-bottom: 1px solid var(--panel-border);
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        background: var(--bg-table-header);
     }
 
     .palette-header h5 {
@@ -88,7 +103,7 @@
     }
 
     .palette-section-header:hover {
-        background: #f1f5f9;
+        background: var(--bg-table-hover);
         border-color: #cbd5e1;
     }
 
@@ -121,7 +136,7 @@
         display: flex;
         align-items: center;
         padding: 8px 10px;
-        background: #fafafa;
+        background: var(--bg-body);
         border: 1px solid var(--border-color);
         border-radius: 6px;
         cursor: grab;
@@ -131,7 +146,7 @@
     }
 
     .palette-item:hover {
-        background: #f3f4f6;
+        background: var(--bg-table-hover);
         border-color: var(--accent-primary);
         transform: translateX(3px);
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -178,7 +193,7 @@
     .components-list-header {
         padding: 12px 15px;
         border-bottom: 1px solid var(--panel-border);
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        background: var(--bg-table-header);
     }
 
     .components-list-header h5 {
@@ -228,7 +243,7 @@
         align-items: center;
         justify-content: space-between;
         padding: 6px 8px;
-        background: #fafafa;
+        background: var(--bg-body);
         border: 1px solid var(--border-color);
         border-radius: 4px;
         margin-bottom: 4px;
@@ -238,7 +253,7 @@
     }
 
     .component-list-item:hover {
-        background: #f0f9ff;
+        background: var(--bg-table-hover);
         border-color: var(--accent-secondary);
     }
 
@@ -341,7 +356,7 @@
     }
 
     .toolbar-btn:hover {
-        background: #f1f5f9;
+        background: var(--bg-table-hover);
         border-color: var(--accent-primary);
     }
 
@@ -362,7 +377,7 @@
     }
 
     .toolbar-btn.danger:hover {
-        background: #fef2f2;
+        background: rgba(220, 38, 38, 0.12);
         border-color: var(--accent-danger);
     }
 
@@ -396,191 +411,19 @@
         position: relative;
         overflow: hidden;
         background:
-            linear-gradient(rgba(216,220,227,0.5) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(216,220,227,0.5) 1px, transparent 1px);
+            linear-gradient(var(--canvas-grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--canvas-grid) 1px, transparent 1px);
         background-size: 20px 20px;
         background-color: var(--canvas-bg);
     }
 
-    #dag-canvas {
+    #cy {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        cursor: default;
-    }
-
-    .canvas-node {
-        position: absolute;
-        min-width: 180px;
-        background: var(--panel-bg);
-        border: 2px solid var(--panel-border);
-        border-radius: 8px;
-        cursor: move;
-        user-select: none;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        transition: box-shadow 0.2s, border-color 0.2s;
-        z-index: 10;
-    }
-
-    .canvas-node:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    }
-
-    .canvas-node.selected {
-        border-color: var(--accent-primary);
-        box-shadow: 0 0 0 3px rgba(16,185,129,0.2), 0 4px 12px rgba(0,0,0,0.12);
-    }
-
-    .canvas-node.connecting {
-        border-color: var(--accent-secondary);
-    }
-
-    .node-header {
-        display: flex;
-        align-items: center;
-        padding: 8px 10px;
-        border-radius: 6px 6px 0 0;
-        cursor: move;
-    }
-
-    .node-header .node-icon {
-        width: 22px;
-        height: 22px;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 8px;
-        font-size: 10px;
-        color: white;
-    }
-
-    .canvas-node[data-type="SubscriptionNode"] .node-header { background: linear-gradient(135deg, var(--node-subscription) 0%, #047857 100%); }
-    .canvas-node[data-type="PublicationNode"] .node-header { background: linear-gradient(135deg, var(--node-publication) 0%, #b91c1c 100%); }
-    .canvas-node[data-type="CalculationNode"] .node-header { background: linear-gradient(135deg, var(--node-calculation) 0%, #1d4ed8 100%); }
-    .canvas-node[data-type="MetronomeNode"] .node-header { background: linear-gradient(135deg, var(--node-metronome) 0%, #6d28d9 100%); }
-    .canvas-node[data-type="SinkNode"] .node-header { background: linear-gradient(135deg, var(--node-sink) 0%, #334155 100%); }
-
-    .node-header .node-title {
-        flex: 1;
-        color: white;
-        font-size: 11px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .node-header .node-type-badge {
-        font-size: 8px;
-        padding: 2px 5px;
-        background: rgba(255,255,255,0.25);
-        border-radius: 3px;
-        color: white;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .node-body {
-        padding: 8px 10px;
-        font-size: 10px;
-        color: var(--text-secondary);
-        background: #fafafa;
-    }
-
-    .node-info-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 3px;
-    }
-
-    .node-info-row i {
-        width: 14px;
-        margin-right: 5px;
-        opacity: 0.7;
-        font-size: 9px;
-    }
-
-    /* Connection Ports */
-    .node-ports {
-        display: flex;
-        justify-content: space-between;
-        padding: 6px 10px 8px;
-        background: #fafafa;
-        border-radius: 0 0 6px 6px;
-    }
-
-    .port {
-        width: 12px;
-        height: 12px;
-        background: var(--panel-border);
-        border: 2px solid var(--panel-bg);
-        border-radius: 50%;
-        cursor: crosshair;
-        transition: all 0.2s;
-        position: relative;
-    }
-
-    .port:hover {
-        transform: scale(1.3);
-    }
-
-    .port.input {
-        background: var(--accent-secondary);
-    }
-
-    .port.output {
-        background: var(--accent-primary);
-    }
-
-    .port.active {
-        box-shadow: 0 0 0 4px rgba(16,185,129,0.3);
-    }
-
-    /* SVG Edges */
-    #edges-svg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 5;
-    }
-
-    .edge-path {
-        fill: none;
-        stroke: var(--accent-primary);
-        stroke-width: 2;
-        pointer-events: stroke;
-        cursor: pointer;
-        marker-end: url(#arrowhead);
-    }
-
-    .edge-path:hover {
-        stroke-width: 4;
-        stroke: var(--accent-warning);
-        marker-end: url(#arrowhead-hover);
-    }
-
-    .edge-path.selected {
-        stroke: var(--accent-secondary);
-        stroke-width: 3;
-        marker-end: url(#arrowhead-selected);
-    }
-
-    .edge-path.temp {
-        stroke: var(--accent-secondary);
-        stroke-dasharray: 5,5;
-        marker-end: url(#arrowhead-temp);
-    }
-
-    .edge-label {
-        font-size: 9px;
-        fill: var(--text-secondary);
-        pointer-events: none;
+        background: transparent;
     }
 
     /* Right Properties Panel */
@@ -598,7 +441,7 @@
     .properties-header {
         padding: 12px 15px;
         border-bottom: 1px solid var(--panel-border);
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        background: var(--bg-table-header);
     }
 
     .properties-header h5 {
@@ -711,7 +554,7 @@
     }
 
     .property-btn:hover {
-        background: #f1f5f9;
+        background: var(--bg-table-hover);
     }
 
     .property-btn.danger {
@@ -720,7 +563,7 @@
     }
 
     .property-btn.danger:hover {
-        background: #fef2f2;
+        background: rgba(220, 38, 38, 0.12);
     }
 
     /* Combo Input (Text + Datalist) */
@@ -877,36 +720,8 @@
     }
 
     .zoom-btn:hover {
-        background: #f1f5f9;
+        background: var(--bg-table-hover);
         border-color: var(--accent-primary);
-    }
-
-    /* Minimap */
-    .minimap {
-        position: absolute;
-        bottom: 15px;
-        left: 15px;
-        width: 160px;
-        height: 100px;
-        background: rgba(255,255,255,0.9);
-        border: 1px solid var(--panel-border);
-        border-radius: 6px;
-        overflow: hidden;
-        z-index: 100;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .minimap-content {
-        width: 100%;
-        height: 100%;
-        position: relative;
-    }
-
-    .minimap-node {
-        position: absolute;
-        background: var(--accent-primary);
-        opacity: 0.7;
-        border-radius: 2px;
     }
 
     /* Context Menu */
@@ -938,7 +753,7 @@
     }
 
     .context-menu-item:hover {
-        background: #f1f5f9;
+        background: var(--bg-table-hover);
     }
 
     .context-menu-item.danger {
@@ -968,16 +783,6 @@
 
     ::-webkit-scrollbar-thumb:hover {
         background: #9ca3af;
-    }
-
-    /* Animations */
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    .connecting .port.output {
-        animation: pulse 1s infinite;
     }
 
     /* Settings Row */
@@ -1066,6 +871,54 @@
                         <div class="item-icon" style="background:#0891b2;"><i class="bi bi-file-earmark-text"></i></div>
                         <span>File</span>
                     </div>
+                    <div class="palette-item" draggable="true" data-type="SQSDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-aws"></i></div>
+                        <span>AWS SQS</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="KinesisDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-water"></i></div>
+                        <span>AWS Kinesis</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="S3DataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#e0701a;"><i class="bi bi-bucket"></i></div>
+                        <span>AWS S3</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="ServiceBusDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-bus-front"></i></div>
+                        <span>Azure Service Bus</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="EventHubsDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-broadcast"></i></div>
+                        <span>Azure Event Hubs</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="AzureBlobDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-cloud"></i></div>
+                        <span>Azure Blob</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="GCSDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#1a73e8;"><i class="bi bi-google"></i></div>
+                        <span>Google Cloud Storage</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="LMDBDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#15803d;"><i class="bi bi-hdd"></i></div>
+                        <span>LMDB (zero-copy)</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="SQLDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#0f766e;"><i class="bi bi-database"></i></div>
+                        <span>SQL Database</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="RESTDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#475569;"><i class="bi bi-hdd-network"></i></div>
+                        <span>REST / HTTP</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="TibcoEMSDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#003366;"><i class="bi bi-diagram-2"></i></div>
+                        <span>TIBCO EMS</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="WebSphereMQDataSubscriber" data-category="subscriber">
+                        <div class="item-icon" style="background:#052f5f;"><i class="bi bi-server"></i></div>
+                        <span>WebSphere MQ</span>
+                    </div>
                     <div class="palette-item" draggable="true" data-type="InMemoryDataSubscriber" data-category="subscriber">
                         <div class="item-icon" style="background:#0d9488;"><i class="bi bi-memory"></i></div>
                         <span>InMemory</span>
@@ -1135,6 +988,58 @@
                     <div class="palette-item" draggable="true" data-type="FileDataPublisher" data-category="publisher">
                         <div class="item-icon" style="background:#0891b2;"><i class="bi bi-file-earmark-arrow-up"></i></div>
                         <span>File</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="SQSDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-aws"></i></div>
+                        <span>AWS SQS</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="SNSDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-megaphone"></i></div>
+                        <span>AWS SNS</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="KinesisDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-water"></i></div>
+                        <span>AWS Kinesis</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="S3DataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#e0701a;"><i class="bi bi-bucket"></i></div>
+                        <span>AWS S3</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="ServiceBusDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-bus-front"></i></div>
+                        <span>Azure Service Bus</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="EventHubsDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-broadcast"></i></div>
+                        <span>Azure Event Hubs</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="AzureBlobDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-cloud"></i></div>
+                        <span>Azure Blob</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="GCSDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#1a73e8;"><i class="bi bi-google"></i></div>
+                        <span>Google Cloud Storage</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="LMDBDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#15803d;"><i class="bi bi-hdd"></i></div>
+                        <span>LMDB (zero-copy)</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="SQLDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#0f766e;"><i class="bi bi-database"></i></div>
+                        <span>SQL Database</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="RESTDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#475569;"><i class="bi bi-hdd-network"></i></div>
+                        <span>REST / HTTP</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="TibcoEMSDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#003366;"><i class="bi bi-diagram-2"></i></div>
+                        <span>TIBCO EMS</span>
+                    </div>
+                    <div class="palette-item" draggable="true" data-type="WebSphereMQDataPublisher" data-category="publisher">
+                        <div class="item-icon" style="background:#052f5f;"><i class="bi bi-server"></i></div>
+                        <span>WebSphere MQ</span>
                     </div>
                     <div class="palette-item" draggable="true" data-type="InMemoryDataPublisher" data-category="publisher">
                         <div class="item-icon" style="background:#0d9488;"><i class="bi bi-memory"></i></div>
@@ -1294,6 +1199,9 @@
                 <button class="toolbar-btn" onclick="exportToFile()" title="Export JSON">
                     <i class="bi bi-download"></i> Export
                 </button>
+                <button class="toolbar-btn primary" onclick="saveToServer()" title="Deploy this DAG to the server" id="deployBtn">
+                    <i class="bi bi-cloud-upload"></i> Save to Server
+                </button>
                 <div class="toolbar-separator"></div>
                 <select class="property-select" id="loadExistingDag" style="width: 160px; padding: 6px 8px;" onchange="loadExistingDag(this.value)">
                     <option value="">Load Existing...</option>
@@ -1316,37 +1224,14 @@
         </div>
 
         <div class="canvas-wrapper" id="canvasWrapper">
-            <svg id="edges-svg">
-                <defs>
-                    <!-- Arrowhead marker for normal edges -->
-                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
-                    </marker>
-                    <!-- Arrowhead marker for hovered edges -->
-                    <marker id="arrowhead-hover" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
-                    </marker>
-                    <!-- Arrowhead marker for selected edges -->
-                    <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
-                    </marker>
-                    <!-- Arrowhead marker for temp edges -->
-                    <marker id="arrowhead-temp" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
-                    </marker>
-                </defs>
-            </svg>
-            <div id="dag-canvas"></div>
+            <div id="cy"></div>
 
             <div class="zoom-controls">
                 <button class="zoom-btn" onclick="zoomIn()" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
                 <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
-                <button class="zoom-btn" onclick="resetZoom()" title="Reset"><i class="bi bi-aspect-ratio"></i></button>
-                <button class="zoom-btn" onclick="fitToCanvas()" title="Fit"><i class="bi bi-arrows-fullscreen"></i></button>
-            </div>
-
-            <div class="minimap" id="minimap">
-                <div class="minimap-content" id="minimapContent"></div>
+                <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom"><i class="bi bi-aspect-ratio"></i></button>
+                <button class="zoom-btn" onclick="fitToCanvas()" title="Fit to View"><i class="bi bi-arrows-fullscreen"></i></button>
+                <button class="zoom-btn" onclick="runAutoLayout()" title="Auto Layout"><i class="bi bi-diagram-3"></i></button>
             </div>
         </div>
 
@@ -1469,11 +1354,11 @@
                     <div class="property-section-title">Edge Configuration</div>
                     <div class="property-group">
                         <label class="property-label">From Node</label>
-                        <input type="text" class="property-input" id="propEdgeFrom" readonly style="background: #f1f5f9;">
+                        <input type="text" class="property-input" id="propEdgeFrom" readonly style="background: var(--bg-table-hover);">
                     </div>
                     <div class="property-group">
                         <label class="property-label">To Node</label>
-                        <input type="text" class="property-input" id="propEdgeTo" readonly style="background: #f1f5f9;">
+                        <input type="text" class="property-input" id="propEdgeTo" readonly style="background: var(--bg-table-hover);">
                     </div>
                     <div class="property-group">
                         <label class="property-label">Edge Name (pname)</label>
@@ -1598,6 +1483,40 @@
 </div>
 
 <!-- JSON Preview Modal -->
+<div class="modal fade" id="deployModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-cloud-upload"></i> Deploy DAG to Server</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Deploy <strong id="deployDagName"></strong> to a DAG folder. It will be saved and the server will reload so it starts running (subject to its schedule).</p>
+                <div class="mb-3">
+                    <label class="form-label">Destination folder</label>
+                    <select class="form-select" id="deployFolder"></select>
+                    <div class="form-text">DAG names must be globally unique across all folders.</div>
+                </div>
+                <div id="deployOverwriteWrap" style="display:none;" class="mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="deployOverwrite">
+                        <label class="form-check-label" for="deployOverwrite">
+                            Overwrite the existing DAG with this name
+                        </label>
+                    </div>
+                </div>
+                <div id="deployMsg"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="performDeploy()">
+                    <i class="bi bi-cloud-upload"></i> Deploy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="jsonPreviewModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -1642,6 +1561,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/cytoscape/cytoscape.min.js') }}"></script>
 <script>
 // ==========================================
 // DAG Designer State
@@ -1694,26 +1614,95 @@ document.addEventListener('DOMContentLoaded', function() {
     updateComponentsLists();
 });
 
+// ==========================================
+// Cytoscape canvas engine (v3.2.0)
+// The canvas was migrated from a bespoke SVG/HTML renderer to Cytoscape.js
+// (already vendored, used read-only on the details page). dagState remains
+// the single source of truth; Cytoscape is the view + interaction layer and
+// syncs to/from dagState. This removed hundreds of lines of hand-rolled
+// node-rendering, edge-math, drag, zoom, pan and minimap code.
+// ==========================================
+let cy = null;
+
+function nodeClass(type) {
+    if (type === 'SubscriptionNode') return 'n-subscription';
+    if (type === 'PublicationNode') return 'n-publication';
+    if (type === 'CalculationNode') return 'n-calculation';
+    if (type === 'MetronomeNode') return 'n-metronome';
+    return 'n-sink'; // SinkNode / PublisherSinkNode / fallback
+}
+
 function initializeCanvas() {
-    const canvas = document.getElementById('dag-canvas');
-
-    canvas.addEventListener('click', function(e) {
-        if (e.target === canvas) {
-            deselectAll();
-        }
+    cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: [],
+        minZoom: 0.2,
+        maxZoom: 3,
+        selectionType: 'single',
+        boxSelectionEnabled: false,
+        style: [
+            { selector: 'node', style: {
+                'shape': 'round-rectangle',
+                'width': 'label', 'height': 38, 'padding': '12px',
+                'background-color': '#475569',
+                'label': 'data(name)', 'color': '#ffffff',
+                'font-size': 12, 'font-weight': 600,
+                'text-valign': 'center', 'text-halign': 'center',
+                'text-wrap': 'ellipsis', 'text-max-width': 160,
+                'border-width': 2, 'border-color': 'rgba(255,255,255,0.18)',
+                'transition-property': 'border-color, border-width',
+                'transition-duration': '0.1s'
+            }},
+            { selector: 'node.n-subscription', style: { 'background-color': '#059669' }},
+            { selector: 'node.n-publication',  style: { 'background-color': '#dc2626' }},
+            { selector: 'node.n-calculation',  style: { 'background-color': '#2563eb' }},
+            { selector: 'node.n-metronome',    style: { 'background-color': '#7c3aed' }},
+            { selector: 'node.n-sink',         style: { 'background-color': '#475569' }},
+            { selector: 'node:selected', style: { 'border-width': 3, 'border-color': '#f59e0b' }},
+            { selector: 'node.connect-source', style: { 'border-width': 3, 'border-color': '#3b82f6', 'border-style': 'dashed' }},
+            { selector: 'edge', style: {
+                'width': 2, 'line-color': '#94a3b8',
+                'target-arrow-color': '#94a3b8', 'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier', 'arrow-scale': 1.1,
+                'label': 'data(label)', 'font-size': 10,
+                // Cytoscape does NOT resolve CSS custom properties (var(--...)),
+                // so edge-label colors must be concrete. A slate pill with
+                // near-white text reads well on both the light and dark canvas.
+                'color': '#f1f5f9',
+                'text-background-color': '#475569', 'text-background-opacity': 0.9,
+                'text-background-shape': 'roundrectangle', 'text-background-padding': 3
+            }},
+            { selector: 'edge:selected', style: { 'line-color': '#3b82f6', 'target-arrow-color': '#3b82f6', 'width': 3 }}
+        ],
+        layout: { name: 'preset' }
     });
 
-    canvas.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        hideContextMenu();
+    // Selection + connect: tapping a node either completes a pending
+    // connection or selects it.
+    cy.on('tap', 'node', function(evt) {
+        const id = evt.target.id();
+        if (canvasState.connectingFrom) { endConnection(id); }
+        else { selectNode(id); }
     });
-
-    document.getElementById('edges-svg').addEventListener('click', function(e) {
-        if (e.target.classList.contains('edge-path')) {
-            e.stopPropagation();
-            const edgeIndex = parseInt(e.target.dataset.index);
-            selectEdge(edgeIndex);
-        }
+    cy.on('tap', 'edge', function(evt) {
+        const idx = parseInt(evt.target.data('index'));
+        if (!isNaN(idx)) selectEdge(idx);
+    });
+    cy.on('tap', function(evt) { if (evt.target === cy) deselectAll(); });
+    cy.on('cxttap', 'node', function(evt) {
+        selectNode(evt.target.id());
+        const oe = evt.originalEvent;
+        showContextMenu(oe.clientX, oe.clientY);
+    });
+    // Persist dragged positions back into dagState.
+    cy.on('dragfree', 'node', function(evt) {
+        const p = evt.target.position();
+        const node = dagState.nodes.find(n => n.id === evt.target.id());
+        if (node) { node.x = p.x; node.y = p.y; }
+    });
+    cy.on('zoom', function() {
+        const z = document.getElementById('zoomLevel');
+        if (z) z.textContent = Math.round(cy.zoom() * 100) + '%';
     });
 
     document.addEventListener('keydown', function(e) {
@@ -1724,10 +1713,7 @@ function initializeCanvas() {
                 else if (canvasState.selectedEdge !== null) deleteSelectedEdge();
             }
         }
-        if (e.key === 'Escape') {
-            cancelConnection();
-            hideContextMenu();
-        }
+        if (e.key === 'Escape') { cancelConnection(); hideContextMenu(); }
     });
 }
 
@@ -1737,19 +1723,16 @@ function isInputFocused() {
 }
 
 // ==========================================
-// Drag and Drop
+// Drag and Drop (palette -> canvas)
 // ==========================================
 function initializeDragAndDrop() {
-    const paletteItems = document.querySelectorAll('.palette-item');
-    const canvas = document.getElementById('dag-canvas');
-
-    paletteItems.forEach(item => {
+    document.querySelectorAll('.palette-item').forEach(item => {
         item.addEventListener('dragstart', handleDragStart);
         item.addEventListener('dragend', handleDragEnd);
     });
-
-    canvas.addEventListener('dragover', handleDragOver);
-    canvas.addEventListener('drop', handleDrop);
+    const container = document.getElementById('cy');
+    container.addEventListener('dragover', handleDragOver);
+    container.addEventListener('drop', handleDrop);
 }
 
 function handleDragStart(e) {
@@ -1760,29 +1743,22 @@ function handleDragStart(e) {
     e.target.style.opacity = '0.5';
 }
 
-function handleDragEnd(e) {
-    e.target.style.opacity = '1';
-}
+function handleDragEnd(e) { e.target.style.opacity = '1'; }
 
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-}
+function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
 
 function handleDrop(e) {
     e.preventDefault();
     const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-    const canvas = document.getElementById('dag-canvas');
-    const rect = canvas.getBoundingClientRect();
-
-    const x = (e.clientX - rect.left) / canvasState.zoom;
-    const y = (e.clientY - rect.top) / canvasState.zoom;
-
-    if (data.category === 'node') {
-        createNode(data.type, x, y);
-    } else {
-        createComponent(data.type, data.category);
+    let x = 120, y = 120;
+    if (cy) {
+        const rect = cy.container().getBoundingClientRect();
+        const pan = cy.pan(), zoom = cy.zoom();
+        x = (e.clientX - rect.left - pan.x) / zoom;
+        y = (e.clientY - rect.top - pan.y) / zoom;
     }
+    if (data.category === 'node') { createNode(data.type, x, y); }
+    else { createComponent(data.type, data.category); }
 }
 
 // ==========================================
@@ -1791,84 +1767,39 @@ function handleDrop(e) {
 function createNode(type, x, y) {
     canvasState.nodeCounter++;
     const nodeId = `node_${canvasState.nodeCounter}`;
-
     const node = {
         id: nodeId,
         name: `${type.replace('Node', '').toLowerCase()}_${canvasState.nodeCounter}`,
         type: type,
         config: {},
-        x: x,
-        y: y
+        x: x, y: y
     };
-
-    if (type === 'MetronomeNode') {
-        node.config.interval = 60;
-    }
+    if (type === 'MetronomeNode') node.config.interval = 60;
 
     dagState.nodes.push(node);
-    renderNode(node);
+    cyAddNode(node);
     selectNode(nodeId);
     updateStatusBar();
-    updateMinimap();
 }
 
-function renderNode(node) {
-    const canvas = document.getElementById('dag-canvas');
-
-    const nodeEl = document.createElement('div');
-    nodeEl.className = 'canvas-node';
-    nodeEl.id = node.id;
-    nodeEl.dataset.type = node.type;
-    nodeEl.style.left = `${node.x}px`;
-    nodeEl.style.top = `${node.y}px`;
-
-    const subscriberInfo = node.subscriber ? `<div class="node-info-row"><i class="bi bi-inbox"></i>${node.subscriber}</div>` : '';
-    const calculatorInfo = node.calculator ? `<div class="node-info-row"><i class="bi bi-calculator"></i>${node.calculator}</div>` : '';
-    const publishersInfo = node.publishers && node.publishers.length > 0 ?
-        `<div class="node-info-row"><i class="bi bi-broadcast"></i>${node.publishers.length} pub(s)</div>` : '';
-
-    nodeEl.innerHTML = `
-        <div class="node-header">
-            <div class="node-icon"><i class="bi bi-${getNodeIcon(node.type)}"></i></div>
-            <span class="node-title">${node.name}</span>
-            <span class="node-type-badge">${node.type.replace('Node', '')}</span>
-        </div>
-        <div class="node-body">
-            ${subscriberInfo}${calculatorInfo}${publishersInfo}
-        </div>
-        <div class="node-ports">
-            <div class="port input" data-port="input" title="Input"></div>
-            <div class="port output" data-port="output" title="Output"></div>
-        </div>
-    `;
-
-    nodeEl.addEventListener('mousedown', handleNodeMouseDown);
-    nodeEl.addEventListener('click', function(e) {
-        e.stopPropagation();
-        selectNode(node.id);
-    });
-    nodeEl.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        selectNode(node.id);
-        showContextMenu(e.clientX, e.clientY);
-    });
-
-    const outputPort = nodeEl.querySelector('.port.output');
-    const inputPort = nodeEl.querySelector('.port.input');
-
-    outputPort.addEventListener('mousedown', function(e) {
-        e.stopPropagation();
-        startConnection(node.id);
-    });
-
-    inputPort.addEventListener('mouseup', function(e) {
-        e.stopPropagation();
-        endConnection(node.id);
-    });
-
-    canvas.appendChild(nodeEl);
+function cyAddNode(node) {
+    if (!cy) return;
+    try {
+        cy.add({
+            group: 'nodes',
+            data: { id: node.id, name: node.name },
+            position: { x: node.x, y: node.y },
+            classes: nodeClass(node.type)
+        });
+    } catch (err) {
+        // Never let one bad node abort a whole import; surface it instead.
+        console.error('cyAddNode failed for', node && node.name, node, err);
+        setStatus('Could not render node: ' + (node && node.name), 'error');
+    }
 }
+
+// Back-compat name: importDagJson() calls renderNode() per node.
+function renderNode(node) { cyAddNode(node); }
 
 function getNodeIcon(type) {
     const icons = {
@@ -1883,67 +1814,16 @@ function getNodeIcon(type) {
 }
 
 function updateNodeDisplay(nodeId) {
-    const nodeEl = document.getElementById(nodeId);
     const node = dagState.nodes.find(n => n.id === nodeId);
-
-    if (nodeEl && node) {
-        nodeEl.querySelector('.node-title').textContent = node.name;
-        nodeEl.querySelector('.node-type-badge').textContent = node.type.replace('Node', '');
-        nodeEl.dataset.type = node.type;
-
-        let bodyHtml = '';
-        if (node.subscriber) bodyHtml += `<div class="node-info-row"><i class="bi bi-inbox"></i>${node.subscriber}</div>`;
-        if (node.calculator) bodyHtml += `<div class="node-info-row"><i class="bi bi-calculator"></i>${node.calculator}</div>`;
-        if (node.publishers && node.publishers.length > 0) bodyHtml += `<div class="node-info-row"><i class="bi bi-broadcast"></i>${node.publishers.length} pub(s)</div>`;
-        nodeEl.querySelector('.node-body').innerHTML = bodyHtml;
+    if (!node || !cy) return;
+    const el = cy.getElementById(nodeId);
+    if (el && el.length) {
+        el.data('name', node.name);
+        el.removeClass('n-subscription n-publication n-calculation n-metronome n-sink')
+          .addClass(nodeClass(node.type));
     }
-}
-
-// ==========================================
-// Node Dragging
-// ==========================================
-function handleNodeMouseDown(e) {
-    if (e.target.classList.contains('port')) return;
-
-    const nodeEl = e.currentTarget;
-    canvasState.isDragging = true;
-    canvasState.dragNode = nodeEl;
-    canvasState.dragStartX = e.clientX;
-    canvasState.dragStartY = e.clientY;
-    canvasState.nodeStartX = parseInt(nodeEl.style.left);
-    canvasState.nodeStartY = parseInt(nodeEl.style.top);
-
-    document.addEventListener('mousemove', handleNodeDrag);
-    document.addEventListener('mouseup', handleNodeDragEnd);
-}
-
-function handleNodeDrag(e) {
-    if (!canvasState.isDragging || !canvasState.dragNode) return;
-
-    const dx = (e.clientX - canvasState.dragStartX) / canvasState.zoom;
-    const dy = (e.clientY - canvasState.dragStartY) / canvasState.zoom;
-
-    const newX = Math.max(0, canvasState.nodeStartX + dx);
-    const newY = Math.max(0, canvasState.nodeStartY + dy);
-
-    canvasState.dragNode.style.left = `${newX}px`;
-    canvasState.dragNode.style.top = `${newY}px`;
-
-    const node = dagState.nodes.find(n => n.id === canvasState.dragNode.id);
-    if (node) {
-        node.x = newX;
-        node.y = newY;
-    }
-
+    // node names may have changed; edge endpoints reference names
     renderEdges();
-    updateMinimap();
-}
-
-function handleNodeDragEnd(e) {
-    canvasState.isDragging = false;
-    canvasState.dragNode = null;
-    document.removeEventListener('mousemove', handleNodeDrag);
-    document.removeEventListener('mouseup', handleNodeDragEnd);
 }
 
 // ==========================================
@@ -1951,38 +1831,8 @@ function handleNodeDragEnd(e) {
 // ==========================================
 function startConnection(fromNodeId) {
     canvasState.connectingFrom = fromNodeId;
-    document.getElementById(fromNodeId).classList.add('connecting');
-
-    document.addEventListener('mousemove', handleConnectionDrag);
-    document.addEventListener('mouseup', cancelConnection);
-
-    setStatus('Click target node input port to connect', 'warning');
-}
-
-function handleConnectionDrag(e) {
-    if (!canvasState.connectingFrom) return;
-
-    const svg = document.getElementById('edges-svg');
-    const wrapper = document.getElementById('canvasWrapper');
-    const rect = wrapper.getBoundingClientRect();
-
-    const fromNode = document.getElementById(canvasState.connectingFrom);
-    const fromPort = fromNode.querySelector('.port.output');
-    const fromRect = fromPort.getBoundingClientRect();
-
-    const x1 = (fromRect.left + fromRect.width/2 - rect.left) / canvasState.zoom;
-    const y1 = (fromRect.top + fromRect.height/2 - rect.top) / canvasState.zoom;
-    const x2 = (e.clientX - rect.left) / canvasState.zoom;
-    const y2 = (e.clientY - rect.top) / canvasState.zoom;
-
-    let tempEdge = svg.querySelector('.edge-path.temp');
-    if (!tempEdge) {
-        tempEdge = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        tempEdge.classList.add('edge-path', 'temp');
-        svg.appendChild(tempEdge);
-    }
-
-    tempEdge.setAttribute('d', createEdgePath(x1, y1, x2, y2));
+    if (cy) cy.getElementById(fromNodeId).addClass('connect-source');
+    setStatus('Click a target node to connect (Esc to cancel)', 'warning');
 }
 
 function endConnection(toNodeId) {
@@ -1990,114 +1840,64 @@ function endConnection(toNodeId) {
         cancelConnection();
         return;
     }
-
-    const exists = dagState.edges.some(e =>
-        e._fromId === canvasState.connectingFrom && e._toId === toNodeId
-    );
-
-    if (!exists) {
-        const fromNode = dagState.nodes.find(n => n.id === canvasState.connectingFrom);
-        const toNode = dagState.nodes.find(n => n.id === toNodeId);
-
-        dagState.edges.push({
-            from_node: fromNode.name,
-            to_node: toNode.name,
-            pname: '',
-            data_transformer: null,
-            _fromId: canvasState.connectingFrom,
-            _toId: toNodeId
-        });
-
-        renderEdges();
-        updateStatusBar();
+    const fromNode = dagState.nodes.find(n => n.id === canvasState.connectingFrom);
+    const toNode = dagState.nodes.find(n => n.id === toNodeId);
+    if (fromNode && toNode) {
+        const exists = dagState.edges.some(e => e.from_node === fromNode.name && e.to_node === toNode.name);
+        if (!exists) {
+            dagState.edges.push({
+                from_node: fromNode.name, to_node: toNode.name,
+                pname: '', data_transformer: null,
+                _fromId: fromNode.id, _toId: toNode.id
+            });
+            renderEdges();
+            updateStatusBar();
+            setStatus(`Connected ${fromNode.name} -> ${toNode.name}`);
+        }
     }
-
     cancelConnection();
 }
 
 function cancelConnection() {
-    if (canvasState.connectingFrom) {
-        document.getElementById(canvasState.connectingFrom).classList.remove('connecting');
+    if (canvasState.connectingFrom && cy) {
+        cy.getElementById(canvasState.connectingFrom).removeClass('connect-source');
     }
     canvasState.connectingFrom = null;
-
-    const tempEdge = document.querySelector('.edge-path.temp');
-    if (tempEdge) tempEdge.remove();
-
-    document.removeEventListener('mousemove', handleConnectionDrag);
-    document.removeEventListener('mouseup', cancelConnection);
-
     setStatus('Ready');
 }
 
 function renderEdges() {
-    const svg = document.getElementById('edges-svg');
-
-    svg.querySelectorAll('.edge-path:not(.temp)').forEach(e => e.remove());
-    svg.querySelectorAll('.edge-label').forEach(e => e.remove());
-
+    if (!cy) return;
+    cy.edges().remove();
     dagState.edges.forEach((edge, index) => {
-        let fromNodeEl, toNodeEl;
-
-        if (edge._fromId && edge._toId) {
-            fromNodeEl = document.getElementById(edge._fromId);
-            toNodeEl = document.getElementById(edge._toId);
-        } else {
-            const fromNode = dagState.nodes.find(n => n.name === edge.from_node);
-            const toNode = dagState.nodes.find(n => n.name === edge.to_node);
-            if (fromNode && toNode) {
-                fromNodeEl = document.getElementById(fromNode.id);
-                toNodeEl = document.getElementById(toNode.id);
-                edge._fromId = fromNode.id;
-                edge._toId = toNode.id;
-            }
+        let fromId = edge._fromId, toId = edge._toId;
+        const haveFrom = fromId && cy.getElementById(fromId).length;
+        const haveTo = toId && cy.getElementById(toId).length;
+        if (!haveFrom || !haveTo) {
+            const fn = dagState.nodes.find(n => n.name === edge.from_node);
+            const tn = dagState.nodes.find(n => n.name === edge.to_node);
+            if (fn && tn) { fromId = fn.id; toId = tn.id; edge._fromId = fromId; edge._toId = toId; }
         }
-
-        if (!fromNodeEl || !toNodeEl) return;
-
-        const x1 = parseInt(fromNodeEl.style.left) + fromNodeEl.offsetWidth - 10;
-        const y1 = parseInt(fromNodeEl.style.top) + fromNodeEl.offsetHeight - 14;
-        const x2 = parseInt(toNodeEl.style.left) + 10;
-        const y2 = parseInt(toNodeEl.style.top) + toNodeEl.offsetHeight - 14;
-
-        const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        pathEl.classList.add('edge-path');
-        if (canvasState.selectedEdge === index) pathEl.classList.add('selected');
-        pathEl.dataset.index = index;
-        pathEl.setAttribute('d', createEdgePath(x1, y1, x2, y2));
-        pathEl.style.pointerEvents = 'stroke';
-
-        svg.appendChild(pathEl);
-
-        // Add label if edge has pname or transformer
-        if (edge.pname || edge.data_transformer) {
-            const midX = (x1 + x2) / 2;
-            const midY = (y1 + y2) / 2 - 8;
-            const labelText = edge.pname || edge.data_transformer || '';
-
-            const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            textEl.classList.add('edge-label');
-            textEl.setAttribute('x', midX);
-            textEl.setAttribute('y', midY);
-            textEl.setAttribute('text-anchor', 'middle');
-            textEl.textContent = labelText.length > 15 ? labelText.substr(0, 15) + '...' : labelText;
-
-            svg.appendChild(textEl);
-        }
+        if (!fromId || !toId) return;
+        if (!cy.getElementById(fromId).length || !cy.getElementById(toId).length) return;
+        const raw = edge.pname || edge.data_transformer || '';
+        const label = raw.length > 15 ? raw.slice(0, 15) + '\u2026' : raw;
+        cy.add({ group: 'edges', data: { id: `e_${index}`, source: fromId, target: toId, index: index, label: label } });
     });
-}
-
-function createEdgePath(x1, y1, x2, y2) {
-    const dx = Math.abs(x2 - x1);
-    const controlOffset = Math.min(dx * 0.5, 80);
-    return `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
+    if (canvasState.selectedEdge !== null) {
+        const sel = cy.getElementById(`e_${canvasState.selectedEdge}`);
+        if (sel.length) sel.select();
+    }
 }
 
 function selectEdge(index) {
     deselectAll();
     canvasState.selectedEdge = index;
-
-    renderEdges();
+    if (cy) {
+        cy.elements().unselect();
+        const el = cy.getElementById(`e_${index}`);
+        if (el.length) el.select();
+    }
     showEdgeProperties(index);
 }
 
@@ -2151,7 +1951,11 @@ function selectNode(nodeId) {
     deselectAll();
 
     canvasState.selectedNode = nodeId;
-    document.getElementById(nodeId).classList.add('selected');
+    if (cy) {
+        cy.elements().unselect();
+        const el = cy.getElementById(nodeId);
+        if (el.length) el.select();
+    }
 
     showNodeProperties(nodeId);
 }
@@ -2162,7 +1966,7 @@ function deselectAll() {
     canvasState.selectedComponent = null;
     canvasState.selectedComponentType = null;
 
-    document.querySelectorAll('.canvas-node.selected').forEach(n => n.classList.remove('selected'));
+    if (cy) cy.elements().unselect();
     document.querySelectorAll('.component-list-item.selected').forEach(n => n.classList.remove('selected'));
 
     document.getElementById('emptyState').style.display = 'flex';
@@ -2170,7 +1974,6 @@ function deselectAll() {
     document.getElementById('edgeProperties').style.display = 'none';
     document.getElementById('componentProperties').style.display = 'none';
 
-    renderEdges();
     hideContextMenu();
 }
 
@@ -2357,7 +2160,10 @@ function deleteSelectedNode() {
     const node = dagState.nodes.find(n => n.id === canvasState.selectedNode);
     if (!node) return;
 
-    document.getElementById(canvasState.selectedNode).remove();
+    if (cy) {
+        const el = cy.getElementById(canvasState.selectedNode);
+        if (el.length) el.remove();
+    }
 
     const index = dagState.nodes.findIndex(n => n.id === canvasState.selectedNode);
     dagState.nodes.splice(index, 1);
@@ -2366,10 +2172,9 @@ function deleteSelectedNode() {
         e.from_node !== node.name && e.to_node !== node.name
     );
 
-    renderEdges();
     deselectAll();
+    renderEdges();
     updateStatusBar();
-    updateMinimap();
     hideContextMenu();
 }
 
@@ -2476,6 +2281,89 @@ function createComponent(type, category) {
             delegate_class: 'MySubscriber',
             delegate_config: {},
             poll_interval: 1
+        };
+    } else if (type === 'SQSDataSubscriber') {
+        component.config = {
+            source: 'sqs://my-queue',
+            region: 'us-east-1',
+            wait_time_seconds: 10,
+            max_messages: 10
+        };
+    } else if (type === 'KinesisDataSubscriber') {
+        component.config = {
+            source: 'kinesis://my-stream',
+            region: 'us-east-1',
+            shard_iterator_type: 'LATEST',
+            poll_interval: 1
+        };
+    } else if (type === 'S3DataSubscriber') {
+        component.config = {
+            source: 's3://my-bucket/incoming/',
+            region: 'us-east-1',
+            poll_interval: 5,
+            delete_on_read: false
+        };
+    } else if (type === 'ServiceBusDataSubscriber') {
+        component.config = {
+            source: 'servicebus://my-queue',
+            connection_string: 'Endpoint=sb://...',
+            max_messages: 10
+        };
+    } else if (type === 'EventHubsDataSubscriber') {
+        component.config = {
+            source: 'eventhubs://my-hub',
+            connection_string: 'Endpoint=sb://...',
+            consumer_group: '$Default'
+        };
+    } else if (type === 'AzureBlobDataSubscriber') {
+        component.config = {
+            source: 'azureblob://my-container/incoming/',
+            connection_string: 'DefaultEndpointsProtocol=https;...',
+            poll_interval: 5,
+            delete_on_read: false
+        };
+    } else if (type === 'GCSDataSubscriber') {
+        component.config = {
+            source: 'gcs://my-bucket/incoming/',
+            credentials_file: '/path/to/service-account.json',
+            poll_interval: 5,
+            delete_on_read: false
+        };
+    } else if (type === 'LMDBDataSubscriber') {
+        component.config = {
+            source: 'lmdb://my_channel',
+            path: '/tmp/dishtayantra_lmdb',
+            poll_interval: 0.1
+        };
+    } else if (type === 'SQLDataSubscriber') {
+        component.config = {
+            source: 'sql://messages',
+            connection_string: 'postgresql://user:pass@localhost:5432/db',
+            query: 'SELECT * FROM messages WHERE processed = false',
+            poll_interval: 5
+        };
+    } else if (type === 'RESTDataSubscriber') {
+        component.config = {
+            source: 'rest://messages',
+            url: 'https://api.example.com/messages',
+            method: 'GET',
+            headers: {},
+            poll_interval: 5
+        };
+    } else if (type === 'TibcoEMSDataSubscriber') {
+        component.config = {
+            source: 'tibcoems://queue/my_queue',
+            server_url: 'tcp://localhost:7222',
+            username: 'admin',
+            password: ''
+        };
+    } else if (type === 'WebSphereMQDataSubscriber') {
+        component.config = {
+            source: 'websphere://queue/MY.QUEUE',
+            queue_manager: 'QM1',
+            channel: 'DEV.APP.SVRCONN',
+            host: 'localhost',
+            port: 1414
         };
     }
     // Default configs for Publishers
@@ -2584,6 +2472,72 @@ function createComponent(type, category) {
             delegate_module: 'my.module',
             delegate_class: 'MyPublisher',
             delegate_config: {}
+        };
+    } else if (type === 'SQSDataPublisher') {
+        component.config = { destination: 'sqs://my-queue', region: 'us-east-1' };
+    } else if (type === 'SNSDataPublisher') {
+        component.config = { destination: 'sns://my-topic', region: 'us-east-1' };
+    } else if (type === 'KinesisDataPublisher') {
+        component.config = {
+            destination: 'kinesis://my-stream',
+            region: 'us-east-1',
+            partition_key: 'id'
+        };
+    } else if (type === 'S3DataPublisher') {
+        component.config = { destination: 's3://my-bucket/outgoing/', region: 'us-east-1' };
+    } else if (type === 'ServiceBusDataPublisher') {
+        component.config = {
+            destination: 'servicebus://my-queue',
+            connection_string: 'Endpoint=sb://...'
+        };
+    } else if (type === 'EventHubsDataPublisher') {
+        component.config = {
+            destination: 'eventhubs://my-hub',
+            connection_string: 'Endpoint=sb://...'
+        };
+    } else if (type === 'AzureBlobDataPublisher') {
+        component.config = {
+            destination: 'azureblob://my-container/outgoing/',
+            connection_string: 'DefaultEndpointsProtocol=https;...'
+        };
+    } else if (type === 'GCSDataPublisher') {
+        component.config = {
+            destination: 'gcs://my-bucket/outgoing/',
+            credentials_file: '/path/to/service-account.json'
+        };
+    } else if (type === 'LMDBDataPublisher') {
+        component.config = {
+            destination: 'lmdb://my_channel',
+            path: '/tmp/dishtayantra_lmdb',
+            map_size: 1073741824
+        };
+    } else if (type === 'SQLDataPublisher') {
+        component.config = {
+            destination: 'sql://messages',
+            connection_string: 'postgresql://user:pass@localhost:5432/db',
+            table: 'messages'
+        };
+    } else if (type === 'RESTDataPublisher') {
+        component.config = {
+            destination: 'rest://messages',
+            url: 'https://api.example.com/messages',
+            method: 'POST',
+            headers: {}
+        };
+    } else if (type === 'TibcoEMSDataPublisher') {
+        component.config = {
+            destination: 'tibcoems://queue/my_queue',
+            server_url: 'tcp://localhost:7222',
+            username: 'admin',
+            password: ''
+        };
+    } else if (type === 'WebSphereMQDataPublisher') {
+        component.config = {
+            destination: 'websphere://queue/MY.QUEUE',
+            queue_manager: 'QM1',
+            channel: 'DEV.APP.SVRCONN',
+            host: 'localhost',
+            port: 1414
         };
     }
     // Default configs for Calculators and Transformers
@@ -2921,6 +2875,81 @@ function exportToFile() {
     setStatus('DAG exported');
 }
 
+// ==========================================
+// Save / Deploy to server (v3.1.0)
+// ==========================================
+async function saveToServer() {
+    const config = generateDagJson();
+    if (!config.name || config.name === 'untitled_dag') {
+        setStatus('Set a DAG name before saving', 'error');
+        document.getElementById('dagName').focus();
+        return;
+    }
+    // Fetch the configured destination folders.
+    let folders = ['config/dags'];
+    let defaultFolder = 'config/dags';
+    try {
+        const r = await fetch('{{ url_for("dag_designer_folders") }}');
+        if (r.ok) {
+            const data = await r.json();
+            folders = data.folders || folders;
+            defaultFolder = data.default || folders[0];
+        }
+    } catch (e) { /* fall back to default folder */ }
+
+    // Populate the deploy dialog's folder picker.
+    const sel = document.getElementById('deployFolder');
+    sel.innerHTML = '';
+    folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f; opt.textContent = f;
+        if (f === defaultFolder) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    document.getElementById('deployDagName').textContent = config.name;
+    document.getElementById('deployMsg').innerHTML = '';
+    document.getElementById('deployOverwrite').checked = false;
+    document.getElementById('deployOverwriteWrap').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('deployModal')).show();
+}
+
+async function performDeploy() {
+    const config = generateDagJson();
+    const folder = document.getElementById('deployFolder').value;
+    const overwrite = document.getElementById('deployOverwrite').checked;
+    const msg = document.getElementById('deployMsg');
+    msg.innerHTML = '<span class="text-muted">Deploying…</span>';
+    try {
+        const resp = await fetch('{{ url_for("dag_designer_save") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dag: config, folder: folder, overwrite: overwrite })
+        });
+        const data = await resp.json();
+        if (resp.status === 409 && data.collision) {
+            // Name already exists - reveal the overwrite confirm.
+            document.getElementById('deployOverwriteWrap').style.display = 'block';
+            msg.innerHTML = `<div class="text-danger">${(data.errors || ['Name already exists']).join('<br>')}</div>`;
+            return;
+        }
+        if (!resp.ok || !data.success) {
+            msg.innerHTML = `<div class="text-danger"><strong>Could not deploy:</strong><br>${(data.errors || ['Unknown error']).join('<br>')}</div>`;
+            return;
+        }
+        let html = `<div class="text-success">✓ ${data.message || 'Deployed.'}</div>`;
+        if (data.warnings && data.warnings.length) {
+            html += `<div class="text-warning small mt-1">${data.warnings.join('<br>')}</div>`;
+        }
+        msg.innerHTML = html;
+        setStatus(`Deployed '${data.dag_name}'`);
+        setTimeout(() => {
+            bootstrap.Modal.getInstance(document.getElementById('deployModal')).hide();
+        }, 1400);
+    } catch (e) {
+        msg.innerHTML = `<div class="text-danger">Request failed: ${e}</div>`;
+    }
+}
+
 function loadFromFile() {
     document.getElementById('fileInput').click();
 }
@@ -2965,32 +2994,30 @@ function importDagJson(json) {
     const nodeCount = json.nodes ? json.nodes.length : 0;
     const cols = Math.ceil(Math.sqrt(nodeCount));
 
-    (json.nodes || []).forEach((n, i) => {
+    // Add all nodes inside a single Cytoscape batch. Adding many nodes one by
+    // one (outside a batch) can leave the earliest-added nodes in a stale
+    // render state on some browsers/timing, so they never paint even though
+    // they exist in the graph. Batching forces one consistent style+render
+    // pass over the whole set.
+    const importedNodes = (json.nodes || []).map((n, i) => {
         canvasState.nodeCounter++;
-        const nodeId = `node_${canvasState.nodeCounter}`;
-
         const col = i % cols;
         const row = Math.floor(i / cols);
-        const x = 80 + col * 220;
-        const y = 80 + row * 130;
-
         const node = {
-            id: nodeId,
+            id: `node_${canvasState.nodeCounter}`,
             name: n.name,
             type: n.type || 'CalculationNode',
             config: n.config || {},
-            x: x,
-            y: y
+            x: 80 + col * 220,
+            y: 80 + row * 130
         };
-
         if (n.subscriber) node.subscriber = n.subscriber;
         if (n.publishers) node.publishers = n.publishers;
         if (n.calculator) node.calculator = n.calculator;
         if (n.input_transformers) node.input_transformers = n.input_transformers;
         if (n.output_transformers) node.output_transformers = n.output_transformers;
-
         dagState.nodes.push(node);
-        renderNode(node);
+        return node;
     });
 
     dagState.edges = (json.edges || []).map(e => ({
@@ -3000,10 +3027,42 @@ function importDagJson(json) {
         data_transformer: e.data_transformer || null
     }));
 
+    if (cy) {
+        cy.batch(() => {
+            importedNodes.forEach(node => cyAddNode(node));
+        });
+    }
     renderEdges();
     updateStatusBar();
-    updateMinimap();
     updateComponentsLists();
+    if (cy) {
+        // Paint-fix for bulk import: cy.add() of many elements can leave the
+        // earliest-added nodes with a stale parsed-style cache, so they report
+        // .visible()===false and never paint until a style recompute happens on
+        // a later render tick. Running the flush synchronously here is too early
+        // (the container/render state hasn't settled), so we finalize once now
+        // and again on the next tick, which reliably paints the whole graph.
+        const finalizeImport = () => {
+            if (!cy) return;
+            cy.style().update();
+            cy.nodes().style('display', 'element');
+            // Edges are added (via renderEdges, above) right after the node
+            // batch, BEFORE the nodes' rendered dimensions have settled, so
+            // their endpoint geometry computes against a 0x0 node box and they
+            // paint with a 0x0 rendered bounding box - present and "visible"
+            // but invisible on screen. Rebuild them here, now that the nodes
+            // are settled, and force a paint flush mirroring the node flush
+            // above. (The earlier renderEdges() call is what makes dagState's
+            // edges show during the first tick; this deferred pass is the one
+            // that reliably paints them.)
+            renderEdges();
+            cy.edges().style('display', 'element');
+            cy.resize();
+            if (cy.nodes().length) cy.fit(undefined, 40);
+        };
+        finalizeImport();
+        setTimeout(finalizeImport, 60);
+    }
 }
 
 function clearCanvas(confirm = true) {
@@ -3011,9 +3070,7 @@ function clearCanvas(confirm = true) {
         if (!window.confirm('Clear all?')) return;
     }
 
-    document.getElementById('dag-canvas').innerHTML = '';
-    document.querySelectorAll('#edges-svg .edge-path').forEach(e => e.remove());
-    document.querySelectorAll('#edges-svg .edge-label').forEach(e => e.remove());
+    if (cy) cy.elements().remove();
 
     dagState.name = '';
     dagState.start_time = null;
@@ -3086,87 +3143,41 @@ function showValidationResults(result) {
 // Zoom
 // ==========================================
 function zoomIn() {
-    canvasState.zoom = Math.min(canvasState.zoom * 1.2, 3);
-    applyZoom();
+    if (cy) cy.zoom({ level: Math.min(cy.zoom() * 1.2, 3), renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
 }
 
 function zoomOut() {
-    canvasState.zoom = Math.max(canvasState.zoom / 1.2, 0.3);
-    applyZoom();
+    if (cy) cy.zoom({ level: Math.max(cy.zoom() / 1.2, 0.2), renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
 }
 
 function resetZoom() {
-    canvasState.zoom = 1;
-    applyZoom();
+    if (cy) { cy.zoom(1); cy.center(); }
 }
 
 function fitToCanvas() {
-    if (dagState.nodes.length === 0) return;
-
-    const wrapper = document.getElementById('canvasWrapper');
-    const wrapperRect = wrapper.getBoundingClientRect();
-
-    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
-    dagState.nodes.forEach(node => {
-        minX = Math.min(minX, node.x);
-        minY = Math.min(minY, node.y);
-        maxX = Math.max(maxX, node.x + 180);
-        maxY = Math.max(maxY, node.y + 80);
-    });
-
-    const contentWidth = maxX - minX + 100;
-    const contentHeight = maxY - minY + 100;
-
-    const scaleX = wrapperRect.width / contentWidth;
-    const scaleY = wrapperRect.height / contentHeight;
-
-    canvasState.zoom = Math.min(scaleX, scaleY, 1);
-    applyZoom();
+    if (cy && cy.nodes().length) cy.fit(undefined, 40);
 }
 
 function applyZoom() {
-    const canvas = document.getElementById('dag-canvas');
-    const svg = document.getElementById('edges-svg');
+    const z = document.getElementById('zoomLevel');
+    if (z && cy) z.textContent = Math.round(cy.zoom() * 100) + '%';
+}
 
-    canvas.style.transform = `scale(${canvasState.zoom})`;
-    canvas.style.transformOrigin = '0 0';
-    svg.style.transform = `scale(${canvasState.zoom})`;
-    svg.style.transformOrigin = '0 0';
-
-    document.getElementById('zoomLevel').textContent = Math.round(canvasState.zoom * 100) + '%';
+function runAutoLayout() {
+    if (!cy || !cy.nodes().length) return;
+    cy.layout({ name: 'breadthfirst', directed: true, spacingFactor: 1.3, padding: 30, fit: true }).run();
+    // persist computed positions back into dagState
+    cy.nodes().forEach(n => {
+        const node = dagState.nodes.find(x => x.id === n.id());
+        if (node) { const p = n.position(); node.x = p.x; node.y = p.y; }
+    });
+    setStatus('Auto-arranged layout');
 }
 
 // ==========================================
-// Minimap
+// Minimap superseded by Cytoscape viewport (pan / zoom / fit)
 // ==========================================
-function updateMinimap() {
-    const content = document.getElementById('minimapContent');
-    content.innerHTML = '';
-
-    if (dagState.nodes.length === 0) return;
-
-    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
-    dagState.nodes.forEach(node => {
-        minX = Math.min(minX, node.x);
-        minY = Math.min(minY, node.y);
-        maxX = Math.max(maxX, node.x + 180);
-        maxY = Math.max(maxY, node.y + 80);
-    });
-
-    const width = maxX - minX + 40;
-    const height = maxY - minY + 40;
-    const scale = Math.min(160 / width, 100 / height);
-
-    dagState.nodes.forEach(node => {
-        const dot = document.createElement('div');
-        dot.className = 'minimap-node';
-        dot.style.left = `${(node.x - minX + 20) * scale}px`;
-        dot.style.top = `${(node.y - minY + 20) * scale}px`;
-        dot.style.width = `${Math.max(4, 180 * scale * 0.25)}px`;
-        dot.style.height = `${Math.max(3, 80 * scale * 0.25)}px`;
-        content.appendChild(dot);
-    });
-}
+function updateMinimap() { /* no-op: Cytoscape handles the viewport */ }
 
 // ==========================================
 // Utility

@@ -832,7 +832,116 @@
         [data-theme="dark"] .dropdown-menu:not(.dropdown-menu-dark) .dropdown-item:hover {
             background: var(--bg-table-hover);
         }
-        
+
+        /* ============================================
+           DARK MODE CONTRAST HARDENING (v3.2.0)
+           Fixes text that was invisible/low-contrast in dark mode because it
+           used a fixed colour (often --primary-dark / Bootstrap defaults) that
+           assumed a light background, or sat on a hard-coded light background.
+           ============================================ */
+
+        /* Stat / metric figures that hard-code the dark navy text colour. */
+        [data-theme="dark"] .metric-value,
+        [data-theme="dark"] .log-stat-value,
+        [data-theme="dark"] .stat-number,
+        [data-theme="dark"] .stat-value,
+        [data-theme="dark"] .gauge-value,
+        [data-theme="dark"] .network-stat-value,
+        [data-theme="dark"] .query-section h5 {
+            color: var(--text-primary);
+        }
+
+        /* `.bg-light` is re-coloured dark above, but a paired `.text-dark`
+           (e.g. light chips/badges) keeps its dark text -> dark-on-dark. */
+        [data-theme="dark"] .bg-light.text-dark,
+        [data-theme="dark"] .badge.bg-light {
+            color: var(--text-primary) !important;
+        }
+
+        /* Bootstrap 5.1 sets fixed dark table colour variables (incl.
+           --bs-table-striped-color: #212529) whose striped/hover selectors
+           out-specify the app's table colour, so odd striped rows rendered
+           dark-on-dark. Remap the variables for dark mode. */
+        [data-theme="dark"] .table {
+            --bs-table-color: var(--text-primary);
+            --bs-table-striped-color: var(--text-primary);
+            --bs-table-active-color: var(--text-primary);
+            --bs-table-hover-color: var(--text-primary);
+        }
+        /* Contextual row/cell tints ship as light pastels; re-tint for dark
+           mode so their (now light) text stays legible. */
+        [data-theme="dark"] .table-success { --bs-table-bg: rgba(16, 185, 129, 0.18); }
+        [data-theme="dark"] .table-danger  { --bs-table-bg: rgba(239, 68, 68, 0.18); }
+        [data-theme="dark"] .table-warning { --bs-table-bg: rgba(245, 158, 11, 0.18); }
+        [data-theme="dark"] .table-info    { --bs-table-bg: rgba(6, 182, 212, 0.18); }
+        [data-theme="dark"] .table-primary { --bs-table-bg: rgba(127, 180, 255, 0.18); }
+        [data-theme="dark"] .table-light   { --bs-table-bg: var(--bg-table-header); }
+        [data-theme="dark"] .table-secondary { --bs-table-bg: var(--bg-card); }
+
+        /* Outline buttons whose text colour resolves to a dark theme value. */
+        [data-theme="dark"] .btn-outline-dark,
+        [data-theme="dark"] .btn-outline-secondary {
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        [data-theme="dark"] .btn-outline-dark:hover,
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            color: var(--bg-body);
+            background: var(--text-primary);
+        }
+        [data-theme="dark"] .btn-outline-primary {
+            color: #7fb4ff;
+            border-color: #7fb4ff;
+        }
+        [data-theme="dark"] .btn-outline-primary:hover {
+            color: var(--bg-body);
+            background: #7fb4ff;
+        }
+
+        /* Contextual alerts ship with light backgrounds + dark text; in dark
+           mode the background stays light while inherited text turns light
+           (light-on-light). Re-theme them as translucent tinted panels. */
+        [data-theme="dark"] .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.45);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .alert-info {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: rgba(6, 182, 212, 0.45);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .alert-warning {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.45);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .alert-primary {
+            background: rgba(127, 180, 255, 0.15);
+            border-color: rgba(127, 180, 255, 0.45);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .alert-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.45);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .alert-secondary,
+        [data-theme="dark"] .alert-light {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        [data-theme="dark"] .alert-success strong,
+        [data-theme="dark"] .alert-info strong,
+        [data-theme="dark"] .alert-warning strong,
+        [data-theme="dark"] .alert-primary strong,
+        [data-theme="dark"] .alert-danger strong,
+        [data-theme="dark"] .alert-light strong,
+        [data-theme="dark"] .alert-secondary strong {
+            color: var(--text-primary);
+        }
+
         /* Accordion in dark mode */
         [data-theme="dark"] .accordion-item {
             background: var(--bg-card);
@@ -993,6 +1102,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('help') }}">
                             <i class="bi bi-book"></i> Help
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('comparison') }}">
+                            <i class="bi bi-bar-chart-steps"></i> Compare
                         </a>
                     </li>
                     <li class="nav-item">

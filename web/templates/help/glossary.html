@@ -34,21 +34,21 @@
         border-radius: 0 8px 8px 0;
     }
     .glossary-term h6 {
-        color: #1e3a5f;
+        color: var(--text-primary);
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
     .glossary-term p {
-        color: #475569;
+        color: var(--text-secondary);
         margin-bottom: 0;
         font-size: 0.95rem;
     }
     .glossary-term code {
-        background: #e2e8f0;
+        background: var(--bg-code);
+        color: #e2e8f0;
         padding: 2px 6px;
         border-radius: 4px;
         font-size: 0.85rem;
-        color: #1e3a5f;
     }
     .letter-nav {
         display: flex;
@@ -62,16 +62,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f1f5f9;
-        color: #1e3a5f;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
         border-radius: 6px;
         text-decoration: none;
         font-weight: 600;
         transition: all 0.2s;
     }
     .letter-nav a:hover {
-        background: #1e3a5f;
-        color: var(--brass, #e3a44a);
+        background: var(--brass, #e3a44a);
+        color: var(--bg-body);
     }
 </style>
 {% endblock %}

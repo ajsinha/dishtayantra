@@ -488,89 +488,14 @@
                     </div>
                 </div>
 
-                <!-- Comparison Table -->
-                <div class="mt-4">
-                    <h6 class="mb-3" style="color: white !important;"><i class="bi bi-table me-2"></i>Head-to-Head Comparison</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm mb-0" style="font-size: 0.85rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);">
-                            <thead>
-                                <tr style="background: rgba(30, 41, 59, 0.9);">
-                                    <th style="color: #ffffff !important; background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(255,255,255,0.15); font-weight: 600;">Capability</th>
-                                    <th class="text-center" style="background: rgba(0, 212, 170, 0.3) !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.15); font-weight: 600;">DishtaYantra</th>
-                                    <th class="text-center" style="color: #ffffff !important; background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(255,255,255,0.15); font-weight: 600;">Apache Spark</th>
-                                    <th class="text-center" style="color: #ffffff !important; background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(255,255,255,0.15); font-weight: 600;">Apache Flink</th>
-                                    <th class="text-center" style="color: #ffffff !important; background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(255,255,255,0.15); font-weight: 600;">Apache Airflow</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Latency</td>
-                                    <td class="text-center" style="color: #10b981 !important; border: 1px solid rgba(255,255,255,0.1);"><strong>~100ns - 1ms</strong></td>
-                                    <td class="text-center" style="color: #f59e0b !important; border: 1px solid rgba(255,255,255,0.1);">100ms - 1s</td>
-                                    <td class="text-center" style="color: #f59e0b !important; border: 1px solid rgba(255,255,255,0.1);">1ms - 100ms</td>
-                                    <td class="text-center" style="color: #ef4444 !important; border: 1px solid rgba(255,255,255,0.1);">Minutes</td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Native C++/Rust</td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">LMDB Zero-Copy Exchange</td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Single-Process Deploy</td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Enterprise MQ Support</td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-dash-circle" style="color: #f59e0b;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-dash-circle" style="color: #f59e0b;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-dash-circle" style="color: #f59e0b;"></i></td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Visual Designer</td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-x-circle" style="color: #ef4444;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Time Windows</td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                    <td class="text-center" style="border: 1px solid rgba(255,255,255,0.1);"><i class="bi bi-check-circle-fill" style="color: #10b981;"></i></td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Learning Curve</td>
-                                    <td class="text-center" style="color: #10b981 !important; border: 1px solid rgba(255,255,255,0.1);"><strong>Hours</strong></td>
-                                    <td class="text-center" style="color: #ef4444 !important; border: 1px solid rgba(255,255,255,0.1);">Weeks</td>
-                                    <td class="text-center" style="color: #ef4444 !important; border: 1px solid rgba(255,255,255,0.1);">Weeks</td>
-                                    <td class="text-center" style="color: #f59e0b !important; border: 1px solid rgba(255,255,255,0.1);">Days</td>
-                                </tr>
-                                <tr>
-                                    <td style="color: #e2e8f0 !important; border: 1px solid rgba(255,255,255,0.1);">Min. Infrastructure</td>
-                                    <td class="text-center" style="color: #10b981 !important; border: 1px solid rgba(255,255,255,0.1);"><strong>1 server</strong></td>
-                                    <td class="text-center" style="color: #ef4444 !important; border: 1px solid rgba(255,255,255,0.1);">3+ nodes</td>
-                                    <td class="text-center" style="color: #ef4444 !important; border: 1px solid rgba(255,255,255,0.1);">3+ nodes</td>
-                                    <td class="text-center" style="color: #f59e0b !important; border: 1px solid rgba(255,255,255,0.1);">1-2 servers</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <!-- Comparison Table moved to dedicated /comparison page (v3.2.0) -->
+                <div class="mt-4 text-center p-4 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);">
+                    <h6 class="mb-2" style="color: #ffffff !important;"><i class="bi bi-table me-2"></i>Head-to-Head Comparison</h6>
+                    <p class="small mb-3" style="color: rgba(226, 232, 240, 0.8) !important;">See the full dimension-by-dimension comparison against Apache Spark, Flink, Airflow, and Kafka Streams &mdash; with the detailed table and commentary on each capability.</p>
+                    <a href="{{ url_for('comparison') }}" class="btn btn-sm" style="background: var(--brass, #e3a44a); color: #0c1022; font-weight: 600;">
+                        <i class="bi bi-bar-chart-steps me-1"></i> View the Full Comparison <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
-
                 <!-- Bottom tagline -->
                 <div class="text-center mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.1);">
                     <p class="mb-0" style="color: rgba(226, 232, 240, 0.9) !important;">

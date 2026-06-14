@@ -197,6 +197,8 @@ class NoAuthRoutes:
         add = self.app.add_api_route
         add('/about', self.about, methods=['GET'], name='about',
             include_in_schema=False)
+        add('/comparison', self.comparison, methods=['GET'], name='comparison',
+            include_in_schema=False)
         add('/help', self.help_index, methods=['GET'], name='help',
             include_in_schema=False)
 
@@ -224,6 +226,10 @@ class NoAuthRoutes:
     def about(self, request: Request):
         """About page."""
         return render(request, 'about.html')
+
+    def comparison(self, request: Request):
+        """Standalone head-to-head comparison page (v3.2.0)."""
+        return render(request, 'comparison.html')
 
     def help_index(self, request: Request):
         """Help index page."""

@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}How {{ app_name }} Compares{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cmp-hero {
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 50%, #0c1022 100%);
+        color: white;
+        padding: 3.5rem 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.3);
+    }
+    .cmp-hero h1 { color: #fff; font-size: 2.6rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .cmp-hero .cmp-tagline { font-size: 1.2rem; opacity: 0.9; max-width: 760px; margin: 0 auto 1.25rem; }
+    .cmp-hero .cmp-badge {
+        background: rgba(0, 212, 170, 0.2);
+        border: 2px solid var(--brass, #e3a44a);
+        color: var(--brass, #e3a44a);
+        padding: 0.4rem 1.25rem; border-radius: 50px; font-weight: 600; display: inline-block;
+    }
+    /* Dark table card, matching the About "Competitive Advantage" treatment */
+    .cmp-table-card {
+        background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%) !important;
+        border: 0; border-radius: 14px; padding: 1.75rem; margin-bottom: 2rem;
+    }
+    .cmp-table-card h2 { color: #fff !important; font-size: 1.4rem; }
+    .cmp-table { font-size: 0.88rem; background: rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.2); }
+    .cmp-table th, .cmp-table td { border: 1px solid rgba(255,255,255,0.12); vertical-align: middle; }
+    .cmp-table tbody td { color: #cbd5e1; }
+    .cmp-table thead th { color: #fff !important; background: rgba(30,41,59,0.95) !important; font-weight: 600; }
+    .cmp-table th.cmp-dy { background: rgba(0,212,170,0.30) !important; }
+    .cmp-table td.cmp-cap { color: #e2e8f0 !important; font-weight: 500; }
+    .cmp-table td.cmp-dycell { background: rgba(0,212,170,0.08); }
+    .cmp-good { color: #10b981 !important; }
+    .cmp-warn { color: #f59e0b !important; }
+    .cmp-bad  { color: #ef4444 !important; }
+    .cmp-legend span { margin-right: 1.25rem; color: rgba(226,232,240,0.85); font-size: 0.85rem; }
+    .cmp-note { color: rgba(226,232,240,0.65) !important; font-size: 0.82rem; }
+    /* Commentary blocks use the normal theme-aware card; just a left accent + lead */
+    .cmp-section .card { height: 100%; }
+    .cmp-section .cmp-lead { font-size: 1.02rem; }
+    .cmp-verdict {
+        border-left: 4px solid var(--brass, #e3a44a);
+        padding: 0.5rem 0 0.5rem 1rem; margin-top: 0.75rem; font-style: italic;
+    }
+    .cmp-choose li { margin-bottom: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="cmp-hero">
+    <div class="cmp-badge mb-3"><i class="bi bi-bar-chart-steps"></i> Platform Comparison</div>
+    <h1>How {{ app_name }} Compares</h1>
+    <p class="cmp-tagline">A candid, dimension-by-dimension look at where {{ app_name }} sits next to Apache Spark,
+       Apache Flink, Apache Airflow, and Kafka Streams &mdash; what it does differently, and where each of the others
+       is still the right tool for the job.</p>
+    <span class="text-white-50 small">{{ app_name }} v{{ app_version }}</span>
+</div>
+
+<!-- Thesis -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="bi bi-compass" style="color: #4a90c2;"></i> The short version</h5>
+                <p class="cmp-lead mb-2">{{ app_name }} is an <strong>in-process, event-driven compute graph</strong>:
+                    a single process recomputes a node only when its input actually changes, and calculators can be
+                    written natively in Python, Java, C++, or Rust within the same DAG. That design optimises for
+                    <strong>low per-hop latency and operational simplicity</strong> rather than for spreading one
+                    enormous job across a cluster.</p>
+                <p class="mb-0 text-muted">Spark, Flink, and Airflow are distributed systems built around a cluster and
+                    a coordinator. They scale a single workload far beyond one machine and bring mature state,
+                    correctness, and scheduling ecosystems &mdash; at the cost of standing infrastructure and latency
+                    floors that a clustered hop imposes. The comparison below is meant to help you pick the right tool,
+                    not to crown a single winner.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Head-to-Head table -->
+<div class="cmp-table-card">
+    <h2 class="mb-3"><i class="bi bi-table me-2"></i>Head-to-Head Comparison</h2>
+    <div class="table-responsive">
+        <table class="table table-sm mb-2 cmp-table">
+            <thead>
+                <tr>
+                    <th>Capability</th>
+                    <th class="text-center cmp-dy">{{ app_name }}</th>
+                    <th class="text-center">Apache Spark</th>
+                    <th class="text-center">Apache Flink</th>
+                    <th class="text-center">Apache Airflow</th>
+                    <th class="text-center">Kafka Streams</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="cmp-cap">Primary model</td>
+                    <td class="text-center cmp-dycell cmp-good"><strong>In-process event-driven DAG</strong></td>
+                    <td class="text-center">Distributed batch / micro-batch</td>
+                    <td class="text-center">Distributed true streaming</td>
+                    <td class="text-center">Batch workflow scheduler</td>
+                    <td class="text-center">Embedded library on Kafka</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Typical per-hop latency</td>
+                    <td class="text-center cmp-dycell cmp-good"><strong>~100ns &ndash; 1ms</strong></td>
+                    <td class="text-center cmp-warn">100ms &ndash; seconds</td>
+                    <td class="text-center cmp-warn">1ms &ndash; 100ms</td>
+                    <td class="text-center cmp-bad">Seconds &ndash; minutes</td>
+                    <td class="text-center cmp-warn">1ms &ndash; 100ms</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Execution paradigm</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i> Streaming + timer</td>
+                    <td class="text-center cmp-warn">Micro-batch</td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i> Batch</td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Native C++ / Rust calculators</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Polyglot in one DAG (Py/Java/C++/Rust/REST)</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> JVM + PySpark</td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> JVM + PyFlink</td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Orchestrates external</td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i> JVM only</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">LMDB zero-copy exchange</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Exactly-once semantics</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-dash-circle cmp-warn"></i> Publisher-dedup</td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Task-level</td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Managed distributed state</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-dash-circle cmp-warn"></i> In-process + cache</td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i> RocksDB</td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i> RocksDB</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Horizontal scale ceiling</td>
+                    <td class="text-center cmp-dycell cmp-warn">Moderate (node + workers)</td>
+                    <td class="text-center cmp-good">Very high</td>
+                    <td class="text-center cmp-good">Very high</td>
+                    <td class="text-center cmp-warn">High (scheduler)</td>
+                    <td class="text-center cmp-good">High (partitions)</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Enterprise MQ (TIBCO / IBM MQ / ActiveMQ)</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Connectors</td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Connectors</td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Operators</td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i> Kafka only</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Cloud pub/sub (SQS/SNS/Kinesis/Service Bus/Event Hubs)</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Visual DAG designer (in browser)</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Read-only view</td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Time windows</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Minimum infrastructure</td>
+                    <td class="text-center cmp-dycell cmp-good"><strong>1 server</strong></td>
+                    <td class="text-center cmp-bad">3+ nodes</td>
+                    <td class="text-center cmp-bad">3+ nodes</td>
+                    <td class="text-center cmp-warn">1&ndash;2 servers</td>
+                    <td class="text-center cmp-bad">Kafka cluster</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Single-process deploy</td>
+                    <td class="text-center cmp-dycell"><i class="bi bi-check-circle-fill cmp-good"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i></td>
+                    <td class="text-center"><i class="bi bi-dash-circle cmp-warn"></i> Scheduler + workers</td>
+                    <td class="text-center"><i class="bi bi-x-circle cmp-bad"></i> Needs Kafka</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Learning curve</td>
+                    <td class="text-center cmp-dycell cmp-good"><strong>Hours</strong></td>
+                    <td class="text-center cmp-bad">Weeks</td>
+                    <td class="text-center cmp-bad">Weeks</td>
+                    <td class="text-center cmp-warn">Days</td>
+                    <td class="text-center cmp-warn">Days</td>
+                </tr>
+                <tr>
+                    <td class="cmp-cap">Best-fit workload</td>
+                    <td class="text-center cmp-dycell">Low-latency real-time enrichment</td>
+                    <td class="text-center">Large-scale batch, ML, SQL</td>
+                    <td class="text-center">Massive stateful streaming</td>
+                    <td class="text-center">Heterogeneous batch orchestration</td>
+                    <td class="text-center">Kafka-native stream processing</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="cmp-legend mt-2 mb-1">
+            <span><i class="bi bi-check-circle-fill cmp-good"></i> Full / strong</span>
+            <span><i class="bi bi-dash-circle cmp-warn"></i> Partial / qualified</span>
+            <span><i class="bi bi-x-circle cmp-bad"></i> Not supported / weak</span>
+        </div>
+        <p class="cmp-note mb-0"><i class="bi bi-info-circle me-1"></i>Latency and throughput entries describe each
+           system's <em>architectural characteristics and typical operating ranges</em>, not a single controlled
+           benchmark. Real numbers depend on payload, hardware, and configuration. The figures for {{ app_name }}
+           reflect its in-process path with native calculators.</p>
+    </div>
+</div>
+
+<!-- Commentary sections -->
+<div class="cmp-section">
+    <h3 class="mb-3"><i class="bi bi-chat-square-text" style="color: #4a90c2;"></i> The comparison, dimension by dimension</h3>
+    <div class="row g-4 mb-2">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-lightning-charge" style="color: #f59e0b;"></i> Latency &amp; the execution model</h5>
+                    <p class="cmp-lead">The biggest architectural difference is <em>where</em> work happens. {{ app_name }}
+                        keeps the whole graph in one process and propagates a message to the next node the moment its
+                        input changes &mdash; there is no scheduler tick, no cluster hop, and no serialization across a
+                        network boundary on the in-process path. That is what makes sub-millisecond, and with native
+                        calculators microsecond-scale, per-hop latency achievable.</p>
+                    <p class="mb-0 text-muted">Spark's Structured Streaming is fundamentally micro-batch, so its latency
+                        floor is set by the batch interval. Flink is a true streaming engine and reaches low-millisecond
+                        latency, but a record still crosses task slots and often the network. Airflow schedules tasks on
+                        an interval and is built for minutes-to-hours batch cadence, not per-event reaction.</p>
+                    <div class="cmp-verdict">If you are reacting to individual events and every millisecond counts,
+                        the in-process model wins. If you are moving terabytes through a pipeline, latency per record is
+                        not the metric that matters.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-box-seam" style="color: #10b981;"></i> Deployment &amp; operational footprint</h5>
+                    <p class="cmp-lead">{{ app_name }} runs as a single process: <code>python run_server.py</code>.
+                        There is no cluster manager, no HDFS or object-store dependency for compute, and no separate
+                        coordinator to babysit. A built-in worker pool adds CPU parallelism when you need it, and an
+                        HA manager handles primary/secondary failover.</p>
+                    <p class="mb-0 text-muted">Spark and Flink expect a cluster &mdash; typically three or more nodes
+                        plus a resource manager (YARN, Kubernetes, or standalone). Airflow needs a scheduler, a
+                        metadata database, and one or more workers. That standing infrastructure buys scale and
+                        resilience, but it is real operational surface area to provision, secure, and upgrade.</p>
+                    <div class="cmp-verdict">For teams that want capability without a platform team, the single-process
+                        model is a genuine advantage; for organisations already running these platforms at scale, the
+                        marginal cost of one more job is low.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-code-slash" style="color: #8b5cf6;"></i> Polyglot native compute</h5>
+                    <p class="cmp-lead">A single {{ app_name }} DAG can mix Python, Java (Py4J), C++ (pybind11), Rust
+                        (PyO3), and REST calculators. Hot paths drop to native code with roughly 100ns call overhead,
+                        and large payloads can be handed to native calculators through memory-mapped LMDB with no
+                        serialization &mdash; the zero-copy exchange that competitors do not offer out of the box.</p>
+                    <p class="mb-0 text-muted">Spark and Flink are JVM-first with Python bindings (PySpark, PyFlink);
+                        crossing the Python/JVM boundary has a cost, and dropping to C++ or Rust per-operator is not a
+                        first-class path. Airflow orchestrates external programs rather than running calculators in
+                        its own address space, and Kafka Streams is JVM-only.</p>
+                    <div class="cmp-verdict">If your latency budget pushes you to native code in places, doing it inside
+                        one DAG &mdash; without rewriting the whole pipeline in one language &mdash; is unique here.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-plug" style="color: #3b82f6;"></i> Messaging &amp; connectivity</h5>
+                    <p class="cmp-lead">{{ app_name }} treats brokers as pluggable endpoints: Kafka, RabbitMQ, ActiveMQ,
+                        Redis, TIBCO EMS, IBM MQ, gRPC, in-memory, and the major cloud services (SQS, SNS, Kinesis,
+                        Azure Service Bus, Event Hubs, plus S3/Blob/GCS object streams) all share one subscriber/
+                        publisher contract, with resilient auto-reconnecting variants.</p>
+                    <p class="mb-0 text-muted">Kafka Streams is, by design, Kafka-only. Spark, Flink, and Airflow reach
+                        other brokers through connectors and operators of varying maturity. Enterprise messaging
+                        (TIBCO, IBM MQ) in particular tends to be a first-class citizen here and a third-party add-on
+                        elsewhere.</p>
+                    <div class="cmp-verdict">In a heterogeneous enterprise with more than just Kafka, breadth of
+                        native broker support meaningfully reduces glue code.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-shield-check" style="color: #14b8a6;"></i> Streaming, state &amp; correctness</h5>
+                    <p class="cmp-lead">{{ app_name }} guarantees that a node recomputes only when its input actually
+                        changes (the equality gate), and message uniqueness is handled at the publisher. That is a clean,
+                        low-overhead model for stateless and lightly-stateful enrichment.</p>
+                    <p class="mb-0 text-muted">This is also where Flink and Kafka Streams are genuinely stronger:
+                        managed, partitioned, checkpointed state backends (RocksDB) and end-to-end exactly-once across a
+                        distributed job are core features. Spark Structured Streaming offers exactly-once for supported
+                        sinks. If your workload is large windowed joins or aggregations that must survive node failure
+                        with strict correctness, those engines were built for it.</p>
+                    <div class="cmp-verdict">Be honest about your correctness requirements: lightweight dedup is enough
+                        for many real-time pipelines, but distributed exactly-once over big state is a Flink-class job.</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-piggy-bank" style="color: #0d9488;"></i> Cost &amp; total cost of ownership</h5>
+                    <p class="cmp-lead">Fewer moving parts means lower TCO for the workloads {{ app_name }} targets:
+                        one server, no cluster scheduler, no broker mandated just to run compute, and a visual designer
+                        that shortens the path from idea to running DAG.</p>
+                    <p class="mb-0 text-muted">Cluster engines amortise their overhead well once utilisation is high and
+                        a platform team is already in place. The cost comparison therefore depends less on a price list
+                        and more on whether you are running one latency-sensitive pipeline or hundreds of large batch
+                        jobs sharing a cluster.</p>
+                    <div class="cmp-verdict">Right-size to the workload: a single instance can replace a small cluster
+                        for real-time enrichment, but it is not a substitute for a shared analytics platform.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Honest trade-offs -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="card" style="border-left: 4px solid var(--brass, #e3a44a);">
+                <div class="card-body">
+                    <h5><i class="bi bi-hand-thumbs-up" style="color: var(--brass, #e3a44a);"></i> Where Spark, Flink, and Airflow are the right choice</h5>
+                    <p class="cmp-lead">A comparison is only useful if it is honest about the other side. {{ app_name }}
+                        is not trying to replace these systems for the jobs they were built for:</p>
+                    <ul class="mb-0">
+                        <li><strong>Apache Spark</strong> &mdash; large-scale batch, ETL over terabytes, SQL on big
+                            datasets, and the MLlib / dataframe ecosystem. If the bottleneck is throughput across a
+                            huge dataset rather than per-event latency, Spark's distributed engine is the proven answer.</li>
+                        <li><strong>Apache Flink</strong> &mdash; massive, long-running, stateful stream processing with
+                            strict exactly-once semantics, large windowed joins, and checkpointed state that must
+                            survive failures across a cluster. This is Flink's home turf.</li>
+                        <li><strong>Apache Airflow</strong> &mdash; orchestrating heterogeneous batch jobs on a schedule,
+                            with a rich operator catalogue, backfills, dependencies, and a mature ecosystem for
+                            data-engineering DAGs that run in minutes or hours, not microseconds.</li>
+                        <li><strong>Kafka Streams</strong> &mdash; stream processing that lives entirely inside a Kafka
+                            deployment, where partition-parallel scaling and Kafka-native exactly-once are exactly what
+                            you want.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How to choose -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="bi bi-signpost-split" style="color: #4a90c2;"></i> How to choose</h5>
+                    <ul class="cmp-choose mb-0">
+                        <li>Reacting to individual events with a tight latency budget, want native C++/Rust in the hot
+                            path, and prefer to run one process? &rarr; <strong>{{ app_name }}</strong>.</li>
+                        <li>Crunching very large datasets in batch, or need SQL/ML over big data? &rarr;
+                            <strong>Spark</strong>.</li>
+                        <li>Running massive stateful streaming jobs that demand distributed exactly-once and large
+                            managed state? &rarr; <strong>Flink</strong>.</li>
+                        <li>Orchestrating scheduled, heterogeneous batch workflows with rich dependencies? &rarr;
+                            <strong>Airflow</strong>.</li>
+                        <li>Already all-in on Kafka and want stream processing inside it? &rarr;
+                            <strong>Kafka Streams</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tagline -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0" style="background: linear-gradient(135deg, #0c1022 0%, #181f3d 100%) !important;">
+            <div class="card-body text-center">
+                <p class="mb-0" style="color: rgba(226,232,240,0.9) !important;">
+                    <i class="bi bi-quote me-2" style="color: var(--brass, #e3a44a);"></i>
+                    <em>"The performance of C++, the safety of Rust, the ecosystem of Python, and the simplicity of a
+                        single process."</em>
+                    <i class="bi bi-quote ms-2" style="color: var(--brass, #e3a44a);"></i>
+                </p>
+                <a href="{{ url_for('about') }}" class="btn btn-outline-light btn-sm mt-3">
+                    <i class="bi bi-arrow-left"></i> Back to About
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -56,7 +56,7 @@ Version 2.2 highlights:
 Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-VERSION = "3.1.0"
+VERSION = "3.2.0"
 BUILD_DATE = "2026-06-14"
 APP_NAME = "DishtaYantra"
 

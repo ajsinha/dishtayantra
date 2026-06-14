@@ -692,31 +692,30 @@ explanation. Start at Tutorial 1 and build up.</p>
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
-        <div class="card help-card" style="border-left: 4px solid #231f20;">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-broadcast" style="color: #231f20;"></i> Kafka Dual-Library Integration
-                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #10b981, #059669);">1.1.2</span>
-                </h5>
-                <p class="card-text">High-performance Kafka integration with support for both kafka-python and confluent-kafka. Switch libraries via config with no code changes.</p>
-                <ul class="small text-muted mb-3">
-                    <li>kafka-python: ~50K msg/sec (development)</li>
-                    <li>confluent-kafka: ~500K msg/sec (production)</li>
-                    <li>Automatic library fallback</li>
-                    <li>Resilient versions with auto-reconnect</li>
-                </ul>
-                <a href="{{ url_for('help_kafka_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #231f20, #374151);">
-                    <i class="bi bi-broadcast"></i> Learn More <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Message Brokers Section -->
 <h3 class="section-title"><i class="bi bi-hdd-network"></i> Message Broker Integrations</h3>
 <div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #231f20;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-broadcast" style="color: #231f20;"></i> Apache Kafka
+                    <span class="badge text-white ms-2" style="background: linear-gradient(135deg, #10b981, #059669);">Dual-Library</span>
+                </h5>
+                <p class="card-text">High-throughput distributed log with a choice of kafka-python or confluent-kafka, switchable via config with no code changes.</p>
+                <ul class="small text-muted mb-3">
+                    <li>kafka-python ~50K msg/sec; confluent-kafka ~500K msg/sec</li>
+                    <li>Full-batch buffering for zero message loss</li>
+                    <li>Resilient auto-reconnect</li>
+                </ul>
+                <a href="{{ url_for('help_kafka_integration') }}" class="btn btn-sm text-white" style="background: linear-gradient(135deg, #231f20, #374151);">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
     <div class="col-md-4 mb-3">
         <div class="card help-card" style="border-left: 4px solid #ff6600;">
             <div class="card-body">
@@ -802,6 +801,42 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>XA transactions</li>
                 </ul>
                 <a href="{{ url_for('help_ibmmq_integration') }}" class="btn btn-sm text-white" style="background: #054ada;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #6366f1;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-diagram-3-fill" style="color: #6366f1;"></i> gRPC Streaming
+                </h5>
+                <p class="card-text">Bidirectional gRPC streams as first-class subscribers and publishers over HTTP/2.</p>
+                <ul class="small text-muted mb-3">
+                    <li>HTTP/2 multiplexed streams</li>
+                    <li>Optional TLS</li>
+                    <li>Low-overhead binary transport</li>
+                </ul>
+                <a href="{{ url_for('help_pubsub') }}" class="btn btn-sm text-white" style="background: #6366f1;">
+                    <i class="bi bi-arrow-right"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #0ea5e9;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-cloud-fill" style="color: #0ea5e9;"></i> Cloud &amp; Streaming
+                </h5>
+                <p class="card-text">Managed cloud messaging across AWS, Azure, and GCP without provider-specific code.</p>
+                <ul class="small text-muted mb-3">
+                    <li>AWS SQS, SNS, Kinesis</li>
+                    <li>Azure Service Bus, Event Hubs</li>
+                    <li>S3 / Azure Blob / GCS object streams</li>
+                </ul>
+                <a href="{{ url_for('help_cloud_pubsub') }}" class="btn btn-sm text-white" style="background: #0ea5e9;">
                     <i class="bi bi-arrow-right"></i> Learn More
                 </a>
             </div>
