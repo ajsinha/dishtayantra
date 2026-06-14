@@ -785,6 +785,53 @@ The Rust Manager provides centralized management of Rust PyO3 modules and calcul
 
 ---
 
+## Arrow Columnar Data Plane (Opt-In)
+
+The Arrow columnar data plane (roadmap Phase 1 / A1) is an **additive, opt-in**
+extension to the calculator layer. It introduces `ArrowCalculator`
+(`core/calculator/arrow_calculator.py`) — a calculator that processes a columnar
+micro-batch with Apache Arrow / `pyarrow.compute` kernels instead of one Python
+dict at a time.
+
+**Additive by design.** `ArrowCalculator` subclasses `DataCalculator` and
+implements the normal `calculate(data)` row method, so the reactive-dataflow
+engine (`core/dag/graph_elements.py::Node.compute`) drives it with no changes.
+Neither `core/dag/*` nor `core_calculator.py` is modified. A bare record dict is
+processed as a 1-row batch; a batch-envelope message `{"batch": [...]}` is
+processed vectorized.
+
+**Coexistence.** Because node types and calculator types are each resolved
+independently by the builder (`core/dag/compute_graph.py`,
+`core/dag/compute_graph_builders.py`), a graph is never required to be
+homogeneous:
+
+- Old-style (row) and new-style (Arrow) DAGs run side by side in one instance.
+- A single graph may contain both row and Arrow calculators. On single-dict flow
+  Arrow calculators are exact drop-ins (output-identical to row); on batched flow
+  any legacy row stage is wrapped by `RowCalculatorBatchAdapter`.
+
+**Performance.** Vectorization helps numeric/columnar work on high-volume,
+schema-regular, latency-tolerant streams; it adds overhead (no win) on
+single-dict flow, low-volume, ultra-low-latency, branchy/string, or I/O-bound
+paths. Measured: ~11.8x at the kernel level, ~1.8x end-to-end at batch 500.
+
+See `docs/design/A1-arrow-data-plane.md` (RFC) and
+`docs/design/A1-worked-example-and-coexistence.md` (worked example + decision
+tree). Runnable: `python -m perftest.run_arrow_example`.
+
+**Automatic source batching (opt-in node types).** Two additive node types make
+batching internal so producers/consumers keep sending and receiving ordinary
+per-message data: `BatchingSubscriptionNode` drains the subscriber into one
+`{"batch": [...]}` envelope per cycle (load-adaptive — fills under backlog,
+flushes when idle), and `FlatteningPublicationNode` republishes each record so
+the external per-message contract is preserved. `SubscriptionNode` and
+`PublicationNode` are unchanged; a DAG opts in by setting a node's `type`.
+Runnable: `python -m perftest.run_autobatch_example`. (Current throughput gain is
+modest because the dataflow deep-copies each envelope per stage; carrying Arrow
+`RecordBatch`es on edges to remove that copy is the next A1 increment.)
+
+---
+
 ## LMDB Zero-Copy Data Exchange
 
 ### Overview (v1.1.2 - High Performance)

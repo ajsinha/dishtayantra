@@ -1,0 +1,43 @@
+{
+  "name": "perftest_arrow_mixed",
+  "description": "A1 worked example: a SINGLE graph that mixes old-style (row) and new-style (Arrow/vectorized) calculators. Row stages: validate, normalize, risk, classify. Arrow stages: fx, notional, fee. On single-dict flow the Arrow calculators run as drop-ins, so output is identical to an all-row pipeline and no adapter is needed. Demonstrates that old and new nodes/calculators coexist in one graph. In-memory broker; runs anywhere via perftest/run_arrow_example.py.",
+  "start_time": null,
+  "end_time": null,
+  "subscribers": [
+    {"name": "in_sub", "config": {"source": "mem://queue/arrow_example_in", "max_depth": 1000000}}
+  ],
+  "publishers": [
+    {"name": "out_pub", "config": {"destination": "mem://queue/arrow_example_out"}}
+  ],
+  "calculators": [
+    {"name": "validate",  "type": "perftest.etl_calculators.ValidateTradeCalculator",        "config": {}},
+    {"name": "normalize", "type": "perftest.etl_calculators.NormalizeTradeCalculator",       "config": {}},
+    {"name": "fx",        "type": "perftest.arrow_etl_calculators.ArrowFxConvertCalculator", "config": {}},
+    {"name": "notional",  "type": "perftest.arrow_etl_calculators.ArrowNotionalCalculator",  "config": {}},
+    {"name": "fee",       "type": "perftest.arrow_etl_calculators.ArrowFeeCalculator",       "config": {}},
+    {"name": "risk",      "type": "perftest.etl_calculators.RiskScoreCalculator",            "config": {}},
+    {"name": "classify",  "type": "perftest.etl_calculators.ClassifyTradeCalculator",        "config": {}}
+  ],
+  "transformers": [],
+  "nodes": [
+    {"name": "ingest",        "type": "SubscriptionNode", "config": {}, "subscriber": "in_sub"},
+    {"name": "validate_node", "type": "CalculationNode",  "config": {}, "calculator": "validate"},
+    {"name": "normalize_node","type": "CalculationNode",  "config": {}, "calculator": "normalize"},
+    {"name": "fx_node",       "type": "CalculationNode",  "config": {}, "calculator": "fx"},
+    {"name": "notional_node", "type": "CalculationNode",  "config": {}, "calculator": "notional"},
+    {"name": "fee_node",      "type": "CalculationNode",  "config": {}, "calculator": "fee"},
+    {"name": "risk_node",     "type": "CalculationNode",  "config": {}, "calculator": "risk"},
+    {"name": "classify_node", "type": "CalculationNode",  "config": {}, "calculator": "classify"},
+    {"name": "sink",          "type": "PublicationNode",  "config": {}, "publishers": ["out_pub"]}
+  ],
+  "edges": [
+    {"from_node": "ingest",         "to_node": "validate_node"},
+    {"from_node": "validate_node",  "to_node": "normalize_node"},
+    {"from_node": "normalize_node", "to_node": "fx_node"},
+    {"from_node": "fx_node",        "to_node": "notional_node"},
+    {"from_node": "notional_node",  "to_node": "fee_node"},
+    {"from_node": "fee_node",       "to_node": "risk_node"},
+    {"from_node": "risk_node",      "to_node": "classify_node"},
+    {"from_node": "classify_node",  "to_node": "sink"}
+  ]
+}

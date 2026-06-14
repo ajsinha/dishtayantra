@@ -1,0 +1,56 @@
+{
+  "_comment": "A1 WORKED EXAMPLE (roadmap Phase 1). Linear trade-ETL pipeline using the columnar ArrowCalculators. Messages are BATCH ENVELOPES: {\"batch\": [trade, trade, ...]}. Each Arrow calculator vectorizes the whole batch and is output-identical to its perftest.etl_calculators row counterpart. Uses in-memory queues so it runs with no Kafka; swap the subscriber/publisher to kafka:// for a broker-fed run. The engine itself is unchanged - these are ordinary custom calculators referenced by dotted path. See docs/A1_ARROW_WHEN_TO_USE.md and run with: python -m perftest.run_worked_example",
+  "name": "perftest_arrow_etl",
+  "description": "in-memory -> arrow FX -> arrow notional -> arrow fees -> arrow risk -> in-memory sink. Columnar batched equivalent of the numeric core of perftest_trade_etl, for the A1 worked example.",
+  "version": "4.3.0",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    {
+      "name": "arrow_in",
+      "config": {
+        "source": "mem://queue/perftest_arrow_in",
+        "max_depth": 2000000,
+        "_note": "Each message is a batch envelope {\"batch\": [...]}. Point at kafka://topic/... for a broker-fed run."
+      }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "arrow_out",
+      "config": {
+        "destination": "mem://queue/perftest_arrow_out",
+        "_note": "Emits enriched batch envelopes. A real sink would flatten to one message per row (see the A1 'next increment' notes)."
+      }
+    }
+  ],
+
+  "calculators": [
+    {"name": "fx",       "type": "perftest.arrow_etl_calculators.ArrowFxConvertCalculator", "config": {}},
+    {"name": "notional", "type": "perftest.arrow_etl_calculators.ArrowNotionalCalculator",  "config": {}},
+    {"name": "fees",     "type": "perftest.arrow_etl_calculators.ArrowFeeCalculator",       "config": {"commission_rate": 0.0005, "exchange_fee_rate": 0.0001, "min_fee": 0.50}},
+    {"name": "risk",     "type": "perftest.arrow_etl_calculators.ArrowRiskScoreCalculator", "config": {}}
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    {"name": "ingest",        "type": "SubscriptionNode", "config": {}, "subscriber": "arrow_in"},
+    {"name": "fx_node",       "type": "CalculationNode",  "config": {}, "calculator": "fx"},
+    {"name": "notional_node", "type": "CalculationNode",  "config": {}, "calculator": "notional"},
+    {"name": "fees_node",     "type": "CalculationNode",  "config": {}, "calculator": "fees"},
+    {"name": "risk_node",     "type": "CalculationNode",  "config": {}, "calculator": "risk"},
+    {"name": "sink",          "type": "PublicationNode",  "config": {}, "publishers": ["arrow_out"]}
+  ],
+
+  "edges": [
+    {"from_node": "ingest",        "to_node": "fx_node"},
+    {"from_node": "fx_node",       "to_node": "notional_node"},
+    {"from_node": "notional_node", "to_node": "fees_node"},
+    {"from_node": "fees_node",     "to_node": "risk_node"},
+    {"from_node": "risk_node",     "to_node": "sink"}
+  ]
+}

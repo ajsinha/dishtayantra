@@ -1919,6 +1919,42 @@ Python 3.13+ Free-Threading:
         </div>
     </div>
 
+    <!-- Arrow Columnar Data Plane -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Arrow Columnar Data Plane (opt-in)</h5>
+                </div>
+                <div class="card-body">
+                    <p>The Arrow columnar data plane is an <strong>additive, opt-in</strong> extension to the
+                    calculator layer. <code>ArrowCalculator</code> processes a columnar micro-batch with vectorized
+                    <code>pyarrow.compute</code> kernels. It subclasses <code>DataCalculator</code>, so the DAG engine
+                    is unchanged and existing DAGs, calculators, and stored configs behave exactly as before.</p>
+                    <p class="mb-2"><strong>Old-style (row) and new-style (Arrow) calculators coexist:</strong></p>
+                    <ul>
+                        <li>Multiple DAGs &mdash; some all-row, some using Arrow &mdash; run in the same instance.</li>
+                        <li>A single graph may contain both row and Arrow calculators. On single-dict flow Arrow
+                        calculators are exact drop-ins; on batched flow a legacy row stage is wrapped with
+                        <code>RowCalculatorBatchAdapter</code>.</li>
+                    </ul>
+                    <p>Two opt-in node types make batching automatic:
+                    <code>BatchingSubscriptionNode</code> drains messages into columnar batches and
+                    <code>FlatteningPublicationNode</code> unbatches on output, so producers/consumers keep
+                    using ordinary per-message data. <code>SubscriptionNode</code>/<code>PublicationNode</code>
+                    are unchanged.</p>
+                    <p><strong>When it helps:</strong> high-volume, numeric/columnar, schema-regular,
+                    latency-tolerant streams (and native calculators via zero-copy). <strong>When it does not:</strong>
+                    low-volume, ultra-low-latency per-event, branchy/string-heavy, or I/O-bound paths.
+                    Measured ~11.8&times; at the kernel level, ~1.8&times; end-to-end at batch 500.</p>
+                    <p class="text-muted small mb-0">See <code>docs/design/A1-arrow-data-plane.md</code>,
+                    <code>docs/design/A1-worked-example-and-coexistence.md</code>, and
+                    <code>perftest/run_arrow_example.py</code>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Version History -->
     <div class="row mb-4">
         <div class="col-12">

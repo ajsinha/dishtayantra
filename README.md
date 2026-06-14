@@ -39,6 +39,7 @@ schedule management. Recent capabilities include:
 ### Core Capabilities
 - **Multi-threaded DAG Execution**: Efficient parallel processing with topologically sorted node execution
 - **Worker Pool**: Multiprocessing with DAG affinity for true CPU parallelism (bypasses GIL)
+- **Arrow columnar data plane (opt-in, additive)**: `ArrowCalculator` calculators vectorize batched messages with Apache Arrow / `pyarrow.compute`, output-identical to their row counterparts. They are drop-in `DataCalculator`s, so the engine is unchanged and old-style (row) and new-style (Arrow) nodes/calculators **coexist in the same instance and even in the same graph** (see `docs/design/A1-worked-example-and-coexistence.md` and `perftest/run_arrow_example.py`)
 - **Subgraph Support**: Modular graph-as-a-node pattern with dynamic light up/down control
 - **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory, LMDB
 - **AWS & Azure Messaging**: SQS, Kinesis, SNS, Azure Service Bus, Event Hubs
@@ -60,6 +61,28 @@ schedule management. Recent capabilities include:
 | C++ | pybind11 | 50-100x faster | Ultra-low latency, SIMD, numeric |
 | Rust | PyO3 | 50-100x faster | Memory safety, thread safety |
 | REST | HTTP/JSON | Network dependent | Microservices, third-party APIs |
+
+### Arrow Columnar Data Plane (opt-in)
+
+`ArrowCalculator` (in `core/calculator/arrow_calculator.py`) is an **additive**,
+opt-in calculator contract that processes a columnar batch with
+`pyarrow.compute` kernels. Because it subclasses `DataCalculator`, every Arrow
+calculator is a **drop-in** for a row calculator: the engine is not modified, so
+row (old-style) and Arrow (new-style) calculators **coexist in the same instance
+and in the same graph**. Vectorized stages are output-identical to their row
+counterparts (validated in CI) and deliver their speedup on *batched* message
+flow (~1.8x end-to-end in the worked example; ~11.8x at the kernel level).
+
+- Worked example & decision tree: `docs/design/A1-worked-example-and-coexistence.md`
+- Tutorial (hands-on): `docs/TUTORIAL_arrow_dag.md`
+- Runnable demos: `python -m perftest.run_arrow_example` (mixed graph) and `python -m perftest.run_autobatch_example` (automatic source-batching)
+
+Two **opt-in** node types make batching automatic without changing producers or
+consumers: `BatchingSubscriptionNode` drains incoming messages into columnar
+batches, and `FlatteningPublicationNode` unbatches on the way out so the external
+per-message contract is preserved. The existing `SubscriptionNode` /
+`PublicationNode` are unchanged, so existing DAGs are unaffected.
+- Design RFC: `docs/design/A1-arrow-data-plane.md`
 
 ### LMDB Zero-Copy Data Exchange
 - **Memory-Mapped Transport**: 100-1000x faster than serialization for large payloads

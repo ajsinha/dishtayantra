@@ -470,3 +470,117 @@ class SubgraphWrapperNode(Node):
             }
         
         return base_details
+
+# ----------------------------------------------------------------------------
+# A1 source-batching nodes (roadmap Phase 1). ADDITIVE and OPT-IN: these are new
+# node types. SubscriptionNode / PublicationNode above are unchanged, so every
+# existing DAG behaves exactly as before. Use these only when a DAG opts in by
+# setting node "type" to "BatchingSubscriptionNode" / "FlatteningPublicationNode".
+# ----------------------------------------------------------------------------
+class BatchingSubscriptionNode(SubscriptionNode):
+    """Source node that auto-batches messages for the Arrow columnar path.
+
+    Drains up to ``max_batch_size`` messages from the subscriber per compute
+    cycle and emits ONE batch-envelope message ``{batch_key: [...]}`` so
+    downstream ArrowCalculators can vectorize without the application having to
+    build envelopes itself. Load-adaptive: batches fill under backlog and flush
+    immediately when the queue is idle (so a quiet stream keeps low latency).
+
+    Config (all optional):
+        {"batch": {"max_size": 500, "key": "batch"}}
+      or flat: {"max_batch_size": 500, "batch_key": "batch"}
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        cfg = config or {}
+        bc = cfg.get('batch', {}) or {}
+        size = bc.get('max_size', bc.get('size', cfg.get('max_batch_size', cfg.get('batch_size', 500))))
+        self._max_batch_size = max(1, int(size))
+        self._batch_key = bc.get('key', cfg.get('batch_key', 'batch'))
+
+    def compute(self) -> bool:
+        if not self.isdirty() or not self.subscriber:
+            return False
+        try:
+            buffer = []
+            while len(buffer) < self._max_batch_size:
+                data = self.subscriber.get_data(block_time=0)
+                if data is None:
+                    break
+                buffer.append(data)
+            if not buffer:
+                self.set_clean()
+                return False
+
+            self._messages_in += len(buffer)
+            transformed_input = {self._batch_key: buffer}
+            for transformer in self._input_transformers:
+                transformed_input = transformer.transform(transformed_input)
+
+            if self._calculator:
+                calculated_output = self._calculator.calculate(transformed_input)
+            else:
+                calculated_output = transformed_input
+
+            transformed_output = calculated_output
+            for transformer in self._output_transformers:
+                transformed_output = transformer.transform(transformed_output)
+
+            if transformed_output != self._output:
+                self._output = transformed_output
+                self._messages_out += 1
+                for edge in self._outgoing_edges:
+                    edge.to_node.set_dirty()
+            self.set_clean()
+            return True
+        except Exception as e:
+            self._errors.append({'time': datetime.now().isoformat(), 'error': str(e)})
+            logger.error(f"Error in batching subscription node {self.name}: {str(e)}")
+            return False
+
+
+class FlatteningPublicationNode(PublicationNode):
+    """Sink node that unbatches a batch-envelope before publishing.
+
+    If its input is ``{batch_key: [...]}`` it publishes each record as a separate
+    message, so the external/broker contract stays per-message even when the DAG
+    batched internally. Otherwise it behaves exactly like PublicationNode. Pairs
+    with BatchingSubscriptionNode.
+    """
+
+    def __init__(self, name, config):
+        super().__init__(name, config)
+        cfg = config or {}
+        bc = cfg.get('batch', {}) or {}
+        self._batch_key = bc.get('key', cfg.get('batch_key', 'batch'))
+
+    def compute(self) -> bool:
+        if not self.isdirty():
+            return False
+        try:
+            Node.compute(self)  # consolidate incoming edges -> self._output
+            out = self._output
+            if out != self._last_published_output:
+                if isinstance(out, dict) and isinstance(out.get(self._batch_key), list):
+                    records = out[self._batch_key]
+                    for rec in records:
+                        for publisher in self.publishers:
+                            try:
+                                publisher.publish(rec)
+                            except Exception as e:
+                                logger.error(f"Error publishing from node {self.name}: {str(e)}")
+                    self._published_count += len(records)
+                else:
+                    for publisher in self.publishers:
+                        try:
+                            publisher.publish(out)
+                        except Exception as e:
+                            logger.error(f"Error publishing from node {self.name}: {str(e)}")
+                    self._published_count += 1
+                self._last_published_output = dict(out) if isinstance(out, dict) else out
+            return True
+        except Exception as e:
+            self._errors.append({'time': datetime.now().isoformat(), 'error': str(e)})
+            logger.error(f"Error in flattening publication node {self.name}: {str(e)}")
+            return False

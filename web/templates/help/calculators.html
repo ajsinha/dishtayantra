@@ -248,4 +248,37 @@ class MyCustomCalculator(DataCalculator):
 }</div>
     </pre>
 </div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Arrow Columnar Calculators (opt-in, new style)</h5>
+    </div>
+    <div class="card-body">
+        <p>An <code>ArrowCalculator</code> processes a columnar <em>batch</em> of records with vectorized
+        <code>pyarrow.compute</code> kernels instead of one dict at a time. It subclasses <code>DataCalculator</code>,
+        so it is a <strong>drop-in</strong> for a row calculator and the engine is unchanged.</p>
+        <p><strong>Old-style (row) and new-style (Arrow) calculators coexist</strong> &mdash; in the same running
+        instance and even within the same graph. On single-dict flow an Arrow calculator is an exact drop-in
+        (output-identical to the row version). On batched flow it vectorizes for the speedup, and any legacy row
+        stage on that path is wrapped with <code>RowCalculatorBatchAdapter</code>.</p>
+        <pre class="code-block">from core.calculator.arrow_calculator import ArrowCalculator, append_columns
+import pyarrow.compute as pc
+
+class MyArrowCalculator(ArrowCalculator):
+    def calculate_batch(self, batch):
+        doubled = pc.multiply(batch.column("value"), 2)
+        return append_columns(batch, {"doubled": doubled})</div>
+        <p class="mt-3">Use it like any custom calculator (works in a graph alongside row calculators):</p>
+        <pre class="code-block">{
+  "name": "my_arrow",
+  "type": "mymodule.MyArrowCalculator",
+  "config": {}
+}</div>
+        <p class="mt-3"><strong>When it helps:</strong> high-volume, numeric/columnar, schema-regular,
+        latency-tolerant streams (and native C++/Rust/Java calculators via zero-copy). <strong>When it does not:</strong>
+        low-volume, ultra-low-latency per-event, branchy/string-heavy, or I/O-bound paths.
+        See <code>docs/design/A1-worked-example-and-coexistence.md</code> and run
+        <code>python -m perftest.run_arrow_example</code>.</p>
+    </div>
+</div>
 {% endblock %}

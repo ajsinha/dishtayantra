@@ -1,0 +1,31 @@
+{
+  "name": "perftest_arrow_autobatch",
+  "description": "A1 source-batching example. Ordinary per-message trades go in; BatchingSubscriptionNode auto-batches them into columnar envelopes; Arrow stages (fx, notional, fee) vectorize; FlatteningPublicationNode unbatches so the OUTPUT is per-message again. The application sends and receives ordinary messages -- batching is internal and opt-in. Existing DAGs that use SubscriptionNode/PublicationNode are unaffected. In-memory broker; run via perftest/run_autobatch_example.py.",
+  "start_time": null,
+  "end_time": null,
+  "subscribers": [
+    {"name": "in_sub", "config": {"source": "mem://queue/autobatch_in", "max_depth": 2000000}}
+  ],
+  "publishers": [
+    {"name": "out_pub", "config": {"destination": "mem://queue/autobatch_out"}}
+  ],
+  "calculators": [
+    {"name": "fx",       "type": "perftest.arrow_etl_calculators.ArrowFxConvertCalculator", "config": {}},
+    {"name": "notional", "type": "perftest.arrow_etl_calculators.ArrowNotionalCalculator",  "config": {}},
+    {"name": "fee",      "type": "perftest.arrow_etl_calculators.ArrowFeeCalculator",       "config": {}}
+  ],
+  "transformers": [],
+  "nodes": [
+    {"name": "ingest",        "type": "BatchingSubscriptionNode", "config": {"batch": {"max_size": 500}}, "subscriber": "in_sub"},
+    {"name": "fx_node",       "type": "CalculationNode",          "config": {}, "calculator": "fx"},
+    {"name": "notional_node", "type": "CalculationNode",          "config": {}, "calculator": "notional"},
+    {"name": "fee_node",      "type": "CalculationNode",          "config": {}, "calculator": "fee"},
+    {"name": "sink",          "type": "FlatteningPublicationNode","config": {}, "publishers": ["out_pub"]}
+  ],
+  "edges": [
+    {"from_node": "ingest",        "to_node": "fx_node"},
+    {"from_node": "fx_node",       "to_node": "notional_node"},
+    {"from_node": "notional_node", "to_node": "fee_node"},
+    {"from_node": "fee_node",      "to_node": "sink"}
+  ]
+}

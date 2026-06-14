@@ -6,6 +6,89 @@ Single source of truth for the application version. Every module, template,
 banner, and document must reference this module rather than hard-coding a
 version string.
 
+Version 4.5.0 highlights (A1 automatic source-batching - additive, opt-in):
+    - Two new opt-in node types make Arrow batching automatic while preserving the
+      external per-message contract: BatchingSubscriptionNode drains incoming
+      messages into one columnar envelope per cycle (load-adaptive), and
+      FlatteningPublicationNode republishes each record on output.
+    - The existing SubscriptionNode / PublicationNode classes are byte-for-byte
+      unchanged (verified by diff); the new types are appended subclasses, so
+      every existing DAG behaves exactly as before.
+    - Worked example perftest/perftest_arrow_autobatch.json +
+      perftest/run_autobatch_example.py: ordinary per-message trades in and out,
+      batched internally, output identical to the all-row pipeline (CI:
+      tests/test_autobatch.py). Throughput gain is currently modest (the dataflow
+      deep-copies each envelope per stage); carrying Arrow RecordBatches on edges
+      is the next A1 increment.
+    - Docs updated: ROADMAP, TUTORIAL, ARCHITECTURE, README, A1 design docs, and
+      the architecture help page.
+
+Version 4.4.0 highlights (Arrow tutorial + adapter ergonomics):
+    - Hands-on tutorial at docs/TUTORIAL_arrow_dag.md: write an ArrowCalculator,
+      use it as a drop-in, vectorize batches, mix row + Arrow in one graph, bridge
+      legacy calculators with RowCalculatorBatchAdapter, and measure the result.
+    - RowCalculatorBatchAdapter now resolves config["wrapped"] using the same
+      {"type": <builtin|dotted.path>, "config": {...}} shape as a DAG calculator
+      entry (with CalculatorFactory fallback), so it is configurable directly in
+      DAG JSON. Backward compatible (passing a wrapped instance still works).
+    - README linked to the tutorial. No engine behavior change.
+
+Version 4.3.0 highlights (A1 worked example + old/new coexistence):
+    - Worked example hosted in perftest/: arrow_etl_calculators.py (vectorized
+      FX/notional/fee/risk, each output-identical to the row versions),
+      perftest_arrow_mixed.json (a SINGLE graph mixing row and Arrow calculators),
+      and run_arrow_example.py (a runnable demonstration).
+    - CONFIRMED by execution + CI (tests/test_arrow_coexistence.py): old-style and
+      new-style DAGs/calculators coexist in the same instance, AND a single graph
+      can contain both row and Arrow nodes (mixed graph output is bit-identical to
+      the all-row equivalent over 20,000 trades).
+    - Detailed design doc + decision tree at
+      docs/design/A1-worked-example-and-coexistence.md; README, ARCHITECTURE.md,
+      and the Calculators/Architecture help pages updated accordingly.
+    - Engine (core/dag/*) and core_calculator.py remain unchanged.
+
+Version 4.2.0 highlights (Phase 1 / A1 vertical slice - additive, opt-in):
+    - ArrowCalculator contract (core/calculator/arrow_calculator.py): an opt-in
+      columnar calculator that is ALSO a drop-in row DataCalculator, so adopting
+      it requires NO engine change. The engine (core/dag/*) and core_calculator.py
+      are byte-for-byte unchanged; existing DAGs and stored data are unaffected.
+    - Vectorized ArrowFxConvert / ArrowNotional calculators that are output-
+      identical to the perftest row calculators (exact parity, validated in CI).
+    - End-to-end vertical slice through the real ComputeGraph
+      (benchmarks/a1_vertical.py): the same two-stage pipeline run row-at-a-time
+      vs Arrow batch-envelopes, verified IDENTICAL per-trade and measured ~1.8x
+      faster end-to-end (the pure kernel is ~11.8x; the node-boundary dict<->Arrow
+      conversion accounts for the rest - the documented next increment is Arrow
+      transport to remove that bridging).
+    - RowCalculatorBatchAdapter lets legacy row calculators run in a batched path
+      unchanged (mixed-DAG compatibility).
+
+Version 4.1.0 highlights (Phase 1 / A1 kickoff - design + de-risking spike):
+    - A1 Arrow columnar data-plane design RFC at docs/design/A1-arrow-data-plane.md
+      (Arrow RecordBatch edges, an additive ArrowCalculator batch contract,
+      micro-batching with a linger cap, zero-copy polyglot handoff, a one-path
+      vertical slice, and a backward-compatible migration plan)
+    - Runnable A1 spike (benchmarks/arrow_vectorization_spike.py) proving the
+      core claim on this codebase's own trade-ETL numerics: vectorized Arrow
+      kernels ran ~11.8x faster than the current row-at-a-time model with
+      bit-identical output (validated row-vs-Arrow in the test suite)
+    - Still no production engine behavior change; this de-risks A1 and gives the
+      RFC measured evidence before the core refactor begins
+
+Version 4.0.0 highlights (start of the "best-in-class" roadmap):
+    - Strategic feature roadmap published at docs/ROADMAP.md (Arrow data plane,
+      no-GIL Python, embedded streaming SQL, event-time/exactly-once,
+      incremental materialized views, WASM calculators, real-time AI, and a
+      graceful single-node-first scale path)
+    - Phase 0 foundations shipped: a reproducible benchmark harness
+      (benchmarks/) that drives the real engine over the in-memory broker and
+      reports latency percentiles, throughput, and peak memory
+    - Free-threading readiness spike (benchmarks/freethreading_spike.py) that
+      measures CPU-bound calculator scaling across threads and inventories
+      native-extension GIL readiness, de-risking the no-GIL work (step A3)
+    - No engine behavior change in this release; it establishes the
+      measurement baseline that all later roadmap work is compared against
+
 Version 3.1.0 highlights:
     - Multiple DAG folders: 'storage.dags.prefixes' lists extra, logically
       grouped folders (config/dags is always included); each scanned for its
@@ -56,7 +139,7 @@ Version 2.2 highlights:
 Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-VERSION = "3.3.0"
+VERSION = "4.5.0"
 BUILD_DATE = "2026-06-14"
 APP_NAME = "DishtaYantra"
 
