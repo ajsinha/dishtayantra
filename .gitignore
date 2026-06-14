@@ -52,3 +52,54 @@ instance/
 *.swp
 *.swo
 .DS_Store
+# ============================================================================
+# DishtaYantra runtime artifacts (never commit generated state)
+# ============================================================================
+# data/ and logs/ are ignored wholesale above; the app recreates them at
+# startup (run_server.py makedirs('logs'); DB/LMDB/file sinks create their
+# parents with exist_ok=True). The patterns below also catch these artifact
+# types if they ever appear OUTSIDE those folders.
+
+# --- SQLite databases (app metadata: users, roles, API keys) ---
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.db-journal
+
+# --- Logs ---
+*.log
+logs/*.log
+logs/*.jsonl
+
+# --- In-memory Redis clone dumps / snapshots ---
+*.rdb
+*.dump
+dump.rdb
+redis-clone-*.json
+
+# --- LMDB zero-copy / worker / cross-process stores ---
+*_lmdb/
+*.mdb
+data/worker_lmdb/
+data/pubsub_lmdb/
+data/cpp_lmdb/
+test_lmdb/
+
+# --- Migrated config artifacts (created during config upgrades) ---
+*.json.migrated
+
+# --- Process / runtime files ---
+*.pid
+*.seed
+*.lock
+
+# --- Perf-test / sink outputs ---
+perftest/*.jsonl
+/tmp/perftest/
+
+# --- OS / editor cruft (extra) ---
+Thumbs.db
+desktop.ini
+*~

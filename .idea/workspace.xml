@@ -5,31 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/dags/scheduled_heartbeat.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/dags/scheduled_heartbeat.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/users.json.migrated" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph_support.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph_support.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/dag_server_autoclone.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server_autoclone.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/dag_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/dag_server_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server_loader.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/dag/dag_server_support.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server_support.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/fanout_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/fanout_datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/fanout_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/fanout_subscriber.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/lmdbpubsub_endpoints.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/lmdbpubsub_endpoints.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ARCHITECTURE.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/AutoClone Feature - Complete Documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/AutoClone Feature - Complete Documentation.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Message Router Components - Complete Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Message Router Components - Complete Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Worker Pool and DAG Affinity Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Worker Pool and DAG Affinity Guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/logs/dagserver.log" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/admin_log_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/admin_log_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/dag_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dag_routes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes/dashboard_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dashboard_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_schedule.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_schedule.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/admin/system_logs.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/admin/system_logs.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/dag/details.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/details.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/autoclone.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/autoclone.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,32 +37,61 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.run_server.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/ashutosh/PycharmProjects/dishtayantra/config/dags",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.generate_trades.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_server.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/ashutosh/PycharmProjects/dishtayantra/config/dags&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/config/dags" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/perftest" />
+    </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.run_server">
+    <configuration name="generate_trades" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="dishtayantra" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/perftest" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="DEBUG_JUST_MY_CODE" value="false" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/perftest/generate_trades.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="run_server" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="dishtayantra" />
       <option name="ENV_FILES" value="" />
@@ -102,6 +120,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.run_server" />
+        <item itemvalue="Python.generate_trades" />
       </list>
     </recent_temporary>
   </component>
@@ -119,7 +138,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1771698938108</updated>
-      <workItem from="1781296084492" duration="10812000" />
+      <workItem from="1781296084492" duration="16330000" />
+      <workItem from="1781390109337" duration="3928000" />
     </task>
     <servers />
   </component>
@@ -127,6 +147,7 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/dishtayantra$run_server.coverage" NAME="run_server Coverage Results" MODIFIED="1781370235436" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/dishtayantra$run_server.coverage" NAME="run_server Coverage Results" MODIFIED="1781402791146" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/dishtayantra$generate_trades.coverage" NAME="generate_trades Coverage Results" MODIFIED="1781384809102" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/perftest" />
   </component>
 </project>

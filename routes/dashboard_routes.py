@@ -54,6 +54,12 @@ class DashboardRoutes:
         self.user_registry = user_registry
         self.guards = guards
         self.worker_pool = worker_pool  # v1.5.2: worker pool for assignments
+        # v3.1.0: per-DAG rolling rate history (msg/min) for the sparkline.
+        # Appended on each details render; the page auto-refreshes ~30s, which
+        # provides a natural sampling cadence without a background thread.
+        from collections import deque
+        self._rate_history = {}  # dag_name -> deque[float]
+        self._rate_history_max = 60
         self._register_routes()
 
     def _register_routes(self) -> None:
@@ -76,6 +82,8 @@ class DashboardRoutes:
                           dags=dags,
                           is_admin=self.user_registry.has_role(username,
                                                                'admin'),
+                          name_collisions=getattr(self.dag_server,
+                                                  'name_collisions', None) or [],
                           server_status=server_status)
         except Exception as e:  # noqa: BLE001 - flashed + full-trace logged
             flash_error_and_log(request, 'Error loading dashboard', e)
@@ -225,14 +233,22 @@ class DashboardRoutes:
             # (summed across subscribers) and messages published (summed across
             # publisher-sink nodes), plus a per-source / per-sink breakdown.
             ingested_total = 0
+            rate_total = 0.0
+            peak_total = 0.0
             ingest_breakdown = []
             for sub_name, sub in (getattr(dag, 'subscribers', {}) or {}).items():
                 cnt = int(getattr(sub, '_receive_count', 0) or 0)
                 ingested_total += cnt
+                meter = getattr(sub, '_rate_meter', None)
+                sub_rate = meter.rate_per_minute() if meter else 0.0
+                sub_peak = meter.peak_per_minute() if meter else 0.0
+                rate_total += sub_rate
+                peak_total += sub_peak
                 ingest_breakdown.append({
                     'name': sub_name,
                     'source': getattr(sub, 'source', ''),
                     'received': cnt,
+                    'rate_per_minute': round(sub_rate, 1),
                     'queue_depth': (sub.get_queue_size()
                                     if hasattr(sub, 'get_queue_size') else None),
                 })
@@ -249,9 +265,20 @@ class DashboardRoutes:
             dag_stats = {
                 'messages_ingested': ingested_total,
                 'messages_published': published_total,
+                'messages_per_minute': round(rate_total, 1),
+                'peak_per_minute': round(peak_total, 1),
                 'ingest_breakdown': ingest_breakdown,
                 'publish_breakdown': publish_breakdown,
             }
+
+            # v3.1.0: append to the rolling rate history for the sparkline.
+            from collections import deque
+            hist = self._rate_history.get(dag_name)
+            if hist is None:
+                hist = deque(maxlen=self._rate_history_max)
+                self._rate_history[dag_name] = hist
+            hist.append(round(rate_total, 1))
+            dag_stats['rate_history'] = list(hist)
 
             return render(request, 'dag/details.html',
                           dag_name=dag_name,

@@ -873,6 +873,27 @@ lmdb.max.readers=126
 lmdb.cleanup.interval=60
 ```
 
+#### DAG Folders and Name Uniqueness (v3.1.0)
+
+DAG JSON files are loaded from `config/dags` and, optionally, additional
+folders listed in `storage.dags.prefixes` (comma-separated). `config/dags` is
+always scanned. Each folder is scanned for its **direct `.json` children
+only** — sub-folders are never auto-loaded.
+
+DAG `name` is the server-wide identity (registry, URLs, pub/sub, metrics) and
+**must be globally unique across all folders**. A name collision is treated as
+a configuration error:
+
+- **Startup:** fatal — the server collects all collisions, logs them, and
+  refuses to boot.
+- **Reload:** the incumbent (already-running) DAG wins; the colliding newcomer
+  is rejected and surfaced on the dashboard as a persistent red banner with a
+  delete-file action.
+
+A DAG's source is tracked by its full object path, so identical filenames in
+different folders are fine and removal reconciliation is exact. See the "DAG
+Folders, Name Uniqueness, and External Libraries" user guide.
+
 #### DAG Node Configuration
 
 ```json

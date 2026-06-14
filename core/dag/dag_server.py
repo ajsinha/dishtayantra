@@ -55,6 +55,23 @@ class DAGComputeServer(DAGLoaderMixin, DAGMonitorMixin, DAGAutoCloneMixin):
                 "Property 'storage.dags.prefix' is not set - falling back to "
                 "legacy folder argument '%s'. Please define the property.",
                 self.dag_config_prefix)
+
+        # v3.1.0: multiple DAG folders. 'storage.dags.prefixes' (plural) may
+        # list additional, logically-grouped folders (comma-separated), e.g.
+        # 'config/risk_dags,config/trade_dags'. Each is scanned for its DIRECT
+        # .json children only (never sub-folders). The primary prefix
+        # (config/dags) is ALWAYS included regardless of configuration.
+        # DAG names must be globally unique across ALL folders.
+        extra_prefixes = self._props.get_list('storage.dags.prefixes') or []
+        ordered = [self.dag_config_prefix]
+        for p in extra_prefixes:
+            cleaned = p.strip().strip('/')
+            if cleaned and cleaned not in ordered:
+                ordered.append(cleaned)
+        self.dag_config_prefixes = ordered
+        if len(ordered) > 1:
+            logger.info("DAG folders configured (scanned for direct children "
+                        "only): %s", ", ".join(ordered))
         self.dag_config_folder = dag_config_folder  # retained for legacy callers
         self.dags = {}
         self._lock = threading.Lock()
@@ -144,9 +161,10 @@ class DAGComputeServer(DAGLoaderMixin, DAGMonitorMixin, DAGAutoCloneMixin):
                                          json.dumps(config, indent=2))
                 logger.info(f"Saved DAG configuration to storage object "
                             f"'{object_path}' (provider: {self._storage.name})")
-                # v2.1.0: remember the source object name so the intraday
-                # schedule-refresh loop can re-read this DAG's config.
-                config['config_filename'] = config_filename
+                # v3.1.0: remember the FULL object path (consistent with the
+                # loader/reload keying) so schedule-refresh and removal
+                # reconciliation work uniformly across folders.
+                config['config_filename'] = object_path
 
             # v1.5.2: Use lazy init when worker pool is enabled
             use_lazy_init = self._worker_pool is not None

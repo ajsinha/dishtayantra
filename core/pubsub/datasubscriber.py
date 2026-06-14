@@ -16,6 +16,7 @@ import threading
 import queue
 import time
 import logging
+from core.metrics.rate_meter import RateMeter
 import traceback
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable, Union
@@ -96,6 +97,8 @@ class DataSubscriber(AbstractDataPubSub):
         self._suspend_event.set()  # Start in running state
         self._last_receive = None
         self._receive_count = 0
+        # v3.1.0: live messages/minute throughput (EWMA, decays when idle).
+        self._rate_meter = RateMeter()
         self._lock = threading.Lock()
         self._sequence_counter = 0  # For maintaining insertion order within same priority
         self._is_priority_queue = isinstance(self._internal_queue, queue.PriorityQueue)
@@ -279,7 +282,7 @@ class DataSubscriber(AbstractDataPubSub):
                     with self._lock:
                         self._last_receive = datetime.now().isoformat()
                         self._receive_count += 1
-
+                    self._rate_meter.mark()
                     # v3.0.0: wake any event-driven consumer immediately rather
                     # than making it poll. Best-effort: a failing callback must
                     # never break the subscription loop.
@@ -313,6 +316,7 @@ class DataSubscriber(AbstractDataPubSub):
                         with self._lock:
                             self._last_receive = datetime.now().isoformat()
                             self._receive_count += 1
+                        self._rate_meter.mark()
                         if self._notify_callback is not None:
                             try:
                                 self._notify_callback()
@@ -419,6 +423,8 @@ class DataSubscriber(AbstractDataPubSub):
                 'current_depth': self.get_queue_size(),
                 'last_receive': self._last_receive,
                 'receive_count': self._receive_count,
+                'rate_per_minute': self._rate_meter.rate_per_minute(),
+                'peak_per_minute': self._rate_meter.peak_per_minute(),
                 'suspended': not self._suspend_event.is_set(),
                 'priority_queue_enabled': self._is_priority_queue,
                 'priority_key': self.priority_key,

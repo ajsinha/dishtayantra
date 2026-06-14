@@ -46,6 +46,13 @@ storage:
     root: ./
   dags:
     prefix: config/dags
+    # v3.1.0: additional, logically-grouped DAG folders (comma-separated).
+    # config/dags is ALWAYS scanned; each folder is scanned for its DIRECT
+    # .json children only (never sub-folders). DAG names must be globally
+    # unique across ALL folders - a collision is fatal at startup and
+    # rejected at reload. See the "DAG Folders, Name Uniqueness, and
+    # External Libraries" user guide.
+    # prefixes: config/risk_dags,config/trade_dags
   # --- S3 example ---
   # provider: s3
   # s3:

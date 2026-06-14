@@ -298,9 +298,6 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2><i class="bi bi-diagram-3"></i> DAG Dashboard</h2>
             <div>
-                <span class="badge {{ 'bg-success' if server_status.is_primary else 'bg-secondary' }} fs-6">
-                    {{ 'PRIMARY' if server_status.is_primary else 'STANDBY' }}
-                </span>
                 {% if is_admin %}
                 {% if server_status.is_primary %}
                 <form method="POST" action="{{ url_for('reload_dags') }}"
@@ -331,6 +328,65 @@
         </div>
     </div>
 </div>
+
+{% if name_collisions %}
+<!-- v3.1.0: persistent DAG-name collision banner (unmistakable red). -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-danger" style="border-width:2px;">
+            <div class="card-header text-white" style="background:#dc2626;">
+                <strong style="font-size:1.05rem; letter-spacing:0.02em;">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                    DAG NAME COLLISION{{ 'S' if name_collisions|length > 1 else '' }}
+                    DETECTED &mdash; {{ name_collisions|length }} file(s) REJECTED
+                </strong>
+            </div>
+            <div class="card-body">
+                <p class="mb-3" style="color:#dc2626; font-weight:600;">
+                    DAG names must be globally unique across all folders. The
+                    following file(s) declare a name already in use and were
+                    <strong>NOT loaded</strong>. The already-running DAG was kept.
+                    Rename or delete the offending file, then click
+                    <em>Reload DAGs</em>.
+                </p>
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr style="color:#dc2626;">
+                            <th>Duplicated DAG name</th>
+                            <th>Already loaded from</th>
+                            <th>Rejected (offending) file</th>
+                            {% if is_admin %}<th class="text-end">Action</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for c in name_collisions %}
+                        <tr>
+                            <td><code style="color:#dc2626;">{{ c.name }}</code></td>
+                            <td><small class="text-muted">{{ c.existing_file }}</small></td>
+                            <td><code>{{ c.offending_file }}</code></td>
+                            {% if is_admin %}
+                            <td class="text-end">
+                                <form method="POST"
+                                      action="{{ url_for('delete_collision_file') }}"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Permanently delete the offending file?\n\n{{ c.offending_file }}\n\nThis removes the JSON from storage. The already-running DAG \'{{ c.name }}\' is unaffected.');">
+                                    <input type="hidden" name="offending_file"
+                                           value="{{ c.offending_file }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="bi bi-trash"></i> Delete file
+                                    </button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- DAGs Section -->
 <div class="row mb-4">

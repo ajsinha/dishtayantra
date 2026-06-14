@@ -19,8 +19,48 @@ from core.dag.compute_graph import ComputeGraph
 logger = logging.getLogger(__name__)
 
 
+class DAGNameCollisionError(Exception):
+    """Raised at startup when two DAG files declare the same DAG name.
+
+    DAG names must be globally unique across every configured folder. A
+    collision means the configuration is ambiguous, so the server refuses to
+    boot rather than start in an undefined state.
+    """
+
+
 class DAGLoaderMixin:
     """Storage-backed loading of DAG configurations."""
+
+    def _record_name_collisions(self, collisions):
+        """Stash detected name collisions so the dashboard can surface them.
+
+        ``collisions`` is a list of ``(name, first_path, dup_path)`` tuples.
+        Stored on the server so the UI can render a persistent red banner and
+        offer to delete the offending file. Safe to call before the lock-held
+        registry exists.
+        """
+        existing = getattr(self, 'name_collisions', None)
+        if existing is None:
+            existing = []
+        # De-dupe by (name, dup_path) so repeated reloads don't pile up.
+        seen = {(c['name'], c['offending_file']) for c in existing}
+        for name, first_path, dup_path in collisions:
+            key = (name, dup_path)
+            if key in seen:
+                continue
+            existing.append({
+                'name': name,
+                'existing_file': first_path,
+                'offending_file': dup_path,
+            })
+            seen.add(key)
+        self.name_collisions = existing
+
+    def clear_name_collision(self, offending_file):
+        """Remove a recorded collision (after the offending file is deleted)."""
+        existing = getattr(self, 'name_collisions', None) or []
+        self.name_collisions = [c for c in existing
+                                if c['offending_file'] != offending_file]
 
     def _load_dags(self):
         """Load all DAG configurations through the storage abstraction.
@@ -35,43 +75,25 @@ class DAGLoaderMixin:
         process. Components are only created when the DAG is dispatched to a
         worker.
         """
-        try:
-            self._storage.ensure_prefix(self.dag_config_prefix)
-        except Exception as e:
-            logger.error(f"Error ensuring DAG prefix "
-                         f"'{self.dag_config_prefix}': {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
+        # v3.1.0: scan ALL configured folders (config/dags + extras).
+        dag_objects = self._list_storage_dag_objects()  # list of (path, base)
 
-        try:
-            json_objects = self._storage.list_names(
-                prefix=self.dag_config_prefix, suffix='.json')
-        except Exception as e:
-            logger.error(f"Error listing DAG configurations under "
-                         f"'{self.dag_config_prefix}': {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
-
-        # Storage listings are recursive (object stores have no real
-        # directories). Match the legacy os.listdir behaviour by keeping
-        # only DIRECT children of the prefix - sub-prefixes such as
-        # 'config/dags/examples/' hold samples that must not be auto-loaded.
-        base = f"{self.dag_config_prefix}/" if self.dag_config_prefix else ""
-        json_objects = [name for name in json_objects
-                        if '/' not in name[len(base):]]
-
-        if not json_objects:
+        if not dag_objects:
             logger.warning(
-                f"No JSON configuration files found under storage prefix "
-                f"'{self.dag_config_prefix}' "
-                f"(provider: {self._storage.name})")
+                "No JSON configuration files found under DAG folder(s): %s "
+                "(provider: %s)",
+                ", ".join(getattr(self, 'dag_config_prefixes',
+                                  [self.dag_config_prefix])),
+                self._storage.name)
             logger.info("You can add DAG configurations via the web UI or "
-                        "place JSON files under the configured prefix")
+                        "place JSON files under a configured folder")
             return
 
-        logger.info(f"Found {len(json_objects)} DAG configuration file(s) "
-                    f"under '{self.dag_config_prefix}' "
-                    f"(provider: {self._storage.name})")
+        logger.info("Found %d DAG configuration file(s) across folder(s): %s "
+                    "(provider: %s)", len(dag_objects),
+                    ", ".join(getattr(self, 'dag_config_prefixes',
+                                      [self.dag_config_prefix])),
+                    self._storage.name)
 
         # v1.5.2: Use lazy initialization when worker pool is enabled
         # This prevents creating duplicate Kafka consumers in main process
@@ -79,21 +101,51 @@ class DAGLoaderMixin:
         if use_lazy_init:
             logger.info("Worker pool enabled - DAGs will be loaded with lazy initialization")
 
-        for object_path in json_objects:
+        # v3.1.0: enforce global DAG-name uniqueness across ALL folders. We
+        # build everything first, COLLECTING every name collision, and only
+        # then decide - so the operator sees ALL problems in one startup, not
+        # one-at-a-time. Any collision is FATAL: the server must not boot into
+        # an ambiguous state.
+        name_to_source = {}        # dag.name -> object_path (first seen)
+        collisions = []            # (name, first_path, dup_path)
+        staged = []                # (dag, object_path) to commit if clean
+
+        for object_path, base in dag_objects:
             try:
                 logger.info(f"Loading DAG from storage object: {object_path}")
                 config = self._read_dag_config(object_path)
-                # v2.1.0: remember the source object name so the intraday
-                # schedule-refresh loop can re-read this DAG's config.
-                config['config_filename'] = object_path[len(base):]
+                # v3.1.0: store the FULL object path so DAGs in different
+                # folders are distinguishable (folder-as-source-key) and
+                # removal reconciliation works across folders.
+                config['config_filename'] = object_path
                 dag = ComputeGraph(config, lazy_init=use_lazy_init)
-                with self._lock:
-                    self.dags[dag.name] = dag
-                logger.info(f"Successfully loaded DAG: {dag.name}")
             except Exception as e:
                 logger.error(f"Error loading DAG from {object_path}: {str(e)}")
                 logger.error(traceback.format_exc())
                 raise
+
+            if dag.name in name_to_source:
+                collisions.append((dag.name, name_to_source[dag.name],
+                                   object_path))
+            else:
+                name_to_source[dag.name] = object_path
+                staged.append((dag, object_path))
+
+        if collisions:
+            # Record for the dashboard banner, log loudly, then abort startup.
+            self._record_name_collisions(collisions)
+            lines = [f"  - DAG name '{name}' declared in BOTH '{first}' and "
+                     f"'{dup}'" for name, first, dup in collisions]
+            msg = ("FATAL: DAG name collision(s) detected - names must be "
+                   "globally unique across all folders:\n" + "\n".join(lines) +
+                   "\nRename or remove the duplicate file(s) and restart.")
+            logger.critical(msg)
+            raise DAGNameCollisionError(msg)
+
+        with self._lock:
+            for dag, _ in staged:
+                self.dags[dag.name] = dag
+                logger.info(f"Successfully loaded DAG: {dag.name}")
 
     def _read_dag_config(self, object_path):
         """Read a DAG JSON object via storage and resolve ${...} placeholders.
@@ -146,20 +198,48 @@ class DAGLoaderMixin:
         return raw_text, config
 
     def _dag_object_path(self, filename):
-        """Map a DAG config filename to its logical storage path."""
-        return f"{self.dag_config_prefix}/{filename}" if self.dag_config_prefix else filename
+        """Map a DAG config filename to its logical storage path.
+
+        v3.1.0: ``config_filename`` may now be a FULL object path (e.g.
+        'config/dags/foo.json') so DAGs across multiple folders are
+        distinguishable. If it already starts with a configured folder
+        prefix, return it unchanged (idempotent); otherwise treat it as a
+        bare filename under the primary prefix (legacy / add_dag path).
+        """
+        if not filename:
+            return filename
+        prefixes = getattr(self, 'dag_config_prefixes', [self.dag_config_prefix])
+        for prefix in prefixes:
+            if prefix and (filename == prefix or
+                           filename.startswith(prefix + '/')):
+                return filename  # already a full path
+        return (f"{self.dag_config_prefix}/{filename}"
+                if self.dag_config_prefix else filename)
 
     def _list_storage_dag_objects(self):
-        """Return the direct-child DAG JSON object paths under the prefix.
+        """Return direct-child DAG JSON object paths across ALL configured
+        folders, as a list of ``(object_path, base)`` pairs.
 
-        Mirrors the filtering in :meth:`_load_dags` so sub-prefixes such as
-        ``config/dags/examples/`` (samples) are never treated as live DAGs.
+        v3.1.0: scans every prefix in ``self.dag_config_prefixes`` (config/dags
+        plus any 'storage.dags.prefixes'). Only DIRECT children of each prefix
+        are returned - sub-folders (e.g. 'config/dags/examples/') are never
+        treated as live DAGs. ``base`` is the prefix-with-slash for that entry,
+        used to derive the folder-relative filename.
         """
-        self._storage.ensure_prefix(self.dag_config_prefix)
-        names = self._storage.list_names(
-            prefix=self.dag_config_prefix, suffix='.json')
-        base = f"{self.dag_config_prefix}/" if self.dag_config_prefix else ""
-        return [n for n in names if '/' not in n[len(base):]], base
+        prefixes = getattr(self, 'dag_config_prefixes', [self.dag_config_prefix])
+        results = []
+        for prefix in prefixes:
+            try:
+                self._storage.ensure_prefix(prefix)
+                names = self._storage.list_names(prefix=prefix, suffix='.json')
+            except Exception as e:  # noqa: BLE001
+                logger.error("Error listing DAGs under '%s': %s", prefix, e)
+                continue
+            base = f"{prefix}/" if prefix else ""
+            for n in names:
+                if '/' not in n[len(base):]:  # direct children only
+                    results.append((n, base))
+        return results
 
     def reload_from_storage(self, remove_missing=True):
         """Re-scan the DAG storage prefix and reconcile the live registry.
@@ -194,54 +274,63 @@ class DAGLoaderMixin:
         self._check_primary()
 
         summary = {"added": [], "removed": [],
-                   "skipped_in_memory": [], "errors": []}
+                   "skipped_in_memory": [], "errors": [], "collisions": []}
 
         try:
-            object_paths, base = self._list_storage_dag_objects()
+            dag_objects = self._list_storage_dag_objects()  # [(path, base)]
         except Exception as e:  # noqa: BLE001 - surface, never crash caller
-            logger.error("reload_from_storage: cannot list storage prefix "
-                         "'%s': %s", self.dag_config_prefix, e)
+            logger.error("reload_from_storage: cannot list DAG folders: %s", e)
             logger.error(traceback.format_exc())
-            summary["errors"].append({"object": self.dag_config_prefix,
+            summary["errors"].append({"object": "dag_folders",
                                       "error": str(e)})
             return summary
 
-        # Filenames (relative to the prefix) currently present in storage.
-        storage_filenames = {p[len(base):] for p in object_paths}
+        # Full object paths currently present in storage (across all folders).
+        storage_paths = {p for p, _base in dag_objects}
 
-        # Names of DAGs already loaded, keyed by their source filename.
+        # Names of DAGs already loaded, keyed by their source object path.
         with self._lock:
-            loaded_by_filename = {
+            loaded_by_path = {
                 dag.config.get('config_filename'): name
                 for name, dag in self.dags.items()
                 if dag.config.get('config_filename')}
-            loaded_names = set(self.dags.keys())
 
         use_lazy_init = self._worker_pool is not None
+        new_collisions = []
 
         # ---- Additions: storage objects not yet represented in memory ----
-        for object_path in object_paths:
-            filename = object_path[len(base):]
-            if filename in loaded_by_filename:
-                continue  # already loaded from this file
+        for object_path, _base in dag_objects:
+            if object_path in loaded_by_path:
+                continue  # already loaded from this exact file
             try:
                 config = self._read_dag_config(object_path)
-                config['config_filename'] = filename
+                config['config_filename'] = object_path  # full path key
                 dag_name = config.get('name')
                 if not dag_name:
                     raise ValueError("DAG config has no 'name'")
                 with self._lock:
                     if dag_name in self.dags:
-                        # Same name already loaded from a different source;
-                        # don't silently clobber it - flag and skip.
-                        raise ValueError(
-                            f"a DAG named '{dag_name}' is already loaded "
-                            f"from a different source")
+                        # v3.1.0 GLOBAL UNIQUENESS: a DAG with this name is
+                        # already loaded from a different file. Incumbent wins;
+                        # the newcomer is REJECTED (not booted) and recorded so
+                        # the dashboard can show a persistent red banner.
+                        existing_src = (self.dags[dag_name].config
+                                        .get('config_filename', '<in-memory>'))
+                        new_collisions.append(
+                            (dag_name, existing_src, object_path))
+                        raise DAGNameCollisionError(
+                            f"DAG name '{dag_name}' in '{object_path}' "
+                            f"collides with already-loaded '{existing_src}'; "
+                            f"names must be globally unique - newcomer rejected")
                     dag = ComputeGraph(config, lazy_init=use_lazy_init)
                     self.dags[dag_name] = dag
                 summary["added"].append(dag_name)
                 logger.info("reload_from_storage: added DAG '%s' from '%s'",
                             dag_name, object_path)
+            except DAGNameCollisionError as ce:
+                logger.critical("reload_from_storage: %s", ce)
+                summary["errors"].append({"object": object_path,
+                                          "error": str(ce)})
             except Exception as e:  # noqa: BLE001
                 logger.error("reload_from_storage: failed to add '%s': %s",
                              object_path, e)
@@ -249,20 +338,24 @@ class DAGLoaderMixin:
                 summary["errors"].append({"object": object_path,
                                           "error": str(e)})
 
+        if new_collisions:
+            self._record_name_collisions(new_collisions)
+            summary["collisions"] = [
+                {"name": n, "existing_file": f, "offending_file": d}
+                for n, f, d in new_collisions]
+
         # ---- Removals: storage-backed DAGs whose file disappeared ----
         if remove_missing:
-            for filename, dag_name in loaded_by_filename.items():
-                if filename in storage_filenames:
-                    continue  # still present
-                if dag_name not in loaded_names:
-                    continue
+            for object_path, dag_name in loaded_by_path.items():
+                if object_path in storage_paths:
+                    continue  # still present in some folder
                 try:
                     # Reuse delete() so worker-pool unload + stop are handled.
                     self.delete(dag_name)
                     summary["removed"].append(dag_name)
                     logger.info("reload_from_storage: removed DAG '%s' "
                                 "(source file '%s' is gone)",
-                                dag_name, filename)
+                                dag_name, object_path)
                 except Exception as e:  # noqa: BLE001
                     logger.error("reload_from_storage: failed to remove "
                                  "'%s': %s", dag_name, e)

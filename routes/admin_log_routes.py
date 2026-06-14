@@ -278,11 +278,45 @@ class AdminLogRoutes:
                 file_positions[log_file] = os.path.getsize(log_file) \
                     if os.path.exists(log_file) else 0
 
-            # Send initial heartbeat
+            # Send initial heartbeat. The leading 2KB comment padding helps
+            # proxies that buffer until a threshold flush the stream promptly
+            # (a well-known SSE-behind-reverse-proxy workaround).
+            yield ":" + (" " * 2048) + "\n\n"
             yield (f"data: "
                    f"{json.dumps({'type': 'heartbeat', 'timestamp': datetime.now().isoformat()})}"
                    f"\n\n")
 
+            # v3.1.0: backfill the most recent lines on connect so the page
+            # shows recent context immediately instead of a blank screen until
+            # the next log line is written. We read the tail of each known log
+            # file, parse and merge, then emit the last N across all sources.
+            try:
+                BACKFILL_LINES = 50
+                backfill = []
+                for log_file in log_files:
+                    if not os.path.exists(log_file):
+                        continue
+                    try:
+                        with open(log_file, 'r', encoding='utf-8',
+                                  errors='replace') as f:
+                            tail = f.readlines()[-BACKFILL_LINES:]
+                        for line in tail:
+                            if line.strip():
+                                entry = self._parse_log_line(
+                                    line.rstrip('\n'), log_file)
+                                if entry:
+                                    backfill.append(entry)
+                    except Exception:  # noqa: BLE001 - skip unreadable file
+                        continue
+                # Emit at most BACKFILL_LINES, marked so the client can style
+                # them distinctly (historical context, not live arrivals).
+                for entry in backfill[-BACKFILL_LINES:]:
+                    entry['backfill'] = True
+                    yield f"data: {json.dumps(entry)}\n\n"
+            except Exception as e:  # noqa: BLE001
+                logger.error(f"Error during live-log backfill: {e}")
+
+            last_heartbeat = time.time()
             while True:
                 try:
                     new_entries = []
@@ -316,8 +350,19 @@ class AdminLogRoutes:
                         yield f"data: {json.dumps(entry)}\n\n"
 
                     if not new_entries:
+                        # Emit a heartbeat every ~15s so the connection keeps
+                        # producing traffic - this prevents idle-connection
+                        # timeouts and prompts buffering proxies to flush.
+                        now = time.time()
+                        if now - last_heartbeat >= 15:
+                            yield (f"data: "
+                                   f"{json.dumps({'type': 'heartbeat', 'timestamp': datetime.now().isoformat()})}"
+                                   f"\n\n")
+                            last_heartbeat = now
                         # Small sleep to prevent CPU spinning
                         time.sleep(0.5)
+                    else:
+                        last_heartbeat = time.time()
                 except GeneratorExit:
                     # Client disconnected
                     break

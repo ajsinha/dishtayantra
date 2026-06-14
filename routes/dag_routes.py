@@ -51,6 +51,9 @@ class DAGRoutes(DAGMessagingMixin):
         add = self.app.add_api_route
         add('/dags/reload', self.reload_dags, methods=['POST'],
             name='reload_dags', include_in_schema=False)
+        add('/dags/collision/delete', self.delete_collision_file,
+            methods=['POST'], name='delete_collision_file',
+            include_in_schema=False)
         add('/dag/create', self.create_dag_page, methods=['GET'],
             name='create_dag', include_in_schema=False)
         add('/dag/create', self.create_dag_submit, methods=['POST'],
@@ -234,6 +237,45 @@ class DAGRoutes(DAGMessagingMixin):
                       'success')
         except Exception as e:  # noqa: BLE001
             flash_error_and_log(request, 'Error reloading DAGs from storage', e)
+        return redirect_to(request, 'dashboard')
+
+    async def delete_collision_file(self, request: Request):
+        """Delete an offending DAG JSON file that caused a name collision.
+
+        Driven by the dashboard's red collision banner. Admin-only. For
+        safety, the path MUST match a currently-recorded collision's
+        ``offending_file`` - arbitrary paths are refused so this cannot be
+        used to delete unrelated storage objects.
+        """
+        self.guards.admin_required(request)
+        try:
+            form = await request.form()
+            offending = (form.get('offending_file') or '').strip()
+            if not offending:
+                flash(request, 'No file specified for deletion.', 'warning')
+                return redirect_to(request, 'dashboard')
+
+            # Validate against the recorded collisions (allow-list).
+            recorded = {c['offending_file'] for c in
+                        (getattr(self.dag_server, 'name_collisions', None) or [])}
+            if offending not in recorded:
+                flash(request,
+                      'Refused: that file is not a recorded collision.',
+                      'warning')
+                return redirect_to(request, 'dashboard')
+
+            # Delete the storage object, then clear the recorded collision.
+            self.dag_server._storage.delete(offending)
+            self.dag_server.clear_name_collision(offending)
+            logger.warning("Deleted colliding DAG file '%s' via dashboard",
+                           offending)
+            flash(request,
+                  f"Deleted colliding file '{offending}'. "
+                  f"Click Reload to pick up any remaining changes.",
+                  'success')
+        except Exception as e:  # noqa: BLE001
+            flash_error_and_log(request,
+                                'Error deleting colliding DAG file', e)
         return redirect_to(request, 'dashboard')
 
     def delete_dag(self, request: Request, dag_name: str):

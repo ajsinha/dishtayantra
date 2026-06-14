@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # v2.2: DAGLoaderMixin moved to dag_server_loader.py (kept under the
 # 500-line limit). Re-exported here so existing imports still resolve.
-from core.dag.dag_server_loader import DAGLoaderMixin  # noqa: F401,E402
+from core.dag.dag_server_loader import DAGLoaderMixin, DAGNameCollisionError  # noqa: F401,E402
 
 
 class DAGMonitorMixin:

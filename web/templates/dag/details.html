@@ -152,6 +152,13 @@
         transition: width 0.4s ease;
     }
     .qbar-fill.warn { background: linear-gradient(90deg, #d97706, #dc2626); }
+    /* v3.1.0: live throughput rate + sparkline */
+    .rate-figure { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .rate-flowing { color: #1f8a4c; }
+    .rate-idle { color: #9aa0aa; }
+    .sparkline-wrap { margin-top: 6px; }
+    .sparkline-wrap svg { display: block; width: 100%; height: 48px; }
+    .rate-peak { font-size: 0.72rem; color: var(--text-secondary); }
     .qbar-label {
         font-size: 0.72rem; color: var(--text-secondary);
         margin-top: 2px; white-space: nowrap;
@@ -267,7 +274,7 @@
                     <i class="bi bi-bar-chart-line"></i> Message Throughput
                 </h5>
                 <div class="row text-center mb-2">
-                    <div class="col-6">
+                    <div class="col-md-4 col-12 mb-2">
                         <div style="font-size: 2rem; font-weight: 700; color: #2563eb;">
                             {{ "{:,}".format(dag_stats.messages_ingested) }}
                         </div>
@@ -276,7 +283,7 @@
                         </div>
                         <small class="text-muted">received by subscribers</small>
                     </div>
-                    <div class="col-6">
+                    <div class="col-md-4 col-12 mb-2">
                         <div style="font-size: 2rem; font-weight: 700; color: #1f8a4c;">
                             {{ "{:,}".format(dag_stats.messages_published) }}
                         </div>
@@ -284,6 +291,35 @@
                             <i class="bi bi-box-arrow-up"></i> Messages Published
                         </div>
                         <small class="text-muted">written to publishers/sinks</small>
+                    </div>
+                    <div class="col-md-4 col-12 mb-2">
+                        {% set rpm = dag_stats.messages_per_minute or 0 %}
+                        <div class="rate-figure {{ 'rate-flowing' if rpm > 0.5 else 'rate-idle' }}">
+                            {{ "{:,.0f}".format(rpm) }}
+                            <span style="font-size: 0.9rem; font-weight: 600;">msg/min</span>
+                        </div>
+                        <div class="text-muted">
+                            <i class="bi bi-activity"></i>
+                            {{ 'Flowing' if rpm > 0.5 else 'Idle' }}
+                            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+                                  background: {{ '#1f8a4c' if rpm > 0.5 else '#9aa0aa' }};"></span>
+                        </div>
+                        {# Dependency-free SVG sparkline of recent rate history #}
+                        {% set hist = dag_stats.rate_history or [] %}
+                        {% if hist|length >= 2 %}
+                        {% set hmax = hist|max %}
+                        {% set hmax = hmax if hmax and hmax > 0 else 1 %}
+                        {% set n = hist|length %}
+                        <div class="sparkline-wrap">
+                            <svg viewBox="0 0 100 48" preserveAspectRatio="none">
+                                <polyline fill="none"
+                                          stroke="{{ '#1f8a4c' if rpm > 0.5 else '#9aa0aa' }}"
+                                          stroke-width="1.5"
+                                          points="{% for v in hist %}{{ '%.2f'|format(loop.index0 * (100.0 / (n - 1))) }},{{ '%.2f'|format(46 - (v / hmax) * 44) }} {% endfor %}" />
+                            </svg>
+                        </div>
+                        {% endif %}
+                        <div class="rate-peak">peak {{ "{:,.0f}".format(dag_stats.peak_per_minute or 0) }}/min</div>
                     </div>
                 </div>
 
@@ -293,12 +329,13 @@
                     <div class="col-md-6">
                         <strong class="small text-muted">INGEST (per subscriber)</strong>
                         <table class="table table-sm mb-0 mt-1">
-                            <thead><tr><th>Subscriber</th><th class="text-end">Received</th><th class="text-end">Queue</th></tr></thead>
+                            <thead><tr><th>Subscriber</th><th class="text-end">Received</th><th class="text-end">msg/min</th><th class="text-end">Queue</th></tr></thead>
                             <tbody>
                             {% for s in dag_stats.ingest_breakdown %}
                                 <tr>
                                     <td><span title="{{ s.source }}">{{ s.name }}</span></td>
                                     <td class="text-end">{{ "{:,}".format(s.received) }}</td>
+                                    <td class="text-end">{{ "{:,.0f}".format(s.rate_per_minute or 0) }}</td>
                                     <td class="text-end">{% if s.queue_depth is not none %}{{ s.queue_depth }}{% else %}-{% endif %}</td>
                                 </tr>
                             {% endfor %}

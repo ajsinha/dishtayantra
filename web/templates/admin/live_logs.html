@@ -73,7 +73,6 @@
         flex: 1;
         overflow-y: auto;
         color: #c9d1d9;
-        scroll-behavior: smooth;
     }
     
     .log-line {
@@ -416,7 +415,7 @@
 {% block extra_js %}
 <script>
 // Configuration
-const MAX_LOG_LINES = 5000;
+const MAX_LOG_LINES = 2000;   // capped to keep the DOM light (was 5000)
 const RECONNECT_INTERVAL = 3000;
 
 // State
@@ -429,6 +428,13 @@ let errorCount = 0;
 let warningCount = 0;
 let logRateCounter = 0;
 let reconnectAttempts = 0;
+// v3.1.0: high-frequency render hygiene - batch incoming entries and flush
+// them to the DOM once per animation frame instead of per message. This is
+// what keeps the page responsive under heavy log volume.
+let pendingEntries = [];
+let flushScheduled = false;
+let liveLineCount = 0;        // maintained count (no per-entry DOM scan)
+let statsDirty = false;
 
 // Elements
 const logViewer = document.getElementById('logViewer');
@@ -470,6 +476,10 @@ function connectToLogStream() {
         
         try {
             const logEntry = JSON.parse(event.data);
+            // Heartbeat / keep-alive frames are not log lines - ignore them.
+            if (logEntry && logEntry.type === 'heartbeat') {
+                return;
+            }
             addLogEntry(logEntry);
         } catch (e) {
             console.error('Failed to parse log entry:', e);
@@ -492,54 +502,71 @@ function connectToLogStream() {
 }
 
 function addLogEntry(entry) {
-    // Hide empty state
-    if (emptyState) {
-        emptyState.style.display = 'none';
-    }
-    
-    // Apply filters
+    // Apply filters at intake so filtered-out entries cost nothing.
     if (!matchesFilters(entry)) return;
-    
+
+    // Maintain counters synchronously (cheap), but defer the DOM work.
     lineNumber++;
     totalCount++;
-    logRateCounter++;
-    
+    // Backfilled (historical) lines shouldn't inflate the live /sec rate.
+    if (!entry.backfill) {
+        logRateCounter++;
+    }
     if (entry.level === 'ERROR' || entry.level === 'CRITICAL') {
         errorCount++;
     } else if (entry.level === 'WARNING') {
         warningCount++;
     }
-    
-    // Create log line
-    const logLine = document.createElement('div');
-    logLine.className = 'log-line new-entry';
-    logLine.dataset.level = entry.level;
-    logLine.dataset.source = entry.source || '';
-    
-    logLine.innerHTML = `
-        <span class="log-line-number">${lineNumber}</span>
-        <span class="log-timestamp">${entry.timestamp}</span>
-        <span class="log-level ${entry.level}">${entry.level}</span>
-        <span class="log-source">${entry.source || 'system'}</span>
-        <span class="log-message">${escapeHtml(entry.message)}</span>
-    `;
-    
-    logViewer.appendChild(logLine);
-    
-    // Remove highlight class after animation
-    setTimeout(() => logLine.classList.remove('new-entry'), 2000);
-    
-    // Limit buffer size
-    while (logViewer.children.length > MAX_LOG_LINES) {
-        logViewer.removeChild(logViewer.firstChild);
+    entry.__lineNo = lineNumber;
+    pendingEntries.push(entry);
+    scheduleFlush();
+}
+
+function scheduleFlush() {
+    if (flushScheduled) return;
+    flushScheduled = true;
+    requestAnimationFrame(flushPending);
+}
+
+function flushPending() {
+    flushScheduled = false;
+    if (pendingEntries.length === 0) return;
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Build all new rows in a fragment - one DOM insertion, one reflow.
+    const batch = pendingEntries;
+    pendingEntries = [];
+    const frag = document.createDocumentFragment();
+    for (const entry of batch) {
+        const logLine = document.createElement('div');
+        logLine.className = 'log-line';
+        logLine.dataset.level = entry.level;
+        logLine.dataset.source = entry.source || '';
+        logLine.innerHTML = `
+            <span class="log-line-number">${entry.__lineNo}</span>
+            <span class="log-timestamp">${entry.timestamp}</span>
+            <span class="log-level ${entry.level}">${entry.level}</span>
+            <span class="log-source">${entry.source || 'system'}</span>
+            <span class="log-message">${escapeHtml(entry.message)}</span>
+        `;
+        frag.appendChild(logLine);
     }
-    
-    // Auto-scroll
+    logViewer.appendChild(frag);
+    liveLineCount += batch.length;
+
+    // Trim to the cap in one pass (no per-entry while-loop reflows).
+    let overflow = liveLineCount - MAX_LOG_LINES;
+    while (overflow > 0 && logViewer.firstChild) {
+        logViewer.removeChild(logViewer.firstChild);
+        liveLineCount--;
+        overflow--;
+    }
+
+    // Auto-scroll once per batch (no smooth-scroll animation thrash).
     if (autoScroll) {
         logViewer.scrollTop = logViewer.scrollHeight;
     }
-    
-    // Update stats
     updateStats();
 }
 
@@ -600,6 +627,8 @@ function setupEventListeners() {
         totalCount = 0;
         errorCount = 0;
         warningCount = 0;
+        liveLineCount = 0;
+        pendingEntries = [];
         updateStats();
     });
     
@@ -651,7 +680,8 @@ function updateStats() {
     document.getElementById('totalCount').textContent = totalCount.toLocaleString();
     document.getElementById('errorCount').textContent = errorCount.toLocaleString();
     document.getElementById('warningCount').textContent = warningCount.toLocaleString();
-    document.getElementById('bufferCount').textContent = logViewer.querySelectorAll('.log-line').length.toLocaleString();
+    // Use the maintained count - never scan the DOM per update.
+    document.getElementById('bufferCount').textContent = liveLineCount.toLocaleString();
 }
 
 function startLogRateCalculator() {

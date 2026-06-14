@@ -6,6 +6,21 @@ Single source of truth for the application version. Every module, template,
 banner, and document must reference this module rather than hard-coding a
 version string.
 
+Version 3.1.0 highlights:
+    - Multiple DAG folders: 'storage.dags.prefixes' lists extra, logically
+      grouped folders (config/dags is always included); each scanned for its
+      DIRECT .json children only (never sub-folders)
+    - Globally-unique DAG names enforced: a name collision across folders is
+      FATAL at startup (server refuses to boot, listing every collision) and
+      REJECTED at reload (incumbent keeps running, newcomer not booted)
+    - Persistent red dashboard banner for reload-time collisions, with a
+      one-click button to delete the offending DAG file
+    - External library paths (external.module.path.*) documented: add custom
+      calculator/transformer module directories to the import path at startup
+    - Zero-message-loss ingestion: every subscriber applies backpressure
+      (block-retry) instead of dropping on a full queue; Kafka consumer now
+      buffers the full polled batch and delivers one message at a time
+
 Version 3.0.0 highlights:
     - Event-driven compute loop: DAGs react to data immediately instead of
       polling on a fixed interval, collapsing per-hop latency from tens/hundreds
@@ -41,8 +56,8 @@ Version 2.2 highlights:
 Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-VERSION = "3.0.0"
-BUILD_DATE = "2026-06-13"
+VERSION = "3.1.0"
+BUILD_DATE = "2026-06-14"
 APP_NAME = "DishtaYantra"
 
 
