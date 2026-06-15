@@ -6,6 +6,33 @@ Single source of truth for the application version. Every module, template,
 banner, and document must reference this module rather than hard-coding a
 version string.
 
+Version 4.7.0 highlights (light/dark theme text-contrast fixes - UI only):
+    - Fixed low-contrast text across both themes to meet WCAG AA (>= 4.5:1):
+      darkened light-theme --text-muted (#9aa3c0 -> #616a8c, 2.5:1 -> 5.3:1) and
+      --text-secondary; lightened dark-theme --text-muted (#5a6488 -> #868fb0,
+      3.1:1 -> 5.6:1) and --text-secondary, in web/templates/base.html.
+    - About page: the author card has an always-light background, so its text is
+      now pinned to dark values; the creator name was invisible in dark theme
+      (#eef0f8 on a light card, ~1:1) and is now ~16:1.
+    - Comparison page: the head-to-head table sits on an always-dark card, so its
+      cell text is now forced light with !important (Bootstrap's theme table
+      colour was overriding it to dark-on-dark in light theme); faint legend/note
+      text brightened.
+    - No engine, API, or logic changes; templates/CSS only.
+
+Version 4.6.0 highlights (batch-file / EOD processing guide + example):
+    - New Help page "Batch File Processing" (web/templates/help/batch_file_processing.html,
+      route /help/batch-file-processing, linked from the Help index) plus
+      docs/BATCH_FILE_PROCESSING.md: how to process large interrelated batch
+      files (e.g. EOD trade + FX + client-limit feeds) with DishtaYantra, and
+      when one-record-at-a-time is and isn't needed.
+    - Runnable example in perftest/: eod_enrichment_calculators.py
+      (ReferenceEnrichCalculator for fact x dimension enrichment;
+      RunningExposureCalculator for the genuinely-sequential case) and
+      run_eod_example.py (replays a trade file enriched against FX + limit feeds,
+      one-at-a-time vs auto-batched, with limit-breach detection).
+    - Documentation only / additive; no engine change.
+
 Version 4.5.0 highlights (A1 automatic source-batching - additive, opt-in):
     - Two new opt-in node types make Arrow batching automatic while preserving the
       external per-message contract: BatchingSubscriptionNode drains incoming
@@ -139,7 +166,7 @@ Version 2.2 highlights:
 Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-VERSION = "4.5.0"
+VERSION = "4.7.0"
 BUILD_DATE = "2026-06-14"
 APP_NAME = "DishtaYantra"
 

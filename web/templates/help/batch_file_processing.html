@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Batch File Processing - {{ app_name }} Help{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+<h2><i class="bi bi-file-earmark-arrow-down" style="color: #4a90c2;"></i> Processing Interrelated Batch Files (End-of-Day Feeds)</h2>
+<p class="text-muted">How to use DishtaYantra when data arrives as large, interrelated batch files
+(e.g. an EOD trade feed enriched against EOD FX-rate and client-limit feeds) rather than as a live stream.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-lightbulb"></i> The short answer</h5></div>
+    <div class="card-body">
+        <p>Yes — this is a great fit, and <strong>usually you do not need one-record-at-a-time</strong>.
+        A batch file is just a <em>bounded stream</em>: read it and replay its records onto the DAG's input
+        queue (or point a file / object-store subscriber at it). The only real design question is how your
+        feeds are <strong>interrelated</strong>.</p>
+        <p class="mb-0">Runnable demo: <code>python -m perftest.run_eod_example</code></p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-diagram-3"></i> Two kinds of "interrelated"</h5></div>
+    <div class="card-body">
+        <p><strong>(a) Fact × Dimension — the common case, NOT one-at-a-time.</strong>
+        Trades are the large <em>fact</em> feed; FX rates and client limits are small <em>dimension</em> feeds.
+        A trade needs <em>its</em> FX rate (by currency) and <em>its</em> limit (by client), but trades do not
+        depend on each other. Load the small dimension feeds <strong>once</strong> into in-memory lookup
+        tables, then stream the trade feed through, enriching each trade by lookup. Independent per trade →
+        fast, parallel, vectorizable. No ordering needed.</p>
+        <p class="mb-0"><strong>(b) Record × Record — the genuine one-at-a-time case.</strong>
+        If a record depends on the records before it (e.g. a client's <em>running</em> exposure accumulates
+        trade by trade), records must be processed in order with state carried forward. This is the only case
+        that truly needs sequential processing — handled with a stateful calculator on an ordered stream.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Architecture</h5></div>
+    <div class="card-body">
+        <pre class="code-block">            EOD FX-rate feed  ─┐  loaded ONCE into
+            EOD limits feed   ─┘  in-memory lookup tables
+                               │
+EOD trade file  →  [replay onto queue]  →  DAG: enrich + value + limit-check  →  output
+   (fact)              (bounded stream)        (FX lookup, notional, breach)</pre>
+        <p class="mb-0">trades = fact feed (large, replayed); fx_rates + client_limits = dimension feeds
+        (small, loaded once).</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-1-circle"></i> Load the dimension feeds once</h5></div>
+    <div class="card-body">
+        <p>A calculator loads reference tables in its constructor — inline or from a file path:</p>
+        <pre class="code-block">{
+  "name": "enrich",
+  "type": "perftest.eod_enrichment_calculators.ReferenceEnrichCalculator",
+  "config": {
+    "fx_file": "/feeds/eod/fx_rates.json",
+    "limits_file": "/feeds/eod/client_limits.json",
+    "default_rate": 1.0
+  }
+}</pre>
+        <p class="mb-0">For very large or shared reference data, load it into the LMDB store or the Redis-clone
+        instead of a per-calculator dict; the lookup pattern is identical.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-2-circle"></i> Replay the trade file, enrich, and check</h5></div>
+    <div class="card-body">
+        <p>Publish each file record onto the input queue (in production, point a file / Kafka / object-store
+        subscriber at the feed instead — the DAG is identical):</p>
+        <pre class="code-block">import json
+from core.pubsub.inmemorypubsub import InMemoryPubSub
+ps = InMemoryPubSub()
+with open("/feeds/eod/trades.jsonl") as fh:
+    for line in fh:
+        ps.publish_to_queue("eod_trades_in", line.strip())</pre>
+        <p class="mb-0">The DAG is <code>ingest → enrich → sink</code>. The enricher looks up FX and limit,
+        computes notional, and flags breaches (output adds <code>fx_rate</code>, <code>notional_usd</code>,
+        <code>client_limit</code>, <code>limit_breach</code>).</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Making it fast</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><strong>Dimensions in memory</strong> → O(1) lookups, no per-record I/O.</li>
+            <li><strong>Auto-batching + Arrow</strong> → put a <code>BatchingSubscriptionNode</code> at the
+            source and use Arrow (vectorized) calculators, or wrap a row enricher with
+            <code>RowCalculatorBatchAdapter</code>, then a <code>FlatteningPublicationNode</code> so output
+            stays per-record. See the Arrow tutorial (<code>docs/TUTORIAL_arrow_dag.md</code>).</li>
+            <li><strong>Parallelism</strong> → partition the trade file (by symbol or client) and run multiple
+            DAG instances / the worker pool; each partition shares the same loaded dimension tables.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-list-ol"></i> The sequential case (true one-at-a-time)</h5></div>
+    <div class="card-body">
+        <p>For running exposure, process the <strong>ordered</strong> trade stream through a stateful
+        calculator (<code>RunningExposureCalculator</code>) that keeps a per-client cumulative notional and
+        flags the trade that breaches the limit. Keys to correctness:</p>
+        <ul class="mb-0">
+            <li><strong>Order matters</strong> — feed records in the intended order; don't shuffle.</li>
+            <li><strong>Keep the dependency on one partition</strong> — shard by client across workers
+            (each client's trades stay ordered within its shard), but don't vectorize across the running
+            dependency.</li>
+            <li><strong>Enrich first, then accumulate</strong> — do the parallel enrichment (case a) up front,
+            then the sequential step (case b) on the result.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-play-circle"></i> Runnable example</h5></div>
+    <div class="card-body">
+        <pre class="code-block">python -m perftest.run_eod_example --trades 20000</pre>
+        <ul class="mb-0">
+            <li><code>perftest/eod_enrichment_calculators.py</code> — <code>ReferenceEnrichCalculator</code>
+            (fact × dimension) and <code>RunningExposureCalculator</code> (sequential).</li>
+            <li><code>perftest/run_eod_example.py</code> — loads FX + limits, replays the trade file, runs
+            enrichment one-at-a-time and auto-batched, and reports breaches + throughput.</li>
+            <li>Full write-up: <code>docs/BATCH_FILE_PROCESSING.md</code>.</li>
+        </ul>
+    </div>
+</div>
+
+<a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Back to Help Center</a>
+
+</div>
+{% endblock %}

@@ -144,6 +144,7 @@ class NoAuthRoutes:
         ('/help/dag-configuration', 'help_dag_configuration', 'help/dag_configuration.html'),
         ('/help/pubsub', 'help_pubsub', 'help/pubsub.html'),
         ('/help/calculators', 'help_calculators', 'help/calculators.html'),
+        ('/help/batch-file-processing', 'help_batch_file_processing', 'help/batch_file_processing.html'),
         ('/help/transformers', 'help_transformers', 'help/transformers.html'),
         ('/help/time-windows', 'help_time_windows', 'help/time_windows.html'),
         ('/help/autoclone', 'help_autoclone', 'help/autoclone.html'),

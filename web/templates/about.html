@@ -69,7 +69,15 @@
         border-radius: 12px;
         padding: 2rem;
         text-align: center;
+        color: #1e293b;
     }
+    /* The card background is always light, so pin its text to dark values
+       regardless of the active theme (otherwise dark-theme text vars render
+       near-white text on this light card). */
+    .author-card h4 { color: #0f172a; }
+    .author-card .text-muted { color: #4a5578 !important; }
+    .author-card .btn-outline-dark { color: #1e293b; border-color: #64748b; }
+    .author-card .btn-outline-dark:hover { color: #fff; background-color: #1e293b; border-color: #1e293b; }
     .author-avatar {
         width: 100px;
         height: 100px;
