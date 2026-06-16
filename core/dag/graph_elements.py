@@ -5,6 +5,8 @@ from datetime import datetime
 from collections import deque
 import threading
 
+from core.dag.edge_value import ev_copy, ev_equals, ev_consolidate, ev_describe, is_batch
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,12 +37,12 @@ class Node(ABC):
     def input(self):
         """Return copy of input data"""
         with self._lock:
-            return copy.deepcopy(self._input)
+            return ev_copy(self._input)
 
     def output(self):
         """Return copy of output data"""
         with self._lock:
-            return copy.deepcopy(self._output)
+            return ev_copy(self._output)
 
     def isdirty(self):
         """Return dirty status"""
@@ -89,22 +91,10 @@ class Node(ABC):
         pass
 
     def consolidate_edge_inputs(self):
-        # Gather inputs from incoming edges
-        merged_input = {}
-        for edge in self._incoming_edges:
-            edge_data = edge.get_data()
-            edge_pname = edge.pname
-            if edge_pname is None:
-                edge_pname = ''
-            edge_pname = edge_pname.strip()
-            if edge_data:
-                if len(edge_pname) == 0:
-                    merged_input.update(edge_data)
-                else:
-                    if edge_pname not in merged_input.keys():
-                        merged_input[edge_pname] = {}
-                    merged_input[edge_pname].update(edge_data)
-        return merged_input
+        # Gather (pname, data) from incoming edges; ev_consolidate merges dicts
+        # exactly as before and passes a single RecordBatch through untouched.
+        pairs = [(edge.pname, edge.get_data()) for edge in self._incoming_edges]
+        return ev_consolidate(pairs)
 
     def compute(self) -> bool:
         """Compute node output based on inputs"""
@@ -121,11 +111,11 @@ class Node(ABC):
                 transformed_input = transformer.transform(transformed_input)
 
             # Check if input has changed
-            if transformed_input == self._input:
+            if ev_equals(transformed_input, self._input):
                 self.set_clean()
                 return False
 
-            self._input = copy.deepcopy(transformed_input)
+            self._input = ev_copy(transformed_input)
             self._messages_in += 1
 
             # Calculate if calculator is available
@@ -140,8 +130,8 @@ class Node(ABC):
                 transformed_output = transformer.transform(transformed_output)
 
             # Check if output has changed
-            if transformed_output != self._output:
-                self._output = copy.deepcopy(transformed_output)
+            if not ev_equals(transformed_output, self._output):
+                self._output = ev_copy(transformed_output)
                 self._messages_out += 1
 
                 # Mark children as dirty
@@ -175,8 +165,8 @@ class Node(ABC):
             'compute_count': self._compute_count,
             'messages_in': self._messages_in,
             'messages_out': getattr(self, '_published_count', self._messages_out),
-            'input': self._input,
-            'output': self._output,
+            'input': ev_describe(self._input),
+            'output': ev_describe(self._output),
             'errors': list(self._errors),
             'incoming_edges': [e.name for e in self._incoming_edges],
             'outgoing_edges': [e.name for e in self._outgoing_edges]
@@ -208,6 +198,16 @@ class Edge:
         output = self.from_node.output()
 
         if self.data_transformer:
+            if is_batch(output):
+                transform_batch = getattr(self.data_transformer, 'transform_batch', None)
+                if transform_batch is not None:
+                    return transform_batch(output)
+                raise TypeError(
+                    f"Edge {self.name}: transformer "
+                    f"'{getattr(self.data_transformer, 'name', self.data_transformer)}' "
+                    "received a RecordBatch but has no transform_batch(). Wrap it in "
+                    "RowTransformerBatchAdapter to run a row transformer on a batch edge."
+                )
             return self.data_transformer.transform(output)
 
         return output

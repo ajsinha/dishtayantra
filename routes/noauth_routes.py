@@ -145,6 +145,7 @@ class NoAuthRoutes:
         ('/help/pubsub', 'help_pubsub', 'help/pubsub.html'),
         ('/help/calculators', 'help_calculators', 'help/calculators.html'),
         ('/help/batch-file-processing', 'help_batch_file_processing', 'help/batch_file_processing.html'),
+        ('/help/headless-orchestration', 'help_headless_orchestration', 'help/headless_orchestration.html'),
         ('/help/transformers', 'help_transformers', 'help/transformers.html'),
         ('/help/time-windows', 'help_time_windows', 'help/time_windows.html'),
         ('/help/autoclone', 'help_autoclone', 'help/autoclone.html'),
@@ -179,14 +180,6 @@ class NoAuthRoutes:
         ('/help/database', 'help_database', 'help/database.html'),
         ('/help/scheduling', 'help_scheduling', 'help/scheduling.html'),
         # Tutorials (v2.2): step-by-step guides with full code
-        ('/help/tutorial-1', 'help_tutorial_1', 'help/tutorial_1_basic.html'),
-        ('/help/tutorial-2', 'help_tutorial_2', 'help/tutorial_2_pipeline.html'),
-        ('/help/tutorial-3', 'help_tutorial_3', 'help/tutorial_3_advanced.html'),
-        ('/help/tutorial-4', 'help_tutorial_4', 'help/tutorial_4_enterprise.html'),
-        ('/help/tutorial-5', 'help_tutorial_5', 'help/tutorial_5_subgraphs.html'),
-        ('/help/tutorial-6', 'help_tutorial_6', 'help/tutorial_6_coordination.html'),
-        ('/help/tutorial-7', 'help_tutorial_7', 'help/tutorial_7_worker_pool.html'),
-        ('/help/tutorial-8', 'help_tutorial_8', 'help/tutorial_8_jvm.html'),
     ]
 
     def __init__(self, app: FastAPI):

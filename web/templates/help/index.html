@@ -109,7 +109,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Custom DataCalculator subclass</li>
                     <li>file:// publisher</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_1') }}" class="btn btn-sm text-white" style="background: #1f8a4c;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_01_first_dag.md') }}" class="btn btn-sm text-white" style="background: #1f8a4c;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -127,7 +127,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Edges and an edge data_transformer</li>
                     <li>In-memory broker, then Kafka</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_2') }}" class="btn btn-sm text-white" style="background: #b8791f;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_02_pipeline.md') }}" class="btn btn-sm text-white" style="background: #b8791f;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -145,7 +145,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Schedule + holiday calendars</li>
                     <li>Resilient Kafka in, SQS + file out</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_3') }}" class="btn btn-sm text-white" style="background: #9a3b3b;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_03_full_feature.md') }}" class="btn btn-sm text-white" style="background: #9a3b3b;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -163,7 +163,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Complex merge nodes (5+ edges)</li>
                     <li>Layered topology, multi-output</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_4') }}" class="btn btn-sm text-white" style="background: #6b2d8a;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_04_enterprise.md') }}" class="btn btn-sm text-white" style="background: #6b2d8a;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -181,7 +181,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Fan-in / fan-out, borrowed calculators</li>
                     <li>Memory + file sinks, market schedule</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_5') }}" class="btn btn-sm text-white" style="background: #6b2d8a;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_05_subgraphs.md') }}" class="btn btn-sm text-white" style="background: #6b2d8a;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -199,7 +199,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>In-memory pub/sub coordination</li>
                     <li>Bidirectional request/ack loop</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_6') }}" class="btn btn-sm text-white" style="background: #1f8a4c;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_06_coordination.md') }}" class="btn btn-sm text-white" style="background: #1f8a4c;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -217,7 +217,7 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Pinned / exclusive / automatic placement</li>
                     <li>Cross-worker pipeline + /admin/workers</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_7') }}" class="btn btn-sm text-white" style="background: #2563eb;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_07_worker_pool.md') }}" class="btn btn-sm text-white" style="background: #2563eb;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
@@ -235,8 +235,65 @@ explanation. Start at Tutorial 1 and build up.</p>
                     <li>Predefined Java calculators</li>
                     <li>All-Java pipeline + /jvm UI</li>
                 </ul>
-                <a href="{{ url_for('help_tutorial_8') }}" class="btn btn-sm text-white" style="background: #d97706;">
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_08_jvm.md') }}" class="btn btn-sm text-white" style="background: #d97706;">
                     <i class="bi bi-play-circle"></i> Start <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hands-On Guides (markdown deep dives) -->
+<h3 class="section-title"><i class="bi bi-journal-code"></i> Hands-On Guides &amp; Deep Dives</h3>
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #0d9488;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-grid-3x3-gap" style="color: #0d9488;"></i> Arrow Calculators
+                    <span class="badge text-white ms-2" style="background: #0d9488;">ARROW</span></h5>
+                <p class="card-text">Gentle, hands-on how-to for the columnar data plane: write your
+                first Arrow calculator, mix it with row calculators, batch, and measure. Starts from
+                plain English.</p>
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_arrow_dag.md') }}" class="btn btn-sm text-white" style="background: #0d9488;">
+                    <i class="bi bi-play-circle"></i> Open <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #b91c1c;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-speedometer2" style="color: #b91c1c;"></i> High-Performance Arrow
+                    <span class="badge text-white ms-2" style="background: #b91c1c;">DEEP DIVE</span></h5>
+                <p class="card-text">Extremely high-throughput DAGs with zero-copy Arrow RecordBatch:
+                the theory (why it's fast), the design (how it stays safe), full calculators + DAG, and
+                a discussion of limits and tuning.</p>
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_high_performance_arrow.md') }}" class="btn btn-sm text-white" style="background: #b91c1c;">
+                    <i class="bi bi-play-circle"></i> Open <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #2563eb;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-file-earmark-bar-graph" style="color: #2563eb;"></i> End-of-Day Batch
+                    <span class="badge text-white ms-2" style="background: #2563eb;">EOD</span></h5>
+                <p class="card-text">Process a large trade file against FX and client-limit feeds, value
+                each trade, and flag breaches &mdash; and learn when records can be vectorized vs. when
+                they must stay sequential.</p>
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_eod_batch.md') }}" class="btn btn-sm text-white" style="background: #2563eb;">
+                    <i class="bi bi-play-circle"></i> Open <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #7c3aed;">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-terminal" style="color: #7c3aed;"></i> Headless &amp; Orchestration
+                    <span class="badge text-white ms-2" style="background: #7c3aed;">OPS</span></h5>
+                <p class="card-text">Run a DAG to completion without the UI, then have a control-plane
+                instance dispatch ephemeral headless workers for heavy jobs &mdash; explained with a
+                depot-dispatcher analogy.</p>
+                <a href="{{ url_for('help_userguide_view', filename='TUTORIAL_headless.md') }}" class="btn btn-sm text-white" style="background: #7c3aed;">
+                    <i class="bi bi-play-circle"></i> Open <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     </div>
@@ -469,6 +526,19 @@ explanation. Start at Tutorial 1 and build up.</p>
                 </h5>
                 <p class="card-text">Use DishtaYantra for large, interrelated batch files (e.g. end-of-day trade, FX, and client-limit feeds) — and when you do (and don't) need one-record-at-a-time.</p>
                 <a href="{{ url_for('help_batch_file_processing') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-terminal"></i> Headless &amp; Orchestration
+                </h5>
+                <p class="card-text">Run DAGs to completion without the UI, and let a long-running control-plane instance dispatch ephemeral headless workers for heavy, isolated, run-to-completion ETL.</p>
+                <a href="{{ url_for('help_headless_orchestration') }}" class="btn btn-outline-primary btn-sm">
                     Learn More <i class="bi bi-arrow-right"></i>
                 </a>
             </div>

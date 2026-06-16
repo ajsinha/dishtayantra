@@ -64,7 +64,7 @@ The DataSubscriber now **automatically wraps non-dictionary messages** into a st
         'subscriber_name': 'kafka_sub',
         'source': 'trades_topic',
         'received_at': '2025-01-13T10:30:00.123456',
-        'packaging_version': '2.2'  # current VERSION
+        'packaging_version': '5.1.1'  # current VERSION (core.version.VERSION)
     }
 }
 ```
@@ -171,7 +171,7 @@ def _package_message(self, data):
         'subscriber_name': 'kafka_trade_sub',
         'source': 'trades_topic',
         'received_at': '2025-01-13T10:30:00.123456',
-        'packaging_version': '2.2'  # current VERSION
+        'packaging_version': '5.1.1'  # current VERSION (core.version.VERSION)
     }
 }
 ```
@@ -194,7 +194,7 @@ def _package_message(self, data):
         'subscriber_name': 'rest_api_sub',
         'source': '/api/data',
         'received_at': '2025-01-13T10:31:00.789012',
-        'packaging_version': '2.2'  # current VERSION
+        'packaging_version': '5.1.1'  # current VERSION (core.version.VERSION)
     }
 }
 ```
@@ -217,7 +217,7 @@ b'\x00\x01\x02\x03\x04'
         'subscriber_name': 'file_sub',
         'source': '/data/binary_feed',
         'received_at': '2025-01-13T10:32:00.456789',
-        'packaging_version': '2.2'  # current VERSION
+        'packaging_version': '5.1.1'  # current VERSION (core.version.VERSION)
     }
 }
 ```

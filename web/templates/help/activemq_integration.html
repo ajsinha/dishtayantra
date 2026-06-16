@@ -18,6 +18,13 @@
 {% endblock %}
 
 {% block content %}
+<div class="alert alert-info dy-overview-guide-callout" role="alert" style="border-left:4px solid var(--brass,#e3a44a);">
+  <i class="bi bi-journal-text"></i>
+  <strong>Overview &amp; configuration reference.</strong> This page is the quick in-app
+  overview. For the complete, step-by-step installation and setup instructions, see the
+  <a href="{{ url_for('help_userguide_view', filename='ActiveMQ DataPublisher and DataSubscriber Setup Guide.md') }}"><strong>ActiveMQ Setup Guide</strong></a>.
+</div>
+
 <div class="help-nav">
     <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
     <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>

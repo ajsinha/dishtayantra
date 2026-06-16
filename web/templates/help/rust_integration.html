@@ -130,6 +130,13 @@
     .rust-logo {
         color: #CE422B;
     }
+
+    [data-theme="dark"] .platform-tabs .nav-link,
+    [data-theme="green"] .platform-tabs .nav-link { color: var(--text-secondary); }
+    [data-theme="dark"] .platform-tabs .nav-link.active,
+    [data-theme="dark"] .rust-logo,
+    [data-theme="green"] .platform-tabs .nav-link.active,
+    [data-theme="green"] .rust-logo { color: #e8775c; border-bottom-color: #e8775c; }
 </style>
 {% endblock %}
 

@@ -102,6 +102,11 @@ class ArrowCalculator(DataCalculator):
         self._calculation_count += 1
         self._last_calculation = datetime.now().isoformat()
 
+        # Zero-copy Arrow transport: the edge already carries a RecordBatch, so
+        # stay columnar end to end (no dict<->Arrow conversion at this stage).
+        if PYARROW_AVAILABLE and isinstance(data, pa.RecordBatch):
+            return self.calculate_batch(data)
+
         if isinstance(data, dict) and isinstance(data.get(self.batch_key), list):
             result = dict(data)
             result[self.batch_key] = self.process_records(data[self.batch_key])

@@ -73,7 +73,7 @@
     }
     .guide-title {
         font-weight: 600;
-        color: #1e3a5f;
+        color: var(--text-primary);
         margin-bottom: 0.25rem;
     }
     .guide-meta {
@@ -122,6 +122,13 @@
     .cat-feature { color: #10b981; }
     .cat-admin { color: #f59e0b; }
     .cat-other { color: #6b7280; }
+
+    [data-theme="dark"] .guide-meta,
+    [data-theme="dark"] .cat-other,
+    [data-theme="green"] .guide-meta,
+    [data-theme="green"] .cat-other { color: var(--text-secondary); }
+    [data-theme="dark"] .cat-calculator,
+    [data-theme="green"] .cat-calculator { color: #a78bfa; }
 </style>
 {% endblock %}
 

@@ -18,6 +18,52 @@ drops into the unchanged engine and coexists with row calculators. See
 
 ---
 
+## Part 0 — The ideas, in plain English (read this if the words above were jargon)
+
+If "columnar", "vectorized", and "Arrow" are unfamiliar, here is the whole idea in
+everyday terms. Skip to Part 1 if you are already comfortable.
+
+**Row-by-row vs. column-at-a-time.** Imagine a spreadsheet of trades: each *row* is
+one trade, each *column* is a field (price, quantity, currency...). To compute the
+dollar value of every trade you could either:
+
+- walk down the rows, one trade at a time, doing the arithmetic for each — this is
+  how an ordinary "row" calculator works; or
+- grab the entire *price* column and the entire *quantity* column and multiply them
+  in one sweep — this is the **columnar** approach.
+
+The second way is dramatically faster for large amounts of numeric data, for the
+same reason it is faster to tell a class "everyone multiply your two numbers" than
+to visit each student's desk in turn. Doing one operation across a whole column at
+once is called **vectorization**.
+
+**What is Arrow?** Apache **Arrow** is a widely-used standard for laying out a table
+*by column* in memory so these whole-column operations are fast. `pyarrow` is its
+Python library, and `pyarrow.compute` provides the fast column operations (multiply,
+add, compare, and so on). A chunk of such a columnar table is called a
+**RecordBatch** — picture a few hundred trades stored column-by-column, ready to be
+crunched together.
+
+**What is a "batch"?** Just a group of records handled together — e.g. 500 trades
+at once instead of one at a time. Bigger groups mean less per-record overhead and
+let the column math pay off.
+
+**The one catch (and the honest trade-off).** Converting your data into Arrow's
+columnar form costs a little time. If you only have *one* record, that setup cost is
+pure waste and the row calculator is actually faster. The columnar approach wins
+only when you process records in **batches** that are large enough to pay back the
+setup cost — and the bigger the batch, the bigger the win. We measure exactly this
+in Part 7, so you can see the trade-off rather than take it on faith.
+
+**Will the answers change?** No. A columnar calculator and its row twin are written
+to produce **identical** output — vectorizing changes the *speed*, never the
+*result*. We verify this in CI and in the worked examples.
+
+With those five ideas — rows vs columns, vectorization, Arrow/RecordBatch, batches,
+and the setup-cost trade-off — the rest of this tutorial will read naturally.
+
+---
+
 ## Part 1 — Write your first Arrow calculator
 
 Subclass `ArrowCalculator` and implement `calculate_batch`. Use `append_columns`
@@ -181,13 +227,61 @@ python -m perftest.run_autobatch_example --trades 20000
 
 You send 20,000 ordinary trades and get 20,000 ordinary results back; internally
 the source batched them (e.g. ~488 messages per envelope) and the Arrow stages
-vectorized. Output is identical to the all-row pipeline. The throughput gain is
-currently modest because the dataflow deep-copies each envelope per stage —
-carrying Arrow `RecordBatch`es on edges (to remove that copy) is the next A1
-increment. Mix in a legacy row stage on this batched path with
+vectorized. Output is identical to the all-row pipeline. The throughput gain from
+*this* (envelope) form is modest because the dataflow deep-copies each envelope
+per stage — **Part 6 removes that copy** by carrying the `RecordBatch` itself on
+the edges. Mix in a legacy row stage on this batched path with
 `RowCalculatorBatchAdapter` (Part 4).
 
-## Part 6 — Measure it
+## Part 6 — Zero-copy transport: a RecordBatch on the edges (v5.1.0)
+
+The envelope path still pays a per-stage cost: because a dict is mutable, the
+engine deep-copies the value on every edge read and every compute, so a 500-row
+envelope is cloned 3–4 times per stage. An Arrow `RecordBatch` is **immutable**,
+so it can be shared *by reference* with no copy at all. Two opt-in node types make
+the batch the on-edge value:
+
+- `ArrowBatchingSubscriptionNode` — drains messages and emits one `RecordBatch`
+  (instead of a dict envelope).
+- `ArrowFlatteningPublicationNode` — converts the `RecordBatch` back to per-row
+  dicts once, at egress.
+
+Between them the batch flows by reference through the Arrow stages — the dict↔Arrow
+conversion happens **once in, once out**, not per stage. `ArrowCalculator` already
+recognises a `RecordBatch` input and stays columnar, so your calculators need no
+change. The shipped example `perftest/perftest_arrow_transport.json` is the same
+pipeline as Part 5 with the two transport node types swapped in:
+
+```json
+{"name": "ingest", "type": "ArrowBatchingSubscriptionNode",
+ "config": {"batch": {"max_size": 500}}, "subscriber": "in_sub"}
+...
+{"name": "sink", "type": "ArrowFlatteningPublicationNode",
+ "config": {}, "publishers": ["out_pub"]}
+```
+
+```bash
+python -m perftest.run_arrow_transport_example --trades 20000
+```
+
+It runs the envelope path and the transport path and compares them: the per-trade
+output is **identical** (0 mismatches), and the transport path runs **~2.29×** the
+envelope path's throughput purely by removing the per-stage copies. The
+equality-gate invariant is preserved — the gate now compares batches with
+`RecordBatch.equals` rather than `==`, it is not bypassed.
+
+Per-consumer **telescopic views** still work and get cheaper: an edge transformer
+that implements `transform_batch` projects columns with zero copy
+(`ProjectionBatchTransformer` does `select`/`rename_columns`), and a legacy row
+transformer can be bridged onto a batch edge with `RowTransformerBatchAdapter`
+(`core/transformer/arrow_transformer.py`). A bare row transformer on a batch edge
+fails fast rather than silently mis-handling the batch.
+
+This first version supports **linear** Arrow segments; `RecordBatch` fan-in joins
+and zero-copy handoff into the C++/Rust/Java calculators are the next A1 steps
+(the Arrow C Data Interface, which this transport sets up).
+
+## Part 7 — Measure it
 
 ```bash
 # End-to-end through the real engine: row vs Arrow batch, with a correctness check
@@ -201,14 +295,18 @@ python -m benchmarks.run_benchmark --messages 5000 --stages 6
 ```
 
 Interpreting the numbers: the **kernel** speedup is large (~11.8× on the trade
-numerics). The **end-to-end** speedup is smaller (~1.8× at batch 500) because the
-node boundary still converts dicts ↔ Arrow. And on **single-dict** flow (batch of
-1), Arrow is *slower* than row — the conversion is pure overhead. Batch size is
-the dial: bigger batches amortize the conversion and approach the kernel speedup.
+numerics). With the **dict-envelope** transport the end-to-end speedup is smaller
+(~1.8× at batch 500) because every stage still deep-copies the envelope. With the
+**zero-copy `RecordBatch` transport** (Part 6) those per-stage copies are gone, so
+the same pipeline runs ~2.29× the envelope path while producing identical output;
+the remaining gap to the kernel ceiling is per-tick node-loop overhead, not data
+copying. On **single-dict** flow (batch of 1), Arrow is *slower* than row — the
+conversion is pure overhead. Batch size is the dial: bigger batches amortize the
+conversion and approach the kernel speedup.
 
 ---
 
-## Part 7 — When to use Arrow (and when not)
+## Part 8 — When to use Arrow (and when not)
 
 Use Arrow (and batch) when the path is **high-volume, numeric/columnar,
 schema-regular, and latency-tolerant** (e.g. trade/tick ETL, FX/notional/risk,
@@ -230,6 +328,8 @@ Full decision tree and the coexistence rules:
 
 ## Where to go next
 
+- **Deep dive — extremely high performance:** `docs/TUTORIAL_high_performance_arrow.md`
+  (the theory, design, a full max-throughput pipeline, and a discussion of limits and tuning)
 - Design RFC: `docs/design/A1-arrow-data-plane.md`
 - Worked example + decision tree: `docs/design/A1-worked-example-and-coexistence.md`
 - Roadmap: `docs/ROADMAP.md`

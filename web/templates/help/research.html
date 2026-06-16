@@ -217,6 +217,26 @@
     .download-section .btn {
         margin: 0.25rem;
     }
+
+    /* Dark-theme overrides: research-content uses var(--bg-card) (dark in dark theme) */
+    [data-theme="dark"] .research-content h1,
+    [data-theme="dark"] .research-content strong,
+    /* Dark-theme overrides: research-content uses var(--bg-card) (dark in dark theme) */
+    [data-theme="green"] .research-content h1,
+    [data-theme="green"] .research-content strong { color: #e7ebf3; }
+    [data-theme="dark"] .research-content h2,
+    [data-theme="green"] .research-content h2 { color: #cbd5e1; }
+    [data-theme="dark"] .research-content h3,
+    [data-theme="green"] .research-content h3 { color: #b8c2d6; }
+    [data-theme="dark"] .research-content h4,
+    [data-theme="green"] .research-content h4 { color: #aab4c4; }
+    [data-theme="dark"] .research-content p,
+    [data-theme="dark"] .research-content li,
+    [data-theme="green"] .research-content p,
+    [data-theme="green"] .research-content li { color: #d7dee9; }
+
+    [data-theme="dark"] .research-content a,
+    [data-theme="green"] .research-content a { color: #a5b4fc; }
 </style>
 {% endblock %}
 

@@ -584,3 +584,119 @@ class FlatteningPublicationNode(PublicationNode):
             self._errors.append({'time': datetime.now().isoformat(), 'error': str(e)})
             logger.error(f"Error in flattening publication node {self.name}: {str(e)}")
             return False
+
+
+# ---------------------------------------------------------------------------
+# Arrow zero-copy transport nodes (v5.1.0, additive / opt-in)
+#
+# These pair with BatchingSubscriptionNode/FlatteningPublicationNode but carry a
+# pyarrow.RecordBatch *on the edges* instead of the {batch_key: [...]} dict
+# envelope. Because a RecordBatch is immutable, the engine shares it by reference
+# (edge_value.ev_copy), so there is no per-stage deep-copy — the conversion
+# dict<->Arrow happens once at ingress and once at egress, not at every hop.
+# Reachable only by selecting these node types; existing DAGs are unaffected.
+# ---------------------------------------------------------------------------
+
+class ArrowBatchingSubscriptionNode(BatchingSubscriptionNode):
+    """Source node that drains messages and emits ONE Arrow RecordBatch (not a
+    dict envelope) for zero-copy columnar transport to downstream ArrowCalculators.
+
+    Selected by node ``type`` ``ArrowBatchingSubscriptionNode``. Config matches
+    BatchingSubscriptionNode (``{"batch": {"max_size": 500}}``). Node-level
+    transformers are not supported on the Arrow source in this version (use edge
+    transformers / ``transform_batch``); they fail fast rather than be ignored.
+    """
+
+    def compute(self) -> bool:
+        from core.dag.edge_value import ev_equals
+        if not self.isdirty() or not self.subscriber:
+            return False
+        if self._input_transformers or self._output_transformers:
+            raise TypeError(
+                f"{self.name}: ArrowBatchingSubscriptionNode does not support "
+                "node-level transformers; use an edge transformer with transform_batch."
+            )
+        try:
+            from core.calculator.arrow_calculator import records_to_batch
+            buffer = []
+            while len(buffer) < self._max_batch_size:
+                data = self.subscriber.get_data(block_time=0)
+                if data is None:
+                    break
+                buffer.append(data)
+            if not buffer:
+                self.set_clean()
+                return False
+
+            self._messages_in += len(buffer)
+            batch = records_to_batch(buffer)            # dict rows -> RecordBatch (once)
+            if self._calculator:
+                output = self._calculator.calculate(batch)
+            else:
+                output = batch
+
+            if not ev_equals(output, self._output):
+                self._output = output                   # shared by reference, no copy
+                self._messages_out += 1
+                for edge in self._outgoing_edges:
+                    edge.to_node.set_dirty()
+            self.set_clean()
+            return True
+        except Exception as e:
+            self._errors.append({'time': datetime.now().isoformat(), 'error': str(e)})
+            logger.error(f"Error in arrow batching subscription node {self.name}: {str(e)}")
+            return False
+
+
+class ArrowFlatteningPublicationNode(FlatteningPublicationNode):
+    """Sink node that converts an incoming Arrow RecordBatch back to per-row dicts
+    (``to_pylist``) and publishes each row, preserving the per-message external
+    contract. If the input is not a batch it behaves exactly like
+    FlatteningPublicationNode. Selected by node type ``ArrowFlatteningPublicationNode``.
+    """
+
+    def compute(self) -> bool:
+        from core.dag.edge_value import is_batch, ev_equals
+        if not self.isdirty():
+            return False
+        try:
+            Node.compute(self)  # consolidate incoming edge(s) -> self._output
+            out = self._output
+
+            if is_batch(out):
+                if not ev_equals(out, self._last_published_output):
+                    records = out.to_pylist()           # RecordBatch -> rows (once)
+                    for rec in records:
+                        for publisher in self.publishers:
+                            try:
+                                publisher.publish(rec)
+                            except Exception as e:
+                                logger.error(f"Error publishing from node {self.name}: {str(e)}")
+                    self._published_count += len(records)
+                    self._last_published_output = out
+                return True
+
+            # non-batch input: identical to FlatteningPublicationNode's publish path
+            if out != self._last_published_output:
+                if isinstance(out, dict) and isinstance(out.get(self._batch_key), list):
+                    records = out[self._batch_key]
+                    for rec in records:
+                        for publisher in self.publishers:
+                            try:
+                                publisher.publish(rec)
+                            except Exception as e:
+                                logger.error(f"Error publishing from node {self.name}: {str(e)}")
+                    self._published_count += len(records)
+                else:
+                    for publisher in self.publishers:
+                        try:
+                            publisher.publish(out)
+                        except Exception as e:
+                            logger.error(f"Error publishing from node {self.name}: {str(e)}")
+                    self._published_count += 1
+                self._last_published_output = dict(out) if isinstance(out, dict) else out
+            return True
+        except Exception as e:
+            self._errors.append({'time': datetime.now().isoformat(), 'error': str(e)})
+            logger.error(f"Error in arrow flattening publication node {self.name}: {str(e)}")
+            return False

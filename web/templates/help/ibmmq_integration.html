@@ -14,10 +14,20 @@
     .feature-card:hover { border-color: #054ada; box-shadow: 0 4px 15px rgba(5, 74, 218, 0.2); }
     .tip-box { background: color-mix(in srgb, var(--success-color) 12%, var(--bg-card)); border-left: 4px solid #10b981; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
     .warning-box { background: color-mix(in srgb, var(--warning-color) 12%, var(--bg-card)); border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+
+    [data-theme="dark"] .broker-color,
+    [data-theme="green"] .broker-color { color: #6fa0ff; }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="alert alert-info dy-overview-guide-callout" role="alert" style="border-left:4px solid var(--brass,#e3a44a);">
+  <i class="bi bi-journal-text"></i>
+  <strong>Overview &amp; configuration reference.</strong> This page is the quick in-app
+  overview. For the complete, step-by-step installation and setup instructions, see the
+  <a href="{{ url_for('help_userguide_view', filename='WebSphere MQ (IBM MQ) DataPublisher and DataSubscriber Setup Guide.md') }}"><strong>IBM MQ / WebSphere MQ Setup Guide</strong></a>.
+</div>
+
 <div class="help-nav">
     <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Back to Help</a>
     <a href="{{ url_for('help_pubsub') }}" class="btn btn-outline-secondary btn-sm ms-2"><i class="bi bi-arrow-left-right"></i> All Pub/Sub</a>

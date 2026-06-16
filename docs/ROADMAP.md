@@ -44,6 +44,16 @@ We do **not** try to out-Spark Spark on petabyte horizontal scale. That is their
 
 Indicative arc: ~18 months for a small focused team (≈3–6 engineers). Timelines scale with headcount; phases 1 and 2 are the long poles.
 
+> **Operational capability (delivered, v5.0.0) — headless execution & orchestration.**
+> Distinct from the A1–A4 performance/correctness path: a first-class headless
+> "run-once" runner (`core/dag/headless_runner.py`) executes a DAG to completion
+> without the web UI and exits with a status code, and a `JobDispatchCalculator`
+> (`core/dag/job_dispatch.py`) lets a long-running control-plane instance react to
+> events and dispatch ephemeral, isolated headless workers (idempotent, async,
+> bounded worker pool, reactive completion events). See
+> `docs/HEADLESS_AND_ORCHESTRATION.md`. This is an operations/deployment feature and
+> does not change the engine's critical path below.
+
 ---
 
 ## 4. Dependency map
@@ -102,14 +112,19 @@ graph TD
 ### Phase 1 — Core modernization (the engine that makes single-node fast)
 *This is the payoff that lets one box out-throughput a small Spark cluster.*
 
-> **Progress (A1):** delivered so far — the `ArrowCalculator` contract (additive,
+> **Progress (A1):** delivered — the `ArrowCalculator` contract (additive,
 > drop-in), vectorized example calculators with exact row-parity, an end-to-end
-> vertical slice, an old/new coexistence demonstration, a tutorial, and **opt-in
-> source-batching nodes** (`BatchingSubscriptionNode` / `FlatteningPublicationNode`)
-> that make batching automatic while preserving the per-message contract. The
-> engine (`core/dag/*`, `core_calculator.py`) remains unchanged. Remaining for A1:
-> carry Arrow `RecordBatch`es on edges to remove the per-stage envelope deep-copy
-> (the current throughput cap), then zero-copy polyglot handoff and spill.
+> vertical slice, an old/new coexistence demonstration, a tutorial, **opt-in
+> source-batching nodes** (`BatchingSubscriptionNode` / `FlatteningPublicationNode`),
+> and now **Arrow `RecordBatch` on the edges (zero-copy transport, v5.1.0)** —
+> `core/dag/edge_value.py` plus opt-in `ArrowBatchingSubscriptionNode` /
+> `ArrowFlatteningPublicationNode`, which remove the per-stage deep-copy. Measured
+> ~2.29× over the dict-envelope path with byte-identical output
+> (`perftest/run_arrow_transport_example.py`); the dict path stays behaviourally
+> identical (engine diff is a minimal mechanical substitution; full suite green).
+> Remaining for A1: zero-copy polyglot handoff via the Arrow C Data Interface
+> (this transport sets it up) and larger-than-memory spill. Designs:
+> `docs/design/A1-recordbatch-edges.md`, `docs/design/A1-arrow-data-plane.md`.
 
 **A1 — Arrow-native columnar data plane** *(XL, the keystone)*
 - Make Arrow `RecordBatch` the in-memory format flowing through `core/dag` edges, into calculators, and to sinks.

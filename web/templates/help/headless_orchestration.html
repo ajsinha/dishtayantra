@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Headless & Orchestration - {{ app_name }} Help{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+<h2><i class="bi bi-terminal" style="color: #4a90c2;"></i> Headless Execution &amp; Orchestration</h2>
+<p class="text-muted">Run ETL without the web UI, and let a long-running control-plane instance
+dispatch ephemeral headless workers for heavy, run-to-completion jobs.</p>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-1-circle"></i> Headless run-once (the worker)</h5></div>
+    <div class="card-body">
+        <p>The engine never needed the UI — the UI is a monitor/designer. The headless runner
+        starts a DAG, processes a bounded feed to completion, drains, stops cleanly, writes a
+        summary, and exits with a status code:</p>
+        <pre class="code-block">python -m core.dag.headless_runner --config job.json \
+    [--replay feed.jsonl] [--expect N] [--summary out.json] [--job-id ID]</pre>
+        <p class="mb-0"><strong>Completion is explicit:</strong> count-based (sink published reaches the
+        expected count) or quiescence (no dirty nodes and empty input queues for several polls).
+        Shutdown drains first, honouring the zero-message-loss invariant. A bounded file is just a
+        finite stream, so this is the natural way to run an EOD job.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-diagram-3"></i> Orchestration — control plane + workers</h5></div>
+    <div class="card-body">
+        <p>A long-running control-plane instance (with the UI, for observability) reacts to events
+        and launches ephemeral headless workers for heavy ETL. This separates an always-on, light
+        decision plane from isolated, disposable compute — a crashing job can't take down the
+        control plane, and finished workers just exit.</p>
+        <pre class="code-block">job_requests -> [dispatch] -> sink          (launch headless workers)
+job_done     -> [react]    -> ...           (react to completions)</pre>
+        <p class="mb-0">A <code>JobDispatchCalculator</code> node turns qualifying events into worker
+        processes.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-shield-check"></i> The dispatcher's guarantees</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><strong>Idempotent</strong> — exactly one launch per unique job key, even on recompute
+            or a replayed event (a dedup set complements the equality gate).</li>
+            <li><strong>Asynchronous</strong> — launches and returns immediately; a daemon thread waits
+            on each child, so the reactive loop never blocks.</li>
+            <li><strong>Bounded</strong> — a <code>max_concurrent</code> cap with a pending queue (a real
+            worker pool), so an event burst cannot fork-bomb the host.</li>
+            <li><strong>Observable</strong> — on child exit it records the summary and can publish a
+            completion event the parent subscribes to (reactive loop). <code>shutdown()</code>
+            terminates live children so the control plane never orphans them.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-signpost-split"></i> Choosing the shape</h5></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            <li><strong>External scheduler launches a run-once worker</strong> (Autosys/Control-M/Airflow
+            watches for the feed, then runs the worker). Leanest and most standard.</li>
+            <li><strong>In-DAG sensing + dispatch</strong> — a control-plane DAG senses readiness (a
+            metronome polling a manifest/<code>.done</code>/control total) and dispatches workers
+            itself. Self-contained.</li>
+            <li><strong>Process isolation vs in-process parallelism</strong> — separate headless
+            processes give isolation, ephemerality, and run-to-completion; for pure throughput the
+            in-process worker pool / autoclone is lighter.</li>
+        </ul>
+        <p class="mt-2 mb-0">Prefer an explicit completeness signal (manifest, trailer record, control
+        count) over time-based heuristics.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-play-circle"></i> Runnable</h5></div>
+    <div class="card-body">
+        <pre class="code-block">python -m perftest.run_orchestration_example --jobs 3</pre>
+        <ul class="mb-0">
+            <li><code>core/dag/headless_runner.py</code> — the run-once worker + CLI.</li>
+            <li><code>core/dag/job_dispatch.py</code> — the idempotent, async, bounded dispatcher.</li>
+            <li><code>perftest/run_orchestration_example.py</code> — control plane dispatches headless
+            workers that each process an EOD feed and exit; the parent reacts to completion.</li>
+            <li>Full write-up: <code>docs/HEADLESS_AND_ORCHESTRATION.md</code>.</li>
+        </ul>
+    </div>
+</div>
+
+<a href="{{ url_for('help') }}" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Back to Help Center</a>
+
+</div>
+{% endblock %}

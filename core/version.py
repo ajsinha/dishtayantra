@@ -6,6 +6,138 @@ Single source of truth for the application version. Every module, template,
 banner, and document must reference this module rather than hard-coding a
 version string.
 
+Version 5.3.0 highlights (new "Green" theme + 3-way switcher; research paper refresh):
+    - NEW THEME "Green": a gold-on-dark-green palette inspired by a green-dial gold
+      watch (very dark green, golden yellow, black, white). It is a dark-family theme,
+      so it inherits every dark-mode light-on-dark contrast fix; all palette colors
+      verified AA/AAA. Doc/tutorial pages pick up gold headings/links for cohesion.
+    - The theme control is now a DROPDOWN (Light / Dark / Green) with an active-check
+      and per-theme icon, replacing the 2-state toggle. Choice persists in localStorage;
+      Green maps to Bootstrap's dark component base.
+    - Comparison table: brightened competitor/first-column text for a crisper read.
+    - Research paper updated to reflect the v5.x advances: new abstract/contribution
+      notes plus a "§7B Recent Advances" section covering the Arrow-native columnar
+      (RecordBatch) zero-copy edge transport and the headless execution + orchestration
+      model. PDF and LaTeX regenerated from the markdown (23pp) and synced across the
+      docs/ and static/ copies. Theme/docs/CSS only; no engine or behaviour change.
+
+Version 5.2.1 highlights (accessibility: dark/light theme contrast audit):
+    - Systematic WCAG contrast audit of every UI page in both themes, using a
+      color-math tool to compute exact ratios rather than eyeballing.
+    - BIGGEST FIX: the markdown viewer (.doc-content) that renders all 12 tutorials
+      and ~30 user guides hardcoded dark text colors meant for a light pane, so in
+      dark theme every heading, paragraph, table cell, link, inline-code chip and
+      callout was near-invisible. Added a complete [data-theme="dark"] override set
+      (headings, body, lists, tables + hover, links, code chips, callout blockquotes)
+      — all AA/AAA on the dark card.
+    - Fixed: comparison-table red marker (4.29 -> AA), dashboard pagination text,
+      login form labels, landing-page captions, the Research and Time-Windows help
+      pages, the user-guide listing, and dark-theme tab labels + brand icons on the
+      pybind11/Rust/REST/Kafka/IBM-MQ integration pages (Kafka's near-black logo was
+      invisible on dark).
+    - Verified: theme palette variables all pass AA in both themes; remaining flagged
+      items are decorative brand icons/arrows that are redundant with adjacent text
+      labels (WCAG-exempt) or syntax colors on always-dark code panes. Docs/CSS only;
+      no engine or behaviour change.
+
+Version 5.2.0 highlights (all tutorials unified to markdown, single world-class renderer):
+    - Converted the 8 in-app HTML tutorials (Your First DAG ... JVM Pool) to markdown
+      (docs/TUTORIAL_01_*.md ... TUTORIAL_08_*.md), faithfully preserving content:
+      plain-English primers, step structure, code blocks (with language tags), ASCII
+      flow diagrams (as code fences), callouts (as styled blockquotes), and tables.
+    - All 12 tutorials (the 8 numbered + the 4 deep-dives: Arrow, High-Performance
+      Arrow, EOD, Headless) now render through ONE path (the markdown viewer), ending
+      the HTML/markdown split. Polished the shared viewer: callout boxes (gradient +
+      accent), and a tutorial-aware "Back to Tutorials" button.
+    - Removed the 8 bespoke tutorial HTML templates and their routes; repointed all
+      Help Center tutorial cards to the markdown viewer (verified all 12 render 200,
+      internal cross-links repaired). Single source of truth, portable, diffable.
+      Docs/help only; no engine/behaviour change.
+
+Version 5.1.2 highlights (documentation: in-app tutorials elaborated + made discoverable):
+    - New dedicated deep-dive tutorial docs/TUTORIAL_high_performance_arrow.md:
+      extremely high-performance DAGs with zero-copy Arrow RecordBatch — theory
+      (where time goes, columnar/vectorization, immutability), design (edge_value
+      dispatch, equality-gate preservation, layered speedups), full calculators +
+      DAG, measurement, and a discussion of limits/tuning/when-to-use. Layman-first.
+    - Elaborated the in-app HTML tutorials: added a consistent "in plain English"
+      primer (analogy + new concepts in everyday terms + one-sentence summary) to
+      tutorials 2-6 to match the quality of 1/7/8.
+    - All 12 tutorials are now reachable from the Help Center: the 8 HTML tutorials
+      plus a new "Hands-On Guides & Deep Dives" section linking the 4 markdown
+      tutorials (Arrow how-to, High-Performance Arrow, EOD, Headless) via the
+      markdown viewer. Verified all render. Docs-only; no engine/behaviour change.
+
+Version 5.1.1 highlights (documentation: elaborated tutorials + help consolidation):
+    - Rewrote the EOD and headless tutorials (docs/TUTORIAL_eod_batch.md,
+      docs/TUTORIAL_headless.md) to be layman-friendly: a plain-English concepts
+      primer (DAG/node/edge/calculator/reactive), analogies, worked numbers, and
+      expected-output walkthroughs. Added a "Part 0 — plain English" primer to the
+      Arrow tutorial (rows-vs-columns, vectorization, Arrow/RecordBatch, the
+      setup-cost trade-off). Tutorials verified accurate against the shipped code.
+    - Help consolidation: the 9 broker integration pages (Kafka, Redis, RabbitMQ,
+      ActiveMQ, LMDB, IBM MQ, TIBCO, REST, In-Memory) now carry an "overview ->
+      full setup guide" cross-link to their detailed user guide, giving the two doc
+      systems clear, complementary roles instead of competing. (Earlier in 5.1.x:
+      removed two orphan help templates, free_threading.html / worker_pool.html,
+      superseded by parallelism.html.) Docs-only; no engine/behaviour change.
+
+Version 5.1.0 highlights (A1 keystone: Arrow RecordBatch on edges — zero-copy transport):
+    - core/dag/edge_value.py: value-type dispatch for the three things the engine
+      does to edge values — copy / compare (equality gate) / consolidate — plus a
+      JSON-safe describe. For any non-batch value each helper is the exact previous
+      dict behaviour; a pyarrow.RecordBatch is shared BY REFERENCE (immutable, so
+      safe), removing the per-stage deep-copy.
+    - graph_elements.py: minimal mechanical substitution (deepcopy->ev_copy,
+      ==/!=->ev_equals, dict.update->ev_consolidate, details->ev_describe, plus a
+      batch-aware Edge.get_data). The dict path is behaviourally identical; diff is
+      trivially reviewable; existing classes byte-identical.
+    - ArrowCalculator.calculate gains a RecordBatch fast-path (stay columnar, no
+      dict<->Arrow conversion mid-pipeline). New opt-in nodes
+      ArrowBatchingSubscriptionNode / ArrowFlatteningPublicationNode (append-only)
+      convert dict->batch once at ingress and batch->dict once at egress.
+    - core/transformer/arrow_transformer.py: the per-edge telescopic view in Arrow
+      — ProjectionBatchTransformer (zero-copy select/rename) and
+      RowTransformerBatchAdapter (bridge a row transformer onto a batch edge).
+    - Measured (perftest/run_arrow_transport_example.py, 20k trades): per-trade
+      output IDENTICAL to the dict path; throughput ~2.29x the v4.5.0 envelope path
+      by removing the per-stage copies. Equality-gate invariant preserved via
+      RecordBatch.equals (not bypassed). Fail-fast on batch fan-in / row transformer
+      on a batch edge. pyarrow stays optional for the core.
+    - Tests: tests/test_edge_value.py + tests/test_arrow_transport.py (16). Suite:
+      166 passed, 1 skipped.
+
+Version 5.0.0 highlights (headless execution + control-plane/worker orchestration):
+    - core/dag/headless_runner.py: a first-class "run-once" CLI that starts a DAG
+      WITHOUT the web UI, optionally replays a bounded feed, detects completion
+      (count-based or quiescence), drains with zero message loss, writes a summary
+      JSON, and exits 0/1 so a scheduler can react.
+    - core/dag/job_dispatch.py: JobDispatchCalculator, an idempotent (exactly-once
+      per job key), asynchronous (non-blocking), bounded (max_concurrent + pending
+      queue / worker pool), observable (records each child's summary, can publish a
+      completion event, shutdown() terminates live children) dispatcher node. A
+      long-running control-plane DAG reacts to events and launches ephemeral
+      headless workers for heavy, isolated, run-to-completion ETL.
+    - perftest/run_orchestration_example.py: end-to-end demo — a control-plane DAG
+      dispatches headless workers (exactly-once, capped) that each process an EOD
+      feed and exit; the parent reacts to their completion.
+    - docs/HEADLESS_AND_ORCHESTRATION.md + Help page; ROADMAP notes the operational
+      capability. Tests: tests/test_headless_and_dispatch.py (5). Suite: 150 pass.
+    - Fully additive: new modules + a calculator selected only by DAGs that
+      reference it; the web app / DAGComputeServer / engine paths are untouched.
+
+Version 4.9.0 highlights (design: edge transformers / telescopic views in Arrow):
+    - Extended docs/design/A1-recordbatch-edges.md (section 5.1) covering how the
+      per-edge transformer's "telescopic view" of upstream state maps onto Arrow:
+      zero-copy columnar projection/slice/rename, a transform_batch contract, a
+      RowTransformerBatchAdapter for legacy transformers, and the edge as the
+      per-consumer batch/row boundary adapter. Design only.
+
+Version 4.8.0 highlights (design doc: Arrow RecordBatch on edges):
+    - docs/design/A1-recordbatch-edges.md: detailed design for the final A1
+      increment (zero-copy RecordBatch transport on DAG edges) and its
+      backward-compatibility strategy. Design only -- no code/engine change yet.
+
 Version 4.7.0 highlights (light/dark theme text-contrast fixes - UI only):
     - Fixed low-contrast text across both themes to meet WCAG AA (>= 4.5:1):
       darkened light-theme --text-muted (#9aa3c0 -> #616a8c, 2.5:1 -> 5.3:1) and
@@ -166,8 +298,8 @@ Version 2.2 highlights:
 Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 """
 
-VERSION = "4.7.0"
-BUILD_DATE = "2026-06-14"
+VERSION = "5.3.0"
+BUILD_DATE = "2026-06-15"
 APP_NAME = "DishtaYantra"
 
 

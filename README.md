@@ -6,7 +6,7 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-2.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -71,18 +71,43 @@ calculator is a **drop-in** for a row calculator: the engine is not modified, so
 row (old-style) and Arrow (new-style) calculators **coexist in the same instance
 and in the same graph**. Vectorized stages are output-identical to their row
 counterparts (validated in CI) and deliver their speedup on *batched* message
-flow (~1.8x end-to-end in the worked example; ~11.8x at the kernel level).
+flow (~11.8x at the kernel level).
 
 - Worked example & decision tree: `docs/design/A1-worked-example-and-coexistence.md`
 - Tutorial (hands-on): `docs/TUTORIAL_arrow_dag.md`
-- Runnable demos: `python -m perftest.run_arrow_example` (mixed graph) and `python -m perftest.run_autobatch_example` (automatic source-batching)
+- Runnable demos: `python -m perftest.run_arrow_example` (mixed graph), `python -m perftest.run_autobatch_example` (automatic source-batching), and `python -m perftest.run_arrow_transport_example` (zero-copy transport)
 
 Two **opt-in** node types make batching automatic without changing producers or
 consumers: `BatchingSubscriptionNode` drains incoming messages into columnar
 batches, and `FlatteningPublicationNode` unbatches on the way out so the external
 per-message contract is preserved. The existing `SubscriptionNode` /
 `PublicationNode` are unchanged, so existing DAGs are unaffected.
-- Design RFC: `docs/design/A1-arrow-data-plane.md`
+
+For maximum throughput, the **zero-copy transport** path carries an immutable
+`pyarrow.RecordBatch` *on the edges* (shared by reference, no per-stage copy) via
+`ArrowBatchingSubscriptionNode` / `ArrowFlatteningPublicationNode` — ~2.29x the
+dict-envelope path with byte-identical output, while the equality-gate invariant is
+preserved (`core/dag/edge_value.py`). The dict path is behaviourally unchanged.
+- Design RFCs: `docs/design/A1-arrow-data-plane.md`, `docs/design/A1-recordbatch-edges.md`
+
+### Headless Execution & Orchestration (opt-in)
+
+Run a DAG to completion without the web UI (`python -m core.dag.headless_runner`),
+and have a long-running control-plane instance dispatch ephemeral, isolated
+headless workers for heavy run-to-completion ETL (`JobDispatchCalculator`:
+idempotent, async, a bounded worker pool, reactive completion events). Additive —
+the web app / engine paths are untouched.
+- Tutorial (hands-on): `docs/TUTORIAL_headless.md`
+- Reference: `docs/HEADLESS_AND_ORCHESTRATION.md`
+- Runnable demo: `python -m perftest.run_orchestration_example`
+
+### End-of-Day Batch Processing
+Process large interrelated batch files (trade facts enriched against FX/limit
+dimensions), with clear guidance on when records can be vectorized in parallel and
+when a true cross-record dependency needs one-at-a-time ordering.
+- Tutorial (hands-on): `docs/TUTORIAL_eod_batch.md`
+- Reference: `docs/BATCH_FILE_PROCESSING.md`
+- Runnable demo: `python -m perftest.run_eod_example`
 
 ### LMDB Zero-Copy Data Exchange
 - **Memory-Mapped Transport**: 100-1000x faster than serialization for large payloads
@@ -410,10 +435,13 @@ status = server.get_server_status()
 
 ## Version & History
 
-Current version: **2.2**. DishtaYantra is developed as a continuously
+Current version: **5.3.0** (the authoritative version is always
+`core/version.py::VERSION`, which every module, template, and banner imports —
+nothing hard-codes a version string). DishtaYantra is developed as a continuously
 evolving system; rather than a release-by-release changelog, the current
 capabilities are described in the **Highlights** and **Features** sections
-above. For details on specific subsystems see:
+above, and per-version highlights live in `core/version.py`. For details on
+specific subsystems see:
 
 - `docs/CONFIG_AND_CLOUD_v2.2.md` - YAML configuration and AWS/Azure messaging
 - `docs/ARCHITECTURE.md` - system architecture

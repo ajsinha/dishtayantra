@@ -127,6 +127,11 @@
         font-weight: 600;
         border-bottom: 3px solid #00599C;
     }
+
+    [data-theme="dark"] .platform-tabs .nav-link,
+    [data-theme="green"] .platform-tabs .nav-link { color: var(--text-secondary); }
+    [data-theme="dark"] .platform-tabs .nav-link.active,
+    [data-theme="green"] .platform-tabs .nav-link.active { color: #4d9fd6; border-bottom-color: #4d9fd6; }
 </style>
 {% endblock %}
 

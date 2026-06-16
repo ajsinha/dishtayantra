@@ -10,7 +10,7 @@ ajsinha@gmail.com
 
 ## Abstract
 
-Real-time data processing systems face fundamental challenges in achieving low-latency computation while supporting heterogeneous computational workloads across multiple programming languages. We present **DishtaYantra**, a novel high-performance Directed Acyclic Graph (DAG) compute framework that addresses these challenges through three key innovations: (1) an LMDB-based zero-copy data exchange mechanism achieving 100-1000× performance improvements over traditional serialization for inter-language communication, (2) a unified multi-language calculator framework supporting Python, Java (Py4J), C++ (pybind11), Rust (PyO3), and REST endpoints with sub-microsecond invocation overhead, and (3) a multiprocessing worker pool architecture with DAG affinity scheduling that bypasses Python's Global Interpreter Lock (GIL) for true CPU parallelism. Our experimental evaluation on consumer hardware (AMD Ryzen, 64GB RAM, Ubuntu 24.04) demonstrates that DishtaYantra achieves median latencies of 5μs for large payload transfers (compared to 500μs with JSON serialization), processes over 100,000 messages per second per worker, and maintains 90% parallel efficiency up to 12 concurrent workers. Around this compute core, DishtaYantra provides a complete operational layer — a pluggable storage abstraction, database-backed authentication, configurable high-availability with automatic failover, and market-aware scheduling — that allows the same dataflow definitions to run as a production service.
+Real-time data processing systems face fundamental challenges in achieving low-latency computation while supporting heterogeneous computational workloads across multiple programming languages. We present **DishtaYantra**, a novel high-performance Directed Acyclic Graph (DAG) compute framework that addresses these challenges through three key innovations: (1) an LMDB-based zero-copy data exchange mechanism achieving 100-1000× performance improvements over traditional serialization for inter-language communication, (2) a unified multi-language calculator framework supporting Python, Java (Py4J), C++ (pybind11), Rust (PyO3), and REST endpoints with sub-microsecond invocation overhead, and (3) a multiprocessing worker pool architecture with DAG affinity scheduling that bypasses Python's Global Interpreter Lock (GIL) for true CPU parallelism. Our experimental evaluation on consumer hardware (AMD Ryzen, 64GB RAM, Ubuntu 24.04) demonstrates that DishtaYantra achieves median latencies of 5μs for large payload transfers (compared to 500μs with JSON serialization), processes over 100,000 messages per second per worker, and maintains 90% parallel efficiency up to 12 concurrent workers. Around this compute core, DishtaYantra provides a complete operational layer — a pluggable storage abstraction, database-backed authentication, configurable high-availability with automatic failover, and market-aware scheduling — that allows the same dataflow definitions to run as a production service. Two further advances extend this core: an **Arrow-native columnar transport** that moves immutable record batches across DAG edges *by reference* — preserving the unconditional change-only recomputation gate while delivering a measured ~2.3× end-to-end speedup over the dictionary-envelope path with byte-identical output — and a **headless execution mode** with a control-plane/worker orchestration layer that runs the same dataflow definitions as bounded, idempotent batch jobs.
 
 **Keywords:** Dataflow processing, DAG execution, Zero-copy communication, Multi-language integration, LMDB, Real-time systems, High-performance computing
 
@@ -45,6 +45,8 @@ This paper makes the following contributions:
 - **DishtaYantra Framework:** A high-performance DAG compute framework supporting five programming languages with unified, format-agnostic configuration (§3)
 - **LMDB Zero-Copy Protocol:** A novel data exchange mechanism reducing latency by 100-1000× compared to JSON serialization (§6)
 - **Worker Pool Architecture:** DAG affinity scheduling with fault tolerance and automatic recovery (§7)
+- **Arrow-Native Columnar Transport:** A zero-copy, by-reference record-batch edge transport that preserves the change-only recomputation invariant while collapsing per-hop envelope overhead (§7B)
+- **Headless Execution & Orchestration:** A webapp-free runner plus an idempotent, bounded control-plane/worker dispatch layer for batch and backfill workloads (§7B)
 - **Enterprise Operational Model:** A pluggable storage abstraction, database-backed authentication and authorization, configurable high-availability with automatic failover, and market-aware scheduling that together let the same dataflow run as a production service (§7A)
 - **Comprehensive Evaluation:** Performance characterization on consumer hardware (§9)
 
@@ -864,6 +866,52 @@ loader auto-detects the format and resolves `${VAR:default}` placeholders
 against other keys, environment variables, and command-line overrides, in that
 precedence order. Missing required properties cause a fail-fast startup error
 that names the exact missing key rather than silently defaulting.
+
+---
+
+## 7B. Recent Advances: Columnar Transport and Headless Orchestration
+
+The architecture described above has been extended with two capabilities that preserve
+its defining invariant — recomputation only when a node's input *actually changes* — while
+broadening the performance envelope and the operational model.
+
+### 7B.1 Arrow-Native Columnar Transport
+
+The default edge transport carries one logical message as a Python dictionary wrapped in a
+small envelope. For high-volume, uniformly-typed streams this imposes a per-message overhead
+that dominates once the calculator itself is cheap. We add an opt-in transport in which an
+edge carries an immutable Apache Arrow `RecordBatch` and passes it *by reference* between
+nodes, eliminating per-row Python object churn and copies.
+
+Crucially, the equality gate is retained verbatim: because a `RecordBatch` is immutable, the
+gate compares successive batches with `RecordBatch.equals`, so a node still recomputes only
+when its columnar input differs. Value handling is routed through a single dispatch layer that
+treats the dictionary path byte-for-byte as before and adds a batch path alongside it, so the
+change is additive and the existing engine semantics are provably unchanged. A projection
+transformer provides zero-copy column select/rename for the common "narrow the wire" case.
+
+On a representative pipeline this columnar path is **~2.29× faster end-to-end than the
+dictionary-envelope path while producing byte-identical output** (zero mismatches). The
+isolated kernel speedup is far larger (~11.8×); the remaining gap is per-tick node-loop
+overhead rather than transport, which usefully localizes where further work pays off. Because
+the batches are standard Arrow, this transport also establishes the substrate for zero-copy
+polyglot hand-off via the Arrow C Data Interface to C++, Rust, and JVM calculators.
+
+### 7B.2 Headless Execution and Orchestration
+
+The same DAG definitions that run behind the web service can also run *headless*: a runner
+starts the compute graph without the webapp, optionally replays a bounded input feed, and
+treats completion as either a target record count or quiescence (no dirty nodes and an empty
+input queue across several polls). It drains in-flight work, writes a machine-readable summary,
+and exits with a conventional status code — making a dataflow a first-class batch job.
+
+Above the runner sits a lightweight control-plane/worker dispatch layer. A dispatch calculator
+launches worker jobs that are **idempotent** (duplicate keys are de-duplicated, so replays are
+safe), **asynchronous** (workers run as child processes with a supervising waiter), **bounded**
+(a configurable concurrency limit with a pending pool prevents resource exhaustion), and
+**observable** (each worker's summary is read back and can be republished downstream). This
+gives backfills and scheduled batch runs the same dataflow semantics — including the change-only
+gate — as the live service, without bespoke orchestration code.
 
 ---
 

@@ -144,6 +144,76 @@
             --bs-code-color: #e685b5;
             --bs-highlight-bg: #3a2d12;
         }
+
+        /* ============================================
+           THEME VARIABLES - GREEN MODE
+           Inspired by a green-dial gold watch: very dark green,
+           golden yellow, black and white. A dark-family theme, so it
+           shares the dark-mode light-on-dark text overrides below.
+           ============================================ */
+        [data-theme="green"] {
+            --primary-gradient: linear-gradient(135deg, #07241a 0%, #0e3826 50%, #07241a 100%);
+            --primary-dark: #051c14;
+            --primary-medium: #0e3826;
+            --primary-light: #2a5c44;
+            --accent-color: #e3c45a;          /* golden yellow */
+
+            /* Brand tokens (gold-on-green identity) */
+            --brass: #e3c45a;
+            --brass-soft: #f2d98b;
+            --tick: #f2d98b;
+            --night: #07241a;
+
+            /* Background colors - green dial */
+            --bg-body: #07241a;
+            --bg-card: #0e3826;
+            --bg-card-header: linear-gradient(135deg, #0c3526 0%, #0a2c1f 50%, #0c3526 100%);
+            --bg-table-header: linear-gradient(135deg, #0c3526, #103f2d);
+            --bg-table-stripe: rgba(227, 196, 90, 0.05);
+            --bg-table-hover: #103f2d;
+            --bg-input: #0e3826;
+            --bg-code: #05201a;
+
+            /* Text colors */
+            --text-primary: #f5f8f3;
+            --text-secondary: #d6dfd2;
+            --text-muted: #bcae7a;
+            --text-on-primary: #f5f8f3;
+            --text-link: #ecc763;             /* gold links */
+
+            /* Border colors */
+            --border-color: #2a5c44;
+            --border-light: #1d4a36;
+
+            /* Shadow */
+            --card-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.55), 0 2px 4px -1px rgba(0, 0, 0, 0.35);
+            --card-shadow-hover: 0 14px 32px -10px rgba(0, 0, 0, 0.65), 0 4px 6px -2px rgba(0, 0, 0, 0.45);
+
+            /* Scrollbar */
+            --scrollbar-track: #0e3826;
+            --scrollbar-thumb: #2a5c44;
+            --scrollbar-thumb-hover: #3c7a5c;
+
+            /* Bootstrap 5.3 token bridge (green-on-dark). Pair with data-bs-theme="dark". */
+            --bs-body-bg: var(--bg-body);
+            --bs-body-bg-rgb: 7, 36, 26;
+            --bs-body-color: var(--text-primary);
+            --bs-body-color-rgb: 245, 248, 243;
+            --bs-emphasis-color: var(--text-primary);
+            --bs-emphasis-color-rgb: 245, 248, 243;
+            --bs-secondary-color: var(--text-secondary);
+            --bs-secondary-bg: var(--bg-card);
+            --bs-tertiary-color: var(--text-muted);
+            --bs-tertiary-bg: #103f2d;
+            --bs-border-color: var(--border-color);
+            --bs-border-color-translucent: rgba(242, 217, 139, 0.14);
+            --bs-heading-color: var(--text-primary);
+            --bs-link-color: var(--text-link);
+            --bs-link-color-rgb: 236, 199, 99;
+            --bs-link-hover-color: #f6dd96;
+            --bs-code-color: #f2d98b;
+            --bs-highlight-bg: #2f3a12;
+        }
         
         /* ============================================
            BASE STYLES
@@ -265,14 +335,12 @@
         .theme-toggle:hover i {
             transform: rotate(15deg);
         }
-        
-        [data-theme="dark"] .theme-toggle .bi-moon-fill {
-            display: none;
-        }
-        
-        [data-theme="light"] .theme-toggle .bi-sun-fill {
-            display: none;
-        }
+
+        /* Theme dropdown: show the check only on the active theme */
+        .theme-menu .theme-check { display: none; margin-left: auto; }
+        .theme-menu .theme-option { display: flex; align-items: center; }
+        .theme-menu .theme-option.active .theme-check { display: inline; color: var(--brass); }
+        .theme-menu .theme-option.active { font-weight: 600; }
         
         /* Admin Dropdown */
         .dropdown-menu-dark {
@@ -790,11 +858,14 @@
            ============================================ */
         /* .bg-light is a fixed-light utility (not theme-aware even in 5.3),
            so it still needs re-colouring on the dark surface. */
-        [data-theme="dark"] .bg-light {
+        [data-theme="dark"] .bg-light,
+    so it still needs re-colouring on the dark surface. */
+        [data-theme="green"] .bg-light {
             background: var(--bg-card) !important;
         }
         
-        [data-theme="dark"] .border {
+        [data-theme="dark"] .border,
+    [data-theme="green"] .border {
             border-color: var(--border-color) !important;
         }
 
@@ -812,44 +883,75 @@
         [data-theme="dark"] .stat-value,
         [data-theme="dark"] .gauge-value,
         [data-theme="dark"] .network-stat-value,
-        [data-theme="dark"] .query-section h5 {
+        [data-theme="dark"] .query-section h5,
+    or sat on a hard-coded light background.
+           ============================================ */
+
+        /* Stat / metric figures that hard-code the dark navy text colour. */
+        [data-theme="green"] .metric-value,
+    [data-theme="green"] .log-stat-value,
+    [data-theme="green"] .stat-number,
+    [data-theme="green"] .stat-value,
+    [data-theme="green"] .gauge-value,
+    [data-theme="green"] .network-stat-value,
+    [data-theme="green"] .query-section h5 {
             color: var(--text-primary);
         }
 
         /* `.bg-light` is re-coloured dark above, but a paired `.text-dark`
            (e.g. light chips/badges) keeps its dark text -> dark-on-dark. */
         [data-theme="dark"] .bg-light.text-dark,
-        [data-theme="dark"] .badge.bg-light {
+        [data-theme="dark"] .badge.bg-light,
+    but a paired `.text-dark`
+           (e.g. light chips/badges) keeps its dark text -> dark-on-dark. */
+        [data-theme="green"] .bg-light.text-dark,
+    [data-theme="green"] .badge.bg-light {
             color: var(--text-primary) !important;
         }
 
         /* Bootstrap 5.3 themes table text natively via data-bs-theme; only the
            contextual row/cell tints ship as fixed light pastels, so re-tint
            those for dark mode (their text is light via --bs-table-color). */
-        [data-theme="dark"] .table-success { --bs-table-bg: rgba(16, 185, 129, 0.18); }
-        [data-theme="dark"] .table-danger  { --bs-table-bg: rgba(239, 68, 68, 0.18); }
-        [data-theme="dark"] .table-warning { --bs-table-bg: rgba(245, 158, 11, 0.18); }
-        [data-theme="dark"] .table-info    { --bs-table-bg: rgba(6, 182, 212, 0.18); }
-        [data-theme="dark"] .table-primary { --bs-table-bg: rgba(127, 180, 255, 0.18); }
-        [data-theme="dark"] .table-light   { --bs-table-bg: var(--bg-table-header); }
-        [data-theme="dark"] .table-secondary { --bs-table-bg: var(--bg-card); }
+        [data-theme="dark"] .table-success,
+    so re-tint
+           those for dark mode (their text is light via --bs-table-color). */
+        [data-theme="green"] .table-success { --bs-table-bg: rgba(16, 185, 129, 0.18); }
+        [data-theme="dark"] .table-danger,
+    [data-theme="green"] .table-danger { --bs-table-bg: rgba(239, 68, 68, 0.18); }
+        [data-theme="dark"] .table-warning,
+    [data-theme="green"] .table-warning { --bs-table-bg: rgba(245, 158, 11, 0.18); }
+        [data-theme="dark"] .table-info,
+    [data-theme="green"] .table-info { --bs-table-bg: rgba(6, 182, 212, 0.18); }
+        [data-theme="dark"] .table-primary,
+    [data-theme="green"] .table-primary { --bs-table-bg: rgba(127, 180, 255, 0.18); }
+        [data-theme="dark"] .table-light,
+    [data-theme="green"] .table-light { --bs-table-bg: var(--bg-table-header); }
+        [data-theme="dark"] .table-secondary,
+    [data-theme="green"] .table-secondary { --bs-table-bg: var(--bg-card); }
 
         /* Outline buttons whose text colour resolves to a dark theme value. */
         [data-theme="dark"] .btn-outline-dark,
-        [data-theme="dark"] .btn-outline-secondary {
+        [data-theme="dark"] .btn-outline-secondary,
+    /* Outline buttons whose text colour resolves to a dark theme value. */
+        [data-theme="green"] .btn-outline-dark,
+    [data-theme="green"] .btn-outline-secondary {
             color: var(--text-primary);
             border-color: var(--border-color);
         }
         [data-theme="dark"] .btn-outline-dark:hover,
-        [data-theme="dark"] .btn-outline-secondary:hover {
+        [data-theme="dark"] .btn-outline-secondary:hover,
+    [data-theme="green"] .btn-outline-dark:hover,
+    [data-theme="green"] .btn-outline-secondary:hover {
             color: var(--bg-body);
             background: var(--text-primary);
         }
-        [data-theme="dark"] .btn-outline-primary {
+        [data-theme="dark"] .btn-outline-primary,
+    [data-theme="green"] .btn-outline-primary {
             color: #7fb4ff;
             border-color: #7fb4ff;
         }
-        [data-theme="dark"] .btn-outline-primary:hover {
+        [data-theme="dark"] .btn-outline-primary:hover,
+    [data-theme="green"] .btn-outline-primary:hover {
             color: var(--bg-body);
             background: #7fb4ff;
         }
@@ -871,11 +973,17 @@
         .text-primary { color: #0d6efd !important; }
         
         /* Dark mode adjustments for contextual colors - make them brighter */
-        [data-theme="dark"] .text-success { color: #20c997 !important; }
-        [data-theme="dark"] .text-danger { color: #f87171 !important; }
-        [data-theme="dark"] .text-warning { color: #fbbf24 !important; }
-        [data-theme="dark"] .text-info { color: #22d3ee !important; }
-        [data-theme="dark"] .text-primary { color: #60a5fa !important; }
+        [data-theme="dark"] .text-success,
+    /* Dark mode adjustments for contextual colors - make them brighter */
+        [data-theme="green"] .text-success { color: #20c997 !important; }
+        [data-theme="dark"] .text-danger,
+    [data-theme="green"] .text-danger { color: #f87171 !important; }
+        [data-theme="dark"] .text-warning,
+    [data-theme="green"] .text-warning { color: #fbbf24 !important; }
+        [data-theme="dark"] .text-info,
+    [data-theme="green"] .text-info { color: #22d3ee !important; }
+        [data-theme="dark"] .text-primary,
+    [data-theme="green"] .text-primary { color: #60a5fa !important; }
         
         /* Preserve bg-dark text-light combination */
         .bg-dark { background-color: #212529 !important; }
@@ -1008,12 +1116,16 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <!-- Theme Toggle Button -->
-                    <li class="nav-item">
-                        <button class="theme-toggle" id="themeToggle" title="Toggle dark/light mode" aria-label="Toggle theme">
-                            <i class="bi bi-moon-fill"></i>
-                            <i class="bi bi-sun-fill"></i>
+                    <!-- Theme Switcher (Light / Dark / Green) -->
+                    <li class="nav-item dropdown">
+                        <button class="theme-toggle" id="themeMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Choose theme" aria-label="Choose theme">
+                            <i class="bi bi-circle-half" id="themeIcon"></i>
                         </button>
+                        <ul class="dropdown-menu dropdown-menu-end theme-menu" aria-labelledby="themeMenuBtn">
+                            <li><button type="button" class="dropdown-item theme-option" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i>Light<i class="bi bi-check2 theme-check ms-2"></i></button></li>
+                            <li><button type="button" class="dropdown-item theme-option" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i>Dark<i class="bi bi-check2 theme-check ms-2"></i></button></li>
+                            <li><button type="button" class="dropdown-item theme-option" data-theme-value="green"><i class="bi bi-watch me-2"></i>Green<i class="bi bi-check2 theme-check ms-2"></i></button></li>
+                        </ul>
                     </li>
                     {% if session.username and ha_role %}
                     <!-- v2.2: HA role visible on every page for logged-in users -->
@@ -1098,52 +1210,45 @@
     // ============================================
     (function() {
         const THEME_KEY = 'dishtayantra-theme';
+        const THEMES = ['light', 'dark', 'green'];
+        const ICONS = { light: 'bi-sun-fill', dark: 'bi-moon-stars-fill', green: 'bi-watch' };
         const html = document.documentElement;
-        const themeToggle = document.getElementById('themeToggle');
-        
-        // Get saved theme or default to light
+        const themeIcon = document.getElementById('themeIcon');
+        const options = document.querySelectorAll('.theme-option');
+
         function getSavedTheme() {
             const saved = localStorage.getItem(THEME_KEY);
-            if (saved) return saved;
-            
-            // Check system preference
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                return 'dark';
-            }
+            if (saved && THEMES.includes(saved)) return saved;
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
             return 'light';
         }
-        
-        // Apply theme
+
         function setTheme(theme) {
+            if (!THEMES.includes(theme)) theme = 'light';
             html.setAttribute('data-theme', theme);
-            html.setAttribute('data-bs-theme', theme);
+            // Green is a dark-family theme, so use Bootstrap's dark base for its components.
+            html.setAttribute('data-bs-theme', theme === 'light' ? 'light' : 'dark');
             localStorage.setItem(THEME_KEY, theme);
-            
-            // Update toggle button title
-            if (themeToggle) {
-                themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+            if (themeIcon) {
+                themeIcon.className = 'bi ' + (ICONS[theme] || 'bi-circle-half');
             }
-        }
-        
-        // Initialize theme on page load
-        setTheme(getSavedTheme());
-        
-        // Toggle theme on button click
-        if (themeToggle) {
-            themeToggle.addEventListener('click', function() {
-                const currentTheme = html.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
+            options.forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-theme-value') === theme);
             });
         }
-        
-        // Listen for system theme changes
+
+        setTheme(getSavedTheme());
+
+        options.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                setTheme(btn.getAttribute('data-theme-value'));
+            });
+        });
+
+        // Follow system changes only if the user has not chosen explicitly.
         if (window.matchMedia) {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-                // Only auto-switch if user hasn't manually set a preference
-                if (!localStorage.getItem(THEME_KEY)) {
-                    setTheme(e.matches ? 'dark' : 'light');
-                }
+                if (!localStorage.getItem(THEME_KEY)) setTheme(e.matches ? 'dark' : 'light');
             });
         }
     })();

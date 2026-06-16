@@ -207,16 +207,19 @@
         margin: 0;
     }
     
-    /* Blockquotes */
+    /* Blockquotes (used as callout boxes in tutorials) */
     .doc-content blockquote {
         border-left: 4px solid var(--brass, #e3a44a);
-        background: #f0fdf9;
-        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #f0fdf9 0%, #f6fbff 100%);
+        padding: 1rem 1.25rem;
         margin: 1.5rem 0;
-        border-radius: 0 8px 8px 0;
-        font-style: italic;
+        border-radius: 0 10px 10px 0;
         color: var(--text-primary);
+        box-shadow: 0 2px 10px rgba(30, 58, 95, 0.06);
     }
+    .doc-content blockquote p { margin-bottom: 0.5rem; }
+    .doc-content blockquote p:last-child { margin-bottom: 0; }
+    .doc-content blockquote strong:first-child { color: #b45309; }
     
     /* Links */
     .doc-content a {
@@ -351,14 +354,92 @@
             padding: 0;
         }
     }
+
+    /* ============================================================
+       DARK-THEME OVERRIDES for rendered markdown (tutorials + guides).
+       .doc-content uses var(--bg-card), which is dark (#11162e) in dark
+       theme, so the light-pane text colors defined above would be
+       near-invisible. These replacements are all verified AA/AAA on the
+       dark card. (Light theme is unchanged.)
+       ============================================================ */
+    [data-theme="dark"] .doc-content h1,
+    [data-theme="dark"] .doc-content h3,
+    so the light-pane text colors defined above would be
+       near-invisible. These replacements are all verified AA/AAA on the
+       dark card. (Light theme is unchanged.)
+       ============================================================ */
+    [data-theme="green"] .doc-content h1,
+    [data-theme="green"] .doc-content h3 { color: #93c5fd; }            /* 9.89 AAA */
+    [data-theme="dark"] .doc-content h2,
+    /* 9.89 AAA */
+    [data-theme="green"] .doc-content h2 {
+        color: #bfdbfe;                                                 /* 12.55 AAA */
+        border-bottom-color: var(--border-color);
+    }
+    [data-theme="dark"] .doc-content h4,
+    [data-theme="green"] .doc-content h4 { color: #cbd5e1; }            /* 12.01 AAA */
+    [data-theme="dark"] .doc-content h5,
+    [data-theme="dark"] .doc-content h6,
+    /* 12.01 AAA */
+    [data-theme="green"] .doc-content h5,
+    [data-theme="green"] .doc-content h6 { color: #b8c2d6; }            /* 9.95 AAA */
+    [data-theme="dark"] .doc-content p,
+    [data-theme="dark"] .doc-content li,
+    [data-theme="dark"] .doc-content td,
+    /* 9.95 AAA */
+    [data-theme="green"] .doc-content p,
+    [data-theme="green"] .doc-content li,
+    [data-theme="green"] .doc-content td { color: #d7dee9; }            /* 13.17 AAA */
+    [data-theme="dark"] .doc-content td,
+    /* 13.17 AAA */
+    [data-theme="green"] .doc-content td { border-bottom-color: var(--border-color); }
+    [data-theme="dark"] .doc-content tbody tr:hover td,
+    [data-theme="green"] .doc-content tbody tr:hover td { background: #1c2547 !important; }
+    [data-theme="dark"] .doc-content a,
+    [data-theme="green"] .doc-content a { color: #60a5fa; }             /* 7.01 AAA */
+    /* Inline code: dark chip + amber text (the cream chip is light-on-light in dark) */
+    [data-theme="dark"] .doc-content code,
+    [data-theme="dark"] .doc-content p code,
+    [data-theme="dark"] .doc-content li code,
+    /* 7.01 AAA */
+    /* Inline code: dark chip + amber text (the cream chip is light-on-light in dark) */
+    [data-theme="green"] .doc-content code,
+    [data-theme="green"] .doc-content p code,
+    [data-theme="green"] .doc-content li code {
+        background: #1e2540;
+        color: #fcd34d;                                                 /* 10.45 AAA */
+        border-color: #2d375c;
+    }
+    /* Callout blockquotes: dark tinted box + light text */
+    [data-theme="dark"] .doc-content blockquote,
+    /* Callout blockquotes: dark tinted box + light text */
+    [data-theme="green"] .doc-content blockquote {
+        background: linear-gradient(135deg, #161d33 0%, #141a30 100%);
+        color: #e6eaf3;                                                 /* 13.86 AAA */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+    [data-theme="dark"] .doc-content blockquote strong:first-child,
+    [data-theme="green"] .doc-content blockquote strong:first-child { color: #fcd34d; }
+
+    /* Green theme: gold accents for cohesion (body text inherits the dark twins) */
+    [data-theme="green"] .doc-content h1,
+    [data-theme="green"] .doc-content h2,
+    [data-theme="green"] .doc-content h3 { color: #f2d98b; }
+    [data-theme="green"] .doc-content h2 { border-bottom-color: var(--border-color); }
+    [data-theme="green"] .doc-content a { color: #ecc763; }
+    [data-theme="green"] .doc-content blockquote { background: linear-gradient(135deg, #0c3526 0%, #0a2c1f 100%); color: #eef3ea; }
+    [data-theme="green"] .doc-content blockquote strong:first-child { color: #f2d98b; }
+    [data-theme="green"] .doc-content code,
+    [data-theme="green"] .doc-content p code,
+    [data-theme="green"] .doc-content li code { color: #f2d98b; background: #103f2d; border-color: #2a5c44; }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Navigation -->
 <div class="nav-buttons">
-    <a href="{{ url_for('help_userguides') }}" class="btn btn-outline-primary">
-        <i class="bi bi-arrow-left"></i> Back to User Guides
+    <a href="{% if filename.startswith('TUTORIAL_') %}{{ url_for('help') }}{% else %}{{ url_for('help_userguides') }}{% endif %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> {% if filename.startswith('TUTORIAL_') %}Back to Tutorials{% else %}Back to User Guides{% endif %}
     </a>
     <a href="{{ url_for('help') }}" class="btn btn-outline-secondary">
         <i class="bi bi-house"></i> Help Home
