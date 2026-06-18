@@ -14,24 +14,35 @@ Copyright (c) 2025-2030 Ashutosh Sinha. All Rights Reserved.
 from __future__ import annotations
 
 import logging
-import traceback
 
 from core.core_utils import instantiate_module
-# The builder resolves built-in calculator/transformer types by looking the
-# type name up in this module's globals() (legacy mechanism, preserved
-# verbatim) - so the full built-in namespaces must be star-imported here.
-from core.calculator.core_calculator import *  # noqa: F401,F403
-from core.transformer.core_transformer import *  # noqa: F401,F403
-from core.dag.subgraph import (
-    SubgraphConfigError,
-    SubgraphNode,
-    load_subgraph_from_config,
-)
+# Built-in calculator/transformer types are resolved by type name from these two
+# module namespaces (see _resolve_builtin_type). This replaces a legacy
+# `from ... import *` that populated globals() and defeated static analysis.
+from core.calculator import core_calculator as _calc_builtins
+from core.transformer import core_transformer as _transformer_builtins
+from core.calculator.core_calculator import DataCalculatorLike
+from core.dag.subgraph import SubgraphNode
 from core.pubsub.pubsubfactory import create_publisher, create_subscriber
+from core.egress.async_publisher import maybe_wrap_publisher
 # SubgraphWrapperNode is constructed at runtime by _build_subgraph_node.
 from core.dag.node_implementations import SubgraphWrapperNode
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_builtin_type(type_name):
+    """Resolve a built-in calculator/transformer class by its type name, or None.
+
+    Looks in the core_calculator and core_transformer module namespaces - the same
+    set of names the previous `globals()` star-import lookup exposed, but explicit
+    and statically analyzable.
+    """
+    for namespace in (_calc_builtins, _transformer_builtins):
+        cls = getattr(namespace, type_name, None)
+        if isinstance(cls, type):
+            return cls
+    return None
 
 
 class ComponentBuilderMixin:
@@ -60,7 +71,10 @@ class ComponentBuilderMixin:
         for pub_config in self.config.get('publishers', []):
             name = pub_config['name']
             config = pub_config['config']
-            self.publishers[name] = create_publisher(name, config)
+            self.publishers[name] = maybe_wrap_publisher(
+                create_publisher(name, config),
+                getattr(self, 'prop_conf', None), name=name,
+                scope=getattr(self, 'name', None), publisher_config=config)
             logger.info(f"Created publisher: {name}")
 
         # Build calculators
@@ -69,9 +83,10 @@ class ComponentBuilderMixin:
             calc_type = calc_config.get('type', 'NullCalculator')
             config = calc_config.get('config', {})
 
-            # Check if it's a known calculator
-            if calc_type in globals():
-                self.calculators[name] = globals()[calc_type](name, config)
+            # Check if it's a known built-in calculator
+            builtin = _resolve_builtin_type(calc_type)
+            if builtin is not None:
+                self.calculators[name] = builtin(name, config)
             else:
                 # Custom calculator
                 parts = calc_type.rsplit('.', 1)
@@ -87,9 +102,10 @@ class ComponentBuilderMixin:
             trans_type = trans_config.get('type', 'NullDataTransformer')
             config = trans_config.get('config', {})
 
-            # Check if it's a known transformer
-            if trans_type in globals():
-                self.transformers[name] = globals()[trans_type](name, config)
+            # Check if it's a known built-in transformer
+            builtin = _resolve_builtin_type(trans_type)
+            if builtin is not None:
+                self.transformers[name] = builtin(name, config)
             else:
                 # Custom transformer
                 parts = trans_type.rsplit('.', 1)

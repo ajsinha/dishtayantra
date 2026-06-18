@@ -1,0 +1,95 @@
+{
+  "_comment": "Example DAG demonstrating worker affinity configuration - v1.5.2",
+  "_description": "This DAG is configured to run on a specific worker for optimal performance",
+  "name": "worker_affinity_example_dag",
+  "version": "1.5.2",
+  "priority": 8,
+  "worker_affinity": {
+    "_comment": "Worker affinity configuration - choose ONE option below",
+    "pinned_worker": 0,
+    "_pinned_worker_note": "Pin this DAG to Worker 0. Set to null to disable.",
+    "exclusive": false,
+    "_exclusive_note": "If true, this DAG gets a dedicated worker with no other DAGs",
+    "preferred_workers": [
+      0,
+      1
+    ],
+    "_preferred_workers_note": "List of preferred worker IDs. System will try these first."
+  },
+  "subscribers": [
+    {
+      "name": "market_data_subscriber",
+      "config": {
+        "source": "lmdb://market_data_channel",
+        "lmdb_path": "data/worker_lmdb",
+        "poll_interval_ms": 5,
+        "max_depth": 10000,
+        "auto_package_non_dict": true,
+        "dag_priority": 8
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "price_processor",
+      "type": "PythonCalculator",
+      "config": {
+        "module": "example_calculators.price_processor",
+        "class": "PriceProcessor"
+      }
+    },
+    {
+      "name": "risk_calculator",
+      "type": "PythonCalculator",
+      "config": {
+        "module": "example_calculators.risk_calculator",
+        "class": "RiskCalculator"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "name": "entry",
+      "type": "SubscriptionNode",
+      "subscriber": "market_data_subscriber"
+    },
+    {
+      "name": "process_prices",
+      "type": "CalculationNode",
+      "calculator": "price_processor"
+    },
+    {
+      "name": "calculate_risk",
+      "type": "CalculationNode",
+      "calculator": "risk_calculator"
+    },
+    {
+      "name": "output",
+      "type": "PublicationNode",
+      "publisher": "results_publisher"
+    }
+  ],
+  "edges": [
+    {
+      "from": "entry",
+      "to": "process_prices"
+    },
+    {
+      "from": "process_prices",
+      "to": "calculate_risk"
+    },
+    {
+      "from": "calculate_risk",
+      "to": "output"
+    }
+  ],
+  "publishers": [
+    {
+      "name": "results_publisher",
+      "config": {
+        "destination": "lmdb://results_channel",
+        "lmdb_path": "data/worker_lmdb"
+      }
+    }
+  ]
+}

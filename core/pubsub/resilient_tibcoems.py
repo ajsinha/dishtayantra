@@ -66,7 +66,14 @@ class Subscription:
 
 
 class ResilientSession:
-    """A resilient wrapper around EMS Session."""
+    """A resilient wrapper around an EMS Session that survives reconnects.
+
+    An EMS session and its consumers/producers are connection-scoped — a dropped
+    connection invalidates them. This wrapper tracks the session's subscriptions
+    (including durable ones) and replays them onto a fresh session after reconnect
+    (``_restore_session_state``), so consumers keep receiving and ``send`` buffers
+    rather than loses messages during the gap. Mirrors the channel-restore pattern in
+    the RabbitMQ connector."""
 
     def __init__(self, connection, acknowledge_mode: AcknowledgeMode = AcknowledgeMode.AUTO_ACKNOWLEDGE):
         self.connection = connection

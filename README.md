@@ -6,7 +6,7 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-5.11.3-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -40,6 +40,8 @@ schedule management. Recent capabilities include:
 - **Multi-threaded DAG Execution**: Efficient parallel processing with topologically sorted node execution
 - **Worker Pool**: Multiprocessing with DAG affinity for true CPU parallelism (bypasses GIL)
 - **Arrow columnar data plane (opt-in, additive)**: `ArrowCalculator` calculators vectorize batched messages with Apache Arrow / `pyarrow.compute`, output-identical to their row counterparts. They are drop-in `DataCalculator`s, so the engine is unchanged and old-style (row) and new-style (Arrow) nodes/calculators **coexist in the same instance and even in the same graph** (see `docs/design/A1-worked-example-and-coexistence.md` and `perftest/run_arrow_example.py`)
+- **Async egress (opt-in, WAL-backed)**: publication can be decoupled from the compute thread — `publish()` becomes a non-blocking append to a per-destination write-ahead log drained by a bounded worker pool (default 4), with per-destination FIFO ordering, durable at-least-once resume, portable stdlib WAL backends (filelog/sqlite), per-publisher opt-in (in-memory destinations stay inline), and massively parallel egress in worker mode (see the *Async Egress* guide + tutorials)
+- **Backpressure (opt-in)**: credit-based flow control between publisher and subscriber (block or drop)
 - **Subgraph Support**: Modular graph-as-a-node pattern with dynamic light up/down control
 - **Multiple Message Brokers**: Kafka, ActiveMQ, RabbitMQ, Redis, TIBCO EMS, WebSphere MQ, In-Memory, LMDB
 - **AWS & Azure Messaging**: SQS, Kinesis, SNS, Azure Service Bus, Event Hubs
@@ -435,7 +437,7 @@ status = server.get_server_status()
 
 ## Version & History
 
-Current version: **5.3.0** (the authoritative version is always
+Current version: **5.11.3** (the authoritative version is always
 `core/version.py::VERSION`, which every module, template, and banner imports —
 nothing hard-codes a version string). DishtaYantra is developed as a continuously
 evolving system; rather than a release-by-release changelog, the current
@@ -443,7 +445,7 @@ capabilities are described in the **Highlights** and **Features** sections
 above, and per-version highlights live in `core/version.py`. For details on
 specific subsystems see:
 
-- `docs/CONFIG_AND_CLOUD_v2.2.md` - YAML configuration and AWS/Azure messaging
+- `docs/CONFIG_AND_CLOUD.md` - YAML configuration and AWS/Azure messaging
 - `docs/ARCHITECTURE.md` - system architecture
 - The in-app **Help** and **About** pages
 
@@ -490,4 +492,4 @@ THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra** | © 2025-2030 Ashutosh Sinha

@@ -1,8 +1,13 @@
 # DishtaYantra Architecture Document
 
-## Version 2.2
-
 © 2025-2030 Ashutosh Sinha
+
+> This document tracks the current product. There is a single authoritative
+> version for the whole project — `core/version.py` (`VERSION`), mirrored in the
+> README badge — and docs do not carry their own separate version numbers. This
+> document covers, among other things, RecordBatch edge transport, native Arrow
+> C Data Interface calculators, WebAssembly sandboxed calculators, credit-based
+> backpressure, and the WAL-backed async egress subsystem.
 
 ---
 
@@ -14,8 +19,9 @@
 4. [Worker Pool Architecture](#worker-pool-architecture)
 5. [JVM Manager Architecture](#jvm-manager-architecture)
 6. [Multi-Language Calculator Architecture](#multi-language-calculator-architecture)
+   — incl. Arrow C Data Interface native calculators & WASM sandboxed calculators
 7. [LMDB Zero-Copy Data Exchange](#lmdb-zero-copy-data-exchange)
-8. [Pub/Sub Framework](#pubsub-framework)
+8. [Pub/Sub Framework](#pubsub-framework) — incl. backpressure & async egress (WAL)
 9. [DAG Execution Engine](#dag-execution-engine)
 10. [Web Application Architecture](#web-application-architecture)
 11. [Admin & Monitoring System](#admin--monitoring-system)
@@ -826,9 +832,41 @@ per-message data: `BatchingSubscriptionNode` drains the subscriber into one
 flushes when idle), and `FlatteningPublicationNode` republishes each record so
 the external per-message contract is preserved. `SubscriptionNode` and
 `PublicationNode` are unchanged; a DAG opts in by setting a node's `type`.
-Runnable: `python -m perftest.run_autobatch_example`. (Current throughput gain is
-modest because the dataflow deep-copies each envelope per stage; carrying Arrow
-`RecordBatch`es on edges to remove that copy is the next A1 increment.)
+Runnable: `python -m perftest.run_autobatch_example`.
+
+**Update (shipped):** the "next increment" referenced in earlier editions has
+landed. Edges can now carry an immutable Arrow `RecordBatch` *by reference*
+between nodes (the equality gate compares batches with `RecordBatch.equals`),
+removing the per-stage envelope deep-copy. On a representative pipeline the
+columnar path is ~2.29× faster end-to-end than the dictionary path with
+byte-identical output. See the next two subsections for the native and sandboxed
+calculator paths built on this substrate.
+
+### Native Arrow Calculators (Arrow C Data Interface)
+
+For hot kernels, a calculator can hand its Arrow `RecordBatch` to a compiled
+native function across the **Arrow C Data Interface** — the stable
+`ArrowArray`/`ArrowSchema` ABI — so the kernel reads the column buffers in place
+with no serialization and no copy crossing the boundary
+(`core/calculator/native_arrow.py`, kernel `core/cpp/arrow_cdata.c`). The C
+translation unit is compiled on first use by the system compiler via a thin
+bridge (`NativeArrowBridge`); the calculator is opt-in and falls back to an
+equivalent pure-`pyarrow` implementation when no compiler/native build is
+available, so portability is never lost. The equality gate is unchanged (standard
+immutable batches in and out). A Nexmark-style streaming workload was added to the
+benchmark harness alongside trade-ETL to exercise this path.
+
+### WebAssembly (WASM) Sandboxed Calculators
+
+For untrusted or multi-tenant calculator code, a calculator can run an exported
+**WebAssembly** function inside a wasmtime sandbox with a fuel-based CPU bound
+(`core/calculator/wasm_calculator.py`). The module cannot exceed its instruction
+budget, escape its linear memory, or reach host resources, which makes it safe to
+accept third-party logic and collapses the four polyglot paths (Java/C++/Rust/REST)
+into one host-compiler-independent, language-agnostic artifact for the
+isolation-first case. The runtime is an optional dependency and the path fails
+closed when it is absent. The first cut exposes a scalar `f64` boundary; a
+batch/Arrow hand-off (sharing the columnar contract above) is future work.
 
 ---
 
@@ -1085,6 +1123,53 @@ This architecture represents a **high-performance innovation** not found in any 
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Backpressure (Credit-Based Flow Control)
+
+A bounded credit scheme (`core/pubsub/backpressure.py`, `CreditController`) caps
+in-flight messages between a publisher and subscriber: the publisher spends a
+credit per message and the subscriber returns one per consume. When credits are
+exhausted the configured policy applies — `block` (true backpressure: the
+publisher waits) or `drop` (counted shed) — with an optional finite block timeout.
+It is off by default and tuned per deployment, and it is the floor the async egress
+subsystem (below) builds on when its WAL nears capacity.
+
+### Async Egress Subsystem (WAL-Backed, Opt-In)
+
+Async egress (`core/egress/`, roadmap A5) decouples publication to external brokers
+from the single compute thread. When enabled, a publisher's `publish()` becomes a
+**non-blocking append to a per-destination write-ahead log (WAL)** and returns; a
+background drainer writes to the real broker. Integration is transparent: the DAG
+builder wraps each publisher via `maybe_wrap_publisher` only when
+`egress.async.enabled=true`, so by default behaviour is byte-identical.
+
+Key properties:
+
+- **Per-destination FIFO** via a single ordered drainer; on a write failure it
+  *stops the line* (retries the same record with backoff) so nothing is reordered —
+  a Sell can never precede its Buy. Parallelism is across destinations and, within a
+  destination, only along independent partition keys.
+- **Durable, recoverable** — a record is acked only after the broker accepts it and
+  the acked offset is itself durable, so a restart replays the un-acked tail in order
+  (at-least-once). Portable WAL backends need no native dependency: `filelog`
+  (segmented stdlib append log with CRC + torn-tail recovery) and `sqlite`
+  (WAL mode), plus `memory`; `lmdb` is an opt-in where available.
+- **Bounded** — hard WAL size cap, a background reclaimer that drops fully-acked
+  segments, and an overflow policy (block/drop) at the cap, so the buffer never
+  exhausts host memory or disk.
+- **Auto-reconnecting** — connection loss triggers backoff + a per-destination
+  circuit breaker; the un-acked tail is preserved and replayed on reconnect.
+- **No second config** — connectors are reconstructed from the existing publisher
+  definitions; the only new config is egress *behaviour*.
+
+**Multiprocess/worker mode.** Because a whole DAG is pinned to one worker
+(`dag_affinity`) and DAG names are universally unique, each DAG's publishers, WALs,
+and drainer co-locate in one process; every worker drains its own WALs concurrently
+across all cores with no cross-process coordination — massively parallel egress. The
+WAL is namespaced by the (universally unique) DAG name, so it follows the DAG and
+resumes on whichever worker runs it after a restart. (Implemented as in-process
+drainer threads; a shared per-destination egress-process supervisor is a later
+phase. See `docs/design/A5-async-egress-subsystem.md`.)
 
 ---
 
@@ -1684,4 +1769,4 @@ This document contains proprietary and confidential information. Unauthorized co
 
 ---
 
-**DishtaYantra v2.2** | © 2025-2030 Ashutosh Sinha
+**DishtaYantra** | © 2025-2030 Ashutosh Sinha

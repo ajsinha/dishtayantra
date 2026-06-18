@@ -65,49 +65,63 @@ except ImportError:
 # =============================================================================
 
 class AbstractResilientConsumer(ABC):
-    """Abstract base for resilient Kafka consumers."""
-    
+    """Contract for resilient Kafka consumers.
+
+    "Resilient" means broker outages are handled transparently: read methods retry a
+    bounded number of times, reconnecting between attempts, and only raise once the
+    retry budget is exhausted. Implementations wrap one of two client libraries
+    (kafka-python or confluent-kafka) behind this identical interface so callers are
+    library-agnostic."""
+
     @abstractmethod
     def poll(self, timeout_ms: int = 0, max_records: Optional[int] = None) -> Dict:
-        pass
-    
+        """Fetch a batch, reconnecting on broker failure. Returns
+        ``{TopicPartition: [records]}`` (possibly empty). Raises only after the
+        reconnect budget is exhausted."""
+
     @abstractmethod
     def consume(self, max_records: Optional[int] = None, timeout_ms: int = 0) -> List:
-        pass
-    
+        """Convenience over ``poll``: a flat list of records across all partitions."""
+
     @abstractmethod
     def commit(self, offsets: Optional[Dict] = None):
-        pass
-    
+        """Commit consumer offsets, reconnecting on failure."""
+
     @abstractmethod
     def close(self):
-        pass
-    
+        """Release the underlying consumer. Idempotent."""
+
     @abstractmethod
     def __iter__(self):
-        pass
+        """Iterate messages, reconnecting transparently across outages."""
 
 
 class AbstractResilientProducer(ABC):
-    """Abstract base for resilient Kafka producers."""
-    
+    """Contract for resilient Kafka producers.
+
+    On broker failure a send is buffered and retried by a background thread rather
+    than lost, so a transient outage does not drop messages. Same interface over both
+    client libraries."""
+
     @abstractmethod
     def send(self, topic: str, value: Any = None, key: Any = None,
              headers: Optional[List] = None, partition: Optional[int] = None,
              timestamp_ms: Optional[int] = None) -> Any:
-        pass
-    
+        """Send one message, returning a delivery handle/future. On failure the
+        message is buffered for retry instead of being dropped."""
+
     @abstractmethod
     def flush(self, timeout: Optional[float] = None):
-        pass
-    
+        """Block until buffered/in-flight messages are delivered or ``timeout`` elapses."""
+
     @abstractmethod
     def close(self, timeout: Optional[float] = None):
-        pass
-    
+        """Flush and release the producer. Idempotent."""
+
     @abstractmethod
     def send_batch(self, messages: List[Dict]) -> List:
-        pass
+        """Send many messages; return per-message results. Partial failures are
+        surfaced to the caller, not silently swallowed."""
 
 
 # =============================================================================
@@ -132,7 +146,13 @@ class ResilientKafkaPythonConsumer(AbstractResilientConsumer):
         self._connect_with_retry()
     
     def _connect_with_retry(self):
-        """Establish connection with retry logic."""
+        """Connect, retrying on a FIXED interval (not exponential backoff).
+
+        Up to ``reconnect_tries`` attempts, sleeping ``reconnect_interval_seconds``
+        between them; this BLOCKS the calling thread for up to tries × interval on a
+        sustained outage. ``check_version()` forces an actual round-trip so we fail
+        here rather than on first poll. Raises the last Kafka error if every attempt
+        fails — surfaced to the caller instead of leaving a half-open consumer."""
         from kafka import KafkaConsumer
         from kafka.errors import NoBrokersAvailable, KafkaTimeoutError, KafkaError
         
@@ -162,7 +182,9 @@ class ResilientKafkaPythonConsumer(AbstractResilientConsumer):
                     raise last_exception
     
     def _reconnect(self):
-        """Attempt to reconnect."""
+        """Tear down the current consumer (best-effort close) and reconnect via
+        ``_connect_with_retry``. Called after a poll/commit failure; propagates if
+        reconnection ultimately fails so the error isn't hidden."""
         logger.info("Attempting to reconnect to Kafka...")
         try:
             if self._consumer:
@@ -178,7 +200,10 @@ class ResilientKafkaPythonConsumer(AbstractResilientConsumer):
     
     def poll(self, timeout_ms: int = 0, max_records: Optional[int] = None,
              update_offsets: bool = True) -> Dict:
-        """Poll for messages with automatic reconnection."""
+        """Poll for a batch; on a Kafka error, wait, ``_reconnect()``, and retry up to
+        ``reconnect_tries``. Resets the retry counter on success. Caveat: each failed
+        attempt blocks for ``reconnect_interval_seconds``, so a long outage can block
+        the caller for up to tries × interval before raising."""
         from kafka.errors import KafkaTimeoutError, KafkaError
         
         for attempt in range(1, self.reconnect_tries + 1):
@@ -316,7 +341,9 @@ class ResilientKafkaPythonProducer(AbstractResilientProducer):
                     raise last_exception
     
     def _reconnect(self):
-        """Attempt to reconnect."""
+        """Close the current producer (1s grace) and reconnect via
+        ``_connect_with_retry``. Buffered messages are NOT lost — the background
+        processor drains them once the connection is back."""
         logger.info("Attempting to reconnect to Kafka...")
         try:
             if self._producer:
@@ -331,7 +358,11 @@ class ResilientKafkaPythonProducer(AbstractResilientProducer):
             raise
     
     def _start_buffer_processor(self):
-        """Start background thread to process buffered messages."""
+        """Launch the daemon thread that drains the retry buffer.
+
+        While connected and the buffer is non-empty it flushes every 0.1s. This is the
+        mechanism that achieves no-loss across an outage: messages buffered while
+        disconnected are delivered once the broker returns, without the caller blocking."""
         def processor():
             while not self._stop_buffer_processor.is_set():
                 if self._connected and not self._message_buffer.empty():
@@ -342,7 +373,10 @@ class ResilientKafkaPythonProducer(AbstractResilientProducer):
         self._buffer_thread.start()
     
     def _flush_buffer(self):
-        """Flush buffered messages."""
+        """Drain the buffer FIFO, sending each message. A message that fails again is
+        moved to ``_failed_messages`` (inspectable via ``get_failed_messages``) rather
+        than left to block the queue — so one poison message can't stall delivery.
+        Runs on the buffer-processor thread."""
         while not self._message_buffer.empty():
             try:
                 msg = self._message_buffer.get_nowait()
@@ -356,7 +390,15 @@ class ResilientKafkaPythonProducer(AbstractResilientProducer):
     def send(self, topic: str, value: Any = None, key: Any = None,
              headers: Optional[List] = None, partition: Optional[int] = None,
              timestamp_ms: Optional[int] = None) -> Any:
-        """Send message with automatic buffering and reconnection."""
+        """Send a message, buffering instead of losing it on failure.
+
+        Never raises on a transient outage: if disconnected it buffers and returns
+        None; if a live send fails it buffers, returns None, and triggers a reconnect.
+        Returns the delivery future on success. Ordering caveat: a message buffered
+        during an outage is retried later by the background thread, so it may be
+        delivered AFTER messages sent once the connection recovered — buffering does
+        not preserve strict order across an outage. None-valued fields are dropped so
+        client defaults apply."""
         message = {
             'topic': topic,
             'value': value,
@@ -438,6 +480,10 @@ class ResilientKafkaPythonProducer(AbstractResilientProducer):
 class ResilientConfluentConsumer(AbstractResilientConsumer):
     """
     Resilient Kafka consumer using confluent-kafka with automatic reconnection.
+
+    Behaviour mirrors ResilientKafkaPythonConsumer (same fixed-interval reconnect and
+    retry-on-poll contract) - see that class for the documented method contracts; the
+    differences here are confluent-kafka API specifics.
     
     ~10x faster than kafka-python due to librdkafka C library.
     """
@@ -596,6 +642,11 @@ class ResilientConfluentConsumer(AbstractResilientConsumer):
 class ResilientConfluentProducer(AbstractResilientProducer):
     """
     Resilient Kafka producer using confluent-kafka with automatic reconnection.
+
+    Behaviour mirrors ResilientKafkaPythonProducer (same buffer-on-failure no-loss
+    model, background flush thread, and cross-outage ordering caveat) - see that class
+    for the documented method contracts; the differences here are confluent-kafka API
+    specifics (e.g. explicit value/key serialization).
     
     ~10x faster than kafka-python due to librdkafka C library.
     """
@@ -696,7 +747,9 @@ class ResilientConfluentProducer(AbstractResilientProducer):
     def send(self, topic: str, value: Any = None, key: Any = None,
              headers: Optional[List] = None, partition: Optional[int] = None,
              timestamp_ms: Optional[int] = None) -> Any:
-        """Send message with automatic buffering and reconnection."""
+        """Send a message via confluent-kafka, buffering instead of losing it on
+        failure (same no-loss contract and cross-outage ordering caveat as the
+        kafka-python producer). Serializes value/key first, then drops None fields."""
         # Serialize value
         serialized_value = self._value_serializer(value) if value else None
         serialized_key = key.encode('utf-8') if isinstance(key, str) else key

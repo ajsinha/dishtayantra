@@ -6,54 +6,96 @@
   <component name="ChangeListManager">
     <list default="true" id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICKSTART.md" beforeDir="false" afterPath="$PROJECT_DIR$/QUICKSTART.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/benchmarks/run_benchmark.py" beforeDir="false" afterPath="$PROJECT_DIR$/benchmarks/run_benchmark.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/enterprise_data_pipeline_50_nodes.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/examples/ash_dag_with_auto_clone.json.kafka-sample" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/examples/cross_worker_consumer_dag.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/examples/cross_worker_producer_dag.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/examples/us_equities_trading_session.json.sample" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/examples/worker_affinity_example.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/examples/worker_affinity_example_dag.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/config/dags/perftest_trade_etl.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/calculator/arrow_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/arrow_calculator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/graph_elements.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/graph_elements.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/example/dags/example_trade_ingest.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/example_trade_ingest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/example/dags/java_math_hybrid_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/java_math_hybrid_dag.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/example/dags/java_trade_pricing_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/java_trade_pricing_dag.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/calculator/core_calculator.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/calculator/core_calculator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph_builders.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph_builders.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/dag_server_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_server_loader.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/dag/node_implementations.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/node_implementations.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/inmemorypubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/inmemorypubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/resilient_activemq.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/resilient_activemq.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/resilient_kafka.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/resilient_kafka.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/resilient_rabbitmq.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/resilient_rabbitmq.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/resilient_redis.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/resilient_redis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/resilient_tibcoems.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/resilient_tibcoems.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/resilient_websphere.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/resilient_websphere.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/transformer/core_transformer.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/transformer/core_transformer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/workers/dag_affinity.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/dag_affinity.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/workers/worker_messages.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_messages.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/workers/worker_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_process.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/ARCHITECTURE.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ARCHITECTURE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/CONFIG_AND_CLOUD_v2.2.md" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/ROADMAP.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/ROADMAP.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TUTORIAL_arrow_dag.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TUTORIAL_arrow_dag.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/research/dishtayantra_paper.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/research/dishtayantra_paper.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/docs/research/dishtayantra_paper.pdf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/research/dishtayantra_paper.tex" beforeDir="false" afterPath="$PROJECT_DIR$/docs/research/dishtayantra_paper.tex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/DAG Folders, Name Uniqueness, and External Libraries Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/DAG Folders, Name Uniqueness, and External Libraries Guide.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/DataSubscriber Message Packaging Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Free-Threading (Python 3.13 No-GIL) Guide.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Subgraph Feature - Complete Documentation.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/calculators/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/calculators/csv_trade_parser.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/JavaLMDBCalculator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/PythonLMDBCalculatorExample.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/cpp_lmdb_calculator.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/python_lmdb_calculator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/lmdb_calculators/rust_lmdb_calculator.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/subgraph_demo.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/calculator/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/dag/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/dag/trade_ingest.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/pubsub/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/trade_data_generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/trade_topic_generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/example/tradeprocessor/transformer/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/perftest/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/perftest/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/perftest/generate_trades.py" beforeDir="false" afterPath="$PROJECT_DIR$/perftest/generate_trades.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes/noauth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/noauth_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/dishtayantra_webapp.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/dishtayantra_webapp.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.pdf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.tex" beforeDir="false" afterPath="$PROJECT_DIR$/web/static/research/dishtayantra_paper.tex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/about.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/about.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/comparison.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/comparison.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/activemq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/activemq_integration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/dag/designer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/designer.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/dag/publish_message.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/publish_message.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/architecture.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/architecture.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/free_threading.html" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/ibmmq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/ibmmq_integration.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/inmemory_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/inmemory_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rabbitmq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rabbitmq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/redis_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/redis_integration.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/research.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/research.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/rest_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rest_integration.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/rust_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rust_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tibco_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/tibco_integration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/subgraph.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/subgraph.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/time_windows.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/time_windows.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_1_basic.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_2_pipeline.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_3_advanced.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_4_enterprise.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_5_subgraphs.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_6_coordination.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_7_worker_pool.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tutorial_8_jvm.html" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/userguide_view.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/userguide_view.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/userguides.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/userguides.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/worker_pool.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/landing.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/landing.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/login.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -174,7 +216,7 @@
       <option name="presentableId" value="Default" />
       <updated>1771698938108</updated>
       <workItem from="1781296084492" duration="16330000" />
-      <workItem from="1781390109337" duration="13848000" />
+      <workItem from="1781390109337" duration="15068000" />
     </task>
     <servers />
   </component>

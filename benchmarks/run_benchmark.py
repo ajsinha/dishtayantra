@@ -45,6 +45,9 @@ def main(argv=None) -> int:
                         help="optional path to write a JSON result")
     parser.add_argument("--markdown", type=str, default=None,
                         help="optional path to write a markdown result")
+    parser.add_argument("--workload", choices=["trade_etl", "nexmark"],
+                        default="trade_etl",
+                        help="which workload to run (default trade_etl)")
     parser.add_argument("--quiet", action="store_true",
                         help="silence engine logs (default on)")
     args = parser.parse_args(argv)
@@ -53,16 +56,25 @@ def main(argv=None) -> int:
     if args.quiet or True:  # benchmarks are noisy; keep engine logs quiet
         logging.disable(logging.INFO)
 
-    in_q, out_q = "bench_in", "bench_out"
-    config = trade_etl_linear_config(in_q, out_q, stages=args.stages)
+    if args.workload == "nexmark":
+        from benchmarks.nexmark_workload import bid_generator, nexmark_linear_config
+        in_q, out_q = "nex_in", "nex_out"
+        config = nexmark_linear_config(in_q, out_q)
+        name = "nexmark_linear[Q1+Q2]"
+        gen_fn = bid_generator()
+    else:
+        in_q, out_q = "bench_in", "bench_out"
+        config = trade_etl_linear_config(in_q, out_q, stages=args.stages)
+        name = f"trade_etl_linear[{args.stages} stages]"
+        gen_fn = trade_generator()
 
     result = run_inmemory_dag_benchmark(
-        name=f"trade_etl_linear[{args.stages} stages]",
+        name=name,
         config=config,
         input_queue=in_q,
         output_queue=out_q,
         n_messages=args.messages,
-        gen_fn=trade_generator(),
+        gen_fn=gen_fn,
         warmup_messages=args.warmup,
         pace_hz=args.pace_hz,
         drain_timeout_s=args.drain_timeout,

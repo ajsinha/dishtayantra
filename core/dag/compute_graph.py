@@ -158,6 +158,7 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         logger.info(f"DAG {self.name}: initialized")
 
     def subscriber_by_name(self, sub_name):
+        """Return the named subscriber; raises KeyError if it isn't declared."""
         return self.subscribers[sub_name]
 
     def get_publisher_by_name(self, publisher_name):
@@ -184,6 +185,8 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         return self.get_publisher_by_name(publisher_name)
 
     def publish(self, publisher_name, data_to_send):
+        """Route data to the named publisher (used by PublisherSinkNode). Raises
+        KeyError if the publisher isn't declared."""
         self.publishers[publisher_name].publish(data_to_send)
 
     def build_dag(self):

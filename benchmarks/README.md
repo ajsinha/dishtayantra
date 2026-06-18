@@ -14,17 +14,23 @@ needs no Kafka or external systems and is safe to run in CI.
 | File | Purpose |
 |------|---------|
 | `harness.py` | Reusable measurement framework: latency percentiles, throughput, peak memory, structured results. Engine-agnostic core + an in-memory DAG runner. |
-| `workloads.py` | Reference workload: a linear trade-ETL DAG (validate → normalize → FX → notional → fees → risk) built from the real `perftest` calculators. |
-| `run_benchmark.py` | CLI to run the reference workload and emit JSON / markdown. |
+| `workloads.py` | Finance trade-ETL workload: a linear DAG (validate → normalize → FX → notional → fees → risk) built from the real `perftest` calculators. |
+| `nexmark_workload.py` / `nexmark_calculators.py` | Nexmark-subset workload: the auction/bid stream as a linear DAG of Q1 (currency convert) + Q2 (auction select). |
+| `run_benchmark.py` | CLI to run a workload (`--workload trade_etl\|nexmark`) and emit JSON / markdown. |
 | `freethreading_spike.py` | Phase-0 de-risking spike for step **A3** (no-GIL Python): measures CPU-bound calculator scaling across threads and inventories extension GIL-readiness. |
 
 ## Running the throughput / latency benchmark
 
 ```bash
 # from the repo root
-python -m benchmarks.run_benchmark --messages 5000 --stages 6
+python -m benchmarks.run_benchmark --messages 5000 --stages 6          # trade-ETL (default)
+python -m benchmarks.run_benchmark --workload nexmark --messages 20000 # Nexmark (Q1+Q2)
 python -m benchmarks.run_benchmark --messages 20000 --output benchmarks/results/baseline.json
 ```
+
+Both workloads run over the real `ComputeGraph` engine via the in-memory broker
+(no Kafka needed). The Nexmark workload is a representative subset (Q1+Q2), not
+the full 8-query suite.
 
 Reports: messages delivered, wall-clock duration, throughput (msg/s),
 end-to-end latency `p50/p95/p99/max` (ms, correlated per message by

@@ -1,7 +1,7 @@
 # DishtaYantra — Strategic Feature Roadmap
 
 *Toward "best real-time compute server in its category"*
-Draft v1 · derived from the 2026 competitive research · current product baseline: v3.3.0
+Draft v1 · derived from the 2026 competitive research · current product baseline: v5.8.1 (tracks `core/version.py`)
 
 ---
 
@@ -64,6 +64,7 @@ graph TD
     A1[A1 Arrow columnar data plane]
     A2[A2 Embed DataFusion / streaming SQL]
     A3[A3 Free-threaded Python no-GIL]
+    A5[A5 Decoupled async egress + WAL]
     B1[B1 Event-time + watermarks + windows]
     B2[B2 Durable state + exactly-once + disaggregated]
     C1[C1 Incremental materialized views]
@@ -76,6 +77,8 @@ graph TD
     P0 --> A1
     P0 --> A3
     A1 --> A2
+    A1 --> A5
+    B2 --> A5
     A1 --> C2
     A1 --> C3
     A2 --> C1
@@ -98,7 +101,7 @@ graph TD
 *You cannot claim "best in the world" without proof, and the two biggest bets need de-risking first.*
 
 **Workstreams**
-- **Benchmark harness** (Nexmark + a finance/trade-ETL workload mirroring `perftest/`): end-to-end latency percentiles, throughput, memory, recovery time. Make it CI-runnable.
+- **Benchmark harness** (Nexmark + a finance/trade-ETL workload mirroring `perftest/`): end-to-end latency percentiles, throughput, memory, recovery time. Make it CI-runnable. *(Delivered: `benchmarks/` runs both a finance trade-ETL DAG and a Nexmark-subset DAG (Q1+Q2) over the real in-memory engine — `python -m benchmarks.run_benchmark --workload {trade_etl,nexmark}` — reporting throughput, latency p50/p95/p99 and peak RSS, with CI smoke tests. Recovery-time benchmarking still TODO.)*
 - **Observability deepening** (`core/metrics`, existing Prometheus/Grafana): per-operator latency histograms, watermark lag, state size, checkpoint duration, queue depth.
 - **Spike: free-threading** — build the dependency tree against Python 3.14t; inventory which C extensions (`core/cpp`, `core/rust`, pyarrow, broker clients) need recompilation/thread-safety work.
 - **Spike: Arrow data plane** — prototype an Arrow `RecordBatch` edge between two nodes and a zero-copy handoff into a C++/Rust calculator.
@@ -123,7 +126,12 @@ graph TD
 > (`perftest/run_arrow_transport_example.py`); the dict path stays behaviourally
 > identical (engine diff is a minimal mechanical substitution; full suite green).
 > Remaining for A1: zero-copy polyglot handoff via the Arrow C Data Interface
-> (this transport sets it up) and larger-than-memory spill. Designs:
+> — **a working native vertical now exists** (`core/calculator/native_arrow.py`
+> + `core/cpp/arrow_cdata.c`): a C kernel reads exported Arrow buffers in place
+> via the standard ABI structs (no copy, no serialization) behind an opt-in
+> `NativeAffineCalculator` that falls back to pyarrow when no compiler is present,
+> with byte-parity tests. The same ABI is the template for C++/Rust/JVM; remaining
+> is deeper engine-path/binding integration and larger-than-memory spill. Designs:
 > `docs/design/A1-recordbatch-edges.md`, `docs/design/A1-arrow-data-plane.md`.
 
 **A1 — Arrow-native columnar data plane** *(XL, the keystone)*
@@ -139,6 +147,9 @@ graph TD
 **A2 — Embed DataFusion (Rust, Arrow-native) for vectorized execution + initial streaming SQL** *(L)*
 - Use it for heavy relational ops (joins/aggregations/filters) and a first `SELECT ... FROM stream`.
 - Polyglot calculators become zero-copy UDFs.
+
+**A5 — Decoupled async egress subsystem (WAL-backed, per-destination)** *(L, opt-in; first cut delivered v5.8.0)*
+- Publication to *external* brokers (Kafka/Redis/RabbitMQ/filesystem/S3/…) decoupled from the single compute thread: `PublicationNode.publish()` becomes a non-blocking append to a per-destination WAL and returns, while DishtaYantra-spawned egress processes (one pool per destination, via `core/multiprocessing`) tail the WAL and write to brokers with batching and partitioned parallel writers. The WAL is both the durable buffer and the zero-copy inter-process channel; memory stays bounded because backpressure is the hard floor (block/spill/drop/dead-letter) and a background janitor reclaims fully-acked WAL segments under a hard size cap, so a slow broker slows the source instead of OOM-ing or filling the disk. WAL backend is configurable and **portable** (`filelog` / `sqlite` = pure stdlib, no native dep; `lmdb` opt-in/fast; `memory`), guarantees **per-destination FIFO** ordering (single ordered writer + stop-the-line retries — never fire a Sell before its Buy), and workers **auto-reconnect** and replay the un-acked tail on connection loss with no message lost. Endpoints are **lifted from the existing publisher definitions** (no second config). The whole feature is off by default and opt-in per publisher, with a dedicated **Egress Management** admin UI. At-least-once via durable acked-offset resume; exactly-once later via B2. Pairs with D2 (backpressure) and B2 (transactional sinks). Design: `docs/design/A5-async-egress-subsystem.md`.
 
 **Exit criteria:** measured vectorized throughput up materially vs v3.3.0; GIL removed for core paths; zero-copy calculator handoff; streaming `SELECT` works end-to-end.
 **Beats Spark/Flink:** no JVM serialization, no shuffle, no network — memory-bandwidth-speed on one box, with SQL ergonomics and none of PyFlink's pain.
@@ -171,8 +182,11 @@ graph TD
 **C2 — WASM sandboxed polyglot calculators** *(L)*
 - Calculators compiled to WebAssembly: any source language, sandboxed for multi-tenant safety, near-native speed, hot-deployable, zero-copy Arrow in/out (depends on A1). Makes the README tagline literally true.
 
-**Exit criteria:** an incrementally-maintained view stays correct under updates/deletes; a user-supplied WASM calculator runs sandboxed with zero-copy handoff.
-**Beats Spark/Flink:** combines incremental SQL views *and* any-language sandboxed UDFs — an ergonomics combination neither offers.
+**C5 — Dynamic / elastic DAG topology (data-driven template expansion)** *(L–XL, foundations can start early)*
+- A running DAG can grow and shrink at runtime — add/modify/remove nodes, calculators, and edges — and a *templatized* section can expand in reaction to the data that arrives: a new key (symbol, tenant, session) materializes its own sub-pipeline behind a stable dispatcher→collector boundary, and idle instances are torn down (idle-TTL / LRU). Built on the single compute thread (structural mutations applied transactionally **between sweeps**, with cycle checks and a generation-stamped re-sort, preserving the equality gate), with a low-risk first cut using per-key subgraphs behind pub/sub topics so the parent's execution order is never disturbed. Finer-grained AutoClone, replicated to the HA standby via a deterministic-from-data design plus a replayable mutation log. Design: `docs/design/C5-dynamic-dag-topology.md`.
+
+**Exit criteria:** an incrementally-maintained view stays correct under updates/deletes; a user-supplied WASM calculator runs sandboxed with zero-copy handoff; a template section grows per-key under load and shrinks when idle, with the HA standby converging to the same topology.
+**Beats Spark/Flink:** combines incremental SQL views, any-language sandboxed UDFs, *and* a self-restructuring topology that follows the data — an ergonomics combination none of them offer.
 
 ---
 

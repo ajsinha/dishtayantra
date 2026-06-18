@@ -50,7 +50,7 @@
             "type": "calculator",
             "calculator": {
                 "type": "python",
-                "class": "example.calculators.basic.TimestampCalculator",
+                "class": "examples.calculators.basic.TimestampCalculator",
                 "config": {
                     "timestamp_field": "processed_at",
                     "format": "iso"

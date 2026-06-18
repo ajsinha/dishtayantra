@@ -1,4 +1,4 @@
-# DishtaYantra v2.2 - Configuration & Cloud Messaging
+# DishtaYantra — Configuration & Cloud Messaging
 
 ## YAML configuration (recommended)
 

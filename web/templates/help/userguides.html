@@ -129,7 +129,13 @@
     [data-theme="green"] .cat-other { color: var(--text-secondary); }
     [data-theme="dark"] .cat-calculator,
     [data-theme="green"] .cat-calculator { color: #a78bfa; }
-</style>
+
+    /* Ubuntu override twins (dark-family; from green). */
+    [data-theme="ubuntu"] .guide-meta,
+    [data-theme="ubuntu"] .cat-other { color: var(--text-secondary); }
+    [data-theme="ubuntu"] .cat-calculator { color: #a78bfa; }
+
+    </style>
 {% endblock %}
 
 {% block content %}

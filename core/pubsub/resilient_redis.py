@@ -35,7 +35,12 @@ class ResilientPipeline(Pipeline):
         super().__init__(client.connection_pool, *args, **kwargs)
 
     def execute(self, raise_on_error: bool = True):
-        """Execute pipeline commands with retry logic."""
+        """Execute the pipeline, retrying the whole batch on connection failure.
+
+        Snapshots the command stack first because a failed ``execute`` consumes it;
+        on retry the snapshot is restored and the batch re-run after a reconnect. Note
+        the batch is replayed wholesale, so non-idempotent pipelines can double-apply on
+        a mid-execution failure — the same at-least-once tradeoff as buffered commands."""
         # Store commands before execution for potential retry
         commands_snapshot = list(self.command_stack)
 
@@ -136,7 +141,10 @@ class ResilientRedisClient(Redis):
             self._buffer_processor_thread.start()
 
     def _connect_with_retry(self):
-        """Establish connection to Redis with retry logic."""
+        """Connect on a FIXED-interval retry (tries × ``reconnect_interval_seconds``,
+        blocking), verify with ``ping()`` so a dead broker fails here not on first use,
+        and restore pub/sub subscriptions on success. Raises the last error if all
+        attempts fail."""
         last_exception = None
 
         for attempt in range(1, self.reconnect_tries + 1):
@@ -177,7 +185,9 @@ class ResilientRedisClient(Redis):
                     raise last_exception
 
     def _ensure_connection(self):
-        """Ensure Redis connection is active, reconnect if necessary."""
+        """Liveness probe: ``ping()`` the server and, if it fails, trigger a reconnect.
+        Returns whether the connection is usable. Cheap pre-flight before commands that
+        must not silently run against a dead socket."""
         try:
             self.ping()
             return True
@@ -187,7 +197,10 @@ class ResilientRedisClient(Redis):
             return self._connected
 
     def _reconnect(self):
-        """Attempt to reconnect to Redis."""
+        """Single-flight reconnect (guarded by ``_reconnecting`` under ``_lock`` so
+        concurrent command failures don't trigger parallel reconnects). Disconnects the
+        pool, re-runs ``_connect_with_retry`` (which restores subscriptions), then
+        flushes buffered commands so writes queued during the outage are applied."""
         with self._lock:
             if self._reconnecting:
                 return
@@ -220,7 +233,9 @@ class ResilientRedisClient(Redis):
                 self._reconnecting = False
 
     def _restore_subscriptions(self):
-        """Restore pub/sub subscriptions after reconnection."""
+        """Re-subscribe channels and patterns after a reconnect. Redis pub/sub
+        subscriptions are connection-scoped, so a dropped connection silently loses
+        them; tracking and replaying them keeps subscribers receiving across outages."""
         if not self._pubsub_channels and not self._pubsub_patterns:
             return
 
@@ -243,7 +258,15 @@ class ResilientRedisClient(Redis):
                 logger.error(f"Failed to restore subscriptions: {e}")
 
     def execute_command(self, *args, **kwargs):
-        """Execute a Redis command with automatic retry and optional buffering."""
+        """The resilience choke point — every Redis command flows through here.
+
+        Checks the connection, runs the command, and on a connection error retries up
+        to ``reconnect_tries`` (fixed interval), reconnecting between attempts. If
+        buffering is enabled the command is also buffered on first failure. Honest
+        caveat: because a buffered command is *also* retried inline, a command that
+        eventually succeeds on retry may also be replayed from the buffer — delivery is
+        at-least-once and non-idempotent writes (e.g. INCR) can double-apply. Prefer
+        buffering for idempotent commands."""
         for attempt in range(1, self.reconnect_tries + 1):
             try:
                 # Check connection before executing
@@ -272,7 +295,10 @@ class ResilientRedisClient(Redis):
                     raise
 
     def _buffer_command(self, args: tuple, kwargs: dict):
-        """Buffer a command for later execution when connection is restored."""
+        """Queue a command for replay after recovery. The buffer is bounded; when full
+        it **drops the oldest** command (load-shedding) rather than blocking the caller
+        or growing without limit — so under a long outage the newest writes survive and
+        the stalest are sacrificed."""
         if not self.buffer_commands or not self._command_buffer:
             return
 
@@ -298,7 +324,9 @@ class ResilientRedisClient(Redis):
             logger.error(f"Failed to buffer command: {e}")
 
     def _process_buffered_commands(self):
-        """Background thread to process buffered commands when connection is restored."""
+        """Background daemon loop: once reconnected, replay buffered commands in FIFO
+        order. Idle-polls when there's nothing to do. Pairs with the drop-oldest
+        buffering and the at-least-once caveat documented on ``execute_command``."""
         while not self._stop_buffer_processor.is_set():
             try:
                 if self._connected and not self._reconnecting and not self._command_buffer.empty():

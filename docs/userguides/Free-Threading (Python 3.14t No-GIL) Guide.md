@@ -1,11 +1,13 @@
-# Free-Threading (Python 3.13+ No-GIL) - Enablement and Testing Guide
+# Free-Threading (Python 3.14t No-GIL) — Enablement and Testing Guide
 
 ## What this guide covers
 
-Python 3.13 introduced an official **free-threaded** build (PEP 703) that can run
-with the Global Interpreter Lock (GIL) disabled, so Python threads execute on
-multiple CPU cores at the same time. This guide explains, specifically for
-DishtaYantra:
+Free-threading was introduced experimentally in Python 3.13 (PEP 703) and became
+an officially **supported** build in Python 3.14 (PEP 779). A free-threaded build
+runs with the Global Interpreter Lock (GIL) disabled, so Python threads execute on
+multiple CPU cores at the same time. DishtaYantra targets the **Python 3.14
+free-threaded build (`python3.14t`)**; the commands below use it. This guide
+explains, specifically for DishtaYantra:
 
 1. What free-threading changes for this system (and what it does not).
 2. How to install a free-threaded interpreter and enable the no-GIL mode.
@@ -51,17 +53,18 @@ processes. It can also reduce latency jitter from threads contending for the GIL
 
 ## 2. Installing a free-threaded interpreter
 
-Free-threading is a **separate build** of CPython. Installing normal 3.13 does
-**not** give you the no-GIL capability; you need the "t" (threaded) variant.
+Free-threading is a **separate build** of CPython. Installing the normal 3.14
+build does **not** give you the no-GIL capability; you need the "t" (threaded)
+variant, `python3.14t`.
 
 ### Option A - python.org installer
-On the 3.13+ installer, enable the **"free-threaded Python"** option. This
-produces an interpreter typically invoked as `python3.13t`.
+On the 3.14 installer, enable the **"free-threaded Python"** option. This
+produces an interpreter typically invoked as `python3.14t`.
 
 ### Option B - pyenv
 ```bash
-pyenv install 3.13t-dev        # or the current 3.13 free-threaded build name
-pyenv shell 3.13t-dev
+pyenv install 3.14t-dev        # or the current 3.14 free-threaded build name
+pyenv shell 3.14t-dev
 ```
 
 ### Option C - uv / build flag
@@ -70,7 +73,7 @@ request the free-threaded variant of the interpreter explicitly.
 
 ### Confirm you actually have it
 ```bash
-python3.13t -c "import sys; print(sys._is_gil_enabled())"
+python3.14t -c "import sys; print(sys._is_gil_enabled())"
 ```
 - If this prints `False`, the GIL is **off** (free-threading active).
 - If it prints `True`, the interpreter *can* free-thread but the GIL is currently
@@ -81,8 +84,8 @@ python3.13t -c "import sys; print(sys._is_gil_enabled())"
 ### Turning the GIL on/off at runtime
 On a free-threaded build the GIL is off by default but can be forced on:
 ```bash
-PYTHON_GIL=1 python3.13t ...     # force the GIL ON
-python3.13t -X gil=0 ...         # explicitly request it OFF
+PYTHON_GIL=1 python3.14t ...     # force the GIL ON
+python3.14t -X gil=0 ...         # explicitly request it OFF
 ```
 Use `PYTHON_GIL=1` as an A/B baseline when benchmarking.
 
@@ -92,7 +95,7 @@ Use `PYTHON_GIL=1` as an A/B baseline when benchmarking.
 
 The risk in free-threading is almost entirely **C/C++/Rust extension modules**.
 A native extension must be explicitly built and tagged free-threading-ready
-(wheels tagged `cp313t`); if it is not, importing it **silently re-enables the
+(wheels tagged `cp314t`); if it is not, importing it **silently re-enables the
 GIL**, quietly defeating the whole exercise. Pure-Python packages are low risk.
 
 DishtaYantra's dependencies, grouped by risk:
@@ -119,7 +122,7 @@ DishtaYantra's dependencies, grouped by risk:
 
 > **Do not assume.** Wheel availability and free-threading readiness change
 > release to release. The specific versions pinned in `requirements.txt` may or
-> may not yet ship `cp313t` wheels. **Verify each one against PyPI** rather than
+> may not yet ship `cp314t` wheels. **Verify each one against PyPI** rather than
 > trusting this table - which is exactly what the check script in the next
 > section does for you.
 
@@ -135,7 +138,7 @@ A script ships at `scripts/check_free_threading.py`. It imports every dependency
 one at a time and reports which ones re-enable the GIL.
 
 ```bash
-python3.13t scripts/check_free_threading.py
+python3.14t scripts/check_free_threading.py
 ```
 
 Read the verdict:
@@ -152,23 +155,23 @@ Read the verdict:
 ### Stage 1 - Install into a free-threaded environment
 
 ```bash
-python3.13t -m venv .venv-ft
+python3.14t -m venv .venv-ft
 source .venv-ft/bin/activate
 pip install -r requirements.txt
 ```
 Watch for any package that **builds from source** instead of installing a wheel -
-that often means no `cp313t` wheel exists yet, and the result may re-enable the
+that often means no `cp314t` wheel exists yet, and the result may re-enable the
 GIL or fail at runtime. Re-run Stage 0 inside this venv.
 
 ### Stage 2 - Unit + integration test suite (single-threaded correctness)
 
 Run the full suite on the free-threaded interpreter:
 ```bash
-SECRET_KEY=test python3.13t -m pytest tests/ -q
+SECRET_KEY=test python3.14t -m pytest tests/ -q
 ```
 Then run it **with the GIL forced on** as a baseline and compare:
 ```bash
-SECRET_KEY=test PYTHON_GIL=1 python3.13t -m pytest tests/ -q
+SECRET_KEY=test PYTHON_GIL=1 python3.14t -m pytest tests/ -q
 ```
 Both should show the same pass count. A test that passes with the GIL on but
 fails with it off is pointing at a real race - investigate before going further.
@@ -278,7 +281,7 @@ its place only after this verification - not on optimism.
 DishtaYantra's own code is written for thread-safety (explicit locks, guarded
 singletons, queue-based pub/sub), which positions it well for free-threading.
 The real determinant is the **native dependency wheels**: until each C/Rust
-extension you use ships a free-threaded (`cp313t`) build, importing it re-enables
+extension you use ships a free-threaded (`cp314t`) build, importing it re-enables
 the GIL and silently defeats the benefit. Use `scripts/check_free_threading.py`
 to get a concrete go/no-go list, then work through the staged testing plan before
 trusting it in production.

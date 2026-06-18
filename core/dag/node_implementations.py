@@ -7,13 +7,26 @@ from core.dag.graph_elements import Node
 logger = logging.getLogger(__name__)
 
 class SinkNode(Node):
+    """Terminal no-op node: an explicit graph leaf that consumes its inputs and
+    produces nothing. ``compute`` intentionally does nothing — use this to anchor
+    a branch that has side effects upstream but no further propagation."""
+
     def __init__(self, name, config):
         super().__init__(name, config)
 
     def compute(self):
-        pass
+        """No-op: a SinkNode is a graph leaf with no output to propagate."""
+        return None
+
 
 class PublisherSinkNode(Node):
+    """Terminal node that publishes each incoming edge's data to named publishers.
+
+    Per-edge change detection (``_edge_tracker``) emits an edge's value once per
+    distinct value: unique messages each pass through exactly once, repeated
+    identical values are de-duped (value-graph behaviour). This is what stops the
+    node re-publishing stale edge state on every sweep."""
+
     def __init__(self, name, config):
         super().__init__(name, config)
         self.publishers = config.get("publishers", [])
@@ -21,7 +34,8 @@ class PublisherSinkNode(Node):
         self._published_count = 0  # messages actually published to sinks
 
     def compute(self) -> bool:
-        """Compute node output based on inputs"""
+        """Publish every incoming edge whose value changed since last sweep; returns
+        True if anything was published, False if no edge changed."""
         if not self.isdirty():
             return False
 
@@ -72,12 +86,22 @@ class SubscriptionNode(Node):
         self.subscriber = subscriber
 
     def pre_compute(self):
-        """Check if subscriber has data and mark dirty if so"""
+        """Sweep entry hook: if the subscriber has buffered data, mark this node
+        dirty so the sweep will call compute(). Subscription nodes are the sources
+        that inject new dirtiness into the graph each sweep."""
         if self.subscriber and self.subscriber.get_queue_size() > 0:
             self.set_dirty()
 
     def compute(self) -> bool:
-        """Pull data from subscriber and compute"""
+        """Pull one message, run transformers + calculator, and propagate on change.
+
+        Returns True if the node executed its calculation this sweep, False if it was
+        skipped (not dirty, no subscriber, or no data available). The **equality
+        gate** is the key invariant: children are marked dirty (and the output
+        message count advances) only when the freshly computed output *differs* from
+        the previous output, so unchanged values never trigger downstream recompute.
+        Always leaves the node clean. Exceptions are recorded and swallowed (return
+        False) so one bad message cannot abort the whole sweep."""
         if not self.isdirty() or not self.subscriber:
             return False
 
@@ -146,7 +170,14 @@ class PublicationNode(Node):
         self.publishers.append(publisher)
 
     def compute(self) -> bool:
-        """Compute and publish if output changed"""
+        """Run the node's calculation, then publish to sinks only when the output
+        changed since the last publish.
+
+        The sink-side **equality gate**: comparing against ``_last_published_output``
+        (not just the upstream change) means a value that round-trips back to a prior
+        state is not re-emitted, and identical recomputations never hit the broker.
+        A failure from one publisher is logged and skipped so the other sinks still
+        receive the message. Returns True if the node executed this sweep."""
         if not self.isdirty():
             return False
 
@@ -177,7 +208,14 @@ class PublicationNode(Node):
 
 
 class MetronomeNode(Node):
-    """Node that executes at regular intervals"""
+    """Time-driven node: fires on a fixed interval rather than on inbound data.
+
+    A background daemon thread (the metronome) ticks every ``interval`` seconds and
+    marks the node dirty, so the node executes on a clock even when no upstream data
+    has changed. Concurrency contract: the metronome thread *only* flags dirtiness
+    and wakes the compute loop — it never runs the calculation itself. All actual
+    computation stays on the single compute thread, preserving the engine's
+    single-writer model."""
 
     def __init__(self, name, config):
         super().__init__(name, config)
@@ -197,7 +235,9 @@ class MetronomeNode(Node):
         self.publishers.append(publisher)
 
     def start_metronome(self):
-        """Start metronome thread"""
+        """Start the background ticker (idempotent: a no-op if already running).
+
+        The ticker is a daemon thread so it never blocks process shutdown."""
         if not self._metronome_thread or not self._metronome_thread.is_alive():
             self._stop_event.clear()
             self._metronome_thread = threading.Thread(target=self._metronome_loop, daemon=True)
@@ -205,7 +245,13 @@ class MetronomeNode(Node):
             logger.info(f"Metronome node {self.name} started with interval {self.interval}s")
 
     def _metronome_loop(self):
-        """Metronome execution loop"""
+        """Ticker loop (runs on the metronome thread, never computes).
+
+        Each interval it marks the node dirty and fires ``_notify_callback`` to wake
+        the compute loop immediately (v3.0.0) rather than waiting for the next poll.
+        Polls at most every 0.1s so ``stop_metronome`` takes effect promptly even
+        when the interval is long. Does no calculation and touches no node output —
+        that is the compute thread's job — which is why it is safe to run concurrently."""
         while not self._stop_event.is_set():
             current_time = time.time()
             elapsed = current_time - self._last_execution
@@ -239,7 +285,14 @@ class MetronomeNode(Node):
         pass
 
     def compute(self) -> bool:
-        """Execute calculation and publish"""
+        """Run the calculation on each tick and publish.
+
+        Unlike data-driven nodes, a metronome **deliberately defeats the equality
+        gate**: it stamps the input with the tick counter (``metronome_tick``) so the
+        output always differs and the node emits on every interval even when the
+        underlying data is unchanged. That is the whole point of a clock node — it
+        guarantees periodic output. Runs on the compute thread after the ticker has
+        marked it dirty."""
         if not self.isdirty():
             return False
 
@@ -500,6 +553,10 @@ class BatchingSubscriptionNode(SubscriptionNode):
         self._batch_key = bc.get('key', cfg.get('batch_key', 'batch'))
 
     def compute(self) -> bool:
+        """Drain up to ``max_batch_size`` messages into one batch-envelope and run
+        the calculator/transformers once over it. Returns False and stays clean when
+        the queue is empty, so an idle stream costs nothing; the equality gate still
+        applies to the emitted envelope."""
         if not self.isdirty() or not self.subscriber:
             return False
         try:
@@ -556,6 +613,10 @@ class FlatteningPublicationNode(PublicationNode):
         self._batch_key = bc.get('key', cfg.get('batch_key', 'batch'))
 
     def compute(self) -> bool:
+        """Unbatch on publish: if the output is a ``{batch_key: [...]}`` envelope,
+        publish each record separately so the external/broker contract stays
+        per-message; otherwise publish the value as-is. Gated on change vs the last
+        published value to avoid re-emitting unchanged state each sweep."""
         if not self.isdirty():
             return False
         try:
@@ -608,6 +669,13 @@ class ArrowBatchingSubscriptionNode(BatchingSubscriptionNode):
     """
 
     def compute(self) -> bool:
+        """Drain messages, build ONE Arrow RecordBatch, and propagate by reference.
+
+        Two Arrow-specific points: the equality gate uses ``ev_equals`` (RecordBatch
+        value-equality) rather than dict ``!=``; and the output batch is shared
+        downstream by reference (no copy), which is the whole point of the columnar
+        path. Node-level transformers are rejected up front (fail fast) since the
+        Arrow source can't apply them — use an edge transformer with transform_batch."""
         from core.dag.edge_value import ev_equals
         if not self.isdirty() or not self.subscriber:
             return False
@@ -656,6 +724,10 @@ class ArrowFlatteningPublicationNode(FlatteningPublicationNode):
     """
 
     def compute(self) -> bool:
+        """Arrow unbatch on publish: convert an incoming RecordBatch to rows
+        (``to_pylist``, once) and publish each, keeping the per-message external
+        contract; uses ``ev_equals`` for the change gate. Falls back to the plain
+        FlatteningPublicationNode path for non-batch input."""
         from core.dag.edge_value import is_batch, ev_equals
         if not self.isdirty():
             return False

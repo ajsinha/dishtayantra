@@ -43,7 +43,7 @@
     },
     {
       "name": "kafka_trade_discriminator",
-      "type": "example.tradeprocessor.dag.trade_ingest.TradeDiscriminatorNode",
+      "type": "examples.tradeprocessor.dag.trade_ingest.TradeDiscriminatorNode",
       "config": {"publishers": ["kafka_output", "file_backup"]}
     },
     {

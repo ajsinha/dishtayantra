@@ -237,7 +237,18 @@
 
     [data-theme="dark"] .research-content a,
     [data-theme="green"] .research-content a { color: #a5b4fc; }
-</style>
+
+    /* Ubuntu override twins (dark-family; from green). */
+    [data-theme="ubuntu"] .research-content h1,
+    [data-theme="ubuntu"] .research-content strong { color: #e7ebf3; }
+    [data-theme="ubuntu"] .research-content h2 { color: #cbd5e1; }
+    [data-theme="ubuntu"] .research-content h3 { color: #b8c2d6; }
+    [data-theme="ubuntu"] .research-content h4 { color: #aab4c4; }
+    [data-theme="ubuntu"] .research-content p,
+    [data-theme="ubuntu"] .research-content li { color: #d7dee9; }
+    [data-theme="ubuntu"] .research-content a { color: #a5b4fc; }
+
+    </style>
 {% endblock %}
 
 {% block content %}

@@ -39,8 +39,8 @@ Rules:
   `prefixes` — you never lose the default location.
 - `prefixes` is a comma-separated list of additional folders.
 - Each folder is scanned for its **direct `.json` children only**. Sub-folders
-  are **never** scanned (this is deliberate — e.g. `config/dags/examples/`
-  holds samples that must not auto-load). If you want another group of DAGs,
+  are **never** scanned (this is deliberate — a nested folder such as a
+  `samples/` sub-directory will not auto-load). If you want another group of DAGs,
   add another sibling folder to `prefixes`, do not nest.
 - A DAG's source file is remembered by its **full path** (e.g.
   `config/risk_dags/foo.json`), so two folders may contain files with the same

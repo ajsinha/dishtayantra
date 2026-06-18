@@ -222,7 +222,7 @@ class DAGLoaderMixin:
 
         v3.1.0: scans every prefix in ``self.dag_config_prefixes`` (config/dags
         plus any 'storage.dags.prefixes'). Only DIRECT children of each prefix
-        are returned - sub-folders (e.g. 'config/dags/examples/') are never
+        are returned - sub-folders (e.g. a nested 'samples/' directory) are never
         treated as live DAGs. ``base`` is the prefix-with-slash for that entry,
         used to derive the folder-relative filename.
         """

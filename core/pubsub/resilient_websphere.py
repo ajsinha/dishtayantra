@@ -60,7 +60,13 @@ class OpenQueueInfo:
 
 
 class ResilientQueue:
-    """A resilient wrapper around pymqi.Queue."""
+    """A resilient wrapper around a pymqi.Queue that survives reconnects.
+
+    An open MQ queue handle is tied to the connection; a dropped queue-manager
+    connection invalidates it. This wrapper remembers the queue name and open-options
+    so the handle can be transparently re-opened after a reconnect (driven by
+    ``_restore_queues`` on the manager), and routes puts through the manager's
+    buffer-on-failure path so messages aren't lost during the gap."""
 
     def __init__(self, queue_manager, queue_name: str, open_options: int = None):
         self.queue_manager = queue_manager

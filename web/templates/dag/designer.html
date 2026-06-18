@@ -42,6 +42,31 @@
         --text-muted: #7681a8;
     }
 
+    /* Green is a dark-family theme: flip the same canvas/panel/text vars to
+       green tones (light text on dark green) so contrast matches the rest of
+       the app. Node/component accent swatches stay vivid, as in dark. */
+    [data-theme="green"] {
+        --canvas-bg: #07241a;
+        --canvas-grid: #0e3826;
+        --panel-bg: #0e3826;
+        --panel-border: #2a5c44;
+        --text-primary: #f5f8f3;
+        --text-secondary: #d6dfd2;
+        --text-muted: #bcae7a;
+    }
+
+    /* Ubuntu is a dark-family theme: aubergine canvas/panels with warm-white
+       text (all >= WCAG AA on the canvas and panel surfaces). */
+    [data-theme="ubuntu"] {
+        --canvas-bg: #2C001E;
+        --canvas-grid: #44122F;
+        --panel-bg: #3D1330;
+        --panel-border: #5E2750;
+        --text-primary: #FBF1EC;
+        --text-secondary: #E7D7DF;
+        --text-muted: #C2A7B6;
+    }
+
     body {
         background: var(--canvas-bg);
         overflow: hidden;

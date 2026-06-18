@@ -19,7 +19,7 @@
                 </div>
                 <div>
                     <h1 class="mb-0">System Architecture</h1>
-                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra v2.2</p>
+                    <p class="text-muted mb-0">Comprehensive technical architecture of DishtaYantra</p>
                 </div>
             </div>
         </div>
@@ -46,6 +46,7 @@
                         <a href="#ha" class="btn btn-outline-primary btn-sm">High Availability</a>
                         <a href="#security" class="btn btn-outline-primary btn-sm">Security</a>
                         <a href="#performance" class="btn btn-outline-primary btn-sm">Performance</a>
+                        <a href="#recent-subsystems" class="btn btn-outline-info btn-sm"><i class="bi bi-stars"></i> Recent Subsystems</a>
                     </div>
                 </div>
             </div>
@@ -64,21 +65,21 @@
                     
                     <div class="row g-4 mt-3">
                         <div class="col-md-6 col-lg-2">
-                            <div class="text-center p-3 bg-light rounded">
+                            <div class="text-center p-3 bg-primary bg-opacity-10 rounded border border-primary">
                                 <i class="bi bi-diagram-3 text-primary" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">DAG Processing</h6>
                                 <small class="text-muted">Parallel node execution with topological sorting</small>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-2">
-                            <div class="text-center p-3 bg-light rounded">
+                            <div class="text-center p-3 bg-success bg-opacity-10 rounded border border-success">
                                 <i class="bi bi-hdd-network text-success" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">Multi-Broker</h6>
                                 <small class="text-muted">Kafka, RabbitMQ, Redis, LMDB, and more</small>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-2">
-                            <div class="text-center p-3 bg-light rounded">
+                            <div class="text-center p-3 bg-info bg-opacity-10 rounded border border-info">
                                 <i class="bi bi-code-slash text-info" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">Multi-Language</h6>
                                 <small class="text-muted">Python, Java, C++, Rust, REST calculators</small>
@@ -99,7 +100,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-2">
-                            <div class="text-center p-3 bg-light rounded">
+                            <div class="text-center p-3 bg-warning bg-opacity-10 rounded border border-warning">
                                 <i class="bi bi-shield-check text-warning" style="font-size: 2.5rem;"></i>
                                 <h6 class="mt-2 mb-1">High Availability</h6>
                                 <small class="text-muted">Zookeeper-based leader election</small>
@@ -203,7 +204,7 @@
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <div class="bg-light p-4 rounded" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                            <div class="bg-body-tertiary p-4 rounded" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
 <pre class="mb-0">
 ┌─────────────────────────────────┐
 │    Presentation Layer           │  Web UI, APIs
@@ -333,7 +334,7 @@
                         <div class="col-md-4 col-lg-2">
                             <div class="card h-100 border-dark">
                                 <div class="card-body text-center p-2">
-                                    <i class="bi bi-trash text-dark" style="font-size: 1.5rem;"></i>
+                                    <i class="bi bi-trash text-secondary" style="font-size: 1.5rem;"></i>
                                     <h6 class="mt-2 mb-1" style="font-size: 0.8rem;">SinkNode</h6>
                                     <small class="text-muted">Discards data</small>
                                 </div>
@@ -343,7 +344,7 @@
 
                     <!-- Execution Flow -->
                     <h6 class="border-bottom pb-2 mt-4"><i class="bi bi-arrow-right-circle me-2"></i>Execution Flow</h6>
-                    <div class="bg-light p-4 rounded mt-3">
+                    <div class="bg-body-tertiary p-4 rounded mt-3">
                         <div class="row text-center">
                             <div class="col">
                                 <div class="bg-primary text-white rounded p-2 mb-2">
@@ -558,7 +559,7 @@ Timeline:
                     <h6 class="border-bottom pb-2"><i class="bi bi-toggle-on me-2"></i>Light Up / Light Down Control</h6>
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <div class="p-3 rounded" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                            <div class="p-3 rounded bg-success bg-opacity-10 border border-success">
                                 <h6><span class="badge bg-success">🟢 Light Up (Active)</span></h6>
                                 <ul class="mb-0 small">
                                     <li>Subgraph participates in calculation cycles</li>
@@ -568,7 +569,7 @@ Timeline:
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="p-3 rounded" style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);">
+                            <div class="p-3 rounded bg-danger bg-opacity-10 border border-danger">
                                 <h6><span class="badge bg-danger">🔴 Light Down (Suspended)</span></h6>
                                 <ul class="mb-0 small">
                                     <li>Subgraph is skipped in calculation cycles</li>
@@ -858,7 +859,7 @@ DishtaYantra          │ External Service
         <div class="col-12">
             <div class="card border-0 shadow-sm" style="border-left: 4px solid #06b6d4 !important;">
                 <div class="card-header text-white" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
-                    <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2"></i>LMDB Zero-Copy Data Exchange <span class="badge bg-light text-dark ms-2">v1.1.2+</span></h5>
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge-fill me-2"></i>LMDB Zero-Copy Data Exchange <span class="badge text-bg-secondary ms-2">v1.1.2+</span></h5>
                 </div>
                 <div class="card-body">
                     <p>DishtaYantra v1.1.2 introduces <strong>LMDB-based zero-copy data exchange</strong> for native calculators. This high-performance innovation enables 100-1000x faster data transfer for large payloads compared to traditional serialization.</p>
@@ -966,7 +967,7 @@ DishtaYantra          │ External Service
 
                     <!-- Configuration -->
                     <h6 class="border-bottom pb-2"><i class="bi bi-sliders me-2"></i>Configuration</h6>
-                    <div class="bg-light p-3 rounded mb-3">
+                    <div class="bg-body-tertiary p-3 rounded mb-3">
                         <p class="small mb-2"><strong>application.properties:</strong></p>
                         <code class="small">
                             lmdb.db.path=/var/dishtayantra/lmdb<br>
@@ -974,7 +975,7 @@ DishtaYantra          │ External Service
                             lmdb.ttl.seconds=300
                         </code>
                     </div>
-                    <div class="bg-light p-3 rounded">
+                    <div class="bg-body-tertiary p-3 rounded">
                         <p class="small mb-2"><strong>DAG Node Configuration:</strong></p>
                         <code class="small">
                             "lmdb_enabled": true,<br>
@@ -1129,7 +1130,7 @@ DishtaYantra          │ External Service
                             </ul>
                         </div>
                         <div class="col-md-6">
-                            <div class="bg-light p-3 rounded">
+                            <div class="bg-body-tertiary p-3 rounded">
                                 <strong>Supported Resilient Adapters:</strong>
                                 <ul class="mb-0 mt-2">
                                     <li>ResilientKafka</li>
@@ -1349,7 +1350,7 @@ DishtaYantra          │ External Service
                     <div class="row">
                         <div class="col-lg-6">
                             <p class="small text-muted">File: <code>config/worker_config.json</code></p>
-                            <div class="bg-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+                            <div class="bg-body-tertiary p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
 <pre class="mb-0">{
   "worker_pool": {
     "enabled": false,  <span class="text-muted">// Set true to enable</span>
@@ -1371,7 +1372,7 @@ DishtaYantra          │ External Service
                         </div>
                         <div class="col-lg-6">
                             <p class="small text-muted">DAG-level affinity in DAG JSON:</p>
-                            <div class="bg-light p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
+                            <div class="bg-body-tertiary p-3 rounded" style="font-family: monospace; font-size: 0.75rem;">
 <pre class="mb-0">{
   "name": "critical_trading_dag",
   "worker_affinity": {
@@ -1494,25 +1495,25 @@ DishtaYantra          │ External Service
                             <p>Real-time metrics collection using <code>psutil</code>:</p>
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-cpu text-primary"></i>
                                         <small class="d-block">CPU</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-memory text-success"></i>
                                         <small class="d-block">Memory</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-hdd text-warning"></i>
                                         <small class="d-block">Disk</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-wifi text-info"></i>
                                         <small class="d-block">Network</small>
                                     </div>
@@ -1592,25 +1593,25 @@ DishtaYantra          │ External Service
                             <h6 class="border-bottom pb-2"><i class="bi bi-graph-up me-2"></i>Metrics Categories</h6>
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-diagram-3 text-primary"></i>
                                         <small class="d-block">DAG Metrics</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-calculator text-success"></i>
                                         <small class="d-block">Calculator Metrics</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-envelope text-warning"></i>
                                         <small class="d-block">Messaging Metrics</small>
                                     </div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="bg-light p-2 rounded text-center">
+                                    <div class="bg-body-tertiary p-2 rounded text-center">
                                         <i class="bi bi-hdd text-info"></i>
                                         <small class="d-block">Cache Metrics</small>
                                     </div>
@@ -1996,10 +1997,41 @@ Python 3.13+ Free-Threading:
         </div>
     </div>
 
+    <!-- Recent Subsystems -->
+    <div class="row mb-4" id="recent-subsystems">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-stars me-2"></i>Recent Subsystems (Opt-In, Backward Compatible)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-table me-2"></i>Arrow RecordBatch Edges &amp; Native C Data Interface</h6>
+                            <p>Edges can carry an immutable Apache Arrow <code>RecordBatch</code> by reference between nodes (the equality gate compares batches with <code>RecordBatch.equals</code>), removing the per-stage envelope copy — ~2.29&times; faster end-to-end with byte-identical output. Hot kernels can hand the batch to a compiled C function across the <strong>Arrow C Data Interface</strong> with no copy and no serialization, falling back to pure <code>pyarrow</code> when no compiler is available.</p>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-shield-lock me-2"></i>WebAssembly Sandboxed Calculators</h6>
+                            <p>A calculator can run an exported <strong>WASM</strong> function inside a wasmtime sandbox with a fuel-based CPU bound — safe for untrusted/multi-tenant code, language-agnostic, and host-compiler-independent. The runtime is optional and the path fails closed when absent.</p>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-speedometer2 me-2"></i>Backpressure (Credit-Based Flow Control)</h6>
+                            <p>A bounded credit scheme caps in-flight messages between publisher and subscriber; when credits are exhausted the policy is <code>block</code> (true backpressure) or <code>drop</code> (counted). Off by default; it is the floor async egress builds on.</p>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <h6 class="border-bottom pb-2"><i class="bi bi-hdd-network me-2"></i>Async Egress (WAL-Backed Publication)</h6>
+                            <p>When enabled, <code>publish()</code> becomes a non-blocking append to a per-destination <strong>write-ahead log</strong> drained by a background writer, so a slow broker never stalls the compute thread. Guarantees <strong>per-destination FIFO</strong> (single ordered writer, stop-the-line retries — never a Sell before its Buy), durable at-least-once resume from the acked offset, portable stdlib WAL backends (filelog/sqlite, no native dep), and a bounded, self-reclaiming buffer. In worker mode each DAG's WAL+drainer co-locate in its pinned worker, so workers drain in parallel — massively parallel egress. See the <em>Async Egress (WAL-Backed Publication) Guide</em>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <div class="row">
         <div class="col-12">
-            <div class="card border-0 shadow-sm bg-light">
+            <div class="card border-0 shadow-sm bg-body-tertiary">
                 <div class="card-body text-center">
                     <p class="mb-2">
                         <a href="{{ url_for('help') }}" class="btn btn-outline-primary">

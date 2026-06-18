@@ -64,6 +64,9 @@ def make_trade(i, rng, anomaly_pct):
         "quantity": quantity,
         "price": price,
         "currency": currency,
+        # client_id lets the SAME trade stream drive client-centric pipelines
+        # (e.g. the EOD running-exposure example) without a separate generator.
+        "client_id": f"C{(i % 5) + 1}",
         "desk": rng.choice(DESKS),
         "trader": rng.choice(TRADERS),
         "venue": rng.choice(["NYSE", "NASDAQ", "LSE", "XETRA", "TSE"]),

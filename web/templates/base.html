@@ -214,7 +214,78 @@
             --bs-code-color: #f2d98b;
             --bs-highlight-bg: #2f3a12;
         }
-        
+
+        /* ============================================
+           UBUNTU THEME (data-theme="ubuntu")
+           Inspired by the Ubuntu desktop: aubergine background, Ubuntu
+           orange (#E95420) accent, warm-white text. A dark-family theme, so
+           it shares the dark-mode light-on-dark overrides below. All text/bg
+           pairs verified >= WCAG AA (contrast computed, not eyeballed).
+           ============================================ */
+        [data-theme="ubuntu"] {
+            --primary-gradient: linear-gradient(135deg, #2C001E 0%, #44122F 50%, #2C001E 100%);
+            --primary-dark: #240018;
+            --primary-medium: #44122F;
+            --primary-light: #5E2750;
+            --accent-color: #E95420;          /* Ubuntu orange */
+
+            /* Brand tokens (orange-on-aubergine identity) */
+            --brass: #E95420;
+            --brass-soft: #FF8A5C;
+            --tick: #FF8A5C;
+            --night: #2C001E;
+
+            /* Background colors - aubergine */
+            --bg-body: #2C001E;
+            --bg-card: #3D1330;
+            --bg-card-header: linear-gradient(135deg, #3D1330 0%, #33102A 50%, #3D1330 100%);
+            --bg-table-header: linear-gradient(135deg, #3D1330, #4A1839);
+            --bg-table-stripe: rgba(233, 84, 32, 0.05);
+            --bg-table-hover: #4A1839;
+            --bg-input: #3D1330;
+            --bg-code: #240018;
+
+            /* Text colors (all >= 4.5:1 on aubergine) */
+            --text-primary: #FBF1EC;          /* 16.8:1 on body */
+            --text-secondary: #E7D7DF;        /* 13.5:1 */
+            --text-muted: #C2A7B6;            /* 8.4:1 */
+            --text-on-primary: #FBF1EC;
+            --text-link: #FF8A5C;             /* 8.0:1 - light orange links */
+
+            /* Border colors */
+            --border-color: #5E2750;
+            --border-light: #45203B;
+
+            /* Shadow */
+            --card-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.55), 0 2px 4px -1px rgba(0, 0, 0, 0.35);
+            --card-shadow-hover: 0 14px 32px -10px rgba(0, 0, 0, 0.65), 0 4px 6px -2px rgba(0, 0, 0, 0.45);
+
+            /* Scrollbar */
+            --scrollbar-track: #3D1330;
+            --scrollbar-thumb: #5E2750;
+            --scrollbar-thumb-hover: #772953;
+
+            /* Bootstrap 5.3 token bridge (light-on-aubergine). Pair with data-bs-theme="dark". */
+            --bs-body-bg: var(--bg-body);
+            --bs-body-bg-rgb: 44, 0, 30;
+            --bs-body-color: var(--text-primary);
+            --bs-body-color-rgb: 251, 241, 236;
+            --bs-emphasis-color: var(--text-primary);
+            --bs-emphasis-color-rgb: 251, 241, 236;
+            --bs-secondary-color: var(--text-secondary);
+            --bs-secondary-bg: var(--bg-card);
+            --bs-tertiary-color: var(--text-muted);
+            --bs-tertiary-bg: #4A1839;
+            --bs-border-color: var(--border-color);
+            --bs-border-color-translucent: rgba(255, 138, 92, 0.16);
+            --bs-heading-color: var(--text-primary);
+            --bs-link-color: var(--text-link);
+            --bs-link-color-rgb: 255, 138, 92;
+            --bs-link-hover-color: #ffa87f;
+            --bs-code-color: #FF8A5C;
+            --bs-highlight-bg: #5E2750;
+        }
+
         /* ============================================
            BASE STYLES
            ============================================ */
@@ -870,7 +941,7 @@
         }
 
         /* ============================================
-           DARK MODE CONTRAST HARDENING (v3.2.0)
+           DARK MODE CONTRAST HARDENING
            Fixes text that was invisible/low-contrast in dark mode because it
            used a fixed colour (often --primary-dark / Bootstrap defaults) that
            assumed a light background, or sat on a hard-coded light background.
@@ -1017,6 +1088,71 @@
         .card-header.bg-warning {
             color: #000000 !important;
         }
+    
+
+        /* ============================================
+           Ubuntu override twins (dark-family; generated from the green
+           overrides - identical bodies via shared var() tokens).
+           ============================================ */
+        so it still needs re-colouring on the dark surface. */
+        [data-theme="ubuntu"] .bg-light {
+            background: var(--bg-card) !important;
+        }
+        [data-theme="ubuntu"] .border {
+            border-color: var(--border-color) !important;
+        }
+        or sat on a hard-coded light background.
+           ============================================ */
+
+        
+        [data-theme="ubuntu"] .metric-value,
+        [data-theme="ubuntu"] .log-stat-value,
+        [data-theme="ubuntu"] .stat-number,
+        [data-theme="ubuntu"] .stat-value,
+        [data-theme="ubuntu"] .gauge-value,
+        [data-theme="ubuntu"] .network-stat-value,
+        [data-theme="ubuntu"] .query-section h5 {
+            color: var(--text-primary);
+        }
+        but a paired `.text-dark`
+           (e.g. light chips/badges) keeps its dark text -> dark-on-dark. */
+        [data-theme="ubuntu"] .bg-light.text-dark,
+        [data-theme="ubuntu"] .badge.bg-light {
+            color: var(--text-primary) !important;
+        }
+        so re-tint
+           those for dark mode (their text is light via --bs-table-color). */
+        [data-theme="ubuntu"] .table-success { --bs-table-bg: rgba(16, 185, 129, 0.18); }
+        [data-theme="ubuntu"] .table-danger { --bs-table-bg: rgba(239, 68, 68, 0.18); }
+        [data-theme="ubuntu"] .table-warning { --bs-table-bg: rgba(245, 158, 11, 0.18); }
+        [data-theme="ubuntu"] .table-info { --bs-table-bg: rgba(6, 182, 212, 0.18); }
+        [data-theme="ubuntu"] .table-primary { --bs-table-bg: rgba(127, 180, 255, 0.18); }
+        [data-theme="ubuntu"] .table-light { --bs-table-bg: var(--bg-table-header); }
+        [data-theme="ubuntu"] .table-secondary { --bs-table-bg: var(--bg-card); }
+        [data-theme="ubuntu"] .btn-outline-dark,
+        [data-theme="ubuntu"] .btn-outline-secondary {
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+        [data-theme="ubuntu"] .btn-outline-dark:hover,
+        [data-theme="ubuntu"] .btn-outline-secondary:hover {
+            color: var(--bg-body);
+            background: var(--text-primary);
+        }
+        [data-theme="ubuntu"] .btn-outline-primary {
+            color: #7fb4ff;
+            border-color: #7fb4ff;
+        }
+        [data-theme="ubuntu"] .btn-outline-primary:hover {
+            color: var(--bg-body);
+            background: #7fb4ff;
+        }
+        [data-theme="ubuntu"] .text-success { color: #20c997 !important; }
+        [data-theme="ubuntu"] .text-danger { color: #f87171 !important; }
+        [data-theme="ubuntu"] .text-warning { color: #fbbf24 !important; }
+        [data-theme="ubuntu"] .text-info { color: #22d3ee !important; }
+        [data-theme="ubuntu"] .text-primary { color: #60a5fa !important; }
+
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -1045,6 +1181,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('cache_management') }}">
                             <i class="bi bi-hdd-rack"></i> Cache
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('egress_monitoring') }}">
+                            <i class="bi bi-arrow-up-right-circle"></i> Egress
                         </a>
                     </li>
                     {% if 'admin' in session.get('roles', []) %}
@@ -1125,6 +1266,7 @@
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="light"><i class="bi bi-sun-fill me-2"></i>Light<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i>Dark<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="green"><i class="bi bi-watch me-2"></i>Green<i class="bi bi-check2 theme-check ms-2"></i></button></li>
+                            <li><button type="button" class="dropdown-item theme-option" data-theme-value="ubuntu"><i class="bi bi-ubuntu me-2"></i>Ubuntu<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                         </ul>
                     </li>
                     {% if session.username and ha_role %}
@@ -1210,8 +1352,8 @@
     // ============================================
     (function() {
         const THEME_KEY = 'dishtayantra-theme';
-        const THEMES = ['light', 'dark', 'green'];
-        const ICONS = { light: 'bi-sun-fill', dark: 'bi-moon-stars-fill', green: 'bi-watch' };
+        const THEMES = ['light', 'dark', 'green', 'ubuntu'];
+        const ICONS = { light: 'bi-sun-fill', dark: 'bi-moon-stars-fill', green: 'bi-watch', ubuntu: 'bi-ubuntu' };
         const html = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         const options = document.querySelectorAll('.theme-option');

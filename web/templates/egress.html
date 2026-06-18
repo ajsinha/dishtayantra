@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Egress Monitoring - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .egress-metric {
+        font-variant-numeric: tabular-nums;
+    }
+    .egress-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+    .egress-dot.up   { background-color: #10b981; box-shadow: 0 0 6px #10b981; }
+    .egress-dot.down { background-color: #ef4444; box-shadow: 0 0 6px #ef4444; }
+    .egress-hw { color: #ef4444; font-weight: 600; }
+    #egress-error { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h2 class="mb-0"><i class="bi bi-arrow-up-right-circle"></i> Egress Monitoring</h2>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-muted small" id="egress-updated">&nbsp;</span>
+            <button class="btn btn-sm btn-outline-secondary" id="egress-refresh">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="alert alert-info py-2 small" role="alert">
+        <i class="bi bi-info-circle"></i>
+        Read-only view of the async egress pool in <strong>this process</strong>. In
+        multiprocess worker mode, each DAG-worker process runs its own egress pool that
+        is not shown here. Async egress is opt-in (<code>egress.async.enabled</code>);
+        if it is off, no destinations appear.
+    </div>
+
+    <div class="alert alert-danger py-2 small" role="alert" id="egress-error"></div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Worker Threads</div>
+                    <div class="fs-3 egress-metric" id="m-workers">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Destinations</div>
+                    <div class="fs-3 egress-metric" id="m-destinations">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Total Written</div>
+                    <div class="fs-3 egress-metric" id="m-written">-</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small text-uppercase">Total Retries</div>
+                    <div class="fs-3 egress-metric" id="m-retries">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Destinations</div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Destination</th>
+                        <th>Status</th>
+                        <th class="text-end">Written</th>
+                        <th class="text-end">Retries</th>
+                        <th class="text-end">Committed Offset</th>
+                        <th class="text-end">WAL Bytes</th>
+                        <th>Last Error</th>
+                    </tr>
+                </thead>
+                <tbody id="egress-tbody">
+                    <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const fmt = n => (typeof n === 'number') ? n.toLocaleString() : (n ?? '-');
+    const bytes = n => {
+        if (typeof n !== 'number') return '-';
+        const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let i = 0, v = n;
+        while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+        return v.toFixed(i ? 1 : 0) + ' ' + u[i];
+    };
+    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    function render(data) {
+        const dests = data.destinations || [];
+        document.getElementById('m-workers').textContent = fmt(data.worker_count);
+        document.getElementById('m-destinations').textContent = fmt(dests.length);
+        document.getElementById('m-written').textContent =
+            fmt(dests.reduce((a, d) => a + (d.written || 0), 0));
+        document.getElementById('m-retries').textContent =
+            fmt(dests.reduce((a, d) => a + (d.retries || 0), 0));
+
+        const tbody = document.getElementById('egress-tbody');
+        if (!dests.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">' +
+                'No active egress destinations in this process.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = dests.map(d => {
+            const up = d.connected;
+            const hw = d.wal_high_water;
+            return '<tr>' +
+                '<td><code>' + esc(d.destination ?? '?') + '</code></td>' +
+                '<td><span class="egress-dot ' + (up ? 'up' : 'down') + '"></span>' +
+                    (up ? 'Connected' : 'Disconnected') + '</td>' +
+                '<td class="text-end egress-metric">' + fmt(d.written) + '</td>' +
+                '<td class="text-end egress-metric">' + fmt(d.retries) + '</td>' +
+                '<td class="text-end egress-metric">' + fmt(d.committed_offset) + '</td>' +
+                '<td class="text-end egress-metric' + (hw ? ' egress-hw' : '') + '">' +
+                    bytes(d.wal_bytes) + (hw ? ' \u26a0' : '') + '</td>' +
+                '<td class="small text-danger">' + (d.last_error ? esc(d.last_error) : '') + '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    async function refresh() {
+        const errBox = document.getElementById('egress-error');
+        try {
+            const r = await fetch('{{ url_for("egress_stats") }}', { headers: { 'Accept': 'application/json' } });
+            const data = await r.json();
+            if (data.error) { throw new Error(data.error); }
+            errBox.style.display = 'none';
+            render(data);
+            document.getElementById('egress-updated').textContent =
+                'Updated ' + new Date().toLocaleTimeString();
+        } catch (e) {
+            errBox.textContent = 'Could not load egress stats: ' + e.message;
+            errBox.style.display = 'block';
+        }
+    }
+
+    document.getElementById('egress-refresh').addEventListener('click', refresh);
+    refresh();
+    setInterval(refresh, 5000);
+})();
+</script>
+{% endblock %}

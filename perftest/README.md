@@ -9,7 +9,24 @@ A realistic, Kafka-fed trade-ETL workload for benchmarking end-to-end
 |------|---------|
 | `perftest_trade_etl.json` | The 11-node branching DAG: Kafka source -> common prep -> 3 parallel branches -> merge -> file + Kafka sinks. |
 | `etl_calculators.py` | Custom trade-processing calculators (validate, normalize, FX, notional, fees, risk/VaR, classify, anomaly, summarize). |
-| `generate_trades.py` | Configurable load generator that publishes trades to Kafka (default 10,000). |
+| `generate_trades.py` | Configurable load generator. `make_trade()` is the canonical trade record (trade_id, symbol, side, quantity, price, currency, client_id, ...) used as the data source by every example below. |
+
+## Use-case examples (all driven by the same trade stream)
+
+Each example consumes the canonical trade stream from `generate_trades.make_trade`
+(in-memory, so no broker is needed) and demonstrates one execution pattern. Run any
+of them with `python -m perftest.run_<name>_example`.
+
+| Use case | DAG JSON | Calculators | Run harness | What it shows |
+|----------|----------|-------------|-------------|---------------|
+| Row ETL (baseline) | `perftest_trade_etl.json` | `etl_calculators.py` | `run_worked_example` | One-record-at-a-time enrichment; the correctness reference. |
+| Arrow columnar ETL | `perftest_arrow_etl.json` | `arrow_etl_calculators.py` | `run_worked_example` | Batch-envelope pipeline; vectorized Arrow calculators output-identical to the row versions. |
+| Mixed Arrow + row | `perftest_arrow_mixed.json` | arrow + row | `run_arrow_example` | A pipeline that mixes vectorized Arrow stages with plain row calculators. |
+| Auto-batching | `perftest_arrow_autobatch.json` | row + adapter | `run_autobatch_example` | `BatchingSubscriptionNode` coalesces a stream into batches; `FlatteningPublicationNode` unbatches on egress. |
+| Arrow zero-copy transport | `perftest_arrow_transport.json` | arrow | `run_arrow_transport_example` | `ArrowBatchingSubscriptionNode` carries native RecordBatches by reference (no per-hop copy). |
+| **EOD batch** | `perftest_eod_batch.json` | `eod_enrichment_calculators.py` | `run_eod_example` | Load dimension feeds once, replay the day's trades as a finite batched stream; client-exposure / limit-breach enrichment. |
+| **WASM sandbox** | `perftest_wasm.json` | `core.calculator.wasm_calculator.WasmCalculator` | `run_wasm_example` | `notional = price*quantity` computed inside a memory-isolated, CPU-capped WebAssembly module (`examples/wasm/calculators.wat`). Needs `pip install wasmtime`. |
+
 
 ## The pipeline (11 nodes, branching topology)
 

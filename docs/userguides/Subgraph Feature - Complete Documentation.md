@@ -441,7 +441,7 @@ See `config/example/dags/trading_pipeline_with_subgraphs.json` for a complete ex
 
 Run the demo script:
 ```bash
-python example/subgraph_demo.py
+python examples/subgraph_demo.py
 ```
 
 ---

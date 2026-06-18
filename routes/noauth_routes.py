@@ -275,12 +275,14 @@ class NoAuthRoutes:
                         categories['calculator'].append(guide_info)
                     elif any(x in lower_title for x in
                              ['admin', 'user', 'monitor', 'prometheus',
-                              'log']):
+                              'log', 'observability']):
                         categories['admin'].append(guide_info)
                     elif any(x in lower_title for x in
                              ['subgraph', 'autoclone', 'cache', 'lmdb',
                               'router', 'packaging', 'resilient', 'storage',
-                              'ha', 'database']):
+                              'ha', 'database', 'backpressure', 'flow control',
+                              'benchmark', 'performance', 'egress', 'wal',
+                              'publication']):
                         categories['feature'].append(guide_info)
                     else:
                         categories['other'].append(guide_info)

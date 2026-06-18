@@ -66,6 +66,14 @@ httpx>=0.27
 # google-cloud-storage>=2.16
 
 # --------------------------------------------------------------------------
+# Optional WebAssembly calculator runtime - install only if you use
+# WasmCalculator (core.calculator.wasm_calculator). Bundles the engine; no
+# host C/Rust compiler needed. See the "WebAssembly (WASM) Sandboxed
+# Calculators Guide" in Help.
+# --------------------------------------------------------------------------
+# wasmtime>=20.0
+
+# --------------------------------------------------------------------------
 # Front-end assets (Bootstrap, jQuery, Prism, highlight.js, fonts) are
 # VENDORED under web/static/vendor/ - no CDN or npm install is needed at
 # runtime, so the UI renders fully in air-gapped deployments.

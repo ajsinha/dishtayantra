@@ -159,12 +159,13 @@ class DAGAffinityManager:
         return profile
     
     def assign_dag(self, dag_config: dict) -> int:
-        """
-        Assign a DAG to a worker based on strategy and constraints.
-        
-        Returns:
-            worker_id: The assigned worker ID
-        """
+        """Pick the worker that will own this DAG, and record the assignment.
+
+        Core invariant: an ENTIRE DAG maps to ONE worker (never split), so its nodes,
+        publishers, WALs, and drainers co-locate in one process. Resolution order:
+        an explicit ``pinned_worker`` first; then ``exclusive`` DAGs get a worker to
+        themselves; otherwise the configured strategy (round-robin / weight-based /
+        least-loaded) balances load. Thread-safe via ``_lock``. Returns the worker id."""
         with self._lock:
             profile = self.profile_dag(dag_config)
             dag_name = profile.name

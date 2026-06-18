@@ -51,18 +51,9 @@ _shutdown_in_progress = False
 
 
 def _setup_logging():
-    """Setup logging configuration"""
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-    
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler('logs/dagserver.log'),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
+    """Setup logging configuration (text or JSON, driven by logging.* config)."""
+    from core.log_config import configure_logging
+    configure_logging(logfile='dagserver.log')
 
 logger = logging.getLogger(__name__)
 

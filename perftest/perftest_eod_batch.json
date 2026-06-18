@@ -1,0 +1,60 @@
+{
+  "_comment": "END-OF-DAY (EOD) BATCH EXAMPLE. The classic batch pattern: load small dimension feeds (fx rates, client limits) ONCE, then replay the day's trades through the DAG as a finite stream. A BatchingSubscriptionNode coalesces many trades into one envelope; RowCalculatorBatchAdapter applies the row-wise ReferenceEnrichCalculator across the batch; FlatteningPublicationNode unbatches to one enriched message per trade on the way out. Uses the canonical perftest trade stream (now carrying client_id) so EOD client-exposure enrichment works on the same data as the other examples. Runs with no Kafka. Feed it with: python -m perftest.run_eod_example",
+  "name": "perftest_eod_batch",
+  "description": "trade stream (mem, batched) -> reference enrichment (fx + client limits) -> flatten -> mem sink. Standalone form of the 'eod_batched' pipeline in run_eod_example.py.",
+  "version": "5.10.2",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    {
+      "name": "eod_in",
+      "config": {
+        "source": "mem://queue/eod_trades_in",
+        "max_depth": 2000000,
+        "_note": "Replays the day's trades (perftest.generate_trades.make_trade). A bounded file is just a finite stream."
+      }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "eod_out",
+      "config": {
+        "destination": "mem://queue/eod_trades_out",
+        "_note": "One enriched message per trade (price_usd, notional_usd, client exposure / limit breach)."
+      }
+    }
+  ],
+
+  "calculators": [
+    {
+      "name": "enrich",
+      "type": "core.calculator.arrow_calculator.RowCalculatorBatchAdapter",
+      "config": {
+        "wrapped": {
+          "type": "perftest.eod_enrichment_calculators.ReferenceEnrichCalculator",
+          "config": {
+            "fx_rates": {"USD": 1.0, "EUR": 1.08, "GBP": 1.27, "JPY": 0.0067, "INR": 0.012},
+            "client_limits": {"C1": 5000000, "C2": 250000, "C3": 1000000, "C4": 75000, "C5": 10000000}
+          }
+        },
+        "_note": "The adapter lets a plain row calculator process a whole batch envelope; the wrapped calculator is unchanged from its single-row use."
+      }
+    }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    {"name": "ingest", "type": "BatchingSubscriptionNode", "config": {"batch": {"max_size": 500}}, "subscriber": "eod_in"},
+    {"name": "enrich_node", "type": "CalculationNode", "config": {}, "calculator": "enrich"},
+    {"name": "sink", "type": "FlatteningPublicationNode", "config": {}, "publishers": ["eod_out"]}
+  ],
+
+  "edges": [
+    {"from_node": "ingest", "to_node": "enrich_node"},
+    {"from_node": "enrich_node", "to_node": "sink"}
+  ]
+}

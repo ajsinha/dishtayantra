@@ -32,8 +32,16 @@ class InMemoryPubSub:
         self._topic_lock = threading.Lock()
         self._queue_stats = {}
         self._topic_stats = {}
+        self._bp_cache = None  # (enabled, capacity, policy, timeout); lazily read
         self._initialized = True
         logger.info("InMemoryPubSub initialized")
+
+    def _backpressure(self):
+        """Lazily read credit-based backpressure config (cached). Default: off."""
+        if self._bp_cache is None:
+            from core.pubsub.backpressure import read_backpressure_config
+            self._bp_cache = read_backpressure_config()
+        return self._bp_cache
 
     def create_queue(self, queue_name, max_size=100000):
         """Create a queue with specified name and max size"""
@@ -104,6 +112,17 @@ class InMemoryPubSub:
             self._topic_stats[topic_name]['last_publish'] = datetime.now().isoformat()
 
         for subscriber_queue in subscribers:
+            controller = getattr(subscriber_queue, 'credit', None)
+            if controller is not None:
+                # Credit-based backpressure path: spend a credit (block or drop
+                # per policy). A granted credit guarantees room, so put won't block.
+                if controller.acquire():
+                    subscriber_queue.put(message, block=False)
+                else:
+                    logger.warning(
+                        f"Backpressure: dropped message for topic {topic_name} "
+                        f"(no credit under '{controller.policy}' policy)")
+                continue
             try:
                 subscriber_queue.put(message, block=False)
             except queue.Full:
@@ -114,13 +133,31 @@ class InMemoryPubSub:
         if topic_name not in self._topics:
             self.create_topic(topic_name)
 
-        subscriber_queue = queue.Queue(maxsize=max_size)
+        enabled, capacity, policy, timeout = self._backpressure()
+        if enabled:
+            from core.pubsub.backpressure import CreditController, CreditQueue
+            controller = CreditController(min(capacity, max_size), policy, timeout)
+            subscriber_queue = CreditQueue(max_size, controller)
+        else:
+            subscriber_queue = queue.Queue(maxsize=max_size)
         with self._topic_lock:
             self._topics[topic_name].append(subscriber_queue)
             self._topic_stats[topic_name]['subscriber_count'] = len(self._topics[topic_name])
 
         logger.info(f"New subscriber to topic {topic_name}")
         return subscriber_queue
+
+    def get_backpressure_stats(self):
+        """Per-topic credit stats for each backpressured subscriber (empty when
+        backpressure is disabled). For observability/metrics."""
+        result = {}
+        with self._topic_lock:
+            for topic_name, subscribers in self._topics.items():
+                controllers = [getattr(q, 'credit', None) for q in subscribers]
+                controllers = [c for c in controllers if c is not None]
+                if controllers:
+                    result[topic_name] = [c.stats() for c in controllers]
+        return result
 
     def get_queue_details(self, queue_name):
         """Get details of a queue"""

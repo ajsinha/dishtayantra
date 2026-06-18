@@ -7,7 +7,13 @@ logger = logging.getLogger(__name__)
 
 
 class DataTransformer(ABC):
-    """Abstract base class for data transformers"""
+    """Abstract base class for data transformers.
+
+    Transformers run on a node's input edges (before calculate) or output (after),
+    reshaping data without being the node's main computation. Same purity contract as
+    calculators: don't mutate the input, be deterministic. They compose - a node can
+    chain several - so each should be a self-contained, order-independent-where-possible
+    step."""
 
     def __init__(self, name, config):
         self.name = name
@@ -17,8 +23,9 @@ class DataTransformer(ABC):
 
     @abstractmethod
     def transform(self, data):
-        """Transform and return result"""
-        pass
+        """Reshape and return the data. Treat ``data`` as read-only and return a new
+        value; transformers are chained, so mutating in place would corrupt a sibling's
+        view. Deterministic: equal input -> equal output."""
 
     def details(self):
         """Return details in JSON format"""

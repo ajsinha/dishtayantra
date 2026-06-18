@@ -62,15 +62,15 @@ from routes import (
     MetricsRoutes,
     NoAuthRoutes,
     RustRoutes,
+    EgressRoutes,
     UserRoutes,
     WorkerRoutes,
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Configure logging (text or JSON, driven by logging.* config; stdout only at
+# import time - run_server adds the file handler on real startup)
+from core.log_config import configure_logging
+configure_logging(logfile=None)
 logger = logging.getLogger(__name__)
 
 
@@ -315,6 +315,7 @@ class DishtaYantraWebApp:
         self.jvm_routes = JVMRoutes(self.app)    # v1.6.0
         self.cpp_routes = CPPRoutes(self.app)    # v1.7.0
         self.rust_routes = RustRoutes(self.app)  # v1.7.0
+        self.egress_routes = EgressRoutes(self.app, self.guards)  # read-only egress monitoring
 
         logger.info("Route handlers initialized successfully")
 

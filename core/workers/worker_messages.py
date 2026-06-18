@@ -31,17 +31,10 @@ warnings.filterwarnings("ignore", message=".*GIL.*lmdb.*", category=RuntimeWarni
 
 # Configure logging for worker process
 def setup_worker_logging(worker_id: int):
-    """Setup logging for worker process"""
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    
-    # Create handler for this worker
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter(
-        f'%(asctime)s [Worker-{worker_id}] %(levelname)s %(name)s: %(message)s'
-    ))
-    logger.handlers = [handler]
-    
+    """Setup logging for worker process (honors logging.* config: text adds a
+    [Worker-N] prefix; json adds a `worker` field). Single source of truth."""
+    from core.log_config import configure_logging
+    configure_logging(worker_id=worker_id, logfile=None)
     return logging.getLogger(__name__)
 
 

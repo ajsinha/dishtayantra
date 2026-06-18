@@ -37,6 +37,7 @@ from .worker_routes import WorkerRoutes
 from .jvm_routes import JVMRoutes
 from .cpp_routes import CPPRoutes
 from .rust_routes import RustRoutes
+from .egress_routes import EgressRoutes
 from .admin_routes import AdminRoutes
 from .admin_log_routes import AdminLogRoutes
 
@@ -54,6 +55,7 @@ __all__ = [
     'JVMRoutes',
     'CPPRoutes',
     'RustRoutes',
+    'EgressRoutes',
     'AdminRoutes',
     'AdminLogRoutes',
 ]

@@ -43,7 +43,7 @@ Features demonstrated:
 Direct usage of LMDB transport API and calculator wrapper within DishtaYantra:
 
 ```python
-from example.lmdb_calculators.python_lmdb_calculator import (
+from examples.lmdb_calculators.python_lmdb_calculator import (
     LargeMatrixProcessor,
     RiskCalculator,
     LMDBSimpleCalculator

@@ -8,6 +8,12 @@ from typing import Dict, Any, Protocol, runtime_checkable, Optional, Type
 logger = logging.getLogger(__name__)
 
 class DataCalculatorLike(Protocol):
+    """Structural contract for a calculator (duck-typed, no inheritance required).
+
+    Any object exposing this shape - ``__init__(name, config)``, ``calculate(data)``,
+    ``details()`` - is accepted by the engine, which is how non-Python calculators
+    (Java/C++/Rust bridges) and ``DataCalculator`` subclasses are treated uniformly."""
+
     def __init__(self, name, config: Dict[str, Any]):
         ...
 
@@ -19,7 +25,10 @@ class DataCalculatorLike(Protocol):
 
 
 class DataCalculator(ABC):
-    """Abstract base class for data calculators"""
+    """Abstract base class for data calculators - the primary extension point.
+
+    A calculator is the per-node compute function. Subclasses implement ``calculate``;
+    the engine handles wiring, dirtiness, and propagation."""
 
     def __init__(self, name, config: Dict[str,Any]):
         self.name = name
@@ -29,8 +38,15 @@ class DataCalculator(ABC):
 
     @abstractmethod
     def calculate(self, data):
-        """Calculate and return result"""
-        pass
+        """Transform input into output for this node. THE method every calculator
+        implements.
+
+        Contract: treat ``data`` as read-only (return a new value rather than mutating
+        the input - upstream nodes share it), and be deterministic - given equal input
+        produce equal output. The engine's equality gate compares outputs by value to
+        decide whether to propagate, so a calculator that returns an unchanged value is
+        correctly treated as "no change". Returning a fresh dict each call is the safe
+        default; the built-in calculators below deep-copy for exactly this reason."""
 
     def details(self) -> Dict[str, Any]:
         """Return details in JSON format"""

@@ -432,7 +432,52 @@
     [data-theme="green"] .doc-content code,
     [data-theme="green"] .doc-content p code,
     [data-theme="green"] .doc-content li code { color: #f2d98b; background: #103f2d; border-color: #2a5c44; }
-</style>
+
+    /* Ubuntu override twins (dark-family; from green). */
+    so the light-pane text colors defined above would be
+       near-invisible. These replacements are all verified AA/AAA on the
+       dark card. (Light theme is unchanged.)
+       ============================================================ */
+    [data-theme="ubuntu"] .doc-content h1,
+    [data-theme="ubuntu"] .doc-content h3 { color: #93c5fd; }
+    [data-theme="ubuntu"] .doc-content h2 {
+        color: #bfdbfe;                                                 /* 12.55 AAA */
+        border-bottom-color: var(--border-color);
+    }
+    [data-theme="ubuntu"] .doc-content h4 { color: #cbd5e1; }
+    [data-theme="ubuntu"] .doc-content h5,
+    [data-theme="ubuntu"] .doc-content h6 { color: #b8c2d6; }
+    [data-theme="ubuntu"] .doc-content p,
+    [data-theme="ubuntu"] .doc-content li,
+    [data-theme="ubuntu"] .doc-content td { color: #d7dee9; }
+    [data-theme="ubuntu"] .doc-content td { border-bottom-color: var(--border-color); }
+    [data-theme="ubuntu"] .doc-content tbody tr:hover td { background: #1c2547 !important; }
+    [data-theme="ubuntu"] .doc-content a { color: #60a5fa; }
+    [data-theme="ubuntu"] .doc-content code,
+    [data-theme="ubuntu"] .doc-content p code,
+    [data-theme="ubuntu"] .doc-content li code {
+        background: #1e2540;
+        color: #fcd34d;                                                 /* 10.45 AAA */
+        border-color: #2d375c;
+    }
+    [data-theme="ubuntu"] .doc-content blockquote {
+        background: linear-gradient(135deg, #161d33 0%, #141a30 100%);
+        color: #e6eaf3;                                                 /* 13.86 AAA */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+    [data-theme="ubuntu"] .doc-content blockquote strong:first-child { color: #fcd34d; }
+    [data-theme="ubuntu"] .doc-content h1,
+    [data-theme="ubuntu"] .doc-content h2,
+    [data-theme="ubuntu"] .doc-content h3 { color: #f2d98b; }
+    [data-theme="ubuntu"] .doc-content h2 { border-bottom-color: var(--border-color); }
+    [data-theme="ubuntu"] .doc-content a { color: #ecc763; }
+    [data-theme="ubuntu"] .doc-content blockquote { background: linear-gradient(135deg, #0c3526 0%, #0a2c1f 100%); color: #eef3ea; }
+    [data-theme="ubuntu"] .doc-content blockquote strong:first-child { color: #f2d98b; }
+    [data-theme="ubuntu"] .doc-content code,
+    [data-theme="ubuntu"] .doc-content p code,
+    [data-theme="ubuntu"] .doc-content li code { color: #f2d98b; background: #103f2d; border-color: #2a5c44; }
+
+    </style>
 {% endblock %}
 
 {% block content %}

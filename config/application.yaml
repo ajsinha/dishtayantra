@@ -15,7 +15,8 @@
 
 app:
   name: DishtaYantra
-  version: "3.2.0"
+  # Informational only; authoritative runtime version is core/version.py VERSION.
+  version: "5.11.3"
   author:
     name: Ashutosh Sinha
     email: ajsinha@gmail.com
@@ -34,6 +35,63 @@ server:
   host: 0.0.0.0
   port: 5002
   debug: false
+
+# ==========================================================================
+# Logging
+# ==========================================================================
+# Handled entirely at the formatter level (core/log_config.py) - switching
+# format changes every log line without touching any call site.
+#   format: text | json   (json = one compact JSON object per line)
+#   json_fields: comma list from {timestamp,epoch,level,logger,message,
+#                module,func,line,path,process,thread}
+#   json_include_extra: also emit any keys passed via logger.x(..., extra={...})
+logging:
+  format: json
+  level: INFO
+  json_fields: timestamp,level,logger,message
+  json_include_extra: "true"
+  text_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# ==========================================================================
+# Backpressure (credit-based flow control)
+# ==========================================================================
+# Opt-in. When OFF (default) the in-memory topic fan-out behaves exactly as
+# before (non-blocking put, drop-on-full). When ON, each subscriber grants the
+# publisher a bounded number of in-flight 'credits'; the publisher spends one
+# per message and the subscriber returns one per consume.
+#   policy: block - publisher waits for a credit (true backpressure)
+#           drop  - publisher drops (counted) when no credit is free
+#   timeout_ms: under 'block', max wait before falling back to a drop (0 = wait
+#               forever). NOTE: with a single-threaded producer/consumer, prefer
+#               'drop' or a finite timeout to avoid stalling the publisher.
+backpressure:
+  enabled: "false"
+  capacity: 1000
+  policy: block
+  timeout_ms: 0
+
+# Async egress (WAL-backed decoupled publication) - OFF by default. Endpoints are
+# taken from the publisher definitions, so there is no separate egress endpoint
+# config. See the "Async Egress (WAL-Backed Publication) Guide" in Help.
+egress:
+  async:
+    enabled: "false"
+    default: "true"           # default for publishers that don't set async_egress
+  worker:
+    count: 4                  # bounded egress worker pool size (per process)
+  wal:
+    backend: filelog          # filelog | sqlite | lmdb | memory (filelog/sqlite = pure stdlib)
+    path: ./data/egress_wal
+    max_bytes: 2147483648
+    high_water_pct: 80
+    segment_bytes: 134217728
+    fsync: interval           # always | interval | os
+    fsync_interval_ms: 50
+  batch:
+    max_records: 500
+  overflow:
+    policy: block             # block | drop
+    block_timeout_ms: 0
 
 # ==========================================================================
 # Storage Abstraction

@@ -869,11 +869,12 @@ that names the exact missing key rather than silently defaulting.
 
 ---
 
-## 7B. Recent Advances: Columnar Transport and Headless Orchestration
+## 7B. Recent Advances: Columnar Transport, Native and Sandboxed Calculators, and Asynchronous Egress
 
-The architecture described above has been extended with two capabilities that preserve
+The architecture described above has been extended with several capabilities that preserve
 its defining invariant — recomputation only when a node's input *actually changes* — while
-broadening the performance envelope and the operational model.
+broadening the performance envelope, the execution-safety model, and the operational model.
+Each is additive and off by default, so existing deployments are unchanged.
 
 ### 7B.1 Arrow-Native Columnar Transport
 
@@ -912,6 +913,65 @@ safe), **asynchronous** (workers run as child processes with a supervising waite
 **observable** (each worker's summary is read back and can be republished downstream). This
 gives backfills and scheduled batch runs the same dataflow semantics — including the change-only
 gate — as the live service, without bespoke orchestration code.
+
+### 7B.3 Zero-Copy Native Calculators via the Arrow C Data Interface
+
+The columnar transport of §7B.1 establishes the substrate for crossing the language boundary
+without copying. We realize this with a calculator vertical that hands an in-memory Arrow
+`RecordBatch` to a compiled native kernel through the **Arrow C Data Interface** — the stable
+ABI of `ArrowArray`/`ArrowSchema` structs — so the kernel reads the column buffers in place,
+with neither serialization nor a buffer copy crossing the boundary. The kernel is a small C
+translation unit compiled on first use by the system's C compiler and invoked through a thin
+bridge; the calculator is opt-in and degrades to an equivalent pure-Python `pyarrow`
+implementation when no compiler or native build is available, so portability is never lost.
+The equality gate is again preserved unchanged, since the native path consumes and produces
+standard immutable batches. A streaming benchmark workload (a Nexmark-style query set) was
+added alongside the existing trade-ETL workload to exercise this path under representative load.
+
+### 7B.4 Sandboxed Calculators via WebAssembly
+
+For untrusted or multi-tenant calculator code, we add an execution path that runs an exported
+**WebAssembly** function inside a WASM runtime (wasmtime) with a fuel-based CPU bound, so a
+calculator cannot exceed its instruction budget, escape its linear memory, or reach host
+resources. This collapses the four polyglot integration paths (Java/C++/Rust/REST) into a
+single portable artifact for the cases where isolation matters more than raw throughput: a
+`.wasm` module is host-compiler-independent, language-agnostic at the source level, and safe to
+accept from third parties. The runtime is an optional dependency and the path fails closed when
+it is absent. The first cut exposes a scalar floating-point boundary; a batch/Arrow hand-off is
+future work, after which sandboxed and native kernels share the same columnar contract.
+
+### 7B.5 Decoupled Asynchronous Egress with a Write-Ahead Log
+
+Publication to external brokers can be decoupled from the single compute thread. With the
+feature enabled, a publication node's `publish()` becomes a **non-blocking append to a
+per-destination write-ahead log (WAL)** and returns; a background drainer reads the WAL and
+writes to the broker. A slow or briefly-unavailable destination therefore no longer stalls the
+compute sweep, and in-flight messages are buffered durably rather than lost. Four properties
+make this safe rather than merely fast:
+
+1. *Per-destination FIFO ordering* is a correctness guarantee, not a tuning knob: a single
+   ordered writer drains each destination, and on a write failure it **stops the line** —
+   retrying the same record with backoff rather than advancing — so a later message can never
+   overtake an earlier one (e.g. a Sell can never precede its Buy). Parallelism is taken across
+   destinations, and within a destination only along independent partition keys.
+2. *Durability and recovery*: a record is acknowledged only after the broker accepts it, and the
+   acknowledged offset is itself durable, so after a crash the drainer reopens the WAL and
+   replays the un-acknowledged tail in order, yielding at-least-once delivery. The WAL backends
+   are portable and require no native dependency — a segmented stdlib append log with
+   length-prefix/CRC framing and torn-tail recovery, or stdlib SQLite in WAL mode — with an
+   optional memory-mapped store where available.
+3. *Bounded resources*: the WAL is hard-capped, a background reclaimer drops fully-acknowledged
+   segments, and an overflow policy (backpressure or drop) applies at the cap, so the buffer
+   self-trims and can never exhaust host memory or disk.
+4. *No second configuration surface*: egress workers reconstruct each connector from the
+   publisher definitions already present in the DAG, so operators configure destinations once.
+
+The subsystem composes with multiprocess/worker execution to give *massively parallel* egress.
+Because a whole DAG is pinned to one worker process and DAG names are universally unique, each
+DAG's publishers, its WALs, and its drainer co-locate in a single process; every worker drains
+its own WALs concurrently across all cores with no cross-process coordination on the hot path.
+The WAL is namespaced by the (universally unique) DAG name, so it follows the DAG and resumes
+correctly on whichever worker the DAG is scheduled to after a restart.
 
 ---
 

@@ -89,7 +89,14 @@ class DAGWorkerProcess(WorkerRuntimeMixin, Process):
         self.total_cycles = 0
     
     def run(self):
-        """Main worker process entry point"""
+        """Worker-process entry point (runs in a separate OS process).
+
+        Lifecycle: set up per-process logging and SIGTERM/SIGINT handlers (for clean
+        shutdown when the orchestrator stops it), initialize components, announce
+        WORKER_READY to the control plane, then enter ``_main_loop`` until told to stop.
+        A fatal error is reported upstream as WORKER_STOPPING and ``_cleanup`` always
+        runs. Each worker owns several whole DAGs - a DAG is never split across
+        processes - so all of a DAG's state lives here, GIL-free relative to siblings."""
         try:
             # Setup logging for this process
             self.logger = setup_worker_logging(self.worker_id)
@@ -147,7 +154,10 @@ class DAGWorkerProcess(WorkerRuntimeMixin, Process):
             self._init_lmdb_connection()
     
     def _main_loop(self):
-        """Main worker loop"""
+        """Per-iteration: drain control-plane messages (start/stop/migrate DAGs), run
+        one execution cycle across all owned DAGs, emit periodic status, then yield
+        briefly (1ms) to avoid busy-spinning. Loop errors are logged and the loop
+        continues (with a longer backoff) so one bad cycle doesn't kill the worker."""
         self.logger.info(f"Worker {self.worker_id} entering main loop")
         
         while self.running and not self.shutdown_event.is_set():
@@ -172,7 +182,9 @@ class DAGWorkerProcess(WorkerRuntimeMixin, Process):
         self.logger.info(f"Worker {self.worker_id} exiting main loop")
     
     def _process_control_messages(self):
-        """Process control messages from orchestrator"""
+        """Drain the control queue non-blockingly and dispatch each message to the
+        orchestrator handler. Non-blocking so the loop keeps running DAG cycles even
+        when no control traffic is pending."""
         try:
             while True:
                 try:

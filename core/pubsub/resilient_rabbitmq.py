@@ -14,9 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 class ResilientChannel:
-    """
-    A wrapper around pika.Channel that provides resilient operations.
-    """
+    """A pika.Channel wrapper that survives connection drops by replaying topology.
+
+    A RabbitMQ channel is connection-scoped: when the connection dies the channel and
+    everything declared on it (QoS, exchanges, queues, bindings, consumers) are gone -
+    unlike Kafka, where the broker holds durable topic state. So this wrapper records
+    every topology-defining call as it happens (via ``__getattr__`` interception) and,
+    after a reconnect, re-creates the channel and **replays** those calls to rebuild
+    server-side state transparently. Callers use it exactly like a pika channel."""
 
     def __init__(self, connection, channel_number=None):
         self.connection = connection
@@ -29,14 +34,17 @@ class ResilientChannel:
         self._bindings = []  # Track queue bindings
 
     def _get_channel(self):
-        """Get or create the underlying channel."""
+        """Return the live channel, lazily (re)creating it after a drop and replaying
+        the tracked topology so the new channel is immediately usable."""
         if self._channel is None or not self._channel.is_open:
             self._channel = self.connection._create_channel(self.channel_number)
             self._restore_channel_state()
         return self._channel
 
     def _restore_channel_state(self):
-        """Restore channel state after reconnection."""
+        """Replay recorded QoS, exchange/queue declares, bindings, and consumers onto
+        a freshly created channel. Each replay is best-effort (logged on failure) so
+        one bad declaration doesn't abort the whole restore."""
         if self._channel:
             # Restore QoS settings
             if self._qos_settings:
@@ -79,7 +87,11 @@ class ResilientChannel:
                     logger.error(f"Failed to restore consumer for queue {queue}: {e}")
 
     def __getattr__(self, name):
-        """Delegate all method calls to the underlying channel with resilience."""
+        """Delegate to the live pika channel, but intercept topology-defining calls
+        (basic_qos / exchange_declare / queue_declare / queue_bind / basic_consume) to
+        record them for replay after a reconnect, and run every call through the
+        connection's retry logic. This is what makes resilience transparent: callers
+        issue ordinary pika operations and the wrapper remembers what to rebuild."""
         channel = self._get_channel()
         attr = getattr(channel, name)
 
@@ -188,7 +200,9 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
         self._buffer_processor_thread.start()
 
     def _connect_with_retry(self):
-        """Establish connection to RabbitMQ with retry logic."""
+        """Connect, retrying on a FIXED interval (tries × ``reconnect_interval_seconds``,
+        blocking; not exponential backoff). Raises the last error if all attempts fail
+        rather than leaving a half-open connection."""
         last_exception = None
 
         for attempt in range(1, self.reconnect_tries + 1):
@@ -216,7 +230,13 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
                     raise last_exception
 
     def _reconnect(self):
-        """Attempt to reconnect to RabbitMQ."""
+        """Single-flight recovery: reconnect, then rebuild and resume.
+
+        Guarded by ``_reconnecting`` under ``_lock`` so that several operations failing
+        at once trigger only ONE reconnection, not a thundering herd. Orchestrates the
+        full recovery in order: close -> ``_connect_with_retry`` -> ``_restore_channels``
+        (replays each channel's topology) -> ``_flush_buffer`` (drains messages buffered
+        during the outage, so nothing is lost)."""
         with self._lock:
             if self._reconnecting:
                 return
@@ -252,7 +272,9 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
                 self._reconnecting = False
 
     def _restore_channels(self):
-        """Restore all channels after reconnection."""
+        """Force every tracked ResilientChannel to drop and recreate its pika channel;
+        recreation triggers that channel's topology replay (QoS/exchanges/queues/
+        bindings/consumers). Best-effort per channel so one failure doesn't block the rest."""
         logger.info(f"Restoring {len(self._channels)} channels")
 
         for channel_num, resilient_channel in self._channels.items():
@@ -303,7 +325,12 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
                     raise
 
     def _execute_with_retry(self, func: Callable, *args, **kwargs):
-        """Execute a function with automatic retry on failure."""
+        """Run any channel operation with reconnect-and-retry.
+
+        On an AMQP connection/channel error, reconnect if the connection is down, wait
+        1s, and retry up to ``reconnect_tries``; re-raise once exhausted. This is the
+        single choke point through which ``__getattr__``-delegated channel calls pass,
+        so resilience is uniform across every operation."""
         for attempt in range(1, self.reconnect_tries + 1):
             try:
                 return func(*args, **kwargs)
@@ -321,7 +348,13 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
     def _publish_with_retry(self, channel: Channel, exchange: str, routing_key: str,
                             body: bytes, properties: Optional[BasicProperties] = None,
                             mandatory: bool = False):
-        """Publish a message with automatic buffering on failure."""
+        """Publish, buffering instead of losing on failure.
+
+        If the connection is down or a reconnect is in flight, the message is buffered
+        (the background processor sends it after recovery) rather than dropped or
+        blocked on; otherwise it publishes with retry. Same cross-outage ordering
+        caveat as the other connectors: buffered messages may be delivered after
+        messages published once the link recovered."""
         # Buffer message if reconnecting
         if self._reconnecting or not self._connected:
             logger.info(f"Connection unavailable, buffering message for routing_key: {routing_key}")
@@ -383,7 +416,11 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
             logger.error(f"Failed to buffer message: {e}")
 
     def _process_buffered_messages(self):
-        """Background thread to process buffered messages when connection is restored."""
+        """Background daemon loop: once connected and not mid-reconnect, drain the
+        buffer and publish each message, recreating the channel if it has closed.
+        A send that fails is re-queued (to the back) for another attempt — so transient
+        failures recover, but note a persistently failing message will keep cycling
+        rather than being dead-lettered. Idle-polls every 0.1s."""
         while not self._stop_buffer_processor.is_set():
             try:
                 if self._connected and not self._reconnecting and not self._message_buffer.empty():
@@ -419,7 +456,9 @@ class ResilientRabbitBlockingConnection(BlockingConnection):
                 time.sleep(1)
 
     def _flush_buffer(self):
-        """Flush all buffered messages after reconnection."""
+        """Drain the buffer synchronously during reconnection (called from
+        ``_reconnect`` after channels are restored), so backlogged messages go out as
+        soon as the link is back rather than waiting for the background poll."""
         logger.info(f"Flushing {self._message_buffer.qsize()} buffered messages")
 
         flushed_count = 0

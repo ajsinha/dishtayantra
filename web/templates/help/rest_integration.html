@@ -159,7 +159,12 @@
     [data-theme="green"] .auth-tabs .nav-link { color: var(--text-secondary); }
     [data-theme="dark"] .auth-tabs .nav-link.active,
     [data-theme="green"] .auth-tabs .nav-link.active { color: #a78bfa; border-bottom-color: #a78bfa; }
-</style>
+
+    /* Ubuntu override twins (dark-family; from green). */
+    [data-theme="ubuntu"] .auth-tabs .nav-link { color: var(--text-secondary); }
+    [data-theme="ubuntu"] .auth-tabs .nav-link.active { color: #a78bfa; border-bottom-color: #a78bfa; }
+
+    </style>
 {% endblock %}
 
 {% block content %}

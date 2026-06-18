@@ -132,7 +132,12 @@
     [data-theme="green"] .platform-tabs .nav-link { color: var(--text-secondary); }
     [data-theme="dark"] .platform-tabs .nav-link.active,
     [data-theme="green"] .platform-tabs .nav-link.active { color: #4d9fd6; border-bottom-color: #4d9fd6; }
-</style>
+
+    /* Ubuntu override twins (dark-family; from green). */
+    [data-theme="ubuntu"] .platform-tabs .nav-link { color: var(--text-secondary); }
+    [data-theme="ubuntu"] .platform-tabs .nav-link.active { color: #4d9fd6; border-bottom-color: #4d9fd6; }
+
+    </style>
 {% endblock %}
 
 {% block content %}

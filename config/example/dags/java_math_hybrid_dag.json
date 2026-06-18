@@ -21,7 +21,7 @@
             "type": "calculator",
             "calculator": {
                 "type": "python",
-                "class": "example.calculators.basic.PassthruCalculator",
+                "class": "examples.calculators.basic.PassthruCalculator",
                 "config": {
                     "add_metadata": true
                 }

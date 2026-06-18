@@ -1,4 +1,4 @@
-# DishtaYantra v2.2 - Quick Start & User Guide
+# DishtaYantra — Quick Start & User Guide
 
 A high-performance, thread-safe DAG (Directed Acyclic Graph) compute engine
 for real-time data pipelines: polyglot calculators wired to twenty-plus
@@ -8,8 +8,10 @@ market-aware schedule management.
 This single guide covers everything you need to install, configure, run,
 and operate DishtaYantra. For deeper architecture detail see
 `docs/ARCHITECTURE.md`; for the full configuration and cloud-messaging
-reference see `docs/CONFIG_AND_CLOUD_v2.2.md`; the in-app **Help** pages
-(`/help`) document every subsystem interactively.
+reference see `docs/CONFIG_AND_CLOUD.md`; for decoupling publication from the
+compute thread see the *Async Egress (WAL-Backed Publication) Guide* and its two
+tutorials (basic, and single-process vs multiprocess workers); the in-app
+**Help** pages (`/help`) document every subsystem interactively.
 
 ---
 
@@ -331,7 +333,7 @@ subscriber then feeds a normal subscription node (see the shipped
 
 Drop any of these files in `config/dags/`, then click **Start** on the
 Dashboard. The two DAGs shipped in `config/dags/` are working references;
-more examples live in `config/dags/examples/` (not auto-loaded). The visual
+more examples live in `config/example/dags/` (not auto-loaded). The visual
 **DAG Designer** (`/dag/designer`) builds the same JSON without hand-editing.
 
 ### Loading new files into a running server
@@ -410,7 +412,7 @@ reconnect.
 | `lmdb://<channel>` | LMDB zero-copy cross-process |
 | `grpc://` | gRPC stream |
 
-**AWS & Azure managed messaging** (see also `docs/CONFIG_AND_CLOUD_v2.2.md`)
+**AWS & Azure managed messaging** (see also `docs/CONFIG_AND_CLOUD.md`)
 
 | Scheme | Service | Notes |
 | --- | --- | --- |
@@ -589,4 +591,4 @@ Log files are written under `logs/`. For anything else, the in-app
 
 ---
 
-**DishtaYantra v2.2** | (c) 2025-2030 Ashutosh Sinha | Proprietary & Confidential
+**DishtaYantra** | (c) 2025-2030 Ashutosh Sinha | Proprietary & Confidential

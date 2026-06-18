@@ -1,0 +1,58 @@
+{
+  "_comment": "WASM CALCULATOR EXAMPLE (roadmap C2). Consumes the perftest trade stream and computes notional = price * quantity INSIDE a sandboxed WebAssembly module (examples/wasm/calculators.wat, exported function 'notional'). The wasm VM cannot read host memory and can be CPU-capped with 'fuel'. The engine is unchanged - WasmCalculator is an ordinary custom calculator referenced by dotted path. Requires 'pip install wasmtime'; without it the node builds but calculate() raises a clear WasmRuntimeUnavailable. Feed it with: python -m perftest.run_wasm_example",
+  "name": "perftest_wasm",
+  "description": "trade stream (mem) -> WASM notional calculator (price*quantity in a wasmtime sandbox) -> mem sink. Demonstrates running a compiled, memory-isolated calculator over the same trade data as the other perftest examples.",
+  "version": "5.10.2",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    {
+      "name": "trades_in",
+      "config": {
+        "source": "mem://queue/wasm_trades_in",
+        "max_depth": 2000000,
+        "_note": "Fed the canonical perftest trade stream (perftest.generate_trades.make_trade). Point at kafka://topic/perftest_trades for a broker-fed run."
+      }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "enriched_out",
+      "config": {
+        "destination": "mem://queue/wasm_trades_out",
+        "_note": "Each trade with a wasm-computed 'notional' field added."
+      }
+    }
+  ],
+
+  "calculators": [
+    {
+      "name": "wasm_notional",
+      "type": "core.calculator.wasm_calculator.WasmCalculator",
+      "config": {
+        "module_path": "examples/wasm/calculators.wat",
+        "function": "notional",
+        "input_fields": ["price", "quantity"],
+        "output_field": "notional",
+        "fuel": 100000,
+        "_note": "fuel caps CPU so a runaway module is stopped deterministically; the module sees only the two scalar inputs, never host memory."
+      }
+    }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    {"name": "ingest",  "type": "SubscriptionNode", "config": {}, "subscriber": "trades_in"},
+    {"name": "notional_node", "type": "CalculationNode", "config": {}, "calculator": "wasm_notional"},
+    {"name": "sink",    "type": "PublicationNode", "config": {}, "publishers": ["enriched_out"]}
+  ],
+
+  "edges": [
+    {"from_node": "ingest", "to_node": "notional_node"},
+    {"from_node": "notional_node", "to_node": "sink"}
+  ]
+}

@@ -81,6 +81,12 @@ class ResilientActiveMQConnection(Connection):
         """Add an internal listener to handle disconnections."""
 
         class ReconnectionListener(stomp.ConnectionListener):
+            """Event-driven failure detection. STOMP is push-based, so instead of
+            discovering a dead connection on the next operation (as the poll/command
+            connectors do), the broker notifies us asynchronously: on_error/
+            on_disconnected fire recovery (guarded by ``_reconnecting`` so duplicate
+            events don't stack), and on_connected re-subscribes everything."""
+
             def __init__(self, connection):
                 self.connection = connection
 
@@ -523,6 +529,9 @@ class ResilientActiveMQConnection(Connection):
 
 # Example custom listener for handling messages
 class MessageListener(stomp.ConnectionListener):
+    """Example listener template (logs received messages/errors). Replace with your
+    own ``on_message`` handling; the resilience lives in the connection, not here."""
+
     def on_message(self, frame):
         logger.info(f"Received message: {frame.body}")
 

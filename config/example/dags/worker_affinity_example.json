@@ -1,0 +1,107 @@
+{
+  "name": "worker_affinity_example",
+  "description": "Example DAG demonstrating worker affinity configuration",
+  "version": "1.5.2",
+  "_worker_affinity_docs": {
+    "description": "Configure how this DAG is assigned to worker processes",
+    "options": {
+      "pinned_worker": "Force assignment to specific worker ID (0-based)",
+      "exclusive": "Dedicate entire worker to this DAG (no other DAGs)",
+      "preferred_workers": "List of preferred worker IDs (used if available)"
+    }
+  },
+  "worker_affinity": {
+    "pinned_worker": 0,
+    "exclusive": false,
+    "preferred_workers": [
+      0,
+      1
+    ]
+  },
+  "priority": 8,
+  "subscribers": [
+    {
+      "name": "market_data_sub",
+      "config": {
+        "source": "lmdb://market_data_channel",
+        "lmdb_path": "data/worker_lmdb",
+        "poll_interval_ms": 10,
+        "max_depth": 10000,
+        "auto_package_non_dict": true
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "processed_data_pub",
+      "config": {
+        "destination": "lmdb://processed_data_channel",
+        "lmdb_path": "data/worker_lmdb"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "price_calculator",
+      "type": "PythonCalculator",
+      "module": "calculators.pricing",
+      "class": "PriceCalculator"
+    }
+  ],
+  "nodes": [
+    {
+      "name": "receive_market_data",
+      "type": "SubscriptionNode",
+      "subscriber": "market_data_sub",
+      "outputs": [
+        "validate_data"
+      ]
+    },
+    {
+      "name": "validate_data",
+      "type": "CalculationNode",
+      "calculator": "price_calculator",
+      "method": "validate",
+      "inputs": [
+        "receive_market_data"
+      ],
+      "outputs": [
+        "calculate_price"
+      ]
+    },
+    {
+      "name": "calculate_price",
+      "type": "CalculationNode",
+      "calculator": "price_calculator",
+      "method": "calculate",
+      "inputs": [
+        "validate_data"
+      ],
+      "outputs": [
+        "publish_result"
+      ]
+    },
+    {
+      "name": "publish_result",
+      "type": "PublicationNode",
+      "publisher": "processed_data_pub",
+      "inputs": [
+        "calculate_price"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "receive_market_data",
+      "to": "validate_data"
+    },
+    {
+      "from": "validate_data",
+      "to": "calculate_price"
+    },
+    {
+      "from": "calculate_price",
+      "to": "publish_result"
+    }
+  ]
+}
