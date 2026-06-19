@@ -203,3 +203,74 @@ def configure_logging(config=None, *, worker_id: Optional[int] = None,
     for handler in handlers:
         root.addHandler(handler)
     return root
+
+
+# ---------------------------------------------------------------------------
+# v5.14.0: runtime log-level control (used by the admin Logging page and the
+# worker SET_LOG_LEVEL handler). Python lets us change levels live, so these
+# take effect immediately with no restart.
+# ---------------------------------------------------------------------------
+
+LOG_LEVEL_NAMES = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+# Loggers surfaced for quick per-logger control. The hot-path ones come first -
+# lowering these (e.g. to WARNING) is the runtime equivalent of the per-message
+# logging fix, with no redeploy.
+MANAGED_LOGGERS = [
+    "core.pubsub.datasubscriber",
+    "core.pubsub.datapubsub",
+    "core.dag.node_implementations",
+    "core.dag.compute_graph",
+    "core.workers.worker_process",
+    "core.egress.async_publisher",
+]
+
+
+def _coerce_level(level):
+    """Accept an int, a level name, or INHERIT/NOTSET (clear override)."""
+    if isinstance(level, int):
+        return level
+    name = str(level).strip().upper()
+    if name in ("INHERIT", "NOTSET", ""):
+        return logging.NOTSET
+    value = getattr(logging, name, None)
+    if not isinstance(value, int):
+        raise ValueError(f"invalid log level: {level!r}")
+    return value
+
+
+def set_root_level(level):
+    """Set the root logger level at runtime. Returns the applied level name."""
+    lvl = _coerce_level(level)
+    logging.getLogger().setLevel(lvl)
+    return logging.getLevelName(lvl)
+
+
+def set_logger_level(name, level):
+    """Set one named logger's level (INHERIT/NOTSET clears the override)."""
+    lvl = _coerce_level(level)
+    logging.getLogger(name).setLevel(lvl)
+    return logging.getLevelName(lvl)
+
+
+def get_logging_state(extra=None):
+    """Snapshot of current levels for the admin UI / API."""
+    root = logging.getLogger()
+    names = list(MANAGED_LOGGERS)
+    for n in (extra or []):
+        if n and n not in names:
+            names.append(n)
+    loggers = []
+    for n in names:
+        lg = logging.getLogger(n)
+        explicit = lg.level  # 0 == NOTSET -> inherits from parent
+        loggers.append({
+            "name": n,
+            "explicit_level": logging.getLevelName(explicit) if explicit else "INHERIT",
+            "effective_level": logging.getLevelName(lg.getEffectiveLevel()),
+        })
+    return {
+        "root_level": logging.getLevelName(root.level),
+        "available_levels": LOG_LEVEL_NAMES,
+        "loggers": loggers,
+    }

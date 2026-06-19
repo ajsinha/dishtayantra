@@ -318,6 +318,25 @@ class WorkerPoolManager(WorkerHealthMixin, WorkerStatusMixin):
         except queue.Full:
             logger.error(f"Control queue full for worker {worker_id}")
             return False
+
+    def broadcast_log_level(self, level: str, logger_name: str = None) -> int:
+        """v5.14.0: push a log-level change to every worker process.
+
+        level: a level name (DEBUG/INFO/.../CRITICAL) or INHERIT to clear an
+               override. logger_name=None targets the root logger.
+        Returns the number of workers the message was queued to.
+        """
+        msg = {
+            'type': ControlMessageType.SET_LOG_LEVEL.value,
+            'data': {'level': level, 'logger': logger_name},
+        }
+        sent = 0
+        for worker_id in list(self.workers.keys()):
+            if self._send_control(worker_id, msg):
+                sent += 1
+        logger.info("Broadcast log level %s%s to %d worker(s)",
+                    level, f" for '{logger_name}'" if logger_name else " (root)", sent)
+        return sent
     
     def load_dag(self, dag_config: dict) -> int:
         """
@@ -429,6 +448,28 @@ class WorkerPoolManager(WorkerHealthMixin, WorkerStatusMixin):
                 'type': ControlMessageType.RESUME_DAG.value,
                 'dag_name': dag_name
             })
+
+    def freeze_subscribers(self, dag_name: str, subscribers=None) -> bool:
+        """v5.15.0: tell the worker hosting dag_name to freeze (drain mode) its
+        subscribers - all if subscribers is None, else the named subset."""
+        worker_id = self.affinity_manager.get_worker_assignment(dag_name)
+        if worker_id is not None:
+            return self._send_control(worker_id, {
+                'type': ControlMessageType.FREEZE_SUBSCRIBERS.value,
+                'dag_name': dag_name,
+                'data': {'subscribers': subscribers},
+            })
+        return False
+
+    def unfreeze_subscribers(self, dag_name: str, subscribers=None) -> bool:
+        worker_id = self.affinity_manager.get_worker_assignment(dag_name)
+        if worker_id is not None:
+            return self._send_control(worker_id, {
+                'type': ControlMessageType.UNFREEZE_SUBSCRIBERS.value,
+                'dag_name': dag_name,
+                'data': {'subscribers': subscribers},
+            })
+        return False
     
     def migrate_dag(self, dag_name: str, to_worker: int) -> bool:
         """

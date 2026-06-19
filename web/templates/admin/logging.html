@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Logging Control - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lvl-pill {
+        display: inline-block; padding: 1px 8px; border-radius: 10px;
+        font-size: 0.72rem; font-weight: 600; letter-spacing: .02em;
+    }
+    .lvl-DEBUG    { background:#e0e7ff; color:#3730a3; }
+    .lvl-INFO     { background:#dcfce7; color:#166534; }
+    .lvl-WARNING  { background:#fef3c7; color:#92400e; }
+    .lvl-ERROR    { background:#fee2e2; color:#991b1b; }
+    .lvl-CRITICAL { background:#fecaca; color:#7f1d1d; }
+    .lvl-INHERIT, .lvl-NOTSET { background:#e5e7eb; color:#374151; }
+    .help-note { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; }
+    .logger-name { font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 0.82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-sliders"></i> Logging Control</h2>
+</div>
+
+<p class="help-note mb-3">
+    Change log levels <strong>at runtime</strong> &mdash; no restart needed. Lowering a
+    chatty logger (for example the per-message subscriber/publisher loggers) to
+    <span class="lvl-pill lvl-WARNING">WARNING</span> is the quickest way to cut logging
+    overhead under load. Changes are <strong>temporary</strong>: everything reverts to the
+    level in <code>application.properties</code> (<code>logging.level</code>) on the next
+    restart.
+    {% if worker_pool_running %}
+    Changes are also broadcast to the <strong>{{ worker_count }}</strong> worker process(es).
+    {% else %}
+    The worker pool is not running, so changes apply to this process only.
+    {% endif %}
+</p>
+
+<!-- Global / root level -->
+<div class="card mb-3" style="border-left: 4px solid #2563eb;">
+    <div class="card-body">
+        <h5 class="card-title mb-1"><i class="bi bi-globe2"></i> Global (root) log level</h5>
+        <p class="help-note mb-3">
+            Applies to every logger that doesn't have its own override below. Current:
+            <span class="lvl-pill lvl-{{ root_level }}">{{ root_level }}</span>
+        </p>
+        <form method="post" action="{{ url_for('logging_apply') }}" class="row g-2 align-items-end">
+            <input type="hidden" name="scope" value="root">
+            <div class="col-auto">
+                <label class="form-label mb-1" style="font-size:.8rem;">Set level</label>
+                <select name="level" class="form-select form-select-sm">
+                    {% for lv in available_levels %}
+                    <option value="{{ lv }}" {{ 'selected' if lv == root_level else '' }}>{{ lv }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="bi bi-check2"></i> Apply
+                </button>
+            </div>
+        </form>
+        <p class="help-note mt-2 mb-0">
+            <strong>DEBUG</strong> = everything (very verbose; turns per-message tracing back on).
+            <strong>INFO</strong> = normal. <strong>WARNING</strong>/<strong>ERROR</strong> =
+            quieter; good for cutting overhead. <strong>CRITICAL</strong> = effectively silent
+            (you'll still see only the most severe events &mdash; not recommended for long periods).
+        </p>
+    </div>
+</div>
+
+<!-- Per-logger overrides -->
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title mb-1"><i class="bi bi-list-nested"></i> Per-logger overrides</h5>
+        <p class="help-note mb-3">
+            Target a single subsystem without changing everything else. The first few are the
+            hot-path loggers &mdash; setting them to <span class="lvl-pill lvl-WARNING">WARNING</span>
+            silences per-message logging while leaving the rest at the global level.
+            <strong>Effective</strong> is the level actually in force (an override, or inherited
+            from the root). Choose <em>INHERIT</em> to remove an override.
+        </p>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Logger</th>
+                        <th class="text-center">Override</th>
+                        <th class="text-center">Effective</th>
+                        <th class="text-end">Set</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lg in loggers %}
+                    <tr>
+                        <td class="logger-name">{{ lg.name }}</td>
+                        <td class="text-center">
+                            <span class="lvl-pill lvl-{{ lg.explicit_level }}">{{ lg.explicit_level }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="lvl-pill lvl-{{ lg.effective_level }}">{{ lg.effective_level }}</span>
+                        </td>
+                        <td>
+                            <form method="post" action="{{ url_for('logging_apply') }}"
+                                  class="d-flex gap-1 justify-content-end">
+                                <input type="hidden" name="scope" value="logger">
+                                <input type="hidden" name="logger" value="{{ lg.name }}">
+                                <select name="level" class="form-select form-select-sm" style="width:auto;">
+                                    {% for lv in available_levels %}
+                                    <option value="{{ lv }}">{{ lv }}</option>
+                                    {% endfor %}
+                                    <option value="INHERIT">INHERIT</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

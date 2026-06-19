@@ -27,7 +27,23 @@
         border: 0; border-radius: 14px; padding: 1.75rem; margin-bottom: 2rem;
     }
     .cmp-table-card h2 { color: #fff !important; font-size: 1.4rem; }
-    .cmp-table { font-size: 0.88rem; background: rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.2); }
+    .cmp-table {
+        /* Pin Bootstrap's table tokens to dark values so this intentionally-dark
+           table renders correctly under EVERY theme. Without this, light-family
+           themes (Light, Blue) set --bs-table-bg light and Bootstrap paints each
+           cell light, washing out the light cell text. */
+        --bs-table-bg: transparent;
+        --bs-table-color: #eaeef4;
+        --bs-table-border-color: rgba(255,255,255,0.12);
+        --bs-table-striped-bg: rgba(255,255,255,0.05);
+        --bs-table-striped-color: #eaeef4;
+        --bs-table-hover-bg: rgba(255,255,255,0.08);
+        --bs-table-hover-color: #ffffff;
+        --bs-table-active-bg: rgba(255,255,255,0.08);
+        --bs-table-active-color: #ffffff;
+        font-size: 0.88rem; background: rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.2);
+        color: #eaeef4;
+    }
     .cmp-table th, .cmp-table td { border: 1px solid rgba(255,255,255,0.12); vertical-align: middle; }
     .cmp-table tbody td { color: #eaeef4 !important; }
     .cmp-table thead th { color: #fff !important; background: rgba(30,41,59,0.95) !important; font-weight: 600; }

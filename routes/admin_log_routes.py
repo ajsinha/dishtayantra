@@ -62,9 +62,10 @@ def extract_dag_name(message):
 class AdminLogRoutes:
     """Admin log viewing and live streaming routes handler."""
 
-    def __init__(self, app: FastAPI, guards: AuthGuards):
+    def __init__(self, app: FastAPI, guards: AuthGuards, worker_pool=None):
         self.app = app
         self.guards = guards
+        self.worker_pool = worker_pool  # v5.14.0: for broadcasting level changes
         self._register_routes()
 
     def _register_routes(self) -> None:
@@ -80,6 +81,11 @@ class AdminLogRoutes:
         add('/admin/logs/live/stream', self.live_logs_stream,
             methods=['GET'], name='live_logs_stream',
             include_in_schema=False)
+        # v5.14.0: runtime log-level management
+        add('/admin/logging', self.logging_management, methods=['GET'],
+            name='logging_management', include_in_schema=False)
+        add('/admin/logging/apply', self.logging_apply, methods=['POST'],
+            name='logging_apply', include_in_schema=False)
 
     # ------------------------------------------------------------------ #
     # Parsing helpers
@@ -377,3 +383,70 @@ class AdminLogRoutes:
             headers={'Cache-Control': 'no-cache',
                      'Connection': 'keep-alive',
                      'X-Accel-Buffering': 'no'})
+
+    # ------------------------------------------------------------------ #
+    # v5.14.0: runtime log-level management
+    # ------------------------------------------------------------------ #
+
+    def logging_management(self, request: Request):
+        """Admin page to view and change log levels at runtime."""
+        self.guards.admin_required(request)
+        from core.log_config import get_logging_state
+        state = get_logging_state()
+        worker_count = 0
+        worker_pool_running = False
+        if self.worker_pool is not None:
+            try:
+                worker_pool_running = self.worker_pool.is_running()
+                worker_count = getattr(self.worker_pool, 'num_workers', 0)
+            except Exception:  # noqa: BLE001
+                worker_pool_running = False
+        return render(request, 'admin/logging.html',
+                      root_level=state['root_level'],
+                      available_levels=state['available_levels'],
+                      loggers=state['loggers'],
+                      worker_pool_running=worker_pool_running,
+                      worker_count=worker_count)
+
+    async def logging_apply(self, request: Request):
+        """Apply a log-level change in this process and broadcast to workers."""
+        self.guards.admin_required(request)
+        from core.log_config import (set_root_level, set_logger_level,
+                                      LOG_LEVEL_NAMES)
+        form = await request.form()
+        scope = (form.get('scope') or 'root').strip()      # 'root' | 'logger'
+        level = (form.get('level') or 'INFO').strip().upper()
+        logger_name = (form.get('logger') or '').strip()
+
+        valid = set(LOG_LEVEL_NAMES) | {'INHERIT'}
+        if level not in valid:
+            flash(request, f"Invalid log level: {level}", 'error')
+            return redirect_to(request, 'logging_management')
+
+        try:
+            if scope == 'logger' and logger_name:
+                applied = set_logger_level(logger_name, level)
+                target = f"logger '{logger_name}'"
+            else:
+                logger_name = None
+                applied = set_root_level(level)
+                target = "root logger"
+
+            # Each worker process has its own logging state, so broadcast the
+            # change. Best-effort; the main-process change is already applied.
+            workers_msg = ""
+            if self.worker_pool is not None:
+                try:
+                    if self.worker_pool.is_running():
+                        n = self.worker_pool.broadcast_log_level(level, logger_name)
+                        workers_msg = f" and broadcast to {n} worker(s)"
+                except Exception as e:  # noqa: BLE001
+                    workers_msg = f" (worker broadcast failed: {e})"
+
+            flash(request,
+                  f"Set {target} to {applied}{workers_msg}. In effect now; "
+                  f"resets to the configured level on restart.",
+                  'success')
+        except Exception as e:  # noqa: BLE001
+            flash(request, f"Could not apply log level: {e}", 'error')
+        return redirect_to(request, 'logging_management')

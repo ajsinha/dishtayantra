@@ -239,6 +239,51 @@ class DAGWorkerProcess(WorkerRuntimeMixin, Process):
         
         elif msg_type == ControlMessageType.GET_DAG_STATE.value:
             self._send_dag_state(msg.dag_name)
+
+        elif msg_type == ControlMessageType.SET_LOG_LEVEL.value:
+            self._apply_log_level(msg.data or {})
+
+        elif msg_type == ControlMessageType.FREEZE_SUBSCRIBERS.value:
+            self._freeze_subscribers(msg.dag_name, (msg.data or {}).get('subscribers'))
+
+        elif msg_type == ControlMessageType.UNFREEZE_SUBSCRIBERS.value:
+            self._unfreeze_subscribers(msg.dag_name, (msg.data or {}).get('subscribers'))
+
+    def _freeze_subscribers(self, dag_name, names):
+        """v5.15.0: freeze subscribers (drain mode) on a worker-hosted DAG."""
+        dag = self.dags.get(dag_name)
+        if dag is not None and hasattr(dag, 'freeze_subscribers'):
+            affected = dag.freeze_subscribers(names)
+            self.logger.info(f"Froze {len(affected)} subscriber(s) on {dag_name}: {affected}")
+        else:
+            self.logger.warning(f"FREEZE_SUBSCRIBERS: DAG {dag_name} not found on this worker")
+
+    def _unfreeze_subscribers(self, dag_name, names):
+        dag = self.dags.get(dag_name)
+        if dag is not None and hasattr(dag, 'unfreeze_subscribers'):
+            affected = dag.unfreeze_subscribers(names)
+            self.logger.info(f"Unfroze {len(affected)} subscriber(s) on {dag_name}: {affected}")
+        else:
+            self.logger.warning(f"UNFREEZE_SUBSCRIBERS: DAG {dag_name} not found on this worker")
+
+    def _apply_log_level(self, payload: dict):
+        """v5.14.0: apply a log-level change broadcast from the orchestrator.
+
+        payload: {'level': 'DEBUG'|..., 'logger': '<name>' or None for root}.
+        Takes effect immediately in this worker process.
+        """
+        try:
+            from core.log_config import set_root_level, set_logger_level
+            level = payload.get('level', 'INFO')
+            logger_name = payload.get('logger')
+            if logger_name:
+                applied = set_logger_level(logger_name, level)
+                self.logger.info(f"Log level for '{logger_name}' set to {applied}")
+            else:
+                applied = set_root_level(level)
+                self.logger.info(f"Root log level set to {applied}")
+        except Exception as e:  # noqa: BLE001
+            self.logger.warning(f"Could not apply log level: {e}")
     
     def _load_dag(self, dag_name: str, dag_config: dict):
         """Load and start a DAG"""

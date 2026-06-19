@@ -40,6 +40,7 @@ from .rust_routes import RustRoutes
 from .egress_routes import EgressRoutes
 from .admin_routes import AdminRoutes
 from .admin_log_routes import AdminLogRoutes
+from .maintenance_routes import MaintenanceRoutes
 
 __all__ = [
     'AuthRoutes',
@@ -58,4 +59,5 @@ __all__ = [
     'EgressRoutes',
     'AdminRoutes',
     'AdminLogRoutes',
+    'MaintenanceRoutes',
 ]

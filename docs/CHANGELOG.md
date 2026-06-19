@@ -5,6 +5,143 @@ records the per-release highlights that previously lived in the version.py
 docstring.
 
 
+## Version 5.16.1 highlights (contrast fix: dark comparison table under light-family themes):
+    - web/templates/comparison.html: the Head-to-Head table rendered with washed-out,
+      low-contrast cell text under light-family themes (Light, Blue). Root cause: the table is
+      a deliberately dark card, but Bootstrap 5.3 paints each cell with --bs-table-bg, which is
+      light when data-bs-theme="light" (both Light and Blue), so the light cell text became
+      near-invisible. Fix: pin the Bootstrap table tokens on .cmp-table (--bs-table-bg:
+      transparent, --bs-table-color: #eaeef4, plus striped/hover/active variants) so the dark
+      card shows through and text stays readable under every theme.
+    - Contrast review of other surfaces: About "Competitive Advantage" dark card uses explicit
+      #ffffff text (ok); standard app tables use theme-aware dark-on-light text (ok in Blue);
+      code blocks use fixed light text on a dark background (ok); hero sections are hardcoded
+      dark with white text (ok). No other dark-surface-with-theme-text contrast issues found.
+
+
+## Version 5.16.0 highlights (drain check accounts for async-egress WAL; new "Blue" theme):
+    Drain / WAL:
+    - core/egress/wal.py: WalBackend.pending_count() added - records appended but not yet
+      committed (drained), computed from offsets (_next - 1 minus committed), 0 == fully
+      drained. Deliberately offset-based, NOT byte size: the filelog active segment keeps
+      committed bytes on disk until it rolls, so size_bytes() never reaches 0. Verified for
+      memory and filelog (pending -> 0 on ack even though filelog size_bytes stays > 0).
+    - core/egress/async_publisher.py: AsyncPublisher.async_pending() returns wal.pending_count().
+      ComputeGraph.drain_status() already sums publishers' async_pending(), so the maintenance
+      "drained" signal now truly accounts for the async-egress WAL, not just the in-process
+      publisher queue.
+
+    Theme:
+    - NEW "Blue" UI theme inspired by BMO (bmo.com/en-us/main/personal). BMO Blue (#0079c0,
+      confirmed from the site's theme-color) on white, a deep-navy (#0b2545) header gradient,
+      and the signature BMO red (#e11b22) as the accent; cool-grey surfaces. Implemented as a
+      [data-theme="blue"] variable block in web/templates/base.html with a Bootstrap 5.3 light
+      token bridge, registered in the theme switcher (THEMES/ICONS/setTheme) and the theme
+      menu. Light-family, so it pairs with Bootstrap's light base.
+
+    Notes:
+    - Backward compatible: additive only. 235 passed with lmdb; 234 + 1 skipped without.
+
+
+## Version 5.15.0 highlights (admin drain-mode freeze of subscribers for maintenance):
+    - NEW admin Maintenance / Drain page (/admin/maintenance, admin-only): "drain mode" -
+      freeze subscribers so they stop pulling NEW messages from brokers while in-flight data
+      keeps flowing, so queues and publications drain. Distinct from pause (which holds the
+      queues in place). Targets: a single subscriber, a subset, all in a DAG, or everything
+      (global). A live drain-status readout plus a JSON status API (/admin/maintenance/status)
+      show when queues/WAL have reached zero so it is safe to restart.
+
+    Mechanism (works for ALL brokers):
+    - core/pubsub/datasubscriber.py: a generic _frozen flag is checked in the shared
+      _subscription_loop before _do_subscribe(), so intake stops for every subscriber type
+      uniformly. freeze()/unfreeze()/is_frozen() + _on_freeze()/_on_unfreeze() hooks added;
+      details() exposes 'frozen'. Verified end-to-end on the in-memory broker (frozen ->
+      queue stays 0 despite published messages; unfreeze -> drains in).
+    - Kafka (v2 broker-aware): core/pubsub/kafka_base.py AbstractKafkaConsumerWrapper gained a
+      defensive pause()/resume() (works for kafka-python and confluent-kafka via the
+      underlying consumer's assignment()/pause()/resume()); KafkaDataSubscriber overrides the
+      hooks to pause the consumer, keeping it in the group (no rebalance) during a long freeze.
+      Falls back to the generic flag if the consumer can't be paused. NOTE: the Kafka pause
+      path is implemented defensively but was not validated against a live Kafka cluster in
+      this environment - the generic freeze is the guarantee for all brokers.
+
+    DAG / view / workers:
+    - ComputeGraph.freeze_subscribers()/unfreeze_subscribers()/drain_status() added.
+    - build_dag_view surfaces a per-subscriber 'frozen' flag and a dag_stats['drain'] block
+      (frozen list, subscriber/publisher queue totals, WAL pending, drained bool), so it works
+      identically for worker-hosted DAGs via the snapshot.
+    - Worker pool: new ControlMessageType.FREEZE_SUBSCRIBERS / UNFREEZE_SUBSCRIBERS, a
+      ControlMessage.data payload {subscribers: [...]|None}, worker handlers
+      (_freeze_subscribers/_unfreeze_subscribers), and worker_pool.freeze_subscribers()/
+      unfreeze_subscribers() that route to the worker hosting the DAG. Unknown control types
+      were already ignored, so older workers are unaffected.
+
+    UI / routes:
+    - routes/maintenance_routes.py (MaintenanceRoutes), template admin/maintenance.html with a
+      3s-poll live drain status, global + per-DAG + per-subscriber freeze/unfreeze, and a
+      "safe to restart" banner. Nav link added under the admin menu.
+
+    Notes:
+    - Backward compatible: additive and admin-gated. Freeze state is ephemeral by design (it
+      clears on restart, which is the expected next step of a maintenance window). 235 passed
+      with lmdb; 234 + 1 skipped without.
+
+
+## Version 5.14.0 highlights (Tier-1 performance pass + runtime logging control UI):
+    Performance:
+    - Hot-path logging gated. DataSubscriber._log_message_received and
+      DataPublisher._log_publish_attempt each built a json.dumps preview and emitted 5
+      INFO lines PER MESSAGE. Both now return immediately unless the logger is at DEBUG
+      (early isEnabledFor guard) and the lines are DEBUG, so INFO (production default) pays
+      nothing. The per-propagation "setting child dirty" INFO in node_implementations.py is
+      DEBUG-gated too.
+    - topological_sort() memoized on the graph (compute_graph_support.py); the order is
+      static after build_dag(), which now sets self._topo_cache = None to invalidate.
+    - Dashboard Details view-model served from a ~1s per-DAG TTL cache (dashboard_routes.py),
+      absorbing refresh/viewer bursts and, for worker DAGs, repeated get_dag_state round-trips.
+    - Optional GC tuning at startup (web/dishtayantra_webapp._apply_gc_tuning): gc.freeze()
+      after load plus an optional gen-0 threshold, config-gated via performance.gc.* (freeze
+      defaults on; both safe).
+
+    Runtime logging control (UI):
+    - NEW admin page /admin/logging (admin-only): change the root log level and per-logger
+      overrides at runtime with no restart. Hot-path loggers are listed first so they can be
+      dropped to WARNING to cut logging overhead live - the runtime equivalent of the gating
+      above. Effective vs explicit (override) levels are shown; INHERIT clears an override.
+    - core/log_config.py gained set_root_level / set_logger_level / get_logging_state plus a
+      MANAGED_LOGGERS list and LOG_LEVEL_NAMES.
+    - Worker processes each own their logging state, so changes are broadcast: new
+      ControlMessageType.SET_LOG_LEVEL + an optional ControlMessage.data field;
+      worker_pool.broadcast_log_level() fans it out; the worker control loop applies it
+      (_apply_log_level). Unknown control types were already ignored, so older workers are
+      unaffected (BC).
+    - Changes are ephemeral by design: they revert to logging.level (application.properties)
+      on restart.
+
+    Notes:
+    - Backward compatible: every change is additive and admin-gated; defaults reproduce
+      prior behavior except the harmless gc.freeze. 235 passed with lmdb; 234 + 1 skipped
+      without.
+    - The previously-suggested "WAL double-pickle fix" was dropped: on inspection the default
+      FileLogWal pickles exactly once; the flagged line belonged to a different (non-default)
+      MemoryWal backend, so there was nothing to fix without moving cost to read time.
+
+
+## Version 5.13.1 highlights (Message Throughput histogram widened to 30 minutes):
+    - Per request, the Details page per-minute ingest histogram now shows 30 one-minute
+      buckets (last 30 minutes) plus the in-progress partial minute, instead of 10.
+    - core/metrics/rate_meter.py: RateMeter._minute_window raised 10 -> 30. Still O(1)
+      memory (a bounded ring of 31 small ints).
+    - core/dag/dag_view.py: build_dag_view no longer hardcodes the window - it derives the
+      length from each meter's minute_buckets() result (window_minutes / len), so the meter
+      and the aggregator can never drift out of sync.
+    - web/templates/dag/details.html: chart title, x-axis and the dev comment updated to
+      "last 30 minutes" / "30 min ago".
+    - Verified end-to-end (TestClient): 30 completed buckets, the oldest bar maps to 30 min
+      ago, 31 <rect> bars render, JSON round-trip intact, and it works in both single-process
+      and worker-snapshot modes. 235 passed with lmdb; 234 + 1 skipped without.
+
+
 ## Version 5.13.0 highlights (DAG Details: true per-minute throughput histogram):
     - The Details page "Message Throughput" panel now shows the ACTUAL number of messages
       received in each 1-minute tumbling window for the last 10 minutes (plus the current,

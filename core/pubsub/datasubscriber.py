@@ -95,6 +95,14 @@ class DataSubscriber(AbstractDataPubSub):
         self._stop_event = threading.Event()
         self._suspend_event = threading.Event()
         self._suspend_event.set()  # Start in running state
+        # v5.15.0: drain-mode freeze. When True the consume loop stops pulling
+        # NEW messages from the broker, but the object, internal queue and
+        # downstream compute/publish keep running so in-flight data drains.
+        # This is the universal mechanism (works for every broker because all
+        # subscribers share _subscription_loop); broker-aware pause is layered
+        # on via _on_freeze()/_on_unfreeze() hooks where supported.
+        self._frozen = False
+        self._freeze_poll_seconds = 0.1
         self._last_receive = None
         self._receive_count = 0
         # v3.1.0: live messages/minute throughput (EWMA, decays when idle).
@@ -253,6 +261,12 @@ class DataSubscriber(AbstractDataPubSub):
             if self._stop_event.is_set():
                 break
 
+            # v5.15.0: drain mode - skip broker intake while frozen, but keep the
+            # loop (and the rest of the DAG) alive so queues drain.
+            if self._frozen:
+                time.sleep(self._freeze_poll_seconds)
+                continue
+
             try:
                 # Defensive check: verify queue type hasn't changed
                 self._check_and_update_queue_type()
@@ -345,6 +359,12 @@ class DataSubscriber(AbstractDataPubSub):
         This provides consistent visibility across all pubsub implementations
         (Kafka, ActiveMQ, RabbitMQ, TIBCO, Redis, etc.)
         """
+        # v5.14.0: per-message tracing is DEBUG-only. At INFO (the production
+        # default) this returns immediately - no preview build, no log calls -
+        # removing a significant per-message hot-path cost. Raise this logger to
+        # DEBUG (e.g. from the admin Logging page) to see every message again.
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
         try:
             # Get a preview of the message (truncate large messages)
             if isinstance(data, dict):
@@ -354,11 +374,11 @@ class DataSubscriber(AbstractDataPubSub):
             else:
                 preview = repr(data)[:500]
             
-            logger.info(f"MESSAGE RECEIVED [{self.name}]:")
-            logger.info(f"  Source: {self.source}")
-            logger.info(f"  Type: {type(data).__name__}")
-            logger.info(f"  Count: {self._receive_count + 1}")
-            logger.info(f"  Preview: {preview}")
+            logger.debug(f"MESSAGE RECEIVED [{self.name}]:")
+            logger.debug(f"  Source: {self.source}")
+            logger.debug(f"  Type: {type(data).__name__}")
+            logger.debug(f"  Count: {self._receive_count + 1}")
+            logger.debug(f"  Preview: {preview}")
         except Exception as e:
             logger.warning(f"Could not log message for {self.name}: {e}")
 
@@ -409,6 +429,49 @@ class DataSubscriber(AbstractDataPubSub):
         self._suspend_event.set()
         logger.info(f"Subscriber {self.name} resumed")
 
+    # ------------------------------------------------------------------ #
+    # v5.15.0: drain-mode freeze (maintenance windows)
+    # ------------------------------------------------------------------ #
+    def freeze(self):
+        """Enter drain mode: stop pulling NEW messages from the broker.
+
+        Unlike suspend() (which stops the whole flow so queues hold), freeze()
+        stops only intake - already-queued messages and downstream compute/
+        publish keep running, so the DAG drains. Universal across brokers via the
+        consume-loop flag; broker-aware pause is applied in _on_freeze() where a
+        backend supports it (e.g. Kafka), avoiding consumer-group rebalances.
+        """
+        if not self._frozen:
+            self._frozen = True
+            try:
+                self._on_freeze()
+            except Exception as e:  # noqa: BLE001 - generic freeze still applies
+                logger.warning(f"{self.name}: broker pause hook failed "
+                               f"(generic freeze still active): {e}")
+            logger.info(f"Subscriber {self.name} FROZEN (drain mode) - intake stopped")
+
+    def unfreeze(self):
+        """Leave drain mode: resume pulling messages from the broker."""
+        if self._frozen:
+            self._frozen = False
+            try:
+                self._on_unfreeze()
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"{self.name}: broker resume hook failed: {e}")
+            logger.info(f"Subscriber {self.name} UNFROZEN - intake resumed")
+
+    def is_frozen(self):
+        return self._frozen
+
+    def _on_freeze(self):
+        """Broker-aware pause hook. Default no-op (the generic flag already stops
+        intake). Subclasses override to call e.g. Kafka consumer.pause()."""
+        pass
+
+    def _on_unfreeze(self):
+        """Broker-aware resume hook. Default no-op."""
+        pass
+
     def get_queue_size(self):
         """Get current queue size"""
         return self._internal_queue.qsize()
@@ -426,6 +489,7 @@ class DataSubscriber(AbstractDataPubSub):
                 'rate_per_minute': self._rate_meter.rate_per_minute(),
                 'peak_per_minute': self._rate_meter.peak_per_minute(),
                 'suspended': not self._suspend_event.is_set(),
+                'frozen': self._frozen,
                 'priority_queue_enabled': self._is_priority_queue,
                 'priority_key': self.priority_key,
                 # v1.5.2: Packaging statistics

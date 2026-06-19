@@ -226,6 +226,21 @@ class KafkaDataSubscriber(DataSubscriber):
         """Subscribe from Kafka topic."""
         return self.consumer.get_single_message()
 
+    def _on_freeze(self):
+        """v5.15.0: pause the Kafka consumer so it stays in the group (no
+        rebalance) during a drain/maintenance window. Falls back to the generic
+        freeze flag if the underlying consumer can't be paused."""
+        if self.consumer and self.consumer.pause():
+            logger.info(f"Kafka subscriber {self.name}: consumer paused (drain mode)")
+        else:
+            logger.info(f"Kafka subscriber {self.name}: using generic freeze "
+                        f"(broker pause unavailable)")
+
+    def _on_unfreeze(self):
+        if self.consumer:
+            self.consumer.resume()
+            logger.info(f"Kafka subscriber {self.name}: consumer resumed")
+
     def stop(self):
         """Stop the subscriber."""
         super().stop()

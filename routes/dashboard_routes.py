@@ -56,6 +56,12 @@ class DashboardRoutes:
         self.user_registry = user_registry
         self.guards = guards
         self.worker_pool = worker_pool  # v1.5.2: worker pool for assignments
+        # v5.14.0: short-TTL cache of the assembled details view-model, keyed by
+        # dag_name. Protects a busy server from rebuilding the view (and, for
+        # worker DAGs, round-tripping get_dag_state) on every refresh / viewer.
+        # 1s keeps the page effectively live. Bounded by the number of DAGs.
+        self._view_cache = {}            # dag_name -> (monotonic_ts, view)
+        self._view_cache_ttl = 1.0       # seconds
         self._register_routes()
 
     def _register_routes(self) -> None:
@@ -154,17 +160,25 @@ class DashboardRoutes:
             # built with the SAME builder (build_dag_view); otherwise build it from
             # the local (built) DAG. Either way the template gets an identical
             # structure, so the page looks the same wherever the DAG executes.
-            view = None
-            if worker_pool_enabled and \
-                    self.worker_pool.get_dag_assignment(dag_name) is not None:
-                try:
-                    snap = self.worker_pool.get_dag_state(dag_name)
-                    if isinstance(snap, dict) and isinstance(snap.get('view'), dict):
-                        view = snap['view']
-                except Exception:  # noqa: BLE001 - fall back to the local view
-                    view = None
-            if view is None:
-                view = build_dag_view(dag)
+            # v5.14.0: served from a ~1s TTL cache to absorb refresh/viewer bursts.
+            import time as _time
+            _now = _time.monotonic()
+            _cached = self._view_cache.get(dag_name)
+            if _cached is not None and (_now - _cached[0]) < self._view_cache_ttl:
+                view = _cached[1]
+            else:
+                view = None
+                if worker_pool_enabled and \
+                        self.worker_pool.get_dag_assignment(dag_name) is not None:
+                    try:
+                        snap = self.worker_pool.get_dag_state(dag_name)
+                        if isinstance(snap, dict) and isinstance(snap.get('view'), dict):
+                            view = snap['view']
+                    except Exception:  # noqa: BLE001 - fall back to the local view
+                        view = None
+                if view is None:
+                    view = build_dag_view(dag)
+                self._view_cache[dag_name] = (_now, view)
 
             details = view['details']
             node_details = view['node_details']

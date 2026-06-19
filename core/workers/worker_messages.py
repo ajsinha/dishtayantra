@@ -51,6 +51,9 @@ class ControlMessageType(Enum):
     PING = "ping"
     GET_STATUS = "get_status"
     GET_DAG_STATE = "get_dag_state"  # v1.5.2: Request full DAG state for UI
+    SET_LOG_LEVEL = "set_log_level"  # v5.14.0: change worker log level at runtime
+    FREEZE_SUBSCRIBERS = "freeze_subscribers"      # v5.15.0: drain-mode freeze
+    UNFREEZE_SUBSCRIBERS = "unfreeze_subscribers"  # v5.15.0: leave drain mode
 
 
 class StatusMessageType(Enum):
@@ -73,6 +76,7 @@ class ControlMessage:
     dag_config: Optional[dict] = None
     timestamp: float = field(default_factory=time.time)
     message_id: str = ""
+    data: Optional[dict] = None  # v5.14.0: generic payload (e.g. SET_LOG_LEVEL)
 
 
 @dataclass

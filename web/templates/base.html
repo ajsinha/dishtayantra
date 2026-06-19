@@ -73,6 +73,78 @@
         }
         
         /* ============================================
+           THEME VARIABLES - BLUE MODE
+           Inspired by BMO (bmo.com): BMO Blue (#0079c0) on white, a
+           deep-navy header gradient, the signature BMO red as the accent,
+           and clean cool-grey surfaces. A light-family theme (pairs with
+           Bootstrap's light base).
+           ============================================ */
+        [data-theme="blue"] {
+            --primary-gradient: linear-gradient(135deg, #0b2545 0%, #0a4d86 55%, #0079c0 100%);
+            --primary-dark: #0b2545;          /* BMO deep navy */
+            --primary-medium: #0a4d86;
+            --primary-light: #0079c0;         /* BMO Blue */
+            --accent-color: #e11b22;          /* BMO red roundel accent */
+
+            /* Brand tokens (re-tinted blue; --brass drives the active checkmark) */
+            --brass: #0079c0;
+            --brass-soft: #4aa3d6;
+            --tick: #0079c0;
+            --night: #0b2545;
+
+            /* Background colors */
+            --bg-body: #f1f5f9;               /* cool light grey */
+            --bg-card: #ffffff;
+            --bg-card-header: var(--primary-gradient);
+            --bg-table-header: linear-gradient(135deg, #e8f1f8, #d8e8f4);
+            --bg-table-stripe: rgba(0, 121, 192, 0.035);
+            --bg-table-hover: #eaf3fb;
+            --bg-input: #ffffff;
+            --bg-code: #0b2545;
+
+            /* Text colors */
+            --text-primary: #0b2545;          /* deep navy */
+            --text-secondary: #3f5a7a;
+            --text-muted: #5b6b82;
+            --text-on-primary: #eaf3fb;
+            --text-link: #0079c0;             /* BMO blue links */
+
+            /* Border colors */
+            --border-color: #d4e2ef;
+            --border-light: #e8f1f8;
+
+            /* Shadow (blue-tinted) */
+            --card-shadow: 0 4px 16px -6px rgba(11, 37, 69, 0.18), 0 2px 4px -1px rgba(11, 37, 69, 0.08);
+            --card-shadow-hover: 0 14px 32px -10px rgba(11, 37, 69, 0.28), 0 4px 6px -2px rgba(11, 37, 69, 0.12);
+
+            /* Scrollbar */
+            --scrollbar-track: #e8f1f8;
+            --scrollbar-thumb: #a9cae4;
+            --scrollbar-thumb-hover: #6fa9d4;
+
+            /* Status colors (danger uses BMO red) */
+            --success-color: #1f9d57;
+            --warning-color: #f59e0b;
+            --danger-color: #e11b22;
+            --info-color: #0079c0;
+
+            /* Bootstrap 5.3 token bridge (light base) so Bootstrap's own
+               components pick up the BMO blue/white palette. */
+            --bs-body-bg: var(--bg-body);
+            --bs-body-color: var(--text-primary);
+            --bs-secondary-color: var(--text-secondary);
+            --bs-secondary-bg: var(--bg-card);
+            --bs-tertiary-bg: #e8f1f8;
+            --bs-border-color: var(--border-color);
+            --bs-heading-color: var(--text-primary);
+            --bs-primary: #0079c0;
+            --bs-primary-rgb: 0, 121, 192;
+            --bs-link-color: #0079c0;
+            --bs-link-color-rgb: 0, 121, 192;
+            --bs-link-hover-color: #005a91;
+        }
+
+        /* ============================================
            THEME VARIABLES - DARK MODE
            ============================================ */
         [data-theme="dark"] {
@@ -1235,6 +1307,16 @@
                                     <i class="bi bi-broadcast"></i> Live Logs
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('logging_management') }}">
+                                    <i class="bi bi-sliders"></i> Logging Control
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('maintenance_page') }}">
+                                    <i class="bi bi-cone-striped"></i> Maintenance / Drain
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% endif %}
@@ -1267,6 +1349,7 @@
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="dark"><i class="bi bi-moon-stars-fill me-2"></i>Dark<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="green"><i class="bi bi-watch me-2"></i>Green<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="ubuntu"><i class="bi bi-ubuntu me-2"></i>Ubuntu<i class="bi bi-check2 theme-check ms-2"></i></button></li>
+                            <li><button type="button" class="dropdown-item theme-option" data-theme-value="blue"><i class="bi bi-bank me-2"></i>Blue<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                         </ul>
                     </li>
                     {% if session.username and ha_role %}
@@ -1352,8 +1435,8 @@
     // ============================================
     (function() {
         const THEME_KEY = 'dishtayantra-theme';
-        const THEMES = ['light', 'dark', 'green', 'ubuntu'];
-        const ICONS = { light: 'bi-sun-fill', dark: 'bi-moon-stars-fill', green: 'bi-watch', ubuntu: 'bi-ubuntu' };
+        const THEMES = ['light', 'dark', 'green', 'ubuntu', 'blue'];
+        const ICONS = { light: 'bi-sun-fill', dark: 'bi-moon-stars-fill', green: 'bi-watch', ubuntu: 'bi-ubuntu', blue: 'bi-bank' };
         const html = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         const options = document.querySelectorAll('.theme-option');
@@ -1368,8 +1451,8 @@
         function setTheme(theme) {
             if (!THEMES.includes(theme)) theme = 'light';
             html.setAttribute('data-theme', theme);
-            // Green is a dark-family theme, so use Bootstrap's dark base for its components.
-            html.setAttribute('data-bs-theme', theme === 'light' ? 'light' : 'dark');
+            // Light-family themes use Bootstrap's light base; the rest use dark.
+            html.setAttribute('data-bs-theme', (theme === 'light' || theme === 'blue') ? 'light' : 'dark');
             localStorage.setItem(THEME_KEY, theme);
             if (themeIcon) {
                 themeIcon.className = 'bi ' + (ICONS[theme] || 'bi-circle-half');

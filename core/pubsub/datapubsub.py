@@ -207,6 +207,10 @@ class DataPublisher(AbstractDataPubSub):
         
         This provides consistent visibility across all pubsub implementations.
         """
+        # v5.14.0: per-message tracing is DEBUG-only (see DataSubscriber). At INFO
+        # this returns immediately - no preview build, no log calls.
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
         try:
             # Get a preview of the message (truncate large messages)
             if isinstance(data, dict):
@@ -219,11 +223,11 @@ class DataPublisher(AbstractDataPubSub):
             with self._lock:
                 count = self._publish_count + 1
             
-            logger.info(f"PUBLISH [{self.name}]:")
-            logger.info(f"  Destination: {self.destination}")
-            logger.info(f"  Type: {type(data).__name__}")
-            logger.info(f"  Count: {count}")
-            logger.info(f"  Preview: {preview}")
+            logger.debug(f"PUBLISH [{self.name}]:")
+            logger.debug(f"  Destination: {self.destination}")
+            logger.debug(f"  Type: {type(data).__name__}")
+            logger.debug(f"  Count: {count}")
+            logger.debug(f"  Preview: {preview}")
         except Exception as e:
             logger.warning(f"Could not log publish for {self.name}: {e}")
 

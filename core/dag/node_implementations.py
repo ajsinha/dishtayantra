@@ -325,7 +325,8 @@ class MetronomeNode(Node):
             # Mark children as dirty
             for edge in self._outgoing_edges:
                 edge.to_node.set_dirty()
-                logger.info(f'node: {self.name} setting child {edge.to_node.name} as dirty')
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f'node: {self.name} setting child {edge.to_node.name} as dirty')
 
             # Mark this node as clean (not dirty) - it will be marked dirty again by metronome
             self.set_clean()

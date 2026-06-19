@@ -9,38 +9,31 @@
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/cpp_math_pipeline_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/cpp_math_pipeline_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/cpp_trade_pricing_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/cpp_trade_pricing_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/cross_worker_consumer_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/cross_worker_consumer_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/cross_worker_producer_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/cross_worker_producer_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/example_trade_ingest.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/example_trade_ingest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/java_math_hybrid_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/java_math_hybrid_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/java_risk_calculation_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/java_risk_calculation_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/java_trade_pricing_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/java_trade_pricing_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/rust_math_pipeline_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/rust_math_pipeline_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/rust_timeseries_analysis_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/rust_timeseries_analysis_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/worker_affinity_example.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/worker_affinity_example.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/dags/worker_affinity_example_dag.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/dags/worker_affinity_example_dag.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/example/worker_config.example.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/example/worker_config.example.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/worker_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/config/worker_config.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/dag/compute_graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph_builders.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph_builders.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph_support.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph_support.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/dag_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_view.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/dag/node_implementations.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/node_implementations.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/egress/async_publisher.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/egress/async_publisher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/egress/wal.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/egress/wal.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/log_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/log_config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/metrics/rate_meter.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/metrics/rate_meter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/lmdbpubsub_endpoints.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/lmdbpubsub_endpoints.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/workers/worker_messages.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_messages.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/workers/worker_pool.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_pool.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/workers/worker_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_process.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_process_runtime.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_process_runtime.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/perftest/perftest_trade_etl.json" beforeDir="false" afterPath="$PROJECT_DIR$/perftest/perftest_trade_etl.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/dagdesigner_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dagdesigner_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/admin_log_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/admin_log_routes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/routes/dashboard_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dashboard_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/designer.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/designer.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/dishtayantra_webapp.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/dishtayantra_webapp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/comparison.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/comparison.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/dag/details.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/details.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/py4j_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/py4j_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rust_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rust_integration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

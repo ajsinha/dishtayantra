@@ -292,6 +292,10 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
                 self.subgraph_supervisor.register_subgraph(sg_node)
             logger.info(f"Subgraph supervisor initialized with {len(self.subgraph_nodes)} subgraphs")
 
+        # v5.14.0: invalidate the memoized topological order; the structure is
+        # static after this point until the next build.
+        self._topo_cache = None
+
         logger.info(f"DAG built successfully with {len(self.nodes)} nodes and {len(self.edges)} edges")
 
     def get_node(self, name: str):
@@ -403,6 +407,75 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
             subscriber.resume()
 
         logger.info(f"DAG {self.name}: resumed")
+
+    # ------------------------------------------------------------------ #
+    # v5.15.0: drain-mode freeze of subscribers (maintenance windows)
+    # ------------------------------------------------------------------ #
+    def freeze_subscribers(self, names=None):
+        """Freeze all (names=None) or the named subscribers so they stop pulling
+        from their brokers. Compute and publishing keep running, so the DAG
+        drains. Returns the list of affected subscriber names."""
+        affected = []
+        for sub_name, sub in self.subscribers.items():
+            if names is None or sub_name in names:
+                if hasattr(sub, 'freeze'):
+                    sub.freeze()
+                    affected.append(sub_name)
+        logger.info(f"DAG {self.name}: froze {len(affected)} subscriber(s): {affected}")
+        return affected
+
+    def unfreeze_subscribers(self, names=None):
+        """Unfreeze all (names=None) or the named subscribers."""
+        affected = []
+        for sub_name, sub in self.subscribers.items():
+            if names is None or sub_name in names:
+                if hasattr(sub, 'unfreeze'):
+                    sub.unfreeze()
+                    affected.append(sub_name)
+        logger.info(f"DAG {self.name}: unfroze {len(affected)} subscriber(s): {affected}")
+        return affected
+
+    def drain_status(self):
+        """v5.15.0: snapshot of how 'drained' the DAG is, for maintenance windows.
+
+        Reports frozen subscribers, total messages still queued at subscribers and
+        publishers, and whether the DAG is fully drained (no frozen-subscriber
+        intake AND nothing left queued). Note: 'publications finished' also
+        requires any async-egress WAL to be empty - publishers that expose a
+        pending count contribute it.
+        """
+        frozen = []
+        sub_queue_total = 0
+        any_frozen = False
+        for sub_name, sub in self.subscribers.items():
+            depth = sub.get_queue_size() if hasattr(sub, 'get_queue_size') else 0
+            sub_queue_total += depth
+            if hasattr(sub, 'is_frozen') and sub.is_frozen():
+                frozen.append(sub_name)
+                any_frozen = True
+        pub_queue_total = 0
+        wal_pending = 0
+        for pub in self.publishers.values():
+            if hasattr(pub, 'get_queue_size'):
+                try:
+                    pub_queue_total += pub.get_queue_size() or 0
+                except Exception:  # noqa: BLE001
+                    pass
+            pend = getattr(pub, 'async_pending', None)
+            if callable(pend):
+                try:
+                    wal_pending += pend() or 0
+                except Exception:  # noqa: BLE001
+                    pass
+        drained = (sub_queue_total == 0 and pub_queue_total == 0 and wal_pending == 0)
+        return {
+            'frozen_subscribers': frozen,
+            'any_frozen': any_frozen,
+            'subscriber_queue_total': sub_queue_total,
+            'publisher_queue_total': pub_queue_total,
+            'wal_pending': wal_pending,
+            'drained': drained,
+        }
 
     def stop(self):
         """Stop the compute graph"""

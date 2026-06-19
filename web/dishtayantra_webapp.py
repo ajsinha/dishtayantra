@@ -51,6 +51,7 @@ from web.fastapi_compat import (
 # Import route handlers
 from routes import (
     AdminLogRoutes,
+    MaintenanceRoutes,
     AdminRoutes,
     AuthRoutes,
     CacheRoutes,
@@ -138,6 +139,7 @@ class DishtaYantraWebApp:
         self._initialize_routes()
 
         self._initialized = True
+        self._apply_gc_tuning()
         logger.info("DishtaYantra Web Application initialized successfully")
 
     # ------------------------------------------------------------------ #
@@ -249,6 +251,36 @@ class DishtaYantraWebApp:
             os.makedirs(directory, exist_ok=True)
             logger.debug(f"Ensured directory exists: {directory}")
 
+    def _apply_gc_tuning(self):
+        """v5.14.0: optional GC tuning to reduce collection overhead under load.
+
+        gc.freeze() moves everything allocated during startup (the app, loaded
+        DAGs, templates, etc.) into a permanent generation that GC never scans
+        again, so steady-state collections only walk the much smaller set of
+        per-message objects. Optionally raises the gen-0 threshold to collect
+        less often. Both are safe and config-gated; the defaults preserve prior
+        behavior except for the (harmless) freeze.
+
+            performance.gc.freeze=true|false     (default: true)
+            performance.gc.threshold=<int>       (default: unset -> unchanged)
+        """
+        import gc
+        try:
+            freeze = str(self.props.get('performance.gc.freeze', 'true')).lower() \
+                in ('1', 'true', 'yes', 'on')
+            if freeze:
+                gc.collect()
+                gc.freeze()
+                frozen = gc.get_freeze_count() if hasattr(gc, 'get_freeze_count') else -1
+                logger.info("GC tuning: froze %d startup objects (gc.freeze)", frozen)
+            thr = self.props.get('performance.gc.threshold', None)
+            if thr:
+                _, g1, g2 = gc.get_threshold()
+                gc.set_threshold(int(thr), g1, g2)
+                logger.info("GC tuning: gen0 threshold set to %s", thr)
+        except Exception as e:  # noqa: BLE001 - tuning must never break startup
+            logger.warning("GC tuning skipped: %s", e)
+
     def _initialize_components(self):
         """Initialize core application components.
 
@@ -307,7 +339,11 @@ class DishtaYantraWebApp:
             self.app, self.dag_server, self.user_registry, self.guards)
         self.admin_routes = AdminRoutes(self.app, self.dag_server,
                                         self.guards)
-        self.admin_log_routes = AdminLogRoutes(self.app, self.guards)
+        self.admin_log_routes = AdminLogRoutes(self.app, self.guards,
+                                               worker_pool=self.worker_pool)
+        self.maintenance_routes = MaintenanceRoutes(
+            self.app, self.dag_server, self.guards,
+            worker_pool=self.worker_pool)
         self.metrics_routes = MetricsRoutes(self.app, self.dag_server,
                                             self.redis_cache)
         self.worker_routes = WorkerRoutes(self.app, self.worker_pool,

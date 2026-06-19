@@ -314,7 +314,7 @@
                         <div class="text-muted"><i class="bi bi-clock-history"></i> Last full minute</div>
                         <small class="text-muted d-block">actual messages received in the most recent completed 1-minute window</small>
                         <div class="rate-peak mt-1">
-                            busiest minute (last 10m):
+                            busiest minute (last 30m):
                             {{ "{:,}".format(dag_stats.ingest_buckets.completed | max) if dag_stats.ingest_buckets else 0 }}
                             &middot; smoothed &asymp;{{ "{:,.0f}".format(rpm) }}/min
                         </div>
@@ -322,7 +322,7 @@
                 </div>
 
                 {# v5.13.0: true per-minute ingest histogram - exact counts for the
-                   last 10 completed minutes plus the current (partial) minute.
+                   last 30 completed minutes plus the current (partial) minute.
                    Replaces the old page-load-sampled rate sparkline. #}
                 {% if dag_stats.ingest_buckets %}
                 {% set comp = dag_stats.ingest_buckets.completed or [] %}
@@ -335,7 +335,7 @@
                 <div class="minbars">
                     <div class="minbars-title">
                         <i class="bi bi-bar-chart-fill"></i>
-                        Messages received per minute &mdash; last 10 minutes
+                        Messages received per minute &mdash; last 30 minutes
                     </div>
                     <svg viewBox="0 0 100 50" preserveAspectRatio="none" class="minbars-svg">
                         {% for v in bars %}
@@ -356,7 +356,7 @@
                               stroke="var(--border-color, #cccccc)" stroke-width="0.4"/>
                     </svg>
                     <div class="minbars-axis">
-                        <span>10 min ago</span><span>now (partial)</span>
+                        <span>30 min ago</span><span>now (partial)</span>
                     </div>
                     <small class="text-muted d-block minbars-help">
                         Each blue bar is the <strong>exact number of messages</strong> this DAG received

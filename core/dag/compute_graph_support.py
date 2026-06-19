@@ -100,7 +100,17 @@ class GraphAlgorithmsMixin:
         return []
 
     def topological_sort(self):
-        """Return nodes in topological order"""
+        """Return nodes in topological order.
+
+        Memoized: the graph structure is static after build_dag(), so the order
+        is computed once and reused. build_dag() invalidates the cache (sets
+        self._topo_cache = None) so a rebuild recomputes. The returned list is
+        treated as read-only by callers.
+        """
+        cached = getattr(self, '_topo_cache', None)
+        if cached is not None:
+            return cached
+
         in_degree = {name: 0 for name in self.nodes}
 
         for node in self.nodes.values():
@@ -120,6 +130,7 @@ class GraphAlgorithmsMixin:
                 if in_degree[child_name] == 0:
                     queue.append(child_name)
 
+        self._topo_cache = sorted_nodes
         return sorted_nodes
 
 

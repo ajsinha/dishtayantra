@@ -52,7 +52,7 @@ class RateMeter:
         # minutes" histogram. Keyed by an integer monotonic-minute index so it is
         # immune to wall-clock/NTP jumps. Bounded to the window (O(1) memory:
         # window+1 small ints), preserving this meter's no-growing-buffer property.
-        self._minute_window = 10           # number of *completed* minutes kept
+        self._minute_window = 30           # number of *completed* minutes kept
         self._minute_counts = {}           # {minute_index: count}
 
     def _fold_locked(self, now):

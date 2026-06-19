@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance / Drain - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .drain-help { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+    .badge-drained  { background:#dcfce7; color:#166534; }
+    .badge-draining { background:#fef3c7; color:#92400e; }
+    .badge-frozen   { background:#dbeafe; color:#1e40af; }
+    .badge-live     { background:#e5e7eb; color:#374151; }
+    .pill { display:inline-block; padding:1px 8px; border-radius:10px; font-size:.72rem; font-weight:600; }
+    .sub-row td { vertical-align: middle; }
+    .num { font-variant-numeric: tabular-nums; }
+    .dag-card { border-left: 4px solid #2563eb; }
+    .dag-card.drained { border-left-color:#1f8a4c; }
+    .logger-name, .src { font-family:'Monaco','Menlo','Ubuntu Mono',monospace; font-size:.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-cone-striped"></i> Maintenance / Drain</h2>
+</div>
+
+<p class="drain-help mb-2">
+    <strong>Drain mode</strong> freezes subscribers so they stop pulling new messages from
+    their brokers, while everything already in flight keeps flowing &mdash; so queues and
+    publications drain. This is different from <em>pause</em>, which stops the whole flow and
+    holds the queues. Use it before a maintenance window: freeze &rarr; watch everything drain
+    to zero &rarr; then restart. Works for every broker (Kafka also gets a broker-level pause to
+    avoid a consumer-group rebalance). Freeze state is <strong>temporary</strong> and clears on
+    restart.
+    {% if not worker_mode %}<br>Running in single-process mode.{% endif %}
+</p>
+
+<!-- Live overall status (polled) -->
+<div id="overall" class="alert {{ 'alert-success' if all_drained else 'alert-warning' }} py-2">
+    <span id="overall-text">
+        {% if any_frozen and all_drained %}Frozen and fully drained &mdash; safe to restart.
+        {% elif any_frozen %}Draining&hellip; waiting for queues to reach zero.
+        {% else %}Nothing frozen &mdash; system live.{% endif %}
+    </span>
+</div>
+
+<!-- Global controls -->
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+        <strong class="me-2">All DAGs:</strong>
+        <form method="post" action="{{ url_for('maintenance_apply') }}" class="d-inline">
+            <input type="hidden" name="action" value="freeze">
+            <input type="hidden" name="scope" value="global">
+            <button class="btn btn-sm btn-warning"
+                    onclick="return confirm('Freeze ALL subscribers on ALL DAGs?');">
+                <i class="bi bi-snow"></i> Freeze everything (enter drain mode)
+            </button>
+        </form>
+        <form method="post" action="{{ url_for('maintenance_apply') }}" class="d-inline">
+            <input type="hidden" name="action" value="unfreeze">
+            <input type="hidden" name="scope" value="global">
+            <button class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-play"></i> Unfreeze everything
+            </button>
+        </form>
+        <span class="drain-help ms-auto">Live status auto-refreshes every few seconds.</span>
+    </div>
+</div>
+
+{% for d in dags %}
+<div class="card mb-3 dag-card {{ 'drained' if d.drained else '' }}">
+    <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <h5 class="card-title mb-0">{{ d.dag_name }}</h5>
+            {% if d.on_worker %}<span class="pill badge-live">worker</span>{% endif %}
+            <span class="pill {{ 'badge-drained' if d.drained else 'badge-draining' }}"
+                  data-dag="{{ d.dag_name }}" data-role="drain-badge">
+                {{ 'drained' if d.drained else 'draining' }}
+            </span>
+            {% if d.any_frozen %}<span class="pill badge-frozen">frozen</span>{% endif %}
+            <span class="drain-help ms-auto">
+                queued: subs <span class="num" data-dag="{{ d.dag_name }}" data-role="subq">{{ d.subscriber_queue_total }}</span>,
+                pub <span class="num">{{ d.publisher_queue_total }}</span>,
+                WAL <span class="num">{{ d.wal_pending }}</span>
+            </span>
+        </div>
+
+        <div class="d-flex gap-2 mb-2">
+            <form method="post" action="{{ url_for('maintenance_apply') }}">
+                <input type="hidden" name="action" value="freeze">
+                <input type="hidden" name="scope" value="dag">
+                <input type="hidden" name="dag_name" value="{{ d.dag_name }}">
+                <input type="hidden" name="subscribers" value="ALL">
+                <button class="btn btn-sm btn-warning"><i class="bi bi-snow"></i> Freeze all</button>
+            </form>
+            <form method="post" action="{{ url_for('maintenance_apply') }}">
+                <input type="hidden" name="action" value="unfreeze">
+                <input type="hidden" name="scope" value="dag">
+                <input type="hidden" name="dag_name" value="{{ d.dag_name }}">
+                <input type="hidden" name="subscribers" value="ALL">
+                <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-play"></i> Unfreeze all</button>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Subscriber</th><th>Source</th><th class="text-center">State</th>
+                        <th class="text-end">Queue</th><th class="text-end">Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for s in d.subscribers %}
+                    <tr class="sub-row">
+                        <td>{{ s.name }}</td>
+                        <td class="src">{{ s.source }}</td>
+                        <td class="text-center">
+                            {% if s.frozen %}<span class="pill badge-frozen">frozen</span>
+                            {% else %}<span class="pill badge-live">live</span>{% endif %}
+                        </td>
+                        <td class="text-end num">{{ s.queue_depth }}</td>
+                        <td class="text-end">
+                            {% if s.frozen %}
+                            <form method="post" action="{{ url_for('maintenance_apply') }}" class="d-inline">
+                                <input type="hidden" name="action" value="unfreeze">
+                                <input type="hidden" name="scope" value="dag">
+                                <input type="hidden" name="dag_name" value="{{ d.dag_name }}">
+                                <input type="hidden" name="subscribers" value="{{ s.name }}">
+                                <button class="btn btn-sm btn-outline-secondary">Unfreeze</button>
+                            </form>
+                            {% else %}
+                            <form method="post" action="{{ url_for('maintenance_apply') }}" class="d-inline">
+                                <input type="hidden" name="action" value="freeze">
+                                <input type="hidden" name="scope" value="dag">
+                                <input type="hidden" name="dag_name" value="{{ d.dag_name }}">
+                                <input type="hidden" name="subscribers" value="{{ s.name }}">
+                                <button class="btn btn-sm btn-outline-warning">Freeze</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">No DAGs loaded.</div>
+{% endfor %}
+
+<script>
+(function () {
+    const statusUrl = "{{ url_for('maintenance_status') }}";
+    async function poll() {
+        try {
+            const r = await fetch(statusUrl, {headers: {'Accept': 'application/json'}});
+            if (!r.ok) return;
+            const data = await r.json();
+            const ov = document.getElementById('overall');
+            const ovt = document.getElementById('overall-text');
+            if (data.any_frozen && data.all_drained) {
+                ov.className = 'alert alert-success py-2';
+                ovt.textContent = 'Frozen and fully drained \u2014 safe to restart.';
+            } else if (data.any_frozen) {
+                ov.className = 'alert alert-warning py-2';
+                ovt.textContent = 'Draining\u2026 waiting for queues to reach zero.';
+            } else {
+                ov.className = 'alert alert-secondary py-2';
+                ovt.textContent = 'Nothing frozen \u2014 system live.';
+            }
+            (data.dags || []).forEach(function (d) {
+                const badge = document.querySelector('[data-role="drain-badge"][data-dag="' + d.dag_name + '"]');
+                if (badge) {
+                    badge.textContent = d.drained ? 'drained' : 'draining';
+                    badge.className = 'pill ' + (d.drained ? 'badge-drained' : 'badge-draining');
+                }
+                const subq = document.querySelector('[data-role="subq"][data-dag="' + d.dag_name + '"]');
+                if (subq) subq.textContent = d.subscriber_queue_total;
+            });
+        } catch (e) { /* transient; keep polling */ }
+    }
+    setInterval(poll, 3000);
+})();
+</script>
+{% endblock %}

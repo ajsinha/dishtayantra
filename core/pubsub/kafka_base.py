@@ -116,6 +116,41 @@ class AbstractKafkaConsumerWrapper(ABC):
         """Get a single message (for compatibility)."""
         pass
 
+    # v5.15.0: broker-aware pause for drain mode. Default works for both
+    # kafka-python and confluent-kafka (both expose assignment()/pause()/
+    # resume() on the underlying consumer stored as self._consumer). Pausing
+    # keeps the consumer in its group (no rebalance) while fetching stops.
+    # Returns True if applied; False -> caller falls back to the generic freeze.
+    def pause(self) -> bool:
+        return self._set_paused(True)
+
+    def resume(self) -> bool:
+        return self._set_paused(False)
+
+    def _set_paused(self, paused: bool) -> bool:
+        consumer = getattr(self, "_consumer", None)
+        if consumer is None:
+            return False
+        try:
+            assign = getattr(consumer, "assignment", None)
+            parts = list(assign()) if callable(assign) else []
+            fn = getattr(consumer, "pause" if paused else "resume", None)
+            if fn is None:
+                return False
+            if parts:
+                try:
+                    fn(*parts)      # kafka-python: pause(*partitions)
+                except TypeError:
+                    fn(parts)       # confluent-kafka: pause([partitions])
+            else:
+                try:
+                    fn()            # kafka-python with no args pauses all
+                except TypeError:
+                    fn([])
+            return True
+        except Exception:           # noqa: BLE001 - generic freeze still applies
+            return False
+
 # =============================================================================
 # kafka-python Wrappers
 # =============================================================================

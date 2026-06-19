@@ -126,9 +126,11 @@ def build_dag_view(dag):
     peak_total = 0.0
     ingest_breakdown = []
     # True per-minute ingest counts summed across subscribers (for the histogram).
-    window = 10
-    bucket_completed = [0] * window
+    # The window length is taken from the meters themselves so it can never drift
+    # from RateMeter._minute_window.
+    bucket_completed = None
     bucket_partial = 0
+    window = 30  # fallback only if no subscriber exposes minute buckets
     for sub_name, sub in (getattr(dag, 'subscribers', {}) or {}).items():
         cnt = int(getattr(sub, '_receive_count', 0) or 0)
         ingested_total += cnt
@@ -140,7 +142,10 @@ def build_dag_view(dag):
         if meter is not None and hasattr(meter, 'minute_buckets'):
             mb = meter.minute_buckets()
             comp = mb.get('completed') or []
-            for i in range(min(window, len(comp))):
+            if bucket_completed is None:
+                window = mb.get('window_minutes', len(comp)) or len(comp)
+                bucket_completed = [0] * len(comp)
+            for i in range(min(len(bucket_completed), len(comp))):
                 bucket_completed[i] += comp[i]
             bucket_partial += mb.get('current_partial', 0)
         ingest_breakdown.append({
@@ -148,9 +153,12 @@ def build_dag_view(dag):
             'source': getattr(sub, 'source', ''),
             'received': cnt,
             'rate_per_minute': round(sub_rate, 1),
+            'frozen': (sub.is_frozen() if hasattr(sub, 'is_frozen') else False),
             'queue_depth': (sub.get_queue_size()
                             if hasattr(sub, 'get_queue_size') else None),
         })
+    if bucket_completed is None:
+        bucket_completed = [0] * window
     published_total = 0
     publish_breakdown = []
     for node in sorted_nodes:
@@ -176,6 +184,12 @@ def build_dag_view(dag):
         },
         # Exact count for the most recently *completed* 1-minute window.
         'last_full_minute': bucket_completed[-1] if bucket_completed else 0,
+        # v5.15.0: drain/maintenance status (frozen subscribers + what's left
+        # queued). Computed here so it flows through the worker snapshot too.
+        'drain': (dag.drain_status() if hasattr(dag, 'drain_status') else {
+            'frozen_subscribers': [], 'any_frozen': False,
+            'subscriber_queue_total': 0, 'publisher_queue_total': 0,
+            'wal_pending': 0, 'drained': True}),
     }
 
     return {

@@ -122,6 +122,16 @@ class AsyncPublisher:
         s["dropped"] = self.dropped
         return s
 
+    def async_pending(self):
+        """v5.15.0: records still in the WAL waiting to be flushed to the real
+        sink (0 == fully drained). Used by the maintenance drain check so
+        'publications finished' truly accounts for async egress, not just the
+        in-process publisher queue."""
+        try:
+            return self._wal.pending_count()
+        except Exception:  # noqa: BLE001
+            return 0
+
     def close(self):
         get_manager().unregister(self._key)
 

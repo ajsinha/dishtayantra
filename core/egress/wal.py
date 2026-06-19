@@ -114,6 +114,24 @@ class WalBackend(ABC):
         return self.max_bytes > 0 and \
             self.size_bytes() >= self.max_bytes * self.high_water_pct / 100.0
 
+    def pending_count(self):
+        """v5.15.0: records appended but not yet committed (drained) - i.e. still
+        waiting to be flushed to the real sink. 0 means fully drained.
+
+        Offset-based (highest assigned offset minus committed offset), NOT byte
+        size: the filelog active segment keeps committed bytes on disk until it
+        rolls, so size_bytes() never reaches 0 even when drained. All backends
+        follow the _next (next offset to assign) / _committed convention.
+        """
+        nxt = getattr(self, "_next", 1)
+        committed = getattr(self, "_committed", None)
+        if committed is None:
+            try:
+                committed = self.committed_offset()
+            except Exception:  # noqa: BLE001
+                committed = 0
+        return max(0, (nxt - 1) - (committed or 0))
+
     def close(self):
         """Flush and release resources (file handles, db connections). Idempotent."""
 
