@@ -21,7 +21,7 @@ from core.core_utils import instantiate_module
 # `from ... import *` that populated globals() and defeated static analysis.
 from core.calculator import core_calculator as _calc_builtins
 from core.transformer import core_transformer as _transformer_builtins
-from core.calculator.core_calculator import DataCalculatorLike
+from core.calculator.core_calculator import DataCalculatorLike, CalculatorFactory
 from core.dag.subgraph import SubgraphNode
 from core.pubsub.pubsubfactory import create_publisher, create_subscriber
 from core.egress.async_publisher import maybe_wrap_publisher
@@ -43,6 +43,18 @@ def _resolve_builtin_type(type_name):
         if isinstance(cls, type):
             return cls
     return None
+
+
+# Implicit built-in transformers: usable by these short names in a node's
+# input_transformers / output_transformers WITHOUT an explicit entry in the DAG's
+# "transformers" section. An explicit transformer of the same name overrides them.
+# These are identity-style helpers callers reach for constantly, so requiring a
+# boilerplate definition was pure friction. Kept here so both the builder and the
+# DAG Designer validator can import one source of truth.
+IMPLICIT_TRANSFORMERS = {
+    "passthru": "PassthruDataTransformer",
+    "null": "NullDataTransformer",
+}
 
 
 class ComponentBuilderMixin:
@@ -83,6 +95,22 @@ class ComponentBuilderMixin:
             calc_type = calc_config.get('type', 'NullCalculator')
             config = calc_config.get('config', {})
 
+            # Bridge calculators (C++ via pybind11, Java via Py4J, Rust via PyO3) are
+            # created through CalculatorFactory, which knows how to load the native
+            # backend. Detected by an explicit type of cpp/java/rust, or by the presence
+            # of a *_class key in config. The factory's own config key is 'calculator',
+            # so we map the schema's `type` onto it (without clobbering an explicit one).
+            is_bridge = (isinstance(calc_type, str)
+                         and calc_type.lower() in ('cpp', 'java', 'rust')) \
+                or any(k in config for k in
+                       ('cpp_class', 'java_class', 'rust_class'))
+            if is_bridge:
+                factory_config = dict(config)
+                factory_config.setdefault('calculator', calc_type)
+                self.calculators[name] = CalculatorFactory.create(name, factory_config)
+                logger.info(f"Created calculator: {name} (bridge: {calc_type})")
+                continue
+
             # Check if it's a known built-in calculator
             builtin = _resolve_builtin_type(calc_type)
             if builtin is not None:
@@ -114,6 +142,15 @@ class ComponentBuilderMixin:
                 self.transformers[name] = instantiate_module(module_path, class_name, {'name': name, 'config': config})
 
             logger.info(f"Created transformer: {name}")
+
+        # Seed implicit built-in transformers (passthru, null) for any name not
+        # explicitly defined above, so nodes may reference them without boilerplate.
+        # An explicit definition of the same name (built above) takes precedence.
+        for impl_name, cls_name in IMPLICIT_TRANSFORMERS.items():
+            if impl_name not in self.transformers:
+                cls = _resolve_builtin_type(cls_name)
+                if cls is not None:
+                    self.transformers[impl_name] = cls(impl_name, {})
 
 
     def _build_subgraph_node(self, node_config: dict) -> SubgraphNode:

@@ -315,6 +315,18 @@ class WorkerRuntimeMixin:
                         'error': str(e)
                     }
             
+            # v5.12.0: build the same Details view-model the main process would
+            # build locally, so the Details page is identical for a worker-run DAG.
+            # The worker holds the REAL built/running DAG, so this carries live queue
+            # depth/max, counts and rates. Defensive: a view failure must not break
+            # the State page response (node_states/subscriber_states).
+            try:
+                from core.dag.dag_view import build_dag_view
+                view = build_dag_view(dag)
+            except Exception as e:  # noqa: BLE001
+                self.logger.error(f"Error building dag view for {dag_name}: {e}")
+                view = None
+
             # Build response data
             data = {
                 'dag_name': dag_name,
@@ -322,6 +334,7 @@ class WorkerRuntimeMixin:
                 'is_suspended': not dag._suspend_event.is_set() if hasattr(dag, '_suspend_event') else False,
                 'node_states': node_states,
                 'subscriber_states': subscriber_states,
+                'view': view,
                 'timestamp': time.time()
             }
             

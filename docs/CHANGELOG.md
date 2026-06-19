@@ -5,6 +5,243 @@ records the per-release highlights that previously lived in the version.py
 docstring.
 
 
+## Version 5.13.0 highlights (DAG Details: true per-minute throughput histogram):
+    - The Details page "Message Throughput" panel now shows the ACTUAL number of messages
+      received in each 1-minute tumbling window for the last 10 minutes (plus the current,
+      in-progress partial minute), drawn as a dependency-free inline SVG bar chart. This
+      replaces the EWMA "msg/min" headline and the old sparkline, which were misleading:
+      the EWMA is a smoothed estimate (not a count), and the sparkline's x-axis was "the
+      last 60 times someone opened this page," not real time.
+    - Plain-language captions (small font) explain it for non-experts: each blue bar is the
+      exact message count for that clock minute; the lighter last bar is the current minute
+      still filling up (so it usually looks short); the "smoothed" figure is a fast-reacting
+      estimate, not an exact tally. Hovering a bar shows its count and how many minutes ago.
+    - core/metrics/rate_meter.py: RateMeter gained minute_buckets() - a bounded ring of
+      exact per-minute counts keyed by a monotonic-minute index (immune to wall-clock/NTP
+      jumps). O(1) memory (window+1 small ints), preserving the meter's no-growing-buffer
+      design. mark() increments the current minute; reads roll forward so idle minutes are a
+      true 0 and a long-idle meter reports all zeros.
+    - core/dag/dag_view.py: build_dag_view sums the per-minute buckets across all subscribers
+      into dag_stats['ingest_buckets'] = {completed:[10], current_partial, window_minutes}
+      and dag_stats['last_full_minute'] (the new headline number). Because the worker builds
+      the view for worker-run DAGs (v5.12.0), the histogram is identical in worker-pool mode
+      with no extra IPC. The EWMA rate_per_minute is retained but relabeled as a secondary
+      "smoothed ~N/min" estimate.
+    - routes/dashboard_routes.py: removed the per-DAG _rate_history deque and its page-load
+      append - it only captured page-open moments and never worked for worker-run DAGs. The
+      template's sparkline (dag_stats.rate_history) was replaced by the bar chart.
+    - Verified end-to-end (TestClient): cross-subscriber bucket aggregation is correct
+      (e.g. two subscribers' 1-minute-ago counts 7 and 3 sum to 10), the view round-trips
+      through JSON, and the chart + captions + hover counts render in both single-process and
+      worker-snapshot modes; the headline reads the last completed minute's real count.
+      235 passed with lmdb; 234 passed + 1 skipped in the shipped repo.
+
+
+
+    - The DAG "Details" page now shows the same live data whether a DAG runs in the main
+      process or in a worker subprocess. Previously, with the worker pool enabled the main
+      process held only a lazy (unbuilt) copy of a worker-run DAG, so its details() returned
+      config-derived placeholders (queue_depth 0, no current_depth/max_depth) and the page
+      showed 0 / infinity for queue depth (and, before 5.11.9, crashed).
+    - NEW core/dag/dag_view.py - build_dag_view(dag): the single source of truth for the
+      Details view-model. From a live (built) ComputeGraph it produces
+      {details, node_details, graph_data, dag_stats} exactly as the dashboard route used to
+      assemble inline. Everything returned is JSON/pickle-safe so it can cross the worker
+      IPC boundary. The rolling rate-history sparkline is intentionally excluded (owned by
+      the main process and appended by the route).
+    - Worker side (core/workers/worker_process_runtime.py _send_dag_state): in addition to
+      the existing State-page node_states/subscriber_states, it now builds
+      data['view'] = build_dag_view(dag) on the worker's REAL running DAG. So the snapshot
+      carries live queue depth/max, message counts and rates. Defensive: a view-build
+      failure does not break the State response.
+    - Main side (routes/dashboard_routes.py dag_details): refactored to build the view from
+      a single place. When the DAG is assigned to a worker it fetches the live snapshot via
+      worker_pool.get_dag_state() and renders from snapshot['view']; otherwise it builds the
+      view locally with build_dag_view(dag). Either branch yields an identical structure, so
+      the template renders identically. If the worker doesn't answer, it falls back to the
+      local view rather than failing.
+    - Verified end-to-end (TestClient): with the worker snapshot supplying distinct values
+      (max_depth 9,999, current_depth 1,234, received 777,777) the page renders those live
+      values and does NOT fall back to the local DAG's figures; single-process rendering is
+      unchanged. The view round-trips through JSON intact (proving IPC-shippability). Tests:
+      235 passed with lmdb installed; 234 passed + 1 skipped in the shipped repo.
+
+
+
+    - FIX (DAG Details page, worker pool enabled): rendering crashed with "unsupported
+      format string passed to Undefined.__format__". The queue_bar macro in
+      web/templates/dag/details.html guarded its depth/capacity args with `is not none`,
+      but for a DAG executing in a worker subprocess the live queue figures
+      (sub.current_depth / sub.max_depth / pub.queue_depth / pub.max_queue_depth) aren't
+      in the main-process view and arrive as Jinja Undefined - which is NOT `none`, so it
+      passed the guard and reached "{:,}".format(Undefined). The macro now guards with
+      `(x is defined and x is not none)`; Undefined/None both render as 0. The State page
+      was unaffected because it doesn't use queue_bar.
+    - FIX (DAG clone with LMDB subscriber): "'LMDBDataSubscriber' object has no attribute
+      'is_composite'". LMDBDataSubscriber / LMDBDataPublisher in
+      core/pubsub/lmdbpubsub_endpoints.py are standalone classes that never implemented
+      the pub/sub interface method the builder's composite-adjustment pass calls on every
+      subscriber (compute_graph_builders.py: `if sub_object.is_composite()`). Added
+      is_composite() -> False to both. Clone rebuilds the DAG via that path, hence the
+      crash on clone.
+    - FIX (example DAGs that validated but couldn't build): worker_affinity_example,
+      worker_affinity_example_dag and cross_worker_consumer_dag declared calculators with
+      the legacy `type: "PythonCalculator"` + module/class form pointing at non-existent
+      classes (calculators.pricing.PriceCalculator, example_calculators.*). The builder
+      ignores module/class, so these never resolved. Repointed to the built-in
+      PassthruCalculator (names preserved so node references still resolve); they now build
+      and clone. A _calculator_note documents how to swap in a real dotted-path calculator.
+    - perftest/perftest_trade_etl.json: added a second Kafka result publisher
+      `output_kafka_async` (destination kafka://topic/perftest_trades_enriched_async,
+      `async_egress: true`) feeding a new `kafka_async_sink` PublisherSinkNode off
+      summarize_node, beside the existing inline `output_kafka`. With egress.async.enabled
+      set, output_kafka_async is wrapped by the WAL-backed AsyncPublisher while output_kafka
+      stays inline - a sync-vs-async egress benchmark in one DAG. Now 12 nodes / 13 edges.
+    - DOCS: refreshed the embedded examples in web/templates/help/py4j_integration.html,
+      pybind11_integration.html and rust_integration.html to the current schema
+      (subscribers/publishers/calculators sections; bridge calculators as
+      type cpp/java/rust + *_class/*_module config; SubscriptionNode/CalculationNode/
+      PublisherSinkNode; from_node/to_node edges) so they match the migrated example files.
+      The full-DAG examples now mirror cpp_math_pipeline_dag.json / rust_math_pipeline_dag.json.
+    - Tests: 235 passed with lmdb installed (the previously-skipped lmdb test now runs and
+      exercises the new is_composite path); 234 passed + 1 skipped in the shipped repo
+      (no lmdb dependency bundled).
+
+
+
+    - ComputeGraph builder (core/dag/compute_graph_builders.py): the calculators-building
+      loop now routes bridge calculators through CalculatorFactory. A calculator whose
+      `type` is "cpp"/"java"/"rust" (case-insensitive), or whose `config` carries a
+      cpp_class / java_class / rust_class key, is created via
+      CalculatorFactory.create(name, {..config, "calculator": type}), which loads the
+      pybind11 (C++), Py4J (Java), or PyO3 (Rust) backend. The schema's `type` is mapped
+      onto the factory's `calculator` key (setdefault, so an explicit one is preserved).
+      Built-in and dotted-path calculators are unchanged - this is purely additive.
+    - Migrated the 7 legacy bridge example DAGs (cpp_math_pipeline_dag, cpp_trade_pricing_dag,
+      rust_math_pipeline_dag, rust_timeseries_analysis_dag, java_math_hybrid_dag,
+      java_risk_calculation_dag, java_trade_pricing_dag) from the obsolete inline
+      source/calculator/destination + from/to schema to the current
+      subscribers/publishers/calculators sections, SubscriptionNode/CalculationNode/
+      PublisherSinkNode nodes, and from_node/to_node edges. Bridge calculators are now
+      declared in the calculators section using the factory config (cpp_class+cpp_module,
+      java_class+gateway_config, rust_class+rust_module). The two Python preprocessing
+      steps in the java DAGs (formerly example classes) are now built-in PassthruCalculator.
+      The inline `condition` on the java risk-alerts sink (never part of the node schema)
+      was dropped.
+    - Result: all 7 validate clean through /api/dag-designer/validate and build straight
+      to the factory, failing only on the absent native backend (an environment dependency,
+      not a schema defect). config/example/dags is now 31/31 deployable & clean (was 24/31).
+      Original filenames were preserved so py4j_integration / pybind11_integration /
+      rust_integration help-page links remain valid. NOTE: those three help pages still
+      embed old-schema JSON examples that no longer match the migrated files - a docs
+      refresh is outstanding. 234 passed, 1 skipped.
+
+
+
+    - DAG Designer importer (importDagJson) now accepts legacy edge keys. Edges are read
+      as from_node ?? from ?? source and to_node ?? to ?? target, so a DAG whose edges
+      still use the old from/to keys loads with its endpoints intact and re-exports as
+      from_node/to_node. Previously such a DAG round-tripped to edges with from_node:null
+      and deploy failed with "Edge references non-existent source node: None". The
+      cross_worker_consumer/producer and worker_affinity examples now deploy clean.
+    - DAG Designer validator (_validate_config and _detect_cycles) hardened against
+      malformed / legacy-schema DAGs so it returns actionable errors instead of crashing:
+        * Nodes or components missing the required 'name' (legacy id-based java DAGs use
+          'id') are reported as "A <kind> entry is missing the required 'name' field"
+          rather than raising KeyError('name') - which had reached the user as the opaque
+          "Save failed: 'name'".
+        * Reference fields holding a non-string (legacy inline "calculator": {"type":
+          "cpp", ...} dicts) are reported as "non-string <field> reference" instead of
+          raising "unhashable type: 'dict'" from a `dict not in set` test.
+        * Non-dict node entries and non-list reference fields are skipped safely.
+      Net effect: the 7 legacy cpp/rust/java bridge DAGs now fail to deploy with clear,
+      specific messages enumerating exactly what is wrong, instead of cryptic crashes;
+      no functional DAG behaviour changed. 234 passed.
+
+
+## Version 5.11.6 highlights (implicit passthru/null transformers + hard-fail on dangling refs + example audit):
+    - Implicit built-in transformers: 'passthru' (PassthruDataTransformer) and 'null'
+      (NullDataTransformer) now resolve by name even when a DAG does not define them in
+      its "transformers" section. Defined once in compute_graph_builders.
+      IMPLICIT_TRANSFORMERS and seeded into self.transformers after the explicit
+      transformers are built, so an explicit transformer of the same name overrides the
+      implicit one. The DAG Designer validator unions these names in too, so a bare
+      passthru/null reference no longer reports as "non-existent".
+    - ComputeGraph hard-fails on dangling node references. Previously a node that
+      referenced an undefined subscriber/publisher silently got no wiring, and an
+      undefined calculator/input_transformer/output_transformer was skipped (5.11.5
+      downgraded this to a warning). All five are now hard errors at build:
+      "DAG '<name>': node '<node>' references undefined <kind> '<ref>'". This matches the
+      DAG Designer validator, which already errored, so the two paths can no longer
+      disagree, and aligns with the project's no-silent-skip principle.
+    - Full audit of every DAG in config/example/dags + config/dags (33 total), with
+      passthru/null treated as implicit:
+        * 8 build clean (coordination_consumer/producer, cross_worker_producer_dag,
+          the duration/perpetual/autoclone-default samples, sample_dag).
+        * 14 are schema-clean with NO dangling references but cannot fully build in a
+          bare sandbox because they need external infrastructure - Kafka brokers,
+          the 'lmdb' module, a configured storage.provider, or (worker_affinity) hit a
+          pre-existing LMDBDataSubscriber.is_composite connector bug. These are env /
+          connector issues, not reference problems.
+        * 7 legacy bridge DAGs (cpp_math_pipeline, cpp_trade_pricing, rust_math_pipeline,
+          rust_timeseries_analysis, java_math_hybrid, java_risk_calculation,
+          java_trade_pricing) use an obsolete schema (SourceNode/CalculatorNode/SinkNode
+          or lowercase source/calculator/sink, inline source/calculator/destination
+          blocks, from/to edge keys, id-based java nodes) and depend on pybind11 / PyO3 /
+          py4j bridges. They were NOT rewritten - the bridge calculator type strings
+          can't be determined from the current factory to do it verifiably, and 4 of the
+          7 are referenced in docs so blind removal would break links. With this release
+          they fail loudly on load (correct) rather than misbehaving silently;
+          recommend a focused rewrite-or-remove pass.
+    - Data fixes applied: cross_worker_consumer_dag, cross_worker_producer_dag,
+      worker_affinity_example, worker_affinity_example_dag had legacy from/to edge keys
+      rewritten to from_node/to_node (the engine reads only from_node/to_node);
+      cross_worker_producer_dag's calculator 'data_transformer' was repointed from the
+      fictional type "PythonCalculator" (module example_calculators.transformer) to the
+      real builtin PassthruCalculator. 234 passed.
+
+
+## Version 5.11.5 highlights (example_trade_ingest passthru fix + dangling-ref warnings):
+    - Fixed DAG Designer deploy failure on example_trade_ingest.json: "Node
+      'kafka_trade_discriminator_publisher' references non-existent input transformer:
+      passthru". The node listed input_transformers: ["passthru"] but the DAG defined no
+      transformers section, so the reference was dangling. Added the section
+      ({"name":"passthru","type":"PassthruDataTransformer"}) - the DAG now validates and
+      deploys clean (validator returns valid:true). Note 'passthru' is not a builtin TYPE
+      name; the resolvable class is PassthruDataTransformer. Only this one shipped DAG had
+      a dangling transformer reference (scanned all of config/example/dags + config/dags).
+    - Root-caused an asymmetry: the DAG Designer validator correctly errors on undefined
+      transformer references, but ComputeGraph.build silently skipped undefined
+      calculator / input_transformer / output_transformer references (if name in
+      self.<...>), which is why the bad reference built in the engine yet failed in the
+      designer. ComputeGraph now logs a warning for each skipped reference instead of
+      swallowing it. (Behaviour still lenient - it skips, not raises - but no longer
+      silent.) 234 passed.
+
+
+## Version 5.11.4 highlights (worker-pool main-loop fix + lmdb default off):
+    - Fixed the worker process "spinning forever" behaviour: _main_loop was a 1ms
+      busy-poll (get_nowait + sleep(0.001)) that woke ~1000x/sec doing nothing - idle
+      workers measured ~4-6% CPU each. It now blocks on control_queue.get(timeout=
+      status_interval), so an idle worker uses ~0% CPU (verified) while still honouring
+      control messages immediately and emitting heartbeats every status_interval.
+      Shutdown remains prompt (SHUTDOWN message unblocks the get; shutdown_event is
+      re-checked each iteration).
+    - Removed the dead _run_dag_cycles(): ComputeGraph exposes start/stop/do_compute but
+      no run_cycle/execute, so its dispatch never fired - yet it looped over every DAG
+      each 1ms and fabricated per-DAG stats (nodes_executed, avg_cycle_time_ms). DAGs
+      actually run via their own do_compute thread (started by dag.start() in _load_dag);
+      real per-DAG state for the UI comes from the GET_DAG_STATE path. total_cycles now
+      truthfully counts main-loop iterations.
+    - Defaulted use_lmdb_for_cross_worker to false in config/worker_config.json, the
+      example config, and WorkerPoolManager's built-in defaults, with an explanatory
+      note. Rationale: the worker control plane (load/unload/status/heartbeat) always
+      uses multiprocessing queues and is independent of this flag; the per-worker LMDB
+      env it gated is vestigial (nothing reads it). Cross-worker DATA flows through the
+      transport a channel names - external brokers (kafka/redis/rabbitmq) and lmdb://
+      endpoints are cross-process regardless; only mem:// channels become worker-local.
+
+
 ## Version 5.11.3 highlights (architecture page contrast sweep + JSON logging default):
     - Architecture help page: completed the dark-theme contrast pass beyond the System
       Overview tiles. All remaining bg-light surfaces (info boxes, stat boxes, the

@@ -160,7 +160,7 @@ class WorkerPoolManager(WorkerHealthMixin, WorkerStatusMixin):
                 'allow_exclusive_workers': True
             },
             'communication': {
-                'use_lmdb_for_cross_worker': True,
+                'use_lmdb_for_cross_worker': False,
                 'lmdb_path': 'data/worker_lmdb'
             }
         }

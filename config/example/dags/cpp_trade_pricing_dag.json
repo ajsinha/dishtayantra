@@ -1,91 +1,107 @@
 {
-    "_comment": "Example DAG using C++ TradePricingCalculator - v1.7.0",
-    "_description": "Demonstrates high-performance trade pricing with C++ calculators",
-    
-    "name": "cpp_trade_pricing_dag",
-    "description": "Trade pricing pipeline using C++ calculators for ultra-low latency",
-    "enabled": true,
-    "auto_start": false,
-    
-    "execution": {
-        "mode": "perpetual",
-        "schedule": null
-    },
-    
-    "nodes": [
-        {
-            "name": "trade_source",
-            "type": "SourceNode",
-            "description": "Receive trade data",
-            "source": {
-                "type": "inmemory",
-                "topic": "cpp_trades_input"
-            }
-        },
-        {
-            "name": "validate_trade",
-            "type": "CalculatorNode",
-            "description": "Validate trade data using C++ DataValidationCalculator",
-            "calculator": {
-                "type": "cpp",
-                "name": "DataValidationCalculator"
-            },
-            "config": {
-                "strict_mode": false,
-                "validate_types": true,
-                "required_fields": ["price", "quantity", "symbol"]
-            }
-        },
-        {
-            "name": "price_trade",
-            "type": "CalculatorNode",
-            "description": "Calculate trade pricing using C++ TradePricingCalculator",
-            "calculator": {
-                "type": "cpp",
-                "name": "TradePricingCalculator"
-            },
-            "config": {
-                "commission_rate": 0.001,
-                "tax_rate": 0.0,
-                "include_fees": true
-            }
-        },
-        {
-            "name": "calculate_risk",
-            "type": "CalculatorNode",
-            "description": "Calculate risk metrics using C++ RiskMetricsCalculator",
-            "calculator": {
-                "type": "cpp",
-                "name": "RiskMetricsCalculator"
-            },
-            "config": {
-                "var_confidence": 0.95,
-                "risk_free_rate": 0.02
-            }
-        },
-        {
-            "name": "results_sink",
-            "type": "SinkNode",
-            "description": "Store priced trades",
-            "destination": {
-                "type": "inmemory",
-                "topic": "cpp_priced_trades"
-            }
-        }
-    ],
-    
-    "edges": [
-        {"from": "trade_source", "to": "validate_trade"},
-        {"from": "validate_trade", "to": "price_trade"},
-        {"from": "price_trade", "to": "calculate_risk"},
-        {"from": "calculate_risk", "to": "results_sink"}
-    ],
-    
-    "_sample_input": {
-        "symbol": "AAPL",
-        "price": 150.25,
-        "quantity": 100,
-        "position_value": 15025.00,
-        "volatility": 0.25
+  "_comment": "C++ trade pricing pipeline (pybind11). Requires the native dishtayantra_cpp module to RUN. Migrated to current schema.",
+  "name": "cpp_trade_pricing_dag",
+  "description": "Trade validate -> price -> risk pipeline using C++ calculators.",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    {
+      "name": "trade_feed",
+      "config": {
+        "source": "mem://queue/cpp_trades_input"
+      }
     }
+  ],
+  "publishers": [
+    {
+      "name": "priced_out",
+      "config": {
+        "destination": "mem://topic/cpp_priced_trades"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "validate_trade",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "DataValidationCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "strict_mode": false,
+        "validate_types": true,
+        "required_fields": [
+          "price",
+          "quantity",
+          "symbol"
+        ]
+      }
+    },
+    {
+      "name": "price_trade",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "TradePricingCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "commission_rate": 0.001,
+        "tax_rate": 0.0,
+        "include_fees": true
+      }
+    },
+    {
+      "name": "calculate_risk",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "RiskMetricsCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "var_confidence": 0.95,
+        "risk_free_rate": 0.02
+      }
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "trade_in",
+      "type": "SubscriptionNode",
+      "subscriber": "trade_feed",
+      "calculator": "validate_trade",
+      "config": {}
+    },
+    {
+      "name": "price_node",
+      "type": "CalculationNode",
+      "calculator": "price_trade",
+      "config": {}
+    },
+    {
+      "name": "risk_node",
+      "type": "CalculationNode",
+      "calculator": "calculate_risk",
+      "config": {}
+    },
+    {
+      "name": "results_sink",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": [
+          "priced_out"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "trade_in",
+      "to_node": "price_node"
+    },
+    {
+      "from_node": "price_node",
+      "to_node": "risk_node"
+    },
+    {
+      "from_node": "risk_node",
+      "to_node": "results_sink"
+    }
+  ]
 }

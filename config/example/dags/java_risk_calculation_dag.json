@@ -1,89 +1,104 @@
 {
-    "_comment": "Example DAG demonstrating Java Risk Calculator via Py4J - v1.6.0",
-    "_description": "Portfolio risk calculation pipeline using Java RiskCalculator for VaR and Greeks analysis",
-    
-    "name": "java_risk_calculation_dag",
-    "description": "Portfolio risk analysis using Java calculators via Py4J gateway",
-    "version": "1.6.0",
-    
-    "nodes": [
-        {
-            "id": "position_input",
-            "type": "source",
-            "source": {
-                "type": "pubsub",
-                "uri": "inmemory://positions/input"
-            },
-            "description": "Receives portfolio position data"
-        },
-        {
-            "id": "calculate_var",
-            "type": "calculator",
-            "calculator": {
-                "type": "java",
-                "name": "RiskCalculator",
-                "config": {
-                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$RiskCalculator",
-                    "var_confidence": 0.99,
-                    "lookback_period": 252
-                }
-            },
-            "description": "Calculates Value-at-Risk (VaR) using Java high-performance calculations"
-        },
-        {
-            "id": "aggregate_risk",
-            "type": "calculator",
-            "calculator": {
-                "type": "java",
-                "name": "AggregationCalculator",
-                "config": {
-                    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$AggregationCalculator",
-                    "aggregate_field": "daily_var",
-                    "aggregate_type": "all"
-                }
-            },
-            "description": "Aggregates risk metrics across positions"
-        },
-        {
-            "id": "risk_output",
-            "type": "sink",
-            "sink": {
-                "type": "pubsub",
-                "uri": "inmemory://risk/output"
-            },
-            "description": "Outputs risk calculation results"
-        },
-        {
-            "id": "risk_alerts",
-            "type": "sink",
-            "sink": {
-                "type": "pubsub",
-                "uri": "inmemory://risk/alerts"
-            },
-            "condition": "data.get('daily_var', 0) > 100000",
-            "description": "Alerts for high-risk positions"
-        }
-    ],
-    
-    "edges": [
-        {"from": "position_input", "to": "calculate_var"},
-        {"from": "calculate_var", "to": "aggregate_risk"},
-        {"from": "aggregate_risk", "to": "risk_output"},
-        {"from": "calculate_var", "to": "risk_alerts"}
-    ],
-    
-    "metadata": {
-        "author": "DishtaYantra",
-        "category": "java-integration",
-        "tags": ["java", "py4j", "risk", "var", "finance"],
-        "requires_jvm": true,
-        "example_input": {
-            "position_id": "POS001",
-            "position_value": 1000000.00,
-            "volatility": 0.25,
-            "delta": 0.65,
-            "gamma": 0.02,
-            "underlying_price": 150.00
-        }
+  "_comment": "Portfolio risk pipeline (Py4J). Requires py4j + dishtayantra-calculators.jar + jvm_manager to RUN. The original inline 'condition' on the alerts sink is not part of the node schema and was dropped; gate alerts with a calculator if needed. Migrated to current schema.",
+  "name": "java_risk_calculation_dag",
+  "description": "VaR -> aggregate risk pipeline using Java calculators, with a parallel alerts sink.",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    {
+      "name": "positions_feed",
+      "config": {
+        "source": "mem://queue/positions_input"
+      }
     }
+  ],
+  "publishers": [
+    {
+      "name": "risk_out",
+      "config": {
+        "destination": "mem://topic/risk_output"
+      }
+    },
+    {
+      "name": "alerts_out",
+      "config": {
+        "destination": "mem://topic/risk_alerts"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "calculate_var",
+      "type": "java",
+      "config": {
+        "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$RiskCalculator",
+        "gateway_config": {
+          "gateway": "primary"
+        },
+        "var_confidence": 0.99,
+        "lookback_period": 252
+      }
+    },
+    {
+      "name": "aggregate_risk",
+      "type": "java",
+      "config": {
+        "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$AggregationCalculator",
+        "gateway_config": {
+          "gateway": "primary"
+        },
+        "aggregate_field": "daily_var",
+        "aggregate_type": "all"
+      }
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "positions_in",
+      "type": "SubscriptionNode",
+      "subscriber": "positions_feed",
+      "calculator": "calculate_var",
+      "config": {}
+    },
+    {
+      "name": "aggregate_node",
+      "type": "CalculationNode",
+      "calculator": "aggregate_risk",
+      "config": {}
+    },
+    {
+      "name": "risk_sink",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": [
+          "risk_out"
+        ]
+      }
+    },
+    {
+      "name": "alerts_sink",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": [
+          "alerts_out"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "positions_in",
+      "to_node": "aggregate_node"
+    },
+    {
+      "from_node": "aggregate_node",
+      "to_node": "risk_sink"
+    },
+    {
+      "from_node": "positions_in",
+      "to_node": "alerts_sink"
+    }
+  ]
 }

@@ -3048,8 +3048,8 @@ function importDagJson(json) {
     });
 
     dagState.edges = (json.edges || []).map(e => ({
-        from_node: e.from_node,
-        to_node: e.to_node,
+        from_node: e.from_node ?? e.from ?? e.source ?? null,
+        to_node: e.to_node ?? e.to ?? e.target ?? null,
         pname: e.pname || '',
         data_transformer: e.data_transformer || null
     }));

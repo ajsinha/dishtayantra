@@ -898,24 +898,22 @@ result = calc.calculate({"values": [100.0, 105.0, 98.0]})
 print(result)  # {"values": [...], "result": 101.0}</pre>
 
         <h6 class="mt-4">CalculatorFactory Integration</h6>
-        <pre class="code-block python"># v1.7.0: Use calculator name from rust_config.json (RECOMMENDED)
-node_config = {
-    "calculator": {
-        "type": "rust",
-        "name": "RustTradePricingCalculator"  # Name from config
-    },
-    "config": {
-        "commission_rate": 0.002
-    }
-}
+        <pre class="code-block python"># The DAG builder routes a calculators-section entry of type "rust" through
+# CalculatorFactory.create(name, config). The equivalent direct call:
+from core.calculator.core_calculator import CalculatorFactory
 
-# Legacy: Direct class specification
-node_config = {
-    "calculator": "rust",
+calc = CalculatorFactory.create("price_trade", {
+    "calculator": "rust",                 # bridge selector
+    "rust_class": "RustTradePricingCalculator",
     "rust_module": "dishtayantra_rust",
-    "rust_class": "TradePricingCalculator",
     "commission_rate": 0.002
-}</pre>
+})
+
+# In a DAG file you don't call the factory yourself - you just declare the
+# calculator and the builder does this for you:
+#   { "name": "price_trade", "type": "rust",
+#     "config": { "rust_class": "RustTradePricingCalculator",
+#                 "rust_module": "dishtayantra_rust", "commission_rate": 0.002 } }</pre>
     </div>
 </div>
 
@@ -931,61 +929,79 @@ node_config = {
             Use <code>calculator.type</code> and <code>calculator.name</code> to reference calculators from <code>rust_config.json</code>.
         </div>
 
-        <h6>v1.7.0 Recommended DAG Configuration</h6>
+        <h6>Current schema (matches <code>config/example/dags/rust_math_pipeline_dag.json</code>)</h6>
+        <p class="text-muted">Bridge calculators are declared in the <code>calculators</code> section with
+        <code>"type": "rust"</code> plus <code>rust_class</code>/<code>rust_module</code>; the builder routes
+        them through <code>CalculatorFactory</code> to the PyO3 module. Nodes reference them by name.</p>
         <pre class="code-block json">{
   "name": "rust_math_pipeline_dag",
-  "description": "Math pipeline using Rust calculators",
-  "nodes": [
+  "description": "Math pipeline using Rust calculators (sum -> mean -> stats).",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    { "name": "math_feed", "config": { "source": "mem://queue/rust_math_input" } }
+  ],
+  "publishers": [
+    { "name": "results_pub", "config": { "destination": "mem://topic/rust_math_results" } }
+  ],
+  "calculators": [
     {
-      "name": "data_source",
-      "type": "SourceNode",
-      "source": { "type": "inmemory", "topic": "rust_input" }
-    },
-    {
-      "name": "math_calc",
-      "type": "CalculatorNode",
-      "calculator": {
-        "type": "rust",
-        "name": "RustMathCalculator"
-      },
+      "name": "sum_calc",
+      "type": "rust",
       "config": {
-        "operation": "mean",
+        "rust_class": "RustMathCalculator",
+        "rust_module": "dishtayantra_rust",
+        "operation": "sum",
         "precision": 8
       }
     },
     {
-      "name": "stats_calc",
-      "type": "CalculatorNode",
-      "calculator": {
-        "type": "rust",
-        "name": "RustStatisticsCalculator"
-      },
+      "name": "mean_calc",
+      "type": "rust",
       "config": {
-        "compute_percentiles": true
+        "rust_class": "RustMathCalculator",
+        "rust_module": "dishtayantra_rust",
+        "operation": "mean"
       }
     },
     {
-      "name": "results_sink",
-      "type": "SinkNode",
-      "destination": { "type": "inmemory", "topic": "rust_results" }
+      "name": "stats_calc",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustStatisticsCalculator",
+        "rust_module": "dishtayantra_rust",
+        "compute_percentiles": true,
+        "percentile_values": [25, 50, 75, 90, 95, 99]
+      }
     }
   ],
+  "transformers": [],
+  "nodes": [
+    { "name": "math_in",      "type": "SubscriptionNode", "subscriber": "math_feed", "calculator": "sum_calc", "config": {} },
+    { "name": "mean_node",    "type": "CalculationNode",  "calculator": "mean_calc", "config": {} },
+    { "name": "stats_node",   "type": "CalculationNode",  "calculator": "stats_calc", "config": {} },
+    { "name": "results_sink", "type": "PublisherSinkNode", "config": { "publishers": ["results_pub"] } }
+  ],
   "edges": [
-    {"from": "data_source", "to": "math_calc"},
-    {"from": "math_calc", "to": "stats_calc"},
-    {"from": "stats_calc", "to": "results_sink"}
+    { "from_node": "math_in",    "to_node": "mean_node" },
+    { "from_node": "mean_node",  "to_node": "stats_node" },
+    { "from_node": "stats_node", "to_node": "results_sink" }
   ]
 }</pre>
 
-        <h6 class="mt-4">Legacy DAG Configuration</h6>
+        <h6 class="mt-4">A single calculator entry (direct class specification)</h6>
+        <p class="text-muted">One element of the <code>calculators</code> array. <code>rust_class</code> + <code>rust_module</code>
+        name the PyO3 struct; extra keys become the calculator's config.</p>
         <pre class="code-block json">{
-  "name": "rust_pricing_node",
-  "type": "CalculatorNode",
-  "calculator": "rust",
-  "rust_module": "dishtayantra_rust",
-  "rust_class": "TradePricingCalculator",
-  "commission_rate": 0.001,
-  "tax_rate": 0.0
+  "name": "price_trade",
+  "type": "rust",
+  "config": {
+    "rust_class": "RustTradePricingCalculator",
+    "rust_module": "dishtayantra_rust",
+    "commission_rate": 0.001,
+    "tax_rate": 0.0
+  }
 }</pre>
 
         <h6 class="mt-4">Configuration Options</h6>

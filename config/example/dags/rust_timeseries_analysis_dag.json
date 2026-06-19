@@ -1,106 +1,123 @@
 {
-    "_comment": "Example DAG using Rust TimeSeriesCalculator - v1.7.0",
-    "_description": "Demonstrates time series analysis with Rust calculators",
-    
-    "name": "rust_timeseries_analysis_dag",
-    "description": "Time series analysis pipeline using memory-safe Rust calculators",
-    "enabled": true,
-    "auto_start": false,
-    
-    "execution": {
-        "mode": "perpetual",
-        "schedule": null
-    },
-    
-    "nodes": [
-        {
-            "name": "data_source",
-            "type": "SourceNode",
-            "description": "Receive time series data",
-            "source": {
-                "type": "inmemory",
-                "topic": "rust_timeseries_input"
-            }
-        },
-        {
-            "name": "validate_data",
-            "type": "CalculatorNode",
-            "description": "Validate input data using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustDataValidationCalculator"
-            },
-            "config": {
-                "strict_mode": false,
-                "required_fields": ["timestamp", "value"]
-            }
-        },
-        {
-            "name": "hash_key",
-            "type": "CalculatorNode",
-            "description": "Generate hash key for dedup using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustHashCalculator"
-            },
-            "config": {
-                "algorithm": "xxhash"
-            }
-        },
-        {
-            "name": "timeseries_analysis",
-            "type": "CalculatorNode",
-            "description": "Calculate moving averages using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustTimeSeriesCalculator"
-            },
-            "config": {
-                "window_size": 20,
-                "operation": "sma"
-            }
-        },
-        {
-            "name": "json_transform",
-            "type": "CalculatorNode",
-            "description": "Transform output to JSON using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustJsonCalculator"
-            },
-            "config": {
-                "operation": "format",
-                "pretty": true
-            }
-        },
-        {
-            "name": "results_sink",
-            "type": "SinkNode",
-            "description": "Store analyzed data",
-            "destination": {
-                "type": "inmemory",
-                "topic": "rust_timeseries_results"
-            }
-        }
-    ],
-    
-    "edges": [
-        {"from": "data_source", "to": "validate_data"},
-        {"from": "validate_data", "to": "hash_key"},
-        {"from": "hash_key", "to": "timeseries_analysis"},
-        {"from": "timeseries_analysis", "to": "json_transform"},
-        {"from": "json_transform", "to": "results_sink"}
-    ],
-    
-    "_sample_input": {
-        "timestamp": 1706140800,
-        "value": 100.5,
-        "symbol": "BTC"
-    },
-    
-    "_benefits": {
-        "memory_safety": "Rust guarantees no null pointers, buffer overflows, or data races",
-        "performance": "Zero-cost abstractions provide C-level performance",
-        "concurrency": "Thread-safe by default with fearless concurrency via Rayon"
+  "_comment": "Rust time-series pipeline (PyO3). Requires the native dishtayantra_rust module to RUN. Migrated to current schema.",
+  "name": "rust_timeseries_analysis_dag",
+  "description": "Time-series pipeline: validate -> hash -> SMA -> json, using Rust calculators.",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    {
+      "name": "ts_feed",
+      "config": {
+        "source": "mem://queue/rust_timeseries_input"
+      }
     }
+  ],
+  "publishers": [
+    {
+      "name": "results_pub",
+      "config": {
+        "destination": "mem://topic/rust_timeseries_results"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "validate_data",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustDataValidationCalculator",
+        "rust_module": "dishtayantra_rust",
+        "strict_mode": false,
+        "required_fields": [
+          "timestamp",
+          "value"
+        ]
+      }
+    },
+    {
+      "name": "hash_key",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustHashCalculator",
+        "rust_module": "dishtayantra_rust",
+        "algorithm": "xxhash"
+      }
+    },
+    {
+      "name": "ts_analysis",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustTimeSeriesCalculator",
+        "rust_module": "dishtayantra_rust",
+        "window_size": 20,
+        "operation": "sma"
+      }
+    },
+    {
+      "name": "json_transform",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustJsonCalculator",
+        "rust_module": "dishtayantra_rust",
+        "operation": "format",
+        "pretty": true
+      }
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "ts_in",
+      "type": "SubscriptionNode",
+      "subscriber": "ts_feed",
+      "calculator": "validate_data",
+      "config": {}
+    },
+    {
+      "name": "hash_node",
+      "type": "CalculationNode",
+      "calculator": "hash_key",
+      "config": {}
+    },
+    {
+      "name": "analysis_node",
+      "type": "CalculationNode",
+      "calculator": "ts_analysis",
+      "config": {}
+    },
+    {
+      "name": "transform_node",
+      "type": "CalculationNode",
+      "calculator": "json_transform",
+      "config": {}
+    },
+    {
+      "name": "results_sink",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": [
+          "results_pub"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "ts_in",
+      "to_node": "hash_node"
+    },
+    {
+      "from_node": "hash_node",
+      "to_node": "analysis_node"
+    },
+    {
+      "from_node": "analysis_node",
+      "to_node": "transform_node"
+    },
+    {
+      "from_node": "transform_node",
+      "to_node": "results_sink"
+    }
+  ]
 }

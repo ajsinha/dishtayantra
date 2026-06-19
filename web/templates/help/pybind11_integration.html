@@ -864,63 +864,82 @@ calc = CalculatorFactory.create('pricing_calc', config)</pre>
             <p>Reference C++ calculators by name using the CPP Manager:</p>
         </div>
         
-        <h6>Using Calculator Names (Recommended - v1.7.0)</h6>
+        <h6>Current schema (matches <code>config/example/dags/cpp_math_pipeline_dag.json</code>)</h6>
+        <p class="text-muted">Bridge calculators are declared in the <code>calculators</code> section with
+        <code>"type": "cpp"</code> plus <code>cpp_class</code>/<code>cpp_module</code> in their config; the
+        builder routes them through <code>CalculatorFactory</code>. Nodes reference calculators by name.</p>
         <pre class="code-block json">{
   "name": "cpp_math_pipeline",
-  "nodes": [
+  "description": "Math pipeline using C++ calculators (sum -> mean -> variance).",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    { "name": "math_feed", "config": { "source": "mem://queue/cpp_math_input" } }
+  ],
+  "publishers": [
+    { "name": "results_pub", "config": { "destination": "mem://topic/cpp_math_results" } }
+  ],
+  "calculators": [
     {
-      "name": "data_source",
-      "type": "SourceNode",
-      "source": {"type": "inmemory", "topic": "input"}
-    },
-    {
-      "name": "math_calc",
-      "type": "CalculatorNode",
-      "calculator": {
-        "type": "cpp",
-        "name": "MathCalculator"
-      },
+      "name": "sum_calc",
+      "type": "cpp",
       "config": {
-        "operation": "mean"
+        "cpp_class": "MathCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "operation": "sum",
+        "precision": 6
       }
     },
     {
-      "name": "stats_calc",
-      "type": "CalculatorNode",
-      "calculator": {
-        "type": "cpp",
-        "name": "StatisticsCalculator"
-      },
+      "name": "mean_calc",
+      "type": "cpp",
       "config": {
+        "cpp_class": "MathCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "operation": "mean",
+        "precision": 6
+      }
+    },
+    {
+      "name": "variance_calc",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "StatisticsCalculator",
+        "cpp_module": "dishtayantra_cpp",
         "compute_percentiles": true,
-        "percentile_values": [50, 90, 99]
+        "percentile_values": [50, 90, 95]
       }
-    },
-    {
-      "name": "results_sink",
-      "type": "SinkNode",
-      "destination": {"type": "inmemory", "topic": "output"}
     }
   ],
+  "transformers": [],
+  "nodes": [
+    { "name": "math_in",       "type": "SubscriptionNode", "subscriber": "math_feed", "calculator": "sum_calc", "config": {} },
+    { "name": "mean_node",     "type": "CalculationNode",  "calculator": "mean_calc", "config": {} },
+    { "name": "variance_node", "type": "CalculationNode",  "calculator": "variance_calc", "config": {} },
+    { "name": "results_sink",  "type": "PublisherSinkNode", "config": { "publishers": ["results_pub"] } }
+  ],
   "edges": [
-    {"from": "data_source", "to": "math_calc"},
-    {"from": "math_calc", "to": "stats_calc"},
-    {"from": "stats_calc", "to": "results_sink"}
+    { "from_node": "math_in",       "to_node": "mean_node" },
+    { "from_node": "mean_node",     "to_node": "variance_node" },
+    { "from_node": "variance_node", "to_node": "results_sink" }
   ]
 }</pre>
 
-        <h6 class="mt-4">Legacy Configuration (Direct Class Specification)</h6>
-        <p class="text-muted">For backward compatibility, you can still specify cpp_class directly:</p>
-        
+        <h6 class="mt-4">A single calculator entry (direct class specification)</h6>
+        <p class="text-muted">One element of the <code>calculators</code> array. <code>cpp_class</code> + <code>cpp_module</code>
+        name the pybind11 class; any extra keys are passed to the calculator as config.</p>
+
         <pre class="code-block json">{
-  "name": "cpp_pricing",
-  "type": "CalculatorNode",
-  "calculator": "cpp",
-  "cpp_module": "dishtayantra_cpp",
-  "cpp_class": "TradePricingCalculator",
-  "commission_rate": 0.001,
-  "tax_rate": 0.002,
-  "include_fees": true
+  "name": "price_trade",
+  "type": "cpp",
+  "config": {
+    "cpp_class": "TradePricingCalculator",
+    "cpp_module": "dishtayantra_cpp",
+    "commission_rate": 0.001,
+    "tax_rate": 0.002,
+    "include_fees": true
+  }
 }</pre>
 
         <h6 class="mt-4">Configuration Options</h6>

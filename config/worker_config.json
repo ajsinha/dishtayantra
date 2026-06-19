@@ -40,7 +40,8 @@
         "control_queue_maxsize": 1000,
         "status_queue_maxsize": 5000,
         
-        "use_lmdb_for_cross_worker": true,
+        "use_lmdb_for_cross_worker": false,
+        "_use_lmdb_note": "Default false. The worker control plane (load/unload/status/heartbeat) always uses multiprocessing queues and is unaffected by this flag. This flag only pre-opens a per-worker LMDB env that the worker itself does not consume. DATA between DAGs on DIFFERENT worker processes flows through whatever transport the channels name: external brokers (kafka://, redis://, rabbitmq://, ...) are cross-process by nature and work regardless; lmdb://channel endpoints also work regardless (they manage their own env from the URI). With this flag false, in-memory (mem://) channels are WORKER-LOCAL - they only connect DAGs co-located in the same worker process, not across workers.",
         "lmdb_path": "data/worker_lmdb",
         "lmdb_map_size_mb": 1024
     },

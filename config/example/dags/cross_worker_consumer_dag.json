@@ -24,11 +24,8 @@
   "calculators": [
     {
       "name": "data_aggregator",
-      "type": "PythonCalculator",
-      "config": {
-        "module": "example_calculators.aggregator",
-        "class": "DataAggregator"
-      }
+      "type": "PassthruCalculator",
+      "config": {}
     }
   ],
   "nodes": [
@@ -50,12 +47,12 @@
   ],
   "edges": [
     {
-      "from": "entry",
-      "to": "aggregate"
+      "from_node": "entry",
+      "to_node": "aggregate"
     },
     {
-      "from": "aggregate",
-      "to": "output"
+      "from_node": "aggregate",
+      "to_node": "output"
     }
   ],
   "publishers": [
@@ -66,5 +63,6 @@
         "max_depth": 5000
       }
     }
-  ]
+  ],
+  "_calculator_note": "Calculators repointed from fictional example_calculators/* classes to the built-in PassthruCalculator so this example builds and clones out-of-the-box. Replace 'type' with your own dotted-path calculator (module.ClassName) to do real work."
 }

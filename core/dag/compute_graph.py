@@ -209,35 +209,54 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
                 class_name = parts[1] if len(parts) > 1 else node_type
                 node = instantiate_module(module_path, class_name, {'name': name, 'config': config})
 
-            # Set subscriber if specified
+            # Set subscriber if specified. A declared reference that does not resolve is
+            # a hard error - silently dropping it would yield a node that never receives
+            # input, which is worse than failing fast at load time.
             if 'subscriber' in node_config:
                 sub_name = node_config['subscriber']
-                if sub_name in self.subscribers:
-                    node.set_subscriber(self.subscribers[sub_name])
+                if sub_name not in self.subscribers:
+                    raise ValueError(
+                        f"DAG '{self.name}': node '{name}' references undefined "
+                        f"subscriber '{sub_name}'")
+                node.set_subscriber(self.subscribers[sub_name])
 
             # Add publishers if specified
             if 'publishers' in node_config:
                 for pub_name in node_config['publishers']:
-                    if pub_name in self.publishers:
-                        node.add_publisher(self.publishers[pub_name])
+                    if pub_name not in self.publishers:
+                        raise ValueError(
+                            f"DAG '{self.name}': node '{name}' references undefined "
+                            f"publisher '{pub_name}'")
+                    node.add_publisher(self.publishers[pub_name])
 
             # Set calculator if specified
             if 'calculator' in node_config:
                 calc_name = node_config['calculator']
-                if calc_name in self.calculators:
-                    node.set_calculator(self.calculators[calc_name])
+                if calc_name not in self.calculators:
+                    raise ValueError(
+                        f"DAG '{self.name}': node '{name}' references undefined "
+                        f"calculator '{calc_name}'")
+                node.set_calculator(self.calculators[calc_name])
 
-            # Add input transformers if specified
+            # Add input transformers if specified. 'passthru' and 'null' are implicit
+            # built-ins (pre-seeded in self.transformers), so they resolve without an
+            # explicit definition; any other unresolved name is a hard error.
             if 'input_transformers' in node_config:
                 for trans_name in node_config['input_transformers']:
-                    if trans_name in self.transformers:
-                        node.add_input_transformer(self.transformers[trans_name])
+                    if trans_name not in self.transformers:
+                        raise ValueError(
+                            f"DAG '{self.name}': node '{name}' references undefined "
+                            f"input transformer '{trans_name}'")
+                    node.add_input_transformer(self.transformers[trans_name])
 
             # Add output transformers if specified
             if 'output_transformers' in node_config:
                 for trans_name in node_config['output_transformers']:
-                    if trans_name in self.transformers:
-                        node.add_output_transformer(self.transformers[trans_name])
+                    if trans_name not in self.transformers:
+                        raise ValueError(
+                            f"DAG '{self.name}': node '{name}' references undefined "
+                            f"output transformer '{trans_name}'")
+                    node.add_output_transformer(self.transformers[trans_name])
 
             node.set_graph(self)
             self.nodes[name] = node

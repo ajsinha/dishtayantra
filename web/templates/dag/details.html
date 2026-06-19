@@ -159,6 +159,13 @@
     .sparkline-wrap { margin-top: 6px; }
     .sparkline-wrap svg { display: block; width: 100%; height: 48px; }
     .rate-peak { font-size: 0.72rem; color: var(--text-secondary); }
+    /* v5.13.0: true per-minute ingest histogram */
+    .minbars { margin-top: 10px; }
+    .minbars-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 2px; }
+    .minbars-svg { display: block; width: 100%; height: 64px; }
+    .minbars-axis { display: flex; justify-content: space-between;
+                    font-size: 0.66rem; color: var(--text-secondary); margin-top: 1px; }
+    .minbars-help { font-size: 0.7rem; line-height: 1.25; margin-top: 4px; }
     .qbar-label {
         font-size: 0.72rem; color: var(--text-secondary);
         margin-top: 2px; white-space: nowrap;
@@ -167,9 +174,14 @@
 {% endblock %}
 
 {% macro queue_bar(depth, capacity) %}
-    {# Horizontal utilisation bar for a queue. depth/capacity -> filled %. #}
-    {% set d = depth if depth is not none else 0 %}
-    {% set cap = capacity if capacity and capacity > 0 else 0 %}
+    {# Horizontal utilisation bar for a queue. depth/capacity -> filled %.
+       depth/capacity may be Undefined (e.g. a DAG running in a worker subprocess
+       whose live queue figures aren't in the main-process view). In Jinja an
+       Undefined value is NOT `none`, so guard with `is defined` as well, otherwise
+       an Undefined slips through to "{:,}".format(...) and raises
+       "unsupported format string passed to Undefined.__format__". #}
+    {% set d = depth if (depth is defined and depth is not none) else 0 %}
+    {% set cap = capacity if (capacity is defined and capacity is not none and capacity > 0) else 0 %}
     {% set pct = ((d / cap) * 100) if cap > 0 else 0 %}
     {% set pct = 100 if pct > 100 else pct %}
     <div class="qbar-wrap">
@@ -294,34 +306,68 @@
                     </div>
                     <div class="col-md-4 col-12 mb-2">
                         {% set rpm = dag_stats.messages_per_minute or 0 %}
-                        <div class="rate-figure {{ 'rate-flowing' if rpm > 0.5 else 'rate-idle' }}">
-                            {{ "{:,.0f}".format(rpm) }}
-                            <span style="font-size: 0.9rem; font-weight: 600;">msg/min</span>
+                        {% set lastmin = dag_stats.last_full_minute or 0 %}
+                        <div class="rate-figure {{ 'rate-flowing' if lastmin > 0 else 'rate-idle' }}">
+                            {{ "{:,}".format(lastmin) }}
+                            <span style="font-size: 0.9rem; font-weight: 600;">msg</span>
                         </div>
-                        <div class="text-muted">
-                            <i class="bi bi-activity"></i>
-                            {{ 'Flowing' if rpm > 0.5 else 'Idle' }}
-                            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;
-                                  background: {{ '#1f8a4c' if rpm > 0.5 else '#9aa0aa' }};"></span>
+                        <div class="text-muted"><i class="bi bi-clock-history"></i> Last full minute</div>
+                        <small class="text-muted d-block">actual messages received in the most recent completed 1-minute window</small>
+                        <div class="rate-peak mt-1">
+                            busiest minute (last 10m):
+                            {{ "{:,}".format(dag_stats.ingest_buckets.completed | max) if dag_stats.ingest_buckets else 0 }}
+                            &middot; smoothed &asymp;{{ "{:,.0f}".format(rpm) }}/min
                         </div>
-                        {# Dependency-free SVG sparkline of recent rate history #}
-                        {% set hist = dag_stats.rate_history or [] %}
-                        {% if hist|length >= 2 %}
-                        {% set hmax = hist|max %}
-                        {% set hmax = hmax if hmax and hmax > 0 else 1 %}
-                        {% set n = hist|length %}
-                        <div class="sparkline-wrap">
-                            <svg viewBox="0 0 100 48" preserveAspectRatio="none">
-                                <polyline fill="none"
-                                          stroke="{{ '#1f8a4c' if rpm > 0.5 else '#9aa0aa' }}"
-                                          stroke-width="1.5"
-                                          points="{% for v in hist %}{{ '%.2f'|format(loop.index0 * (100.0 / (n - 1))) }},{{ '%.2f'|format(46 - (v / hmax) * 44) }} {% endfor %}" />
-                            </svg>
-                        </div>
-                        {% endif %}
-                        <div class="rate-peak">peak {{ "{:,.0f}".format(dag_stats.peak_per_minute or 0) }}/min</div>
                     </div>
                 </div>
+
+                {# v5.13.0: true per-minute ingest histogram - exact counts for the
+                   last 10 completed minutes plus the current (partial) minute.
+                   Replaces the old page-load-sampled rate sparkline. #}
+                {% if dag_stats.ingest_buckets %}
+                {% set comp = dag_stats.ingest_buckets.completed or [] %}
+                {% set partial = dag_stats.ingest_buckets.current_partial or 0 %}
+                {% set bars = comp + [partial] %}
+                {% set bmaxraw = bars | max %}
+                {% set bmax = bmaxraw if bmaxraw and bmaxraw > 0 else 1 %}
+                {% set nb = bars | length %}
+                {% set slot = 100.0 / nb %}
+                <div class="minbars">
+                    <div class="minbars-title">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        Messages received per minute &mdash; last 10 minutes
+                    </div>
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" class="minbars-svg">
+                        {% for v in bars %}
+                        {% set is_partial = (loop.index0 == nb - 1) %}
+                        {% set bh = (v / bmax) * 46.0 %}
+                        {% set bx = loop.index0 * slot + slot * 0.12 %}
+                        {% set bw = slot * 0.76 %}
+                        <rect x="{{ '%.2f'|format(bx) }}"
+                              y="{{ '%.2f'|format(48 - (bh if bh > 0.6 else 0.6)) }}"
+                              width="{{ '%.2f'|format(bw) }}"
+                              height="{{ '%.2f'|format(bh if bh > 0.6 else 0.6) }}"
+                              fill="{{ '#9aa0aa' if is_partial else '#2563eb' }}"
+                              fill-opacity="{{ '0.45' if is_partial else '0.9' }}">
+                            <title>{{ "{:,}".format(v) }} msg &mdash; {{ 'current minute (in progress)' if is_partial else (nb - 1 - loop.index0)|string + ' min ago' }}</title>
+                        </rect>
+                        {% endfor %}
+                        <line x1="0" y1="48" x2="100" y2="48"
+                              stroke="var(--border-color, #cccccc)" stroke-width="0.4"/>
+                    </svg>
+                    <div class="minbars-axis">
+                        <span>10 min ago</span><span>now (partial)</span>
+                    </div>
+                    <small class="text-muted d-block minbars-help">
+                        Each blue bar is the <strong>exact number of messages</strong> this DAG received
+                        during that one clock minute. The last, lighter bar is the current minute, still
+                        filling up &mdash; so it normally looks short. These are real counts over fixed
+                        one-minute windows; the &ldquo;smoothed&rdquo; figure above is a fast-reacting
+                        estimate, handy for &ldquo;is it busy right now?&rdquo; but not an exact tally.
+                        Hover a bar to see its count.
+                    </small>
+                </div>
+                {% endif %}
 
                 {% if dag_stats.ingest_breakdown %}
                 <hr>

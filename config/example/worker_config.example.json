@@ -46,7 +46,7 @@
         "control_queue_maxsize": 1000,
         "status_queue_maxsize": 5000,
 
-        "use_lmdb_for_cross_worker": true,
+        "use_lmdb_for_cross_worker": false,
         "lmdb_path": "data/worker_lmdb",
         "lmdb_map_size_mb": 1024,
         "_lmdb_note": "DAGs on different worker processes cannot share an in-memory queue (separate memory spaces). Cross-worker pub/sub uses a memory-mapped LMDB store instead. Use lmdb:// sources/destinations to pass data between DAGs on different workers."

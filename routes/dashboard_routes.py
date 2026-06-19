@@ -15,6 +15,8 @@ Copyright (c) 2025-2030 Ashutosh Sinha. All rights reserved.
 import logging
 import os
 
+from core.dag.dag_view import build_dag_view
+
 from fastapi import FastAPI, Request
 
 from web.fastapi_compat import (
@@ -54,12 +56,6 @@ class DashboardRoutes:
         self.user_registry = user_registry
         self.guards = guards
         self.worker_pool = worker_pool  # v1.5.2: worker pool for assignments
-        # v3.1.0: per-DAG rolling rate history (msg/min) for the sparkline.
-        # Appended on each details render; the page auto-refreshes ~30s, which
-        # provides a natural sampling cadence without a background thread.
-        from collections import deque
-        self._rate_history = {}  # dag_name -> deque[float]
-        self._rate_history_max = 60
         self._register_routes()
 
     def _register_routes(self) -> None:
@@ -94,27 +90,11 @@ class DashboardRoutes:
         """DAG details view."""
         username = self.guards.login_required(request)
         try:
-            details = self.dag_server.details(dag_name)
-
-            # Get topological order
+            # The DAG object in this (main) process. When the DAG runs in a
+            # worker subprocess this is a lazy, unbuilt copy; the live view-model
+            # is fetched from the worker below so the page is identical to
+            # single-process mode.
             dag = self.dag_server.dags[dag_name]
-            sorted_nodes = dag.topological_sort()
-
-            # Build dependency info with additional details
-            node_details = []
-            for node in sorted_nodes:
-                dependencies = [edge.from_node.name
-                                for edge in node._incoming_edges]
-                last_calculation = getattr(node, '_last_compute', None)
-                errors = list(getattr(node, '_errors', []))
-                node_details.append({
-                    'name': node.name,
-                    'type': node.__class__.__name__,
-                    'dependencies': dependencies,
-                    'config': node.config,
-                    'last_calculation': last_calculation,
-                    'errors': errors
-                })
 
             # v1.5.2: Execution location information
             is_running = (dag._compute_thread and
@@ -169,116 +149,34 @@ class DashboardRoutes:
             except Exception:  # noqa: BLE001 - never block the page
                 source_json, source_config = None, None
 
-            # v2.2: compact node/edge graph for the visual DAG view.
-            # Node-type -> semantic role used for colouring in the SVG.
-            def _role(type_name):
-                t = (type_name or '').lower()
-                if 'subscription' in t:
-                    return 'source'
-                if 'metronome' in t:
-                    return 'source'
-                if 'publishersink' in t or 'sink' in t:
-                    return 'sink'
-                if 'subgraph' in t:
-                    return 'subgraph'
-                return 'compute'
+            # v5.12.0: single source of truth for the details view-model. For a
+            # DAG running in a worker subprocess, fetch the live snapshot the worker
+            # built with the SAME builder (build_dag_view); otherwise build it from
+            # the local (built) DAG. Either way the template gets an identical
+            # structure, so the page looks the same wherever the DAG executes.
+            view = None
+            if worker_pool_enabled and \
+                    self.worker_pool.get_dag_assignment(dag_name) is not None:
+                try:
+                    snap = self.worker_pool.get_dag_state(dag_name)
+                    if isinstance(snap, dict) and isinstance(snap.get('view'), dict):
+                        view = snap['view']
+                except Exception:  # noqa: BLE001 - fall back to the local view
+                    view = None
+            if view is None:
+                view = build_dag_view(dag)
 
-            graph_nodes = []
-            graph_edges = []
-            for node in sorted_nodes:
-                deps = [edge.from_node.name
-                        for edge in node._incoming_edges]
-                calc = getattr(node, '_calculator', None)
-                graph_nodes.append({
-                    'id': node.name,
-                    'label': node.name,
-                    'type': node.__class__.__name__,
-                    'role': _role(node.__class__.__name__),
-                    # Live state for the interactive node panel:
-                    'dependencies': deps,
-                    'calculator': (getattr(calc, 'name', None)
-                                   or (calc.__class__.__name__
-                                       if calc is not None else None)),
-                    'calculation_count': getattr(calc, '_calculation_count',
-                                                 None) if calc else None,
-                    'last_calculation': _json_safe(
-                        getattr(node, '_last_compute', None)),
-                    'error_count': len(getattr(node, '_errors', []) or []),
-                    'messages_in': getattr(node, '_messages_in', 0),
-                    'messages_out': getattr(node, '_published_count',
-                                            getattr(node, '_messages_out', 0)),
-                    'streaming': getattr(node, '_streaming', False),
-                    'last_error': (list(getattr(node, '_errors', []))[-1]
-                                   if getattr(node, '_errors', None)
-                                   else None),
-                })
-                for edge in node._incoming_edges:
-                    edge_obj = {
-                        'from': edge.from_node.name,
-                        'to': node.name,
-                    }
-                    # Surface a transformer / pname label on the edge if present.
-                    transformer = getattr(edge, 'data_transformer', None)
-                    if transformer is not None:
-                        tname = getattr(transformer, 'name', None) \
-                            or transformer.__class__.__name__
-                        edge_obj['label'] = tname
-                    pname = getattr(edge, 'pname', None)
-                    if pname:
-                        edge_obj['pname'] = pname
-                    graph_edges.append(edge_obj)
-            graph_data = {'nodes': graph_nodes, 'edges': graph_edges}
+            details = view['details']
+            node_details = view['node_details']
+            graph_data = view['graph_data']
+            dag_stats = view['dag_stats']
 
-            # v3.0.0: DAG throughput stats for the UI - messages ingested
-            # (summed across subscribers) and messages published (summed across
-            # publisher-sink nodes), plus a per-source / per-sink breakdown.
-            ingested_total = 0
-            rate_total = 0.0
-            peak_total = 0.0
-            ingest_breakdown = []
-            for sub_name, sub in (getattr(dag, 'subscribers', {}) or {}).items():
-                cnt = int(getattr(sub, '_receive_count', 0) or 0)
-                ingested_total += cnt
-                meter = getattr(sub, '_rate_meter', None)
-                sub_rate = meter.rate_per_minute() if meter else 0.0
-                sub_peak = meter.peak_per_minute() if meter else 0.0
-                rate_total += sub_rate
-                peak_total += sub_peak
-                ingest_breakdown.append({
-                    'name': sub_name,
-                    'source': getattr(sub, 'source', ''),
-                    'received': cnt,
-                    'rate_per_minute': round(sub_rate, 1),
-                    'queue_depth': (sub.get_queue_size()
-                                    if hasattr(sub, 'get_queue_size') else None),
-                })
-            published_total = 0
-            publish_breakdown = []
-            for node in sorted_nodes:
-                pub_cnt = getattr(node, '_published_count', None)
-                if pub_cnt is not None:
-                    published_total += int(pub_cnt)
-                    publish_breakdown.append({
-                        'name': node.name,
-                        'published': int(pub_cnt),
-                    })
-            dag_stats = {
-                'messages_ingested': ingested_total,
-                'messages_published': published_total,
-                'messages_per_minute': round(rate_total, 1),
-                'peak_per_minute': round(peak_total, 1),
-                'ingest_breakdown': ingest_breakdown,
-                'publish_breakdown': publish_breakdown,
-            }
-
-            # v3.1.0: append to the rolling rate history for the sparkline.
-            from collections import deque
-            hist = self._rate_history.get(dag_name)
-            if hist is None:
-                hist = deque(maxlen=self._rate_history_max)
-                self._rate_history[dag_name] = hist
-            hist.append(round(rate_total, 1))
-            dag_stats['rate_history'] = list(hist)
+            # v5.13.0: the throughput chart is now driven by true per-minute
+            # ingest counts (dag_stats['ingest_buckets']) accumulated by the
+            # running DAG's rate meters - see core/metrics/rate_meter.py. This
+            # replaces the old page-load-sampled rate_history sparkline, which
+            # only captured the moments a human opened this page and never worked
+            # for DAGs running in a worker subprocess.
 
             return render(request, 'dag/details.html',
                           dag_name=dag_name,

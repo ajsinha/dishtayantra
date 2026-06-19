@@ -32,19 +32,13 @@
   "calculators": [
     {
       "name": "price_processor",
-      "type": "PythonCalculator",
-      "config": {
-        "module": "example_calculators.price_processor",
-        "class": "PriceProcessor"
-      }
+      "type": "PassthruCalculator",
+      "config": {}
     },
     {
       "name": "risk_calculator",
-      "type": "PythonCalculator",
-      "config": {
-        "module": "example_calculators.risk_calculator",
-        "class": "RiskCalculator"
-      }
+      "type": "PassthruCalculator",
+      "config": {}
     }
   ],
   "nodes": [
@@ -71,16 +65,16 @@
   ],
   "edges": [
     {
-      "from": "entry",
-      "to": "process_prices"
+      "from_node": "entry",
+      "to_node": "process_prices"
     },
     {
-      "from": "process_prices",
-      "to": "calculate_risk"
+      "from_node": "process_prices",
+      "to_node": "calculate_risk"
     },
     {
-      "from": "calculate_risk",
-      "to": "output"
+      "from_node": "calculate_risk",
+      "to_node": "output"
     }
   ],
   "publishers": [
@@ -91,5 +85,6 @@
         "lmdb_path": "data/worker_lmdb"
       }
     }
-  ]
+  ],
+  "_calculator_note": "Calculators repointed from fictional example_calculators/* classes to the built-in PassthruCalculator so this example builds and clones out-of-the-box. Replace 'type' with your own dotted-path calculator (module.ClassName) to do real work."
 }

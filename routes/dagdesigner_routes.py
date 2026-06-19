@@ -137,10 +137,27 @@ class DAGDesignerRoutes:
                 len(dag_config.get('nodes', [])) == 0:
             errors.append("At least one node is required")
 
+        # Collect names defensively: every node/component must carry a 'name'. A missing
+        # 'name' (e.g. legacy id-based DAGs that use 'id') is reported as a clear error
+        # rather than raising a raw KeyError that reaches the user as "Save failed:
+        # 'name'".
+        def _safe_names(items, kind):
+            collected = set()
+            for it in items:
+                if not isinstance(it, dict) or not it.get('name'):
+                    errors.append(f"A {kind} entry is missing the required 'name' "
+                                  f"field (legacy id-based or malformed config)")
+                else:
+                    collected.add(it['name'])
+            return collected
+
         # Validate edges reference existing nodes
-        node_names = {n['name'] for n in dag_config.get('nodes', [])}
-        transformer_names = {t['name'] for t in
-                             dag_config.get('transformers', [])}
+        node_names = _safe_names(dag_config.get('nodes', []), 'node')
+        from core.dag.compute_graph_builders import IMPLICIT_TRANSFORMERS
+        transformer_names = _safe_names(dag_config.get('transformers', []),
+                                        'transformer')
+        # passthru / null resolve implicitly even without an explicit definition.
+        transformer_names |= set(IMPLICIT_TRANSFORMERS.keys())
 
         for edge in dag_config.get('edges', []):
             if edge.get('from_node') not in node_names:
@@ -165,36 +182,57 @@ class DAGDesignerRoutes:
             errors.append(f"Cycle detected: {cycle_path}")
 
         # Validate node references
-        subscriber_names = {s['name'] for s in
-                            dag_config.get('subscribers', [])}
-        publisher_names = {p['name'] for p in
-                           dag_config.get('publishers', [])}
-        calculator_names = {c['name'] for c in
-                            dag_config.get('calculators', [])}
+        subscriber_names = _safe_names(dag_config.get('subscribers', []),
+                                       'subscriber')
+        publisher_names = _safe_names(dag_config.get('publishers', []),
+                                      'publisher')
+        calculator_names = _safe_names(dag_config.get('calculators', []),
+                                       'calculator')
+
+        # Reference fields must be plain string names (or lists of them). Legacy DAGs
+        # sometimes inline a dict here (e.g. "calculator": {"type": "cpp", ...}); treat
+        # any non-string as a clear error instead of letting `dict not in set` raise an
+        # unhashable-type TypeError.
+        def _ref_ok(node_label, field, value):
+            if isinstance(value, str):
+                return True
+            errors.append(f"Node '{node_label}' has a non-string {field} reference "
+                          f"(got {type(value).__name__}); expected a component name "
+                          f"(legacy inline definition is not supported)")
+            return False
 
         for node in dag_config.get('nodes', []):
-            if node.get('subscriber') and \
-                    node.get('subscriber') not in subscriber_names:
-                errors.append(f"Node '{node['name']}' references "
-                              f"non-existent subscriber: "
-                              f"{node.get('subscriber')}")
-            for pub in node.get('publishers', []):
-                if pub not in publisher_names:
-                    errors.append(f"Node '{node['name']}' references "
+            if not isinstance(node, dict):
+                continue
+            node_label = node.get('name', '<unnamed>')
+            sub = node.get('subscriber')
+            if sub and _ref_ok(node_label, 'subscriber', sub) and \
+                    sub not in subscriber_names:
+                errors.append(f"Node '{node_label}' references "
+                              f"non-existent subscriber: {sub}")
+            pubs = node.get('publishers', [])
+            for pub in (pubs if isinstance(pubs, list) else []):
+                if _ref_ok(node_label, 'publisher', pub) and \
+                        pub not in publisher_names:
+                    errors.append(f"Node '{node_label}' references "
                                   f"non-existent publisher: {pub}")
-            if node.get('calculator') and \
-                    node.get('calculator') not in calculator_names:
-                errors.append(f"Node '{node['name']}' references "
-                              f"non-existent calculator: "
-                              f"{node.get('calculator')}")
-            for trans in node.get('input_transformers', []):
-                if trans not in transformer_names:
-                    errors.append(f"Node '{node['name']}' references "
+            calc = node.get('calculator')
+            if calc and _ref_ok(node_label, 'calculator', calc) and \
+                    calc not in calculator_names:
+                errors.append(f"Node '{node_label}' references "
+                              f"non-existent calculator: {calc}")
+            itrans = node.get('input_transformers', [])
+            for trans in (itrans if isinstance(itrans, list) else []):
+                if _ref_ok(node_label, 'input_transformer', trans) and \
+                        trans not in transformer_names:
+                    errors.append(f"Node '{node_label}' references "
                                   f"non-existent input transformer: "
                                   f"{trans}")
-            for trans in node.get('output_transformers', []):
-                if trans not in transformer_names:
-                    errors.append(f"Node '{node['name']}' references "
+            otrans = node.get('output_transformers', [])
+            for trans in (otrans if isinstance(otrans, list) else []):
+                if _ref_ok(node_label, 'output_transformer', trans) and \
+                        trans not in transformer_names:
+                    errors.append(f"Node '{node_label}' references "
                                   f"non-existent output transformer: "
                                   f"{trans}")
 
@@ -225,7 +263,8 @@ class DAGDesignerRoutes:
             with the repeated start node.
         """
         graph = {}
-        node_names = {n['name'] for n in nodes}
+        node_names = {n['name'] for n in nodes
+                      if isinstance(n, dict) and n.get('name')}
 
         for name in node_names:
             graph[name] = []

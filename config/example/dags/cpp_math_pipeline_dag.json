@@ -1,92 +1,105 @@
 {
-    "_comment": "Example DAG using C++ MathCalculator - v1.7.0",
-    "_description": "Demonstrates high-performance C++ calculator integration via pybind11",
-    
-    "name": "cpp_math_pipeline",
-    "description": "Math pipeline using C++ calculators for ~100ns calculation overhead",
-    "enabled": true,
-    "auto_start": false,
-    
-    "execution": {
-        "mode": "perpetual",
-        "schedule": null
-    },
-    
-    "nodes": [
-        {
-            "name": "data_source",
-            "type": "SourceNode",
-            "description": "Generate numeric data for calculations",
-            "config": {
-                "generator": "random_numbers",
-                "batch_size": 100,
-                "interval_ms": 1000
-            },
-            "source": {
-                "type": "inmemory",
-                "topic": "cpp_math_input"
-            }
-        },
-        {
-            "name": "sum_calculator",
-            "type": "CalculatorNode",
-            "description": "Calculate sum using C++ MathCalculator",
-            "calculator": {
-                "type": "cpp",
-                "name": "MathCalculator"
-            },
-            "config": {
-                "operation": "sum",
-                "precision": 6
-            }
-        },
-        {
-            "name": "mean_calculator", 
-            "type": "CalculatorNode",
-            "description": "Calculate mean using C++ MathCalculator",
-            "calculator": {
-                "type": "cpp",
-                "name": "MathCalculator"
-            },
-            "config": {
-                "operation": "mean",
-                "precision": 6
-            }
-        },
-        {
-            "name": "variance_calculator",
-            "type": "CalculatorNode", 
-            "description": "Calculate variance using C++ StatisticsCalculator",
-            "calculator": {
-                "type": "cpp",
-                "name": "StatisticsCalculator"
-            },
-            "config": {
-                "compute_percentiles": true,
-                "percentile_values": [50, 90, 95]
-            }
-        },
-        {
-            "name": "results_sink",
-            "type": "SinkNode",
-            "description": "Collect calculation results",
-            "destination": {
-                "type": "inmemory",
-                "topic": "cpp_math_results"
-            }
-        }
-    ],
-    
-    "edges": [
-        {"from": "data_source", "to": "sum_calculator"},
-        {"from": "sum_calculator", "to": "mean_calculator"},
-        {"from": "mean_calculator", "to": "variance_calculator"},
-        {"from": "variance_calculator", "to": "results_sink"}
-    ],
-    
-    "_usage_notes": {
-        "build_cpp_module": "cd cpp && mkdir build && cd build && cmake .. && make",
-        "verify_module": "python -c 'import dishtayantra_cpp; print(dir(dishtayantra_cpp))'",
-        "performance": "C++ calculators have ~100ns call overhead vs ~100-500μs for Java/Py4J"
+  "_comment": "C++ MathCalculator pipeline (pybind11). Requires the native dishtayantra_cpp module (cd cpp && cmake .. && make) to RUN; without it the DAG validates/deploys but the calculators fail to load at start. Migrated to current schema.",
+  "name": "cpp_math_pipeline",
+  "description": "Math pipeline using C++ calculators (sum -> mean -> variance).",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    {
+      "name": "math_feed",
+      "config": {
+        "source": "mem://queue/cpp_math_input"
+      }
     }
+  ],
+  "publishers": [
+    {
+      "name": "results_pub",
+      "config": {
+        "destination": "mem://topic/cpp_math_results"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "sum_calc",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "MathCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "operation": "sum",
+        "precision": 6
+      }
+    },
+    {
+      "name": "mean_calc",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "MathCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "operation": "mean",
+        "precision": 6
+      }
+    },
+    {
+      "name": "variance_calc",
+      "type": "cpp",
+      "config": {
+        "cpp_class": "StatisticsCalculator",
+        "cpp_module": "dishtayantra_cpp",
+        "compute_percentiles": true,
+        "percentile_values": [
+          50,
+          90,
+          95
+        ]
+      }
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "math_in",
+      "type": "SubscriptionNode",
+      "subscriber": "math_feed",
+      "calculator": "sum_calc",
+      "config": {}
+    },
+    {
+      "name": "mean_node",
+      "type": "CalculationNode",
+      "calculator": "mean_calc",
+      "config": {}
+    },
+    {
+      "name": "variance_node",
+      "type": "CalculationNode",
+      "calculator": "variance_calc",
+      "config": {}
+    },
+    {
+      "name": "results_sink",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": [
+          "results_pub"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "math_in",
+      "to_node": "mean_node"
+    },
+    {
+      "from_node": "mean_node",
+      "to_node": "variance_node"
+    },
+    {
+      "from_node": "variance_node",
+      "to_node": "results_sink"
+    }
+  ]
 }

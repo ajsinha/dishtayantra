@@ -86,7 +86,11 @@ class LMDBDataPublisher:
         self.running = False
         
         logger.info(f"LMDBDataPublisher '{name}' initialized for channel '{self.channel}'")
-    
+
+    def is_composite(self):
+        # LMDB publishers are single-destination endpoints, never fan-out composites.
+        return False
+
     def start(self):
         """Start the publisher"""
         self.running = True
@@ -196,7 +200,13 @@ class LMDBDataSubscriber:
         self._thread: Optional[threading.Thread] = None
         
         logger.info(f"LMDBDataSubscriber '{name}' initialized for channel '{self.channel}'")
-    
+
+    def is_composite(self):
+        # LMDB subscribers are single-source endpoints, never fan-in composites.
+        # The DAG builder calls this on every subscriber; implementing it keeps the
+        # composite-adjustment pass (and DAG clone, which rebuilds it) from crashing.
+        return False
+
     def start(self):
         """Start the subscriber"""
         if self.running:

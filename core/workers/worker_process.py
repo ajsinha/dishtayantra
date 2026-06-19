@@ -154,31 +154,38 @@ class DAGWorkerProcess(WorkerRuntimeMixin, Process):
             self._init_lmdb_connection()
     
     def _main_loop(self):
-        """Per-iteration: drain control-plane messages (start/stop/migrate DAGs), run
-        one execution cycle across all owned DAGs, emit periodic status, then yield
-        briefly (1ms) to avoid busy-spinning. Loop errors are logged and the loop
-        continues (with a longer backoff) so one bad cycle doesn't kill the worker."""
+        """Block on the control queue (waking at least every ``status_interval`` to emit
+        a heartbeat) and dispatch control messages as they arrive. The worker does NOT
+        drive DAG computation here: each loaded DAG runs its own ``do_compute`` thread,
+        started in ``_load_dag``. So the loop only services control traffic and the
+        periodic heartbeat, and otherwise sleeps in ``Queue.get`` - an idle worker uses
+        ~0% CPU instead of the old 1ms busy-poll. A SHUTDOWN message (or the shared
+        ``shutdown_event``, re-checked every iteration) ends the loop promptly."""
         self.logger.info(f"Worker {self.worker_id} entering main loop")
-        
+
         while self.running and not self.shutdown_event.is_set():
             try:
-                # Process control messages
-                self._process_control_messages()
-                
-                # Run DAG execution cycles
-                self._run_dag_cycles()
-                
-                # Send periodic status
+                # Wait for a control message; wake at the heartbeat cadence if none
+                # arrives. Blocking get => no busy-spin.
+                try:
+                    msg_dict = self.control_queue.get(timeout=self.status_interval)
+                    msg = ControlMessage(**msg_dict) if isinstance(msg_dict, dict) else msg_dict
+                    self._handle_control_message(msg)
+                    # Drain any further queued messages without blocking.
+                    self._process_control_messages()
+                except queue.Empty:
+                    pass  # idle tick - fall through to heartbeat
+
+                self.total_cycles += 1  # main-loop iterations (control/heartbeat ticks)
+
+                # Periodic status / heartbeat (self-throttled to status_interval)
                 self._send_periodic_status()
-                
-                # Small sleep to prevent CPU spinning
-                time.sleep(0.001)
-                
+
             except Exception as e:
                 self.logger.error(f"Error in main loop: {e}")
                 self.logger.error(traceback.format_exc())
                 time.sleep(0.1)
-        
+
         self.logger.info(f"Worker {self.worker_id} exiting main loop")
     
     def _process_control_messages(self):
@@ -324,40 +331,6 @@ class DAGWorkerProcess(WorkerRuntimeMixin, Process):
             self.paused_dags.discard(dag_name)
             self.dag_stats[dag_name].status = "running"
             self.logger.info(f"DAG {dag_name} resumed")
-    
-    def _run_dag_cycles(self):
-        """Run execution cycles for all DAGs"""
-        for dag_name, dag in list(self.dags.items()):
-            if dag_name in self.paused_dags:
-                continue
-            
-            try:
-                start = time.time()
-                
-                # Run one cycle of DAG execution
-                if hasattr(dag, 'run_cycle'):
-                    dag.run_cycle()
-                elif hasattr(dag, 'execute'):
-                    dag.execute()
-                
-                cycle_time = (time.time() - start) * 1000  # ms
-                
-                # Update stats
-                stats = self.dag_stats.get(dag_name)
-                if stats:
-                    stats.nodes_executed += 1
-                    stats.last_execution = time.time()
-                    # Exponential moving average for cycle time
-                    stats.avg_cycle_time_ms = (stats.avg_cycle_time_ms * 0.9 + 
-                                               cycle_time * 0.1)
-                
-                self.total_cycles += 1
-                
-            except Exception as e:
-                self.logger.error(f"Error in DAG {dag_name} cycle: {e}")
-                if dag_name in self.dag_stats:
-                    self.dag_stats[dag_name].errors += 1
-                    self.dag_stats[dag_name].status = "error"
     
     def _handle_signal(self, signum, frame):
         """Handle termination signals"""

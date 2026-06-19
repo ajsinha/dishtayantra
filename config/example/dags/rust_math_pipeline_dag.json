@@ -1,86 +1,107 @@
 {
-    "_comment": "Example DAG using Rust MathCalculator - v1.7.0",
-    "_description": "Demonstrates memory-safe mathematical operations with Rust calculators",
-    
-    "name": "rust_math_pipeline_dag",
-    "description": "Math pipeline using Rust calculators for memory-safe high-performance",
-    "enabled": true,
-    "auto_start": false,
-    
-    "execution": {
-        "mode": "perpetual",
-        "schedule": null
-    },
-    
-    "nodes": [
-        {
-            "name": "data_source",
-            "type": "SourceNode",
-            "description": "Generate test data",
-            "source": {
-                "type": "inmemory",
-                "topic": "rust_math_input"
-            }
-        },
-        {
-            "name": "sum_calculator",
-            "type": "CalculatorNode",
-            "description": "Calculate sum using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustMathCalculator"
-            },
-            "config": {
-                "operation": "sum",
-                "precision": 8
-            }
-        },
-        {
-            "name": "mean_calculator",
-            "type": "CalculatorNode",
-            "description": "Calculate mean using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustMathCalculator"
-            },
-            "config": {
-                "operation": "mean"
-            }
-        },
-        {
-            "name": "stats_calculator",
-            "type": "CalculatorNode",
-            "description": "Full statistical analysis using Rust",
-            "calculator": {
-                "type": "rust",
-                "name": "RustStatisticsCalculator"
-            },
-            "config": {
-                "compute_percentiles": true,
-                "percentile_values": [25, 50, 75, 90, 95, 99]
-            }
-        },
-        {
-            "name": "results_sink",
-            "type": "SinkNode",
-            "description": "Store results",
-            "destination": {
-                "type": "inmemory",
-                "topic": "rust_math_results"
-            }
-        }
-    ],
-    
-    "edges": [
-        {"from": "data_source", "to": "sum_calculator"},
-        {"from": "sum_calculator", "to": "mean_calculator"},
-        {"from": "mean_calculator", "to": "stats_calculator"},
-        {"from": "stats_calculator", "to": "results_sink"}
-    ],
-    
-    "_usage_notes": {
-        "build": "cd rust && maturin develop --release",
-        "test_input": {"values": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]},
-        "expected_output": "Sum, mean, and full statistical analysis including percentiles"
+  "_comment": "Rust math pipeline (PyO3). Requires the native dishtayantra_rust module (cd rust && maturin develop --release) to RUN. Migrated to current schema.",
+  "name": "rust_math_pipeline_dag",
+  "description": "Math pipeline using Rust calculators (sum -> mean -> stats).",
+  "version": "2.0",
+  "start_time": null,
+  "duration": null,
+  "subscribers": [
+    {
+      "name": "math_feed",
+      "config": {
+        "source": "mem://queue/rust_math_input"
+      }
     }
+  ],
+  "publishers": [
+    {
+      "name": "results_pub",
+      "config": {
+        "destination": "mem://topic/rust_math_results"
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "sum_calc",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustMathCalculator",
+        "rust_module": "dishtayantra_rust",
+        "operation": "sum",
+        "precision": 8
+      }
+    },
+    {
+      "name": "mean_calc",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustMathCalculator",
+        "rust_module": "dishtayantra_rust",
+        "operation": "mean"
+      }
+    },
+    {
+      "name": "stats_calc",
+      "type": "rust",
+      "config": {
+        "rust_class": "RustStatisticsCalculator",
+        "rust_module": "dishtayantra_rust",
+        "compute_percentiles": true,
+        "percentile_values": [
+          25,
+          50,
+          75,
+          90,
+          95,
+          99
+        ]
+      }
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "math_in",
+      "type": "SubscriptionNode",
+      "subscriber": "math_feed",
+      "calculator": "sum_calc",
+      "config": {}
+    },
+    {
+      "name": "mean_node",
+      "type": "CalculationNode",
+      "calculator": "mean_calc",
+      "config": {}
+    },
+    {
+      "name": "stats_node",
+      "type": "CalculationNode",
+      "calculator": "stats_calc",
+      "config": {}
+    },
+    {
+      "name": "results_sink",
+      "type": "PublisherSinkNode",
+      "config": {
+        "publishers": [
+          "results_pub"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "math_in",
+      "to_node": "mean_node"
+    },
+    {
+      "from_node": "mean_node",
+      "to_node": "stats_node"
+    },
+    {
+      "from_node": "stats_node",
+      "to_node": "results_sink"
+    }
+  ]
 }

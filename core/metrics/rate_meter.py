@@ -46,6 +46,14 @@ class RateMeter:
         self._tick = 1.0              # fold cadence (seconds)
         self._peak_per_min = 0.0
         self._total = 0
+        # --- True per-minute counts (tumbling 1-min windows) -----------------
+        # Unlike the EWMA above (a smoothed estimate), these are exact counts of
+        # events that fell in each clock-aligned minute, for an honest "last N
+        # minutes" histogram. Keyed by an integer monotonic-minute index so it is
+        # immune to wall-clock/NTP jumps. Bounded to the window (O(1) memory:
+        # window+1 small ints), preserving this meter's no-growing-buffer property.
+        self._minute_window = 10           # number of *completed* minutes kept
+        self._minute_counts = {}           # {minute_index: count}
 
     def _fold_locked(self, now):
         """Fold whole elapsed ticks of accumulated events into the EWMA.
@@ -74,6 +82,12 @@ class RateMeter:
         self._pending = 0
         self._last_tick += ticks * self._tick
 
+    def _prune_minutes_locked(self, cur_minute):
+        """Drop minute buckets older than the kept window (cur - window)."""
+        oldest = cur_minute - self._minute_window
+        for k in [k for k in self._minute_counts if k < oldest]:
+            del self._minute_counts[k]
+
     def mark(self, count: int = 1):
         """Record `count` events as having just occurred."""
         if count <= 0:
@@ -83,6 +97,11 @@ class RateMeter:
             self._fold_locked(now)
             self._pending += count
             self._total += count
+            # True per-minute count for the histogram.
+            cur_minute = int(now // 60)
+            self._minute_counts[cur_minute] = \
+                self._minute_counts.get(cur_minute, 0) + count
+            self._prune_minutes_locked(cur_minute)
             # Peak tracks the settled EWMA (events/min), not the spiky
             # in-progress partial-tick estimate, so a single first event
             # cannot register an absurd peak.
@@ -106,6 +125,37 @@ class RateMeter:
         with self._lock:
             self._fold_locked(now)
             return self._live_per_min_locked(now)
+
+    def minute_buckets(self) -> dict:
+        """Exact event counts per clock-aligned minute for the last N minutes.
+
+        Returns a dict:
+            {
+              'completed': [c_oldest, ..., c_newest],  # N completed minutes,
+                                                        # oldest -> newest (index
+                                                        # 0 == N minutes ago,
+                                                        # last == 1 minute ago)
+              'current_partial': int,   # the in-progress (incomplete) minute
+              'window_minutes': N,
+            }
+
+        Rolls to "now" first, so minutes with no traffic read as a true 0 rather
+        than being absent, and a long-idle meter correctly reports all zeros.
+        These are real counts - not the smoothed EWMA from rate_per_minute().
+        """
+        now = time.monotonic()
+        w = self._minute_window
+        with self._lock:
+            cur = int(now // 60)
+            self._prune_minutes_locked(cur)
+            completed = [self._minute_counts.get(cur - w + i, 0)
+                         for i in range(w)]
+            current_partial = self._minute_counts.get(cur, 0)
+        return {
+            'completed': completed,
+            'current_partial': current_partial,
+            'window_minutes': w,
+        }
 
     def peak_per_minute(self) -> float:
         with self._lock:

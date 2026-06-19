@@ -43,9 +43,8 @@
   "calculators": [
     {
       "name": "price_calculator",
-      "type": "PythonCalculator",
-      "module": "calculators.pricing",
-      "class": "PriceCalculator"
+      "type": "PassthruCalculator",
+      "config": {}
     }
   ],
   "nodes": [
@@ -92,16 +91,17 @@
   ],
   "edges": [
     {
-      "from": "receive_market_data",
-      "to": "validate_data"
+      "from_node": "receive_market_data",
+      "to_node": "validate_data"
     },
     {
-      "from": "validate_data",
-      "to": "calculate_price"
+      "from_node": "validate_data",
+      "to_node": "calculate_price"
     },
     {
-      "from": "calculate_price",
-      "to": "publish_result"
+      "from_node": "calculate_price",
+      "to_node": "publish_result"
     }
-  ]
+  ],
+  "_calculator_note": "Calculators repointed from fictional example_calculators/* classes to the built-in PassthruCalculator so this example builds and clones out-of-the-box. Replace 'type' with your own dotted-path calculator (module.ClassName) to do real work."
 }

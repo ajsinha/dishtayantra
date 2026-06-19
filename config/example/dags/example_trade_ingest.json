@@ -34,6 +34,9 @@
       }
     }
   ],
+  "transformers": [
+    {"name": "passthru", "type": "PassthruDataTransformer", "config": {}}
+  ],
   "nodes": [
     {
       "name": "kafka_trade_input_node",

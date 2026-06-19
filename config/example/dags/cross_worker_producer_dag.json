@@ -20,11 +20,8 @@
   "calculators": [
     {
       "name": "data_transformer",
-      "type": "PythonCalculator",
-      "config": {
-        "module": "example_calculators.transformer",
-        "class": "DataTransformer"
-      }
+      "type": "PassthruCalculator",
+      "config": {}
     }
   ],
   "nodes": [
@@ -46,12 +43,12 @@
   ],
   "edges": [
     {
-      "from": "entry",
-      "to": "transform"
+      "from_node": "entry",
+      "to_node": "transform"
     },
     {
-      "from": "transform",
-      "to": "output"
+      "from_node": "transform",
+      "to_node": "output"
     }
   ],
   "publishers": [

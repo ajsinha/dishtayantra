@@ -1,5 +1,5 @@
 {
-  "_comment": "Performance-test DAG (branching topology). Consumes trades from Kafka, does common prep, FANS OUT into three parallel branches (fees / risk / anomaly) that each compute different attributes, FANS IN at a classify node that merges them, then fans out again to TWO sinks: a file publisher and a Kafka publisher. 11 nodes.",
+  "_comment": "Performance-test DAG (branching topology). Consumes trades from Kafka, does common prep, FANS OUT into three parallel branches (fees / risk / anomaly) that each compute different attributes, FANS IN at a classify node that merges them, then fans out again to TWO sinks: a file publisher and TWO Kafka publishers (one inline output_kafka, one async output_kafka_async for async-egress benchmarking). 12 nodes.",
   "name": "perftest_trade_etl",
   "description": "Kafka -> validate -> normalize -> FX -> notional -> {fees | risk | anomaly} (parallel) -> classify (merge) -> summarize -> {file sink, kafka sink}. A branching/merging trade-enrichment pipeline for benchmarking fan-out / fan-in throughput and latency.",
 
@@ -34,6 +34,16 @@
         "bootstrap_servers": ["localhost:9092"],
         "kafka_library": "kafka-python"
       }
+    },
+    {
+      "name": "output_kafka_async",
+      "config": {
+        "destination": "kafka://topic/perftest_trades_enriched_async",
+        "bootstrap_servers": ["localhost:9092"],
+        "kafka_library": "kafka-python",
+        "async_egress": true,
+        "_async_note": "async_egress:true routes this publisher through the WAL-backed AsyncPublisher (non-blocking publish) when the global switch egress.async.enabled=true is set. The sibling output_kafka stays inline, so you can benchmark async vs sync side by side."
+      }
     }
   ],
 
@@ -67,7 +77,8 @@
     { "name": "summarize_node", "type": "CalculationNode", "calculator": "summarize", "config": {} },
 
     { "name": "file_sink",  "type": "PublisherSinkNode", "config": { "publishers": ["output_file"] } },
-    { "name": "kafka_sink", "type": "PublisherSinkNode", "config": { "publishers": ["output_kafka"] } }
+    { "name": "kafka_sink", "type": "PublisherSinkNode", "config": { "publishers": ["output_kafka"] } },
+    { "name": "kafka_async_sink", "type": "PublisherSinkNode", "config": { "publishers": ["output_kafka_async"] } }
   ],
 
   "edges": [
@@ -86,6 +97,7 @@
     { "from_node": "classify_node",  "to_node": "summarize_node" },
 
     { "from_node": "summarize_node", "to_node": "file_sink" },
-    { "from_node": "summarize_node", "to_node": "kafka_sink" }
+    { "from_node": "summarize_node", "to_node": "kafka_sink" },
+    { "from_node": "summarize_node", "to_node": "kafka_async_sink" }
   ]
 }

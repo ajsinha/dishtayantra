@@ -375,21 +375,20 @@ if jvm_manager.is_initialized():
         <h5 class="mb-0"><i class="bi bi-diagram-2"></i> Using Java Calculators in DAGs</h5>
     </div>
     <div class="card-body">
-        <p>To use a Java calculator in a DAG, specify <code>"type": "java"</code> in the calculator config:</p>
+        <p>To use a Java calculator in a DAG, add an entry to the <code>calculators</code> section with
+        <code>"type": "java"</code> and the fully-qualified <code>java_class</code> in its config. The builder
+        routes it through <code>CalculatorFactory</code> to the Py4J gateway. Nodes then reference it by name.</p>
         
         <div class="code-block json">{
-    "id": "calculate_pricing",
-    "type": "calculator",
-    "calculator": {
-        "type": "java",
-        "name": "TradePricingCalculator",
-        "config": {
-            "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$TradePricingCalculator",
-            "commission_rate": 0.001,
-            "tax_rate": 0.002,
-            "include_vat": true
-        }
-    }
+  "name": "calculate_pricing",
+  "type": "java",
+  "config": {
+    "java_class": "com.dishtayantra.calculators.examples.ExampleCalculators$TradePricingCalculator",
+    "gateway_config": { "gateway": "primary" },
+    "commission_rate": 0.001,
+    "tax_rate": 0.002,
+    "include_vat": true
+  }
 }</div>
 
         <div class="tip-box">
