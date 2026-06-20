@@ -5,6 +5,13 @@ records the per-release highlights that previously lived in the version.py
 docstring.
 
 
+## Version 5.16.2 highlights (logout returns to the public landing page):
+    - routes/auth_routes.py logout(): now redirects to 'index' (the root route '/', which
+      renders the public landing page for anonymous visitors) instead of 'login'. Previously
+      logging out dropped the user on the login form; now they see the landing page. The
+      "Logged out successfully" flash is preserved.
+
+
 ## Version 5.16.1 highlights (contrast fix: dark comparison table under light-family themes):
     - web/templates/comparison.html: the Head-to-Head table rendered with washed-out,
       low-contrast cell text under light-family themes (Light, Blue). Root cause: the table is

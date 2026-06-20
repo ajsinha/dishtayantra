@@ -85,10 +85,12 @@ class AuthRoutes:
             return redirect_to(request, 'login')
 
     def logout(self, request: Request):
-        """Clear the session and return to the login page."""
+        """Clear the session and return to the public landing page."""
         username = request.session.get('username')
         request.session.clear()
         if username:
             logger.info("User '%s' logged out", username)
-        return redirect_to(request, 'login',
+        # v5.16.2: land on the public landing page (the root route renders it
+        # for anonymous visitors) rather than the login form.
+        return redirect_to(request, 'index',
                            flash_message='Logged out successfully')

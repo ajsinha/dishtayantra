@@ -9,30 +9,9 @@
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/compute_graph_support.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/compute_graph_support.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/dag_view.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/dag_view.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/dag/node_implementations.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/dag/node_implementations.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/egress/async_publisher.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/egress/async_publisher.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/egress/wal.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/egress/wal.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/log_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/log_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/metrics/rate_meter.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/metrics/rate_meter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datapubsub.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/datasubscriber.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_messages.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_messages.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_pool.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_pool.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/workers/worker_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/workers/worker_process.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/admin_log_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/admin_log_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/dashboard_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/dashboard_routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/dishtayantra_webapp.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/dishtayantra_webapp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/comparison.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/comparison.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/dag/details.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/dag/details.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/auth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/auth_routes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
