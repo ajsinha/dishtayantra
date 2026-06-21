@@ -31,6 +31,8 @@ from .dag_routes import DAGRoutes
 from .cache_routes import CacheRoutes
 from .cache_api_routes import CacheApiRoutes
 from .user_routes import UserRoutes
+from .apikey_routes import ApiKeyRoutes
+from .audit_routes import AuditRoutes
 from .dagdesigner_routes import DAGDesignerRoutes
 from .metrics_routes import MetricsRoutes
 from .worker_routes import WorkerRoutes
@@ -50,6 +52,8 @@ __all__ = [
     'CacheRoutes',
     'CacheApiRoutes',
     'UserRoutes',
+    'ApiKeyRoutes',
+    'AuditRoutes',
     'DAGDesignerRoutes',
     'MetricsRoutes',
     'WorkerRoutes',

@@ -9,25 +9,24 @@ version string.
 Per-release highlights are kept in docs/CHANGELOG.md (not here, to keep this
 file small). Most recent release:
 
-Version 5.19.0 highlights (new JSON-array trade-ETL lane: list-of-dicts batching, no Arrow):
-    - NEW perftest/perftest_trade_etl_array.json + perftest/array_trade_calculators.py: a third
-      trade-ETL lane whose unit of work on each edge is a plain Python list of dicts (a JSON
-      array), processed a whole batch per calculate() call. Uses stock BatchingSubscriptionNode
-      (drains N messages into {batch:[...]}) + array calculators + stock FlatteningPublicationNode
-      sinks; no Arrow dependency. The speedup is pure batch amortization of per-message node/
-      queue/gate overhead (the arithmetic stays pure-Python per element), so it sits between the
-      row lane and the Arrow lane - useful when data is too irregular to normalize into Arrow
-      columns, and as a baseline that isolates batching gains from vectorization gains.
-    - Verified BIT-FOR-BIT output parity with the canonical row lane (constants/logic imported
-      from perftest/etl_calculators.py so they cannot drift); DAG assembles correctly in the
-      engine (12 nodes, correct types/topology). Indicative calculator-chain throughput on 50k
-      heterogeneous trades (~9 stages, single thread, CPython 3.12, excludes Kafka I/O): row
-      ~7.4k rec/s, array ~17k (~2.3x), arrow ~55k (~7.4x). Documented in the Benchmarking guide.
-    - Additive/opt-in (referenced by dotted path); the engine is untouched. 235 passed.
+Version 5.25.1 highlights (fix: trade generator must not choose Kafka partitions):
+    - perftest/generate_trades.py computed an explicit partition number itself
+      (zlib.crc32(product) % N) and passed partition=<n> to producer.send(...). On a topic with
+      fewer partitions than requested (e.g. an existing 1-partition topic) this raised
+      "AssertionError: Unrecognized partition" because partitions 1..N-1 did not exist.
+    - Fix: the generator now provides ONLY the message key (the --partition-key field value) and
+      lets Kafka's partitioner hash it over whatever partitions the topic actually has - same value
+      -> same partition, and it works for any partition count. Removed partition_for()/zlib and the
+      client-side per-partition counting (the producer no longer decides partitions); the summary
+      now reports distinct key values. --partitions now only controls how many partitions the topic
+      is CREATED with (topic provisioning), not per-message routing; the "sends will fail" warning
+      became an informational note. --dry-run shows the key grouping instead of computed partition
+      numbers. This mirrors the v5.20.0 publisher design (set the key, let Kafka route).
+    - Docs: Message Broker Connectors Guide note clarified. No server code changed; 247 passed.
       Full history: docs/CHANGELOG.md.
 """
 
-VERSION = "5.19.0"
+VERSION = "5.25.1"
 BUILD_DATE = "2026-06-18"
 APP_NAME = "DishtaYantra"
 

@@ -49,6 +49,21 @@ CREATE TABLE IF NOT EXISTS api_keys (
 CREATE INDEX IF NOT EXISTS ix_api_keys_user_id  ON api_keys (user_id);
 CREATE INDEX IF NOT EXISTS ix_api_keys_key_hash ON api_keys (key_hash);
 
+-- Audit trail: append-only record of security/admin-relevant actions.
+CREATE TABLE IF NOT EXISTS audit_events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at DATETIME     NOT NULL,
+    actor      VARCHAR(128),
+    action     VARCHAR(64)  NOT NULL,
+    target     VARCHAR(256),
+    detail     TEXT,
+    source_ip  VARCHAR(64),
+    success    BOOLEAN      NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS ix_audit_events_created_at ON audit_events (created_at);
+CREATE INDEX IF NOT EXISTS ix_audit_events_actor      ON audit_events (actor);
+CREATE INDEX IF NOT EXISTS ix_audit_events_action     ON audit_events (action);
+
 -- Default role catalogue (the application also seeds these at startup)
 INSERT OR IGNORE INTO roles (name, description) VALUES
     ('admin',    'Full administrative access'),

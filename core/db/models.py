@@ -30,6 +30,7 @@ from sqlalchemy import (
     Integer,
     String,
     Table,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -149,3 +150,38 @@ class ApiKey(Base):
 
     def __repr__(self) -> str:  # pragma: no cover - debug aid
         return f"<ApiKey name={self.name} prefix={self.key_prefix}>"
+
+
+class AuditEvent(Base):
+    """An append-only record of a security/admin-relevant action.
+
+    Audit rows are never updated or deleted by the application; they capture
+    who did what, when, and from where, for accountability and forensics.
+    """
+
+    __tablename__ = "audit_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow,
+                        index=True)
+    actor = Column(String(128), nullable=True, index=True)   # username or 'system'
+    action = Column(String(64), nullable=False, index=True)  # e.g. 'apikey.create'
+    target = Column(String(256), nullable=True)              # subject of the action
+    detail = Column(Text, nullable=True)                     # human-readable note
+    source_ip = Column(String(64), nullable=True)
+    success = Column(Boolean, nullable=False, default=True)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "actor": self.actor,
+            "action": self.action,
+            "target": self.target,
+            "detail": self.detail,
+            "source_ip": self.source_ip,
+            "success": self.success,
+        }
+
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        return f"<AuditEvent {self.action} actor={self.actor}>"

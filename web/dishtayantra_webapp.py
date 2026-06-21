@@ -65,6 +65,8 @@ from routes import (
     RustRoutes,
     EgressRoutes,
     UserRoutes,
+    ApiKeyRoutes,
+    AuditRoutes,
     WorkerRoutes,
 )
 
@@ -122,6 +124,7 @@ class DishtaYantraWebApp:
         self.dag_routes = None
         self.cache_routes = None
         self.user_routes = None
+        self.audit_retention = None
         self.dagdesigner_routes = None
         self.admin_routes = None
         self.admin_log_routes = None
@@ -335,6 +338,10 @@ class DishtaYantraWebApp:
                                         self.user_registry, self.guards)
         self.user_routes = UserRoutes(self.app, self.user_registry,
                                       self.guards)
+        self.apikey_routes = ApiKeyRoutes(self.app, self.user_registry,
+                                          self.guards)
+        self.audit_routes = AuditRoutes(self.app, self.guards)
+        self._start_audit_retention()
         self.dagdesigner_routes = DAGDesignerRoutes(
             self.app, self.dag_server, self.user_registry, self.guards)
         self.admin_routes = AdminRoutes(self.app, self.dag_server,
@@ -388,6 +395,25 @@ class DishtaYantraWebApp:
             logger.error(traceback.format_exc())
             raise
 
+    def _start_audit_retention(self):
+        """Start the background sweep that purges old audit events.
+
+        Configurable via ``audit.retention_days`` (default 15; <= 0 disables)
+        and ``audit.retention_sweep_hours`` (default 6).
+        """
+        try:
+            days = int(self.props.get('audit.retention_days', '15'))
+        except (TypeError, ValueError):
+            days = 15
+        try:
+            hours = float(self.props.get('audit.retention_sweep_hours', '6'))
+        except (TypeError, ValueError):
+            hours = 6.0
+        from core.audit_retention import AuditRetention
+        self.audit_retention = AuditRetention(
+            retention_days=days, sweep_interval_seconds=int(hours * 3600))
+        self.audit_retention.start()
+
     def shutdown(self):
         """Shutdown the web application and clean up resources."""
         logger.info("Shutting down DishtaYantra Web Application...")
@@ -408,6 +434,9 @@ class DishtaYantraWebApp:
             if self.user_registry:
                 logger.info("Cleaning up user registry...")
                 self.user_registry.stop_reload()
+
+            if self.audit_retention:
+                self.audit_retention.stop()
 
             logger.info("DishtaYantra Web Application shutdown complete")
         except Exception as e:

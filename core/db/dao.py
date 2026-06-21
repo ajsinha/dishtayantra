@@ -22,13 +22,13 @@ import hashlib
 import hmac
 import logging
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import select, desc, delete
 
 from core.db.database_manager import DatabaseManager
-from core.db.models import ApiKey, Role, User
+from core.db.models import ApiKey, AuditEvent, Role, User
 
 logger = logging.getLogger(__name__)
 
@@ -347,3 +347,59 @@ class ApiKeyDAO:
                 raise ValueError(f"API key id {key_id} not found")
             session.delete(record)
             logger.info("API key id=%s deleted by '%s'", key_id, deleted_by)
+
+
+class AuditDAO:
+    """Append-only access to the audit trail (record + query)."""
+
+    def __init__(self, db: Optional[DatabaseManager] = None):
+        self.db = db or DatabaseManager.get_instance()
+
+    def record(self, action: str, actor: Optional[str] = None,
+               target: Optional[str] = None, detail: Optional[str] = None,
+               source_ip: Optional[str] = None, success: bool = True) -> None:
+        """Insert one audit row. Callers should not let auditing break the
+        primary operation; see core.audit_log.audit for the safe wrapper."""
+        with self.db.session_scope() as session:
+            session.add(AuditEvent(
+                action=action, actor=actor, target=target, detail=detail,
+                source_ip=source_ip, success=success,
+                created_at=datetime.now(timezone.utc).replace(tzinfo=None)))
+
+    def list_events(self, limit: int = 200, offset: int = 0,
+                    actor: Optional[str] = None, action: Optional[str] = None,
+                    success: Optional[bool] = None) -> List[dict]:
+        """Most-recent-first, with optional filters."""
+        with self.db.session_scope() as session:
+            stmt = select(AuditEvent)
+            if actor:
+                stmt = stmt.where(AuditEvent.actor == actor)
+            if action:
+                stmt = stmt.where(AuditEvent.action == action)
+            if success is not None:
+                stmt = stmt.where(AuditEvent.success == success)
+            stmt = stmt.order_by(desc(AuditEvent.created_at),
+                                 desc(AuditEvent.id)).limit(limit).offset(offset)
+            return [e.to_dict() for e in session.execute(stmt).scalars().all()]
+
+    def purge_older_than(self, days: int) -> int:
+        """Delete audit rows older than ``days`` days; returns the count removed.
+
+        ``days`` <= 0 (or None) disables purging and keeps everything.
+        """
+        if not days or days <= 0:
+            return 0
+        cutoff = (datetime.now(timezone.utc).replace(tzinfo=None)
+                  - timedelta(days=days))
+        with self.db.session_scope() as session:
+            result = session.execute(
+                delete(AuditEvent).where(AuditEvent.created_at < cutoff))
+            return result.rowcount or 0
+
+    def distinct_actions(self) -> List[str]:
+        """The set of action names seen so far (for filter dropdowns)."""
+        with self.db.session_scope() as session:
+            rows = session.execute(
+                select(AuditEvent.action).distinct().order_by(AuditEvent.action)
+            ).scalars().all()
+            return list(rows)

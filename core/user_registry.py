@@ -277,9 +277,14 @@ class UserRegistry:
     # ------------------------------------------------------------------ #
 
     def create_api_key(self, username: str, key_name: str,
-                       created_by: str) -> Tuple[str, dict]:
-        """Issue a new API key; returns (clear_key_shown_once, record)."""
-        return self.api_key_dao.create_api_key(username, key_name, created_by)
+                       created_by: str, expires_at=None) -> Tuple[str, dict]:
+        """Issue a new API key; returns (clear_key_shown_once, record).
+
+        ``expires_at`` is an optional naive-UTC datetime after which the key is
+        rejected; ``None`` means the key never expires.
+        """
+        return self.api_key_dao.create_api_key(username, key_name, created_by,
+                                               expires_at=expires_at)
 
     def list_api_keys(self, username: str) -> List[dict]:
         """List API key records for a user (hashes are never exposed)."""

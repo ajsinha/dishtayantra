@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}API Keys - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .key-help { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+    .mono { font-family:'Monaco','Menlo','Ubuntu Mono',monospace; }
+    .key-prefix { font-family:'Monaco','Menlo','Ubuntu Mono',monospace; font-size:.82rem; }
+    .clear-key-box {
+        font-family:'Monaco','Menlo','Ubuntu Mono',monospace;
+        font-size: 1rem; word-break: break-all; background: var(--bs-light, #f8f9fa);
+        border: 1px dashed var(--bs-primary, #2563eb); border-radius: 6px;
+        padding: 10px 12px;
+    }
+    .pill { display:inline-block; padding:1px 8px; border-radius:10px; font-size:.72rem; font-weight:600; }
+    .pill-active  { background:#dcfce7; color:#166534; }
+    .pill-revoked { background:#fee2e2; color:#991b1b; }
+    .num { font-variant-numeric: tabular-nums; }
+    td, th { vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-key"></i> API Keys</h2>
+</div>
+
+<p class="key-help mb-3">
+    API keys let CLIs and automation (for example <span class="mono">dyadmin --api-key</span>)
+    authenticate without a password or browser session. A key is bound to a user and
+    <strong>inherits that user's roles</strong> &mdash; a key for an admin user grants admin access.
+    Keys are stored as salted hashes; the clear key is shown <strong>once</strong>, at creation.
+</p>
+
+{% if new_key %}
+<div class="alert alert-success" role="alert">
+    <h5 class="alert-heading"><i class="bi bi-check-circle"></i> API key created</h5>
+    <p class="mb-2">Copy this key now &mdash; it will <strong>not</strong> be shown again and cannot be recovered:</p>
+    <div class="d-flex align-items-center gap-2">
+        <div class="clear-key-box flex-grow-1" id="clearKey">{{ new_key }}</div>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyClearKey()">
+            <i class="bi bi-clipboard"></i> Copy
+        </button>
+    </div>
+    <hr>
+    <p class="mb-0 key-help">
+        user <strong>{{ new_key_meta.username }}</strong>,
+        name <strong>{{ new_key_meta.name }}</strong>,
+        prefix <span class="key-prefix">{{ new_key_meta.prefix }}</span>{% if new_key_meta.expires_at %},
+        expires <span class="num">{{ new_key_meta.expires_at }}</span>{% else %}, no expiry{% endif %}.
+        Use it as <span class="mono">Authorization: Bearer &lt;key&gt;</span> or the
+        <span class="mono">X-API-Key</span> header.
+    </p>
+</div>
+{% endif %}
+
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-plus-circle"></i> Create a key</div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('apikey_create') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="username">User</label>
+                <select class="form-select" id="username" name="username" required>
+                    <option value="" selected disabled>Select user…</option>
+                    {% for u in users %}
+                    <option value="{{ u }}">{{ u }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="key_name">Key name</label>
+                <input type="text" class="form-control" id="key_name" name="key_name"
+                       placeholder="e.g. ci-runner" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="expires_days">Expires in (days)</label>
+                <input type="number" class="form-control" id="expires_days" name="expires_days"
+                       min="1" placeholder="blank = never">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-key"></i> Create
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-list-ul"></i> Existing keys</div>
+    <div class="card-body">
+        {% if api_keys %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>User</th><th>Name</th><th>Prefix</th><th>Status</th>
+                        <th>Created</th><th>Last used</th><th>Expires</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for k in api_keys %}
+                    <tr>
+                        <td>{{ k.username }}</td>
+                        <td>{{ k.name }}</td>
+                        <td class="key-prefix">{{ k.key_prefix }}</td>
+                        <td>
+                            {% if k.is_active %}
+                            <span class="pill pill-active">Active</span>
+                            {% else %}
+                            <span class="pill pill-revoked">Revoked</span>
+                            {% endif %}
+                        </td>
+                        <td class="num">{{ (k.created_at or '')[:19] }}</td>
+                        <td class="num">{{ (k.last_used_at or '—')[:19] }}</td>
+                        <td class="num">{{ (k.expires_at or 'never')[:19] }}</td>
+                        <td class="text-end">
+                            {% if k.is_active %}
+                            <form method="post" action="{{ url_for('apikey_revoke', key_id=k.id) }}"
+                                  onsubmit="return confirm('Revoke key &quot;{{ k.name }}&quot; for {{ k.username }}? This cannot be undone.');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-x-circle"></i> Revoke
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No API keys yet. Create one above.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyClearKey() {
+    var el = document.getElementById('clearKey');
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+        var btn = event.target.closest('button');
+        if (btn) { var t = btn.innerHTML; btn.innerHTML = '<i class="bi bi-check"></i> Copied';
+                   setTimeout(function(){ btn.innerHTML = t; }, 1500); }
+    });
+}
+</script>
+{% endblock %}

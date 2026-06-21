@@ -28,6 +28,7 @@ from web.fastapi_compat import (
     redirect_to,
     render,
 )
+from core.audit_log import audit, client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +138,7 @@ class UserRoutes:
                                                      admin_user)
             if success:
                 logger.info(f"User {username} created by {admin_user}")
+                audit('user.create', actor=admin_user, target=username, source_ip=client_ip(request))
                 return redirect_to(request, 'user_management',
                                    flash_message=f'User {username} created '
                                                  f'successfully')
@@ -247,6 +249,7 @@ class UserRoutes:
                                                      admin_user)
             if success:
                 logger.info(f"User {username} created by {admin_user}")
+                audit('user.create', actor=admin_user, target=username, source_ip=client_ip(request))
                 return JSONResponse({'success': True,
                                      'message': f'User {username} created '
                                                 f'successfully'})
@@ -343,6 +346,7 @@ class UserRoutes:
                                                      admin_user)
             if success:
                 logger.info(f"User {username} updated by {admin_user}")
+                audit('user.update', actor=admin_user, target=username, source_ip=client_ip(request))
                 if is_json:
                     return JSONResponse({'success': True,
                                          'message': f'User {username} '
@@ -394,6 +398,7 @@ class UserRoutes:
             success = self.user_registry.delete_user(username, admin_user)
             if success:
                 logger.info(f"User {username} deleted by {admin_user}")
+                audit('user.delete', actor=admin_user, target=username, source_ip=client_ip(request))
                 return JSONResponse({'success': True,
                                      'message': f'User {username} deleted '
                                                 f'successfully'})

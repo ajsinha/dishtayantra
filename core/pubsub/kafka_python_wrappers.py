@@ -50,6 +50,9 @@ class KafkaPythonProducerWrapper(AbstractKafkaProducerWrapper):
         # Default serializer
         if 'value_serializer' not in producer_config:
             producer_config['value_serializer'] = lambda v: json.dumps(v).encode('utf-8')
+        if 'key_serializer' not in producer_config:
+            producer_config['key_serializer'] = (
+                lambda k: k.encode('utf-8') if isinstance(k, str) else k)
         
         self._producer_config = producer_config
         self._producer = None

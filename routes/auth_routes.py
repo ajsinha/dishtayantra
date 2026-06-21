@@ -22,6 +22,7 @@ from web.fastapi_compat import (
     redirect_to,
     render,
 )
+from core.audit_log import audit, client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +76,11 @@ class AuthRoutes:
                                                              username)
                 request.session['roles'] = user_data.get('roles', ['user'])
                 logger.info("User '%s' logged in", username)
+                audit('auth.login', actor=username, source_ip=client_ip(request))
                 return redirect_to(request, 'dashboard',
                                    flash_message='Login successful')
+            audit('auth.login_failed', actor=username, success=False,
+                  source_ip=client_ip(request))
             return redirect_to(request, 'login',
                                flash_message='Invalid username or password',
                                flash_category='error')
@@ -90,6 +94,7 @@ class AuthRoutes:
         request.session.clear()
         if username:
             logger.info("User '%s' logged out", username)
+            audit('auth.logout', actor=username, source_ip=client_ip(request))
         # v5.16.2: land on the public landing page (the root route renders it
         # for anonymous visitors) rather than the login form.
         return redirect_to(request, 'index',

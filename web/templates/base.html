@@ -1317,6 +1317,16 @@
                                     <i class="bi bi-cone-striped"></i> Maintenance / Drain
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('apikey_management') }}">
+                                    <i class="bi bi-key"></i> API Keys
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('audit_log') }}">
+                                    <i class="bi bi-clipboard-check"></i> Audit Trail
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     {% endif %}

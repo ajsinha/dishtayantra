@@ -149,6 +149,12 @@ class KafkaDataPublisher(DataPublisher):
         self.topic = destination.split('/')[-1]
         self.bootstrap_servers = config.get('bootstrap_servers', ['localhost:9092'])
         self.kafka_library = config.get('kafka_library', 'kafka-python')
+        # Optional: name of a field in each outgoing message whose value becomes
+        # the Kafka message key, so all messages sharing that value are routed to
+        # the same partition (preserving per-key ordering and enabling co-partition
+        # joins / log compaction). When unset, messages are sent with no key and
+        # Kafka's default partitioner spreads them (the original behavior).
+        self.partition_key = config.get('partition_key')
         
         # Create producer using factory
         self.producer = create_kafka_producer(self.bootstrap_servers, config)
@@ -166,8 +172,21 @@ class KafkaDataPublisher(DataPublisher):
             if local_topic is None or len(local_topic) == 0:
                 local_topic = self.destination
 
+        # Optional partition routing: when partition_key is configured and present
+        # on a dict message, use that field's value as the Kafka message key so all
+        # messages sharing it land on the same partition. Missing field / non-dict /
+        # unset -> no key -> default partitioner spread (unchanged behavior).
+        key = None
+        if self.partition_key and isinstance(local_data, dict):
+            kv = local_data.get(self.partition_key)
+            if kv is not None:
+                key = str(kv)
+
         # Send using wrapper
-        self.producer.send(local_topic, value=local_data)
+        if key is not None:
+            self.producer.send(local_topic, value=local_data, key=key)
+        else:
+            self.producer.send(local_topic, value=local_data)
         self.producer.flush()
 
         with self._lock:

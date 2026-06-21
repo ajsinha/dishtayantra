@@ -71,17 +71,32 @@
         <h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5>
     </div>
     <div class="card-body">
-        <p>DishtaYantra exposes REST APIs for managing DAGs, cache, and users. All endpoints require authentication via session cookies (login first via UI or API).</p>
+        <p>DishtaYantra exposes REST APIs for managing DAGs, cache, and users. All endpoints require authentication, via <strong>either</strong> a session cookie (login) <strong>or</strong> an API key header.</p>
         <h6>Base URL</h6>
-        <pre class="code-block">http://localhost:5000</div>
-        
+        <pre class="code-block">http://localhost:5002</pre>
+
         <h6 class="mt-3">Authentication</h6>
-        <p>Login first to obtain a session cookie:</p>
+        <p>Use a session for the web UI; use an <strong>API key</strong> for CLIs and automation.</p>
+        <p><strong>Session login</strong> (obtain a cookie):</p>
         <pre class="code-block">POST /login
 Content-Type: application/x-www-form-urlencoded
 
-username=admin&password=admin</div>
-    </pre>
+username=admin&amp;password=admin123</pre>
+        <p><strong>API key</strong> &mdash; send it on every request in either header:</p>
+        <pre class="code-block">Authorization: Bearer &lt;api-key&gt;
+# or
+X-API-Key: &lt;api-key&gt;
+
+# example
+curl -H "Authorization: Bearer $DY_API_KEY" \
+     http://localhost:5002/admin/maintenance/status</pre>
+        <p>A key inherits the roles of its owning user (an admin user's key grants admin access). Admins can create, list, and revoke keys from the web UI at <strong>Admin &rarr; API Keys</strong> (<code>/admin/api-keys</code>); the clear key is shown once. On the server host, keys can also be minted with <code>tools/dyapikey.py</code>:</p>
+        <pre class="code-block">python3 tools/dyapikey.py create admin ci-runner
+python3 tools/dyapikey.py list admin
+python3 tools/dyapikey.py revoke &lt;id&gt;</pre>
+        <p><strong>Command-line admin client.</strong> <code>tools/dyadmin.py</code> drives all admin functions over HTTP using either auth method &mdash; see the <em>Admin CLI (dyadmin) Guide</em>:</p>
+        <pre class="code-block">dyadmin --api-key $DY_API_KEY maintenance status
+DY_API_KEY=... dyadmin dag stop my_dag</pre>
 </div>
 
 <!-- DAG Endpoints -->

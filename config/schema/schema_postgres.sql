@@ -50,6 +50,21 @@ CREATE TABLE IF NOT EXISTS api_keys (
 CREATE INDEX IF NOT EXISTS ix_api_keys_user_id  ON api_keys (user_id);
 CREATE INDEX IF NOT EXISTS ix_api_keys_key_hash ON api_keys (key_hash);
 
+-- Audit trail: append-only record of security/admin-relevant actions.
+CREATE TABLE IF NOT EXISTS audit_events (
+    id         SERIAL PRIMARY KEY,
+    created_at TIMESTAMP    NOT NULL,
+    actor      VARCHAR(128),
+    action     VARCHAR(64)  NOT NULL,
+    target     VARCHAR(256),
+    detail     TEXT,
+    source_ip  VARCHAR(64),
+    success    BOOLEAN      NOT NULL DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS ix_audit_events_created_at ON audit_events (created_at);
+CREATE INDEX IF NOT EXISTS ix_audit_events_actor      ON audit_events (actor);
+CREATE INDEX IF NOT EXISTS ix_audit_events_action     ON audit_events (action);
+
 INSERT INTO roles (name, description) VALUES
     ('admin',    'Full administrative access'),
     ('operator', 'Operational control of DAGs'),

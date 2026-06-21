@@ -195,15 +195,35 @@ class AuthGuards:
     def __init__(self, user_registry):
         self.user_registry = user_registry
 
+    def _api_key_username(self, request: Request):
+        """Resolve a username from an API key header, or None.
+
+        Accepts ``Authorization: Bearer <key>`` or ``X-API-Key: <key>``.
+        """
+        auth = request.headers.get("authorization", "")
+        key = None
+        if auth[:7].lower() == "bearer ":
+            key = auth[7:].strip()
+        if not key:
+            key = request.headers.get("x-api-key")
+        if not key:
+            return None
+        info = self.user_registry.authenticate_api_key(key)
+        return info.get("username") if info else None
+
+    def _authenticated_username(self, request: Request):
+        """Session cookie first, then API key header. None if neither."""
+        return request.session.get("username") or self._api_key_username(request)
+
     def login_required(self, request: Request) -> str:
-        """Ensure a user is logged in; returns the username."""
-        username = request.session.get("username")
+        """Ensure a user is logged in (session OR API key); returns the username."""
+        username = self._authenticated_username(request)
         if not username:
             raise NotAuthenticatedError()
         return username
 
     def admin_required(self, request: Request) -> str:
-        """Ensure the logged-in user holds the admin role."""
+        """Ensure the authenticated user holds the admin role."""
         username = self.login_required(request)
         if not self.user_registry.has_role(username, "admin"):
             raise NotAuthorizedError("Admin access required")

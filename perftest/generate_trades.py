@@ -49,6 +49,8 @@ import time
 DEFAULT_TOPIC = "perftest_trades"
 DEFAULT_BOOTSTRAP = "localhost:9092"
 DEFAULT_COUNT = 10000
+DEFAULT_PARTITIONS = 5
+DEFAULT_PARTITION_KEY = "symbol"
 
 SYMBOLS = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META", "JPM", "GS", "BAC",
@@ -255,6 +257,47 @@ def make_trade(i, rng, anomaly_pct, uniform=False, level="med"):
     return trade
 
 
+def ensure_topic(bootstrap, topic, partitions):
+    """Best-effort: create ``topic`` with ``partitions`` partitions so Kafka has
+    that many partitions to spread keyed messages across. No-ops if the topic
+    already exists. If it exists with fewer partitions, key-based routing still
+    works - the spread is simply limited to the partitions that exist.
+    """
+    try:
+        from kafka.admin import KafkaAdminClient, NewTopic
+        from kafka.errors import TopicAlreadyExistsError
+    except ImportError:
+        return
+    admin = None
+    try:
+        admin = KafkaAdminClient(bootstrap_servers=bootstrap.split(","))
+        admin.create_topics([NewTopic(name=topic, num_partitions=partitions,
+                                      replication_factor=1)])
+        print(f"  created topic '{topic}' with {partitions} partitions")
+    except TopicAlreadyExistsError:
+        try:
+            md = admin.describe_topics([topic])
+            existing = len(md[0]["partitions"]) if md else None
+            if existing is not None and existing < partitions:
+                print(f"  note: topic '{topic}' already exists with {existing} "
+                      f"partition(s) (< {partitions} requested). Key-based routing "
+                      f"still works; messages spread across {existing} partition(s). "
+                      f"Recreate the topic with more partitions for wider spread.")
+            else:
+                print(f"  topic '{topic}' already exists with {existing} partition(s)")
+        except Exception:  # noqa: BLE001
+            print(f"  topic '{topic}' already exists (partition count unknown)")
+    except Exception as exc:  # noqa: BLE001
+        print(f"  (note: could not ensure {partitions} partitions on '{topic}': {exc}; "
+              f"relying on the existing/auto-created topic)")
+    finally:
+        if admin is not None:
+            try:
+                admin.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+
 def build_producer(bootstrap):
     """Construct a kafka-python producer, failing clearly if Kafka is absent."""
     try:
@@ -266,6 +309,7 @@ def build_producer(bootstrap):
         return KafkaProducer(
             bootstrap_servers=bootstrap.split(","),
             value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            key_serializer=lambda k: k.encode("utf-8") if isinstance(k, str) else k,
             acks=1,
             linger_ms=5,          # small batching window for throughput
             retries=3,
@@ -295,7 +339,20 @@ def main():
                     help="RNG seed for reproducible data")
     ap.add_argument("--dry-run", action="store_true",
                     help="print a few sample trades instead of sending to Kafka")
+    ap.add_argument("--partitions", type=int, default=DEFAULT_PARTITIONS,
+                    help=f"how many partitions to create the topic with (default "
+                         f"{DEFAULT_PARTITIONS}), giving Kafka that many partitions "
+                         f"to spread keyed messages across. Routing is by key hash, "
+                         f"not an explicit partition number; same value -> same "
+                         f"partition. Use 1 for a single-partition topic.")
+    ap.add_argument("--partition-key", default=DEFAULT_PARTITION_KEY,
+                    help=f"trade field that identifies the 'product type' for "
+                         f"partition routing (default '{DEFAULT_PARTITION_KEY}'). "
+                         f"All trades sharing this field value go to one partition.")
     args = ap.parse_args()
+
+    if args.partitions < 1:
+        sys.exit("--partitions must be >= 1")
 
     rng = random.Random(args.seed)
 
@@ -304,24 +361,43 @@ def main():
         print(f"# Dry run: {n} sample trades (of {args.count} requested), "
               f"{'uniform' if args.uniform else 'heterogeneous'}\n")
         for i in range(n):
-            print(json.dumps(make_trade(i, rng, args.anomaly_pct,
-                                        args.uniform, args.hetero_level)))
+            t = make_trade(i, rng, args.anomaly_pct, args.uniform, args.hetero_level)
+            key_val = str(t.get(args.partition_key, ""))
+            print(f"# key {args.partition_key}={key_val}: {json.dumps(t)}")
+        prods = sorted(set(SYMBOLS))
+        print(f"\n# {len(prods)} distinct '{args.partition_key}' value(s). Each is "
+              f"sent as the Kafka message key, so all trades for one value share a "
+              f"partition (Kafka hashes the key over the topic's partitions; the "
+              f"producer does not choose the partition number):")
+        print("#   " + ", ".join(prods))
         return
 
+    if args.partitions > 1:
+        ensure_topic(args.bootstrap, args.topic, args.partitions)
     producer = build_producer(args.bootstrap)
     print(f"Publishing {args.count} "
           f"{'uniform' if args.uniform else 'heterogeneous'} trades to topic "
           f"'{args.topic}' at {args.bootstrap}"
-          + (f" (rate-limited to {args.rate}/s)" if args.rate else "") + " ...")
+          + (f" (rate-limited to {args.rate}/s)" if args.rate else "")
+          + f"; keyed by '{args.partition_key}' so Kafka groups every trade "
+            f"with the same value onto one partition ...")
 
     interval = (1.0 / args.rate) if args.rate > 0 else 0.0
     sent = 0
     start = time.perf_counter()
     next_report = 10000
+    key_field = args.partition_key
+    distinct_keys = set()
 
     for i in range(args.count):
-        producer.send(args.topic, make_trade(i, rng, args.anomaly_pct,
-                                              args.uniform, args.hetero_level))
+        trade = make_trade(i, rng, args.anomaly_pct, args.uniform, args.hetero_level)
+        key_val = str(trade.get(key_field, ""))
+        # Provide ONLY the message key; Kafka's partitioner hashes it to one of
+        # the topic's partitions (same key -> same partition). The producer must
+        # not choose the partition number itself - that would assume a partition
+        # count the topic may not have, and fail if it has fewer.
+        producer.send(args.topic, value=trade, key=key_val)
+        distinct_keys.add(key_val)
         sent += 1
         if interval:
             time.sleep(interval)
@@ -335,6 +411,9 @@ def main():
     elapsed = time.perf_counter() - start
     print(f"\nDone. Sent {sent} trades in {elapsed:.2f}s "
           f"({sent/elapsed:,.0f} msg/s produced).")
+    print(f"Keyed by '{key_field}': {len(distinct_keys)} distinct value(s); Kafka "
+          f"routes each value to one of the topic's partitions by key hash "
+          f"(same value -> same partition).")
     print("Now check the DAG output files once the pipeline drains, e.g.:")
     print("  wc -l /tmp/perftest/trade_etl_output.jsonl")
     print("  wc -l /tmp/perftest/trade_etl_arrow_output.jsonl")

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .audit-help { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+    .mono { font-family:'Monaco','Menlo','Ubuntu Mono',monospace; font-size:.8rem; }
+    .num { font-variant-numeric: tabular-nums; }
+    .pill { display:inline-block; padding:1px 8px; border-radius:10px; font-size:.72rem; font-weight:600; }
+    .pill-ok   { background:#dcfce7; color:#166534; }
+    .pill-fail { background:#fee2e2; color:#991b1b; }
+    .action-tag { font-family:'Monaco','Menlo','Ubuntu Mono',monospace; font-size:.78rem;
+                  background: var(--bs-light,#f1f5f9); padding:1px 6px; border-radius:4px; }
+    td, th { vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2><i class="bi bi-clipboard-check"></i> Audit Trail</h2>
+</div>
+
+<p class="audit-help mb-3">
+    An append-only record of security- and admin-relevant actions &mdash; who did what,
+    when, and from where. Captured events include logins, API-key creation/revocation,
+    and user create/update/delete.
+</p>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('audit_log') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="actor">Actor</label>
+                <input type="text" class="form-control" id="actor" name="actor"
+                       value="{{ f_actor }}" placeholder="username">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="action">Action</label>
+                <select class="form-select" id="action" name="action">
+                    <option value="">All</option>
+                    {% for a in actions %}
+                    <option value="{{ a }}" {% if a == f_action %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="success">Outcome</label>
+                <select class="form-select" id="success" name="success">
+                    <option value="" {% if not f_success %}selected{% endif %}>All</option>
+                    <option value="true" {% if f_success == 'true' %}selected{% endif %}>Success</option>
+                    <option value="false" {% if f_success == 'false' %}selected{% endif %}>Failure</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="limit">Limit</label>
+                <input type="number" class="form-control num" id="limit" name="limit"
+                       min="1" max="1000" value="{{ limit }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list-ul"></i> Events <span class="text-muted">({{ events|length }})</span>
+    </div>
+    <div class="card-body">
+        {% if events %}
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>Time (UTC)</th><th>Actor</th><th>Action</th>
+                        <th>Target</th><th>Detail</th><th>Source IP</th><th>Outcome</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in events %}
+                    <tr>
+                        <td class="num mono">{{ (e.created_at or '')[:19] }}</td>
+                        <td>{{ e.actor or '—' }}</td>
+                        <td><span class="action-tag">{{ e.action }}</span></td>
+                        <td>{{ e.target or '' }}</td>
+                        <td class="audit-help">{{ e.detail or '' }}</td>
+                        <td class="mono">{{ e.source_ip or '' }}</td>
+                        <td>
+                            {% if e.success %}
+                            <span class="pill pill-ok">OK</span>
+                            {% else %}
+                            <span class="pill pill-fail">FAIL</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No audit events match the current filter.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

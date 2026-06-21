@@ -16,7 +16,7 @@
 app:
   name: DishtaYantra
   # Informational only; authoritative runtime version is core/version.py VERSION.
-  version: "5.19.0"
+  version: "5.25.1"
   author:
     name: Ashutosh Sinha
     email: ajsinha@gmail.com
@@ -225,3 +225,9 @@ lmdb:
     seconds: 300
   cleanup:
     interval: 60
+
+# Audit trail retention (Admin -> Audit Trail). A background sweep deletes
+# events older than retention_days. Set retention_days <= 0 to keep forever.
+audit:
+  retention_days: 15
+  retention_sweep_hours: 6

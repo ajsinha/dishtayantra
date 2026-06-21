@@ -167,6 +167,41 @@ config = {
 }
 ```
 
+### Publisher partitioning with `partition_key`
+
+By default the Kafka publisher sends each message with **no key**, so Kafka's
+default partitioner spreads output across the topic's partitions (round-robin /
+sticky). That maximizes spread but gives **no per-key ordering** — two messages
+for the same instrument can land on different partitions and be consumed out of
+order.
+
+Set `partition_key` to the name of a field in the outgoing message to route by
+that field instead. Its value becomes the Kafka **message key**, so all messages
+sharing it are hashed to the **same partition**:
+
+```python
+config = {
+    'destination': 'kafka://topic/trades_enriched',
+    'bootstrap_servers': ['localhost:9092'],
+    'kafka_library': 'kafka-python',
+    'partition_key': 'symbol'   # all trades for one symbol -> one partition
+}
+```
+
+This preserves per-key ordering and enables co-partitioned joins and log
+compaction downstream. Behavior notes:
+
+- **Unset** → no key → original spread behavior (fully backward compatible).
+- Field **missing** from a message, or a **non-dict** message → that message
+  falls back to no key (never errors).
+- The field value is coerced to a string key (so numeric IDs work too).
+- Partition selection is Kafka's standard key hash over the topic's partition
+  count — so create the topic with as many partitions as you want to spread
+  across. (The perftest trade generator follows the same principle: its
+  `--partition-key` chooses which field becomes the message key, and
+  `--partitions` controls how many partitions it *creates the topic with*; it
+  does not pick partition numbers itself — Kafka routes by key hash.)
+
 ### Configuration (application.yaml or application.properties)
 
 ```properties

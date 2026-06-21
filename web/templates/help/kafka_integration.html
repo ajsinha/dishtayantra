@@ -366,6 +366,23 @@ publisher = create_publisher('event_publisher', config)
 publisher.publish({'event': 'user_login', 'user_id': 123})
 publisher.stop()</pre>
 
+        <h6 class="mt-4">2a. Publisher partitioning (<code>partition_key</code>)</h6>
+        <p>By default the publisher sends with no key, so Kafka spreads messages
+        across partitions (no per-key ordering). Set <code>partition_key</code> to
+        a field name to route by that field &mdash; its value becomes the Kafka
+        message key, so all messages sharing it go to the <strong>same
+        partition</strong> (preserving per-key ordering and enabling co-partition
+        joins / log compaction). Unset, or a missing field, falls back to the
+        default no-key behavior.</p>
+        <pre class="code-block python">config = {
+    'destination': 'kafka://topic/trades_enriched',
+    'bootstrap_servers': ['localhost:9092'],
+    'partition_key': 'symbol'   # all trades for one symbol -> one partition
+}</pre>
+        <p class="text-muted"><small>Full reference: the
+        <em>Message Broker Connectors Guide</em> (Kafka section) and the
+        <em>Configuration Reference Guide</em> (publisher element).</small></p>
+
         <h6 class="mt-4">3. Basic Subscriber</h6>
         <pre class="code-block python">from core.pubsub.pubsubfactory import create_subscriber
 

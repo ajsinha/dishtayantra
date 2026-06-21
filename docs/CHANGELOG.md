@@ -5,6 +5,76 @@ records the per-release highlights that previously lived in the version.py
 docstring.
 
 
+## Version 5.25.1 highlights (fix: trade generator must not choose Kafka partitions):
+    - perftest/generate_trades.py passed an explicit partition= computed as crc32(product) % N,
+      which crashed ("Unrecognized partition") when the topic had fewer partitions than requested.
+      It now sets only the message key and lets Kafka's partitioner route by key hash (same value ->
+      same partition, any partition count). Removed partition_for/zlib + per-partition counts;
+      --partitions now only provisions the topic's partition count; --dry-run shows key grouping.
+      Message Broker Connectors Guide clarified. No server code changed.
+
+
+## Version 5.25.0 highlights (audit-trail retention):
+    - Audit trail bounded by a background sweep: events older than audit.retention_days (default 15)
+      are auto-deleted; sweep runs at startup then every audit.retention_sweep_hours (default 6);
+      set retention_days <= 0 to keep forever. AuditDAO.purge_older_than + core/audit_retention.py
+      daemon wired into the webapp lifecycle. Config keys in application.properties/yaml. Admin and
+      Configuration Reference guides updated. 3 new tests (247 total).
+
+
+## Version 5.24.0 highlights (append-only audit trail):
+    - NEW audit trail of security/admin actions, viewed at Admin -> Audit Trail (/admin/audit) with
+      actor/action/outcome filters. Auto-recorded for auth login/logout/failed-login, apikey
+      create/revoke, and user create/update/delete; each row captures timestamp, actor, action,
+      target, detail, source IP, and success. New audit_events table (AuditEvent + AuditDAO),
+      core.audit_log.audit() safe helper, routes/audit_routes.py, admin/audit.html, nav entry,
+      schema DDL, and Administration guide section. 5 new tests (244 total).
+
+
+## Version 5.23.0 highlights (admin web UI for API-key management):
+    - NEW Admin -> API Keys page (/admin/api-keys): create (with optional expiry), list, and revoke
+      API keys from the browser; clear key shown once, never stored retrievably. Keys stay bound to
+      a user and inherit its roles. Registry create_api_key gained optional expires_at. New routes
+      (routes/apikey_routes.py), template (admin/api_keys.html), nav entry. 4 new tests (239 total).
+      API Reference help page and Admin CLI guide updated.
+
+
+## Version 5.22.0 highlights (API-key authentication for admin endpoints + CLI):
+    - AuthGuards now accept a session cookie OR an API key ("Authorization: Bearer <key>" or
+      "X-API-Key" header), wiring the existing API-key store into request authentication (backward
+      compatible). NEW tools/dyapikey.py mints/lists/revokes keys locally on the server host (clear
+      key shown once; optional --expires-days). tools/dyadmin.py gained --api-key / DY_API_KEY
+      (skips session login). API Reference help page and Admin CLI (dyadmin) Guide updated. Verified
+      end-to-end against a live server.
+
+
+## Version 5.21.0 highlights (dyadmin admin CLI):
+    - NEW tools/dyadmin.py: command-line client for all admin functions of a running server
+      (monitor, dag lifecycle, maintenance/drain, runtime logging, logs, workers, native JVM/C++/
+      Rust). Session-cookie auth (POST /login), admin role required; creds via flags or
+      DY_URL/DY_ADMIN_USER/DY_ADMIN_PASSWORD. --dry-run and --json supported. Verified end-to-end
+      against a live server. NEW Admin CLI (dyadmin) Guide; README updated. Client-only.
+
+
+## Version 5.20.0 highlights (Kafka publisher partition_key):
+    - Kafka DataPublisher gained an optional "partition_key" config: name a field whose value
+      becomes the Kafka message key, routing all messages that share it to the same partition
+      (per-key ordering, co-partition joins, log compaction). Unset/missing field/non-dict ->
+      no key -> original spread behavior (backward compatible). Added a key_serializer default to
+      the kafka-python producer factory. Documented in the Configuration Reference Guide, the
+      Message Broker Connectors Guide (Kafka), and the Kafka help page.
+
+
+## Version 5.19.1 highlights (trade generator: partition by product type):
+    - perftest/generate_trades.py now routes each trade to a Kafka partition by product type
+      (default field: symbol) so same-product trades share a partition. Deterministic
+      CRC32(product) % N; message key set to the product value. New args --partitions (default 5)
+      and --partition-key (default symbol; --partitions 1 = legacy single-partition). Best-effort
+      creates the topic with N partitions; --dry-run prints the product->partition map; live run
+      prints per-partition counts. Previously trades had no key/partition (round-robin or all on
+      partition 0). perftest-only.
+
+
 ## Version 5.19.0 highlights (new JSON-array trade-ETL lane):
     - NEW perftest_trade_etl_array.json + perftest/array_trade_calculators.py: a list-of-dicts
       (JSON array) trade-ETL lane - stock BatchingSubscriptionNode + array calculators (whole

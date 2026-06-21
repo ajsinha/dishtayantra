@@ -7,15 +7,31 @@
     <list default="true" id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_repro_pool.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/dags/perftest_trade_etl_arrow.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/schema/schema_postgres.sql" beforeDir="false" afterPath="$PROJECT_DIR$/config/schema/schema_postgres.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/schema/schema_sqlite.sql" beforeDir="false" afterPath="$PROJECT_DIR$/config/schema/schema_sqlite.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/db/dao.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/db/dao.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/db/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/db/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_datapubsub.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/pubsub/kafka_python_wrappers.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/pubsub/kafka_python_wrappers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/user_registry.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/user_registry.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TUTORIAL_arrow.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TUTORIAL_arrow.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Benchmarking and Performance Harness Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Benchmarking and Performance Harness Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Administration and Maintenance Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Administration and Maintenance Guide.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/userguides/Configuration Reference Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Configuration Reference Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Message Broker Connectors Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Message Broker Connectors Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/perftest/generate_trades.py" beforeDir="false" afterPath="$PROJECT_DIR$/perftest/generate_trades.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/auth_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/auth_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/user_routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/routes/user_routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/dishtayantra_webapp.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/dishtayantra_webapp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/fastapi_compat.py" beforeDir="false" afterPath="$PROJECT_DIR$/web/fastapi_compat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/base.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/base.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/api_reference.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/api_reference.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

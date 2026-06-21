@@ -558,3 +558,40 @@ A typical runbook: freeze (global) → poll `status` until every DAG reports
 
 ---
 
+## Audit trail
+
+DishtaYantra keeps an append-only **audit trail** of security- and admin-relevant
+actions — who did what, when, and from where. View and filter it at **Admin →
+Audit Trail** (`/admin/audit`), filtering by actor, action, or outcome.
+
+Events are recorded automatically for:
+
+- `auth.login`, `auth.login_failed`, `auth.logout`
+- `apikey.create`, `apikey.revoke`
+- `user.create`, `user.update`, `user.delete`
+
+Each row captures a UTC timestamp, the actor (username, or `system`), the action,
+a target, a free-text detail, the source IP (honoring `X-Forwarded-For`), and a
+success flag. Rows are never updated or deleted by the application.
+
+The trail is stored in the `audit_events` table (auto-created on SQLite; the
+DDL is in `config/schema/schema_*.sql` for PostgreSQL deployments). To record
+events from new code paths, call the safe helper — it never raises into the
+caller, so auditing can't break the operation being audited:
+
+```python
+from core.audit_log import audit, client_ip
+audit("user.update", actor=admin_user, target=username,
+      source_ip=client_ip(request))
+```
+
+Use dotted, lowercase action names (`area.verb`) so the filter groups them well.
+
+### Retention
+
+The audit log is bounded by a background **retention sweep**: events older than
+`audit.retention_days` (default **15**) are deleted automatically. The sweep
+runs once at startup and then every `audit.retention_sweep_hours` (default 6).
+Set `audit.retention_days` to `0` (or any value &le; 0) to disable purging and
+keep events indefinitely. Both keys live in `application.properties` /
+`application.yaml`; see the Configuration Reference Guide.

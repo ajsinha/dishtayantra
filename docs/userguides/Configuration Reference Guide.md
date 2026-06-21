@@ -100,6 +100,16 @@ values and explanations. There are two layers:
 | `db.sqlite.path` | `data/dishtayantra.db` | SQLite file path. |
 | `db.postgres.host` / `.port` / `.database` / `.user` / `.password` | `localhost` / `5432` / `dishtayantra` / `${POSTGRES_USER:...}` / `${POSTGRES_PASSWORD:}` | PostgreSQL settings (apply `config/schema/schema_postgres.sql` once). |
 
+## `audit` (audit-trail retention)
+
+The audit trail (Admin &rarr; Audit Trail) is bounded by a background sweep that
+deletes old events.
+
+| Key | Sample | Explanation |
+|-----|--------|-------------|
+| `audit.retention_days` | `15` | Days to keep audit events; older rows are purged. Default `15`. Set to `0` (or &le; 0) to disable purging and keep events indefinitely. |
+| `audit.retention_sweep_hours` | `6` | How often the retention sweep runs (hours). Default `6`. The sweep also runs once at startup. |
+
 ## `ha` (High Availability manager)
 
 | Key | Sample | Explanation |
@@ -191,6 +201,7 @@ values and explanations. There are two layers:
 | `config.batch_size` | `500` | Max messages per publish batch. |
 | `config.max_queue_depth` | `100000` | Publisher queue capacity. |
 | `config.publish_interval` | `0.0` | Optional pacing between publishes (s). |
+| `config.partition_key` | `"symbol"` | **Kafka only.** Name of a field in each outgoing message; its value becomes the Kafka message key, so all messages sharing that value are routed to the **same partition** (preserves per-key ordering, enables co-partition joins and log compaction). When unset, messages are sent with no key and Kafka's default partitioner spreads them (the original behavior). Missing field or non-dict message falls back to no key. |
 | `config.<connector-specific>` | — | e.g. `bootstrap_servers`, `kafka_library`; see the connector's own guide. |
 
 ## Source / destination URI schemes

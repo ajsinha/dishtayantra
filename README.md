@@ -6,7 +6,7 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-5.19.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-5.25.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -130,6 +130,7 @@ when a true cross-record dependency needs one-at-a-time ordering.
 - **System Logs Viewer**: View, filter, search, and download application logs
 - **Worker Pool Management**: Monitor and control worker processes
 - **Maintenance / Drain Mode**: freeze subscribers (global, per-DAG, or per-subscriber) to quiesce the server for a maintenance window; live drain status accounts for in-flight queues *and* the async-egress WAL (`/admin/maintenance`)
+- **Admin CLI** (`tools/dyadmin.py`): scriptable command-line client for all admin functions (monitor, DAG lifecycle, maintenance/drain, logging, workers, native modules); see the *Admin CLI (dyadmin) Guide*
 - **Runtime Logging Control**: change global and per-logger levels on a live server with no restart, broadcast to all worker processes (`/admin/logging`)
 - **JVM Management**: Java gateway status and control
 - **C++ Management**: pybind11 module administration
@@ -446,7 +447,7 @@ status = server.get_server_status()
 
 ## Version & History
 
-Current version: **5.19.0** (the authoritative version is always
+Current version: **5.25.1** (the authoritative version is always
 `core/version.py::VERSION`, which every module, template, and banner imports —
 nothing hard-codes a version string). DishtaYantra is developed as a continuously
 evolving system; rather than a release-by-release changelog, the current

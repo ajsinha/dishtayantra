@@ -1,0 +1,226 @@
+{
+  "name": "perftest_trade_etl_arrow",
+  "subscribers": [
+    {
+      "name": "trade_kafka",
+      "config": {
+        "source": "kafka://topic/perftest_trades",
+        "bootstrap_servers": [
+          "localhost:9092"
+        ],
+        "group_id": "perftest_trade_etl_arrow",
+        "kafka_library": "kafka-python",
+        "max_depth": 2000000,
+        "idle_poll_interval": 0.002,
+        "_idle_note": "Deep queue so the batching ingest can drain large batches under load; latency at 10k/s is dominated by batch fill, not poll interval."
+      }
+    }
+  ],
+  "publishers": [
+    {
+      "name": "output_file",
+      "config": {
+        "destination": "file:///tmp/perftest/trade_etl_arrow_output.jsonl"
+      }
+    },
+    {
+      "name": "output_kafka",
+      "config": {
+        "destination": "kafka://topic/perftest_trades_enriched",
+        "bootstrap_servers": [
+          "localhost:9092"
+        ],
+        "kafka_library": "kafka-python"
+      }
+    },
+    {
+      "name": "output_kafka_async",
+      "config": {
+        "destination": "kafka://topic/perftest_trades_enriched_async",
+        "bootstrap_servers": [
+          "localhost:9092"
+        ],
+        "kafka_library": "kafka-python",
+        "async_egress": true,
+        "_async_note": "async_egress:true routes this publisher through the WAL-backed AsyncPublisher when egress.async.enabled=true, for async vs sync side-by-side benchmarking."
+      }
+    }
+  ],
+  "calculators": [
+    {
+      "name": "validate",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowValidateCalculator",
+      "config": {}
+    },
+    {
+      "name": "fx",
+      "type": "perftest.arrow_etl_calculators.ArrowFxConvertCalculator",
+      "config": {
+        "default_rate": 1
+      }
+    },
+    {
+      "name": "notional",
+      "type": "perftest.arrow_etl_calculators.ArrowNotionalCalculator",
+      "config": {}
+    },
+    {
+      "name": "fees",
+      "type": "perftest.arrow_etl_calculators.ArrowFeeCalculator",
+      "config": {
+        "commission_rate": 0.0005,
+        "exchange_fee_rate": 0.0001,
+        "min_fee": 0.5
+      }
+    },
+    {
+      "name": "risk",
+      "type": "perftest.arrow_etl_calculators.ArrowRiskScoreCalculator",
+      "config": {}
+    },
+    {
+      "name": "classify",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowClassifyCalculator",
+      "config": {}
+    },
+    {
+      "name": "anomaly",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowAnomalyCalculator",
+      "config": {
+        "fat_finger_qty": 1000000,
+        "max_price_usd": 1000000
+      }
+    },
+    {
+      "name": "summarize",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowSummarizeCalculator",
+      "config": {}
+    }
+  ],
+  "transformers": [],
+  "nodes": [
+    {
+      "name": "trade_ingest",
+      "type": "perftest.arrow_trade_nodes.NormalizingArrowBatchingSubscriptionNode",
+      "config": {
+        "batch": {
+          "max_size": 5000
+        },
+        "extras_key": "extras_json"
+      },
+      "subscriber": "trade_kafka",
+      "calculator": "validate"
+    },
+    {
+      "name": "fx_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "fx"
+    },
+    {
+      "name": "notional_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "notional"
+    },
+    {
+      "name": "fees_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "fees"
+    },
+    {
+      "name": "risk_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "risk"
+    },
+    {
+      "name": "classify_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "classify"
+    },
+    {
+      "name": "anomaly_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "anomaly"
+    },
+    {
+      "name": "summarize_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "summarize"
+    },
+    {
+      "name": "file_sink",
+      "type": "ArrowFlatteningPublicationNode",
+      "config": {
+        "publishers": [
+          "output_file"
+        ]
+      }
+    },
+    {
+      "name": "kafka_sink",
+      "type": "ArrowFlatteningPublicationNode",
+      "config": {
+        "publishers": [
+          "output_kafka"
+        ]
+      }
+    },
+    {
+      "name": "kafka_async_sink",
+      "type": "ArrowFlatteningPublicationNode",
+      "config": {
+        "publishers": [
+          "output_kafka_async"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "trade_ingest",
+      "to_node": "fx_node"
+    },
+    {
+      "from_node": "fx_node",
+      "to_node": "notional_node"
+    },
+    {
+      "from_node": "notional_node",
+      "to_node": "fees_node"
+    },
+    {
+      "from_node": "fees_node",
+      "to_node": "risk_node"
+    },
+    {
+      "from_node": "risk_node",
+      "to_node": "classify_node"
+    },
+    {
+      "from_node": "classify_node",
+      "to_node": "anomaly_node"
+    },
+    {
+      "from_node": "anomaly_node",
+      "to_node": "summarize_node"
+    },
+    {
+      "from_node": "summarize_node",
+      "to_node": "file_sink"
+    },
+    {
+      "from_node": "summarize_node",
+      "to_node": "kafka_sink"
+    },
+    {
+      "from_node": "summarize_node",
+      "to_node": "kafka_async_sink"
+    }
+  ]
+}
