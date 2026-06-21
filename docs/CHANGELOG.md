@@ -5,6 +5,30 @@ records the per-release highlights that previously lived in the version.py
 docstring.
 
 
+## Version 5.19.0 highlights (new JSON-array trade-ETL lane):
+    - NEW perftest_trade_etl_array.json + perftest/array_trade_calculators.py: a list-of-dicts
+      (JSON array) trade-ETL lane - stock BatchingSubscriptionNode + array calculators (whole
+      list per calculate()) + stock FlatteningPublicationNode sinks, no Arrow. Bit-for-bit output
+      parity with the row lane; speedup is pure batch amortization (sits between row and Arrow).
+      Indicative calc-chain throughput on 50k heterogeneous trades: row ~7.4k, array ~17k (2.3x),
+      arrow ~55k (7.4x). Documented in the Benchmarking and Performance Harness Guide.
+    - Additive/opt-in; engine untouched.
+
+
+## Version 5.18.3 highlights (Configuration Reference Guide: heterogeneous Arrow source node):
+    - Added "Heterogeneous Arrow source: NormalizingArrowBatchingSubscriptionNode" to the
+      Configuration Reference Guide (config keys batch.max_size/extras_key/core_fields + wiring
+      snippet + pointer to the Arrow tutorial). Mirrors the 5.18.2 Arrow-guide detail.
+
+
+## Version 5.18.2 highlights (Arrow guide: heterogeneous-attribute handling in full detail):
+    - docs/TUTORIAL_arrow.md "Heterogeneous sources" expanded from overview to detailed
+      reference: stable core-schema table (type/default/coercion), worked before->after example
+      (nested dicts/lists preserved in extras_json), robustness rules, node config
+      (batch.max_size/extras_key/core_fields), DAG wiring snippet, sink round-trip, and the
+      compute-on-typed-columns perf rule. All values verified against arrow_trade_nodes.py.
+
+
 ## Version 5.18.1 highlights (fix: DAG state page crashed for Arrow DAGs):
     - /dag/<name>/state rendered each node's raw _input/_output via the template's `| tojson`
       filter. Arrow nodes hold a pyarrow.RecordBatch (not JSON-serializable), so the state page

@@ -739,22 +739,110 @@ ragged dicts straight into `records_to_batch` (which infers the schema from the
 first row only, so it silently drops attributes missing from row 0 and raises on
 cross-row type conflicts).
 
-The pattern, shown end-to-end in `perftest/perftest_trade_etl_arrow.json`:
+The pattern, shown end-to-end in `perftest/perftest_trade_etl_arrow.json` and
+implemented by `perftest/arrow_trade_nodes.py`'s
+`NormalizingArrowBatchingSubscriptionNode`:
 
 - A small set of **core attributes** that are always present becomes typed
-  columns (trade_id, symbol, side, quantity, price, currency, ...).
+  columns.
 - **Everything else** — including nested dicts and lists — is preserved losslessly
   in a single JSON **`extras_json`** column, so nothing is dropped and the schema
   is identical for every batch regardless of which optional attributes appear.
 
-`perftest/arrow_trade_nodes.py`'s `NormalizingArrowBatchingSubscriptionNode` does
-exactly this: it drains up to `batch.max_size` heterogeneous trade dicts and
-builds one stable-schema RecordBatch. The vectorized calculators then operate on
-the typed core columns; the variable data rides through untouched in `extras_json`
-and is restored at the flattening sink. Highest throughput comes from promoting
-**every field you compute on** into a typed core column and leaving only
-pure pass-through data in `extras_json` — if a calculator has to parse
-`extras_json` per row, you're back to row speed for that stage.
+#### The stable schema
+
+The node drains up to `batch.max_size` raw trade dicts and builds one RecordBatch
+with this fixed schema (the default `DEFAULT_CORE_FIELDS`):
+
+| Column | Arrow type | Default if missing | Coercion |
+|--------|-----------|--------------------|----------|
+| `trade_id` | string | `""` | to string |
+| `seq` | int64 | `null` | to int (or null) |
+| `symbol` | string | `""` | upper-cased, trimmed |
+| `side` | string | `""` | upper-cased, trimmed |
+| `quantity` | float64 | `0.0` | to float |
+| `price` | float64 | `0.0` | to float |
+| `currency` | string | `"USD"` | upper-cased, trimmed |
+| `extras_json` | string | `"{}"` | JSON of all non-core keys |
+
+So normalization (upper-casing symbol/side/currency) is folded into ingest, and
+every batch has exactly these 8 columns no matter how ragged the input is.
+
+#### Worked example
+
+Three trades with different shapes go in:
+
+```json
+{"trade_id":"T1","symbol":"aapl","side":"buy","quantity":100,"price":150.0,"currency":"usd","trader":"alice","meta":{"src":"algo"}}
+{"trade_id":"T2","symbol":"vod","side":"sell","quantity":2000,"price":0.8,"currency":"GBP","strategy":"twap","legs":[{"id":1},{"id":2}]}
+{"trade_id":"T3","symbol":"7203","side":"BUY","quantity":5000,"price":2500,"currency":"JPY"}
+```
+
+Out comes one RecordBatch with identical columns for every row. The core columns
+are typed and normalized; the variable attributes (different per row, including
+the nested `meta` dict and the `legs` list) are JSON-packed into `extras_json`:
+
+| trade_id | symbol | side | quantity | price | currency | extras_json |
+|----------|--------|------|----------|-------|----------|-------------|
+| T1 | AAPL | BUY | 100.0 | 150.0 | USD | `{"trader":"alice","meta":{"src":"algo"}}` |
+| T2 | VOD | SELL | 2000.0 | 0.8 | GBP | `{"strategy":"twap","legs":[{"id":1},{"id":2}]}` |
+| T3 | 7203 | BUY | 5000.0 | 2500.0 | JPY | `{}` |
+
+#### Robustness: never drops, never raises
+
+- A **missing core field** falls back to its default (e.g. T3 had no extras → `{}`;
+  a trade with no `currency` becomes `"USD"`).
+- A **bad/garbage value** is coerced rather than crashing (a non-numeric
+  `quantity` becomes `0.0`); the coercion helpers never raise.
+- **Cross-row type conflicts** in optional attributes (e.g. `meta` is a dict in
+  one trade and a string in another) are a non-issue, because optional attributes
+  are JSON-stringified into `extras_json` rather than typed into a column. This is
+  exactly the case that crashes a naive `records_to_batch`.
+
+#### Configuring it
+
+The node is selected by dotted-path `type` and is fully config-driven:
+
+```json
+{
+  "name": "trade_ingest",
+  "type": "perftest.arrow_trade_nodes.NormalizingArrowBatchingSubscriptionNode",
+  "subscriber": "trade_kafka",
+  "calculator": "validate",
+  "config": {
+    "batch": { "max_size": 5000 },
+    "extras_key": "extras_json",
+    "core_fields": [
+      {"name": "trade_id", "type": "string",  "coerce": "str",   "default": ""},
+      {"name": "quantity", "type": "float64", "coerce": "float", "default": 0.0}
+    ]
+  }
+}
+```
+
+- `batch.max_size` — how many trades to drain into one RecordBatch per cycle.
+- `extras_key` — rename the JSON catch-all column (default `extras_json`).
+- `core_fields` — override the default schema for a non-trade domain. Each entry
+  is `{name, type (string|float64|int64|bool), coerce (str|upper|float|int),
+  default}`. Omit it to use the trade defaults above.
+
+#### The round trip
+
+Downstream, the vectorized calculators operate on the typed core columns; the
+`extras_json` column rides through untouched. At the sink,
+`ArrowFlatteningPublicationNode` converts the batch back to one dict per row
+(`to_pylist`), so each published message carries the computed columns **plus**
+`extras_json` — the original variable attributes, intact and lossless. The
+external/broker contract stays one-message-in / one-message-out; batching is
+purely internal.
+
+#### Performance note
+
+Highest throughput comes from promoting **every field you compute on** into a
+typed core column and leaving only pure pass-through data in `extras_json`. If a
+calculator has to `json.loads(extras_json)` per row to read a variable attribute,
+that stage is back to row speed — so if an optional attribute becomes something
+you compute on, add it as a (nullable) core column instead.
 
 ### Known limits of the first transport version (fail-fast, not silent)
 

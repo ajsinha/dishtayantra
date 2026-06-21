@@ -249,6 +249,52 @@ values and explanations. There are two layers:
 | `interval` | `60` | Tick interval (seconds) for `MetronomeNode`. |
 | `extras_key` | `"extras_json"` | (Custom Arrow trade node) column holding non-core attributes. |
 
+## Heterogeneous Arrow source: `NormalizingArrowBatchingSubscriptionNode`
+
+For an Arrow path fed by a source whose records carry **different attribute sets**
+per message, `perftest.arrow_trade_nodes.NormalizingArrowBatchingSubscriptionNode`
+normalizes each batch to a **stable schema** at ingress: a fixed set of typed
+**core columns** plus one JSON `extras_json` column that losslessly carries every
+non-core attribute (including nested dicts/lists). Every batch then has identical
+columns regardless of input shape, which is what lets a heterogeneous feed ride
+the columnar path. (Full mechanism, worked example, and robustness rules are in
+the **Arrow Columnar Data Plane tutorial**, "Heterogeneous sources".)
+
+Selected by dotted-path `type`; config keys:
+
+| Key | Sample | Explanation |
+|-----|--------|-------------|
+| `batch.max_size` | `5000` | Messages drained into one RecordBatch per cycle. |
+| `extras_key` | `"extras_json"` | Name of the JSON catch-all column for non-core attributes. |
+| `core_fields` | see below | Override the default core schema (omit to use the trade defaults: `trade_id`, `seq`, `symbol`, `side`, `quantity`, `price`, `currency`). |
+
+Each `core_fields` entry is `{name, type, coerce, default}`:
+
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `name` | `"quantity"` | Output column name. |
+| `type` | `string` \| `float64` \| `int64` \| `bool` | Arrow column type. |
+| `coerce` | `str` \| `upper` \| `float` \| `int` | Per-value coercion (never raises; bad input → default). |
+| `default` | `0.0` | Value used when the attribute is missing. |
+
+```json
+{
+  "name": "trade_ingest",
+  "type": "perftest.arrow_trade_nodes.NormalizingArrowBatchingSubscriptionNode",
+  "subscriber": "trade_kafka",
+  "calculator": "validate",
+  "config": {
+    "batch": { "max_size": 5000 },
+    "extras_key": "extras_json",
+    "core_fields": [
+      {"name": "trade_id", "type": "string",  "coerce": "str",   "default": ""},
+      {"name": "symbol",   "type": "string",  "coerce": "upper", "default": ""},
+      {"name": "quantity", "type": "float64", "coerce": "float", "default": 0.0}
+    ]
+  }
+}
+```
+
 ## Calculator / transformer element
 
 | Key | Sample | Explanation |

@@ -72,3 +72,32 @@ these green so the harness itself never silently rots.
 Alongside the workloads, `benchmarks/` includes exploratory spikes used to
 de-risk roadmap items — Arrow vectorization, the A1 vertical slice, and
 free-threading readiness. These are research scripts, not CI gates.
+
+## The three trade-ETL lanes (row / array / Arrow)
+
+The same trade-ETL pipeline ships in three forms so you can measure where speedup
+comes from. All three are output-equivalent per trade (bit-for-bit, modulo the
+processing timestamp); they differ only in the unit of work on each edge:
+
+| Lane | DAG | Unit of work on edges | Where the speed comes from |
+|------|-----|----------------------|----------------------------|
+| Row | `perftest/perftest_trade_etl.json` | one message | baseline |
+| Array | `perftest/perftest_trade_etl_array.json` | a Python list of dicts (JSON array) | batch amortization of per-message node/queue/gate overhead |
+| Arrow | `perftest/perftest_trade_etl_arrow.json` | an immutable `pyarrow.RecordBatch` | the above **plus** columnar C vectorization |
+
+The array lane uses a stock `BatchingSubscriptionNode` (drains N messages into
+`{batch: [...]}`), the array calculators in `perftest/array_trade_calculators.py`
+(each processes the whole list in one `calculate()` call), and stock
+`FlatteningPublicationNode` sinks. No Arrow dependency.
+
+Indicative calculator-chain throughput (50k heterogeneous trades, ~9 stages,
+single thread, CPython 3.12 — excludes Kafka I/O):
+
+- Row: ~7,400 rec/s
+- Array: ~17,000 rec/s (~2.3x row)
+- Arrow: ~55,000 rec/s (~7.4x row, ~3.2x array)
+
+Takeaway: roughly half the gap from row to Arrow is just batching (the array lane
+gets it with plain Python and no schema); the rest needs columnar vectorization.
+Pick the array lane when data is too irregular/nested to normalize into Arrow
+columns, or as a baseline that isolates batching gains from vectorization gains.

@@ -9,60 +9,13 @@
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/dags/perftest_trade_etl_arrow.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/BATCH_FILE_PROCESSING.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/BATCH_FILE_PROCESSING.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TUTORIAL_arrow_dag.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TUTORIAL_eod_batch.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TUTORIAL_eod_batch.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/TUTORIAL_high_performance_arrow.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/design/A1-recordbatch-edges.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/design/A1-recordbatch-edges.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/ActiveMQ DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Admin and System Monitoring Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Aerospike DataPublisher Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/AshRedis DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Custom DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Database Connection Pooling Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/File DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/HolderDataSubscriber &amp; HolderDataPublisher.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/In-Memory DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/In-Memory Redis Clone.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Kafka DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/LMDB Zero-Copy Integration Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Logging and Observability Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Message Router Components - Complete Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Metronome DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Multi-Language Calculator Integration Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Native Arrow Calculators (Zero-Copy C Data Interface) Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Prometheus Monitoring Integration Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/REST DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/RabbitMQ DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Redis DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/Resilient Connectors Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/SQL DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/TIBCO EMS DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/User Management Architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/User Management Architecture.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/WebAssembly (WASM) Sandboxed Calculators Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/WebSphere MQ (IBM MQ) DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/userguides/gRPC DataPublisher and DataSubscriber Setup Guide.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/perftest/generate_trades.py" beforeDir="false" afterPath="$PROJECT_DIR$/perftest/generate_trades.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/activemq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/activemq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/autoclone.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/autoclone.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/batch_file_processing.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/batch_file_processing.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/TUTORIAL_arrow.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/TUTORIAL_arrow.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Benchmarking and Performance Harness Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Benchmarking and Performance Harness Guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/userguides/Configuration Reference Guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/userguides/Configuration Reference Guide.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/ibmmq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/ibmmq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/inmemory_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/inmemory_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/kafka_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/lmdb_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/prometheus_monitoring.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/prometheus_monitoring.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/py4j_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/py4j_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/pybind11_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rabbitmq_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rabbitmq_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/redis_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/redis_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rest_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rest_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/rust_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/rust_integration.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/subgraph.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/subgraph.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/tibco_integration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/tibco_integration.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
