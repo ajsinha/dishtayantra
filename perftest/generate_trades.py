@@ -2,21 +2,42 @@
 """
 Trade-data load generator for the DishtaYantra performance test.
 
-Generates a configurable number of realistic trade records and publishes them
-to a Kafka topic on localhost. The 'perftest_trade_etl' DAG consumes that topic,
-runs the 9-stage ETL, and writes enriched output to a file sink.
+Generates a configurable number of HETEROGENEOUS trade records and publishes
+them to a Kafka topic on localhost. The 'perftest_trade_etl' (row) DAG and the
+'perftest_trade_etl_arrow' (columnar RecordBatch) DAG both consume that topic,
+so the same stream exercises - and lets you compare - both paths.
+
+Heterogeneity model
+-------------------
+A small set of CORE attributes is ALWAYS present, because both pipelines rely on
+them as a contract: trade_id, seq, symbol, side, quantity, price, currency. The
+row ETL requires them; the Arrow ingest maps them to typed columns. Everything
+else varies wildly so the stream is genuinely ragged:
+
+  * different trades carry different OPTIONAL key sets (shape differs per record),
+  * nested dicts (settlement, counterparty, algo_params with dict-in-dict),
+  * lists and lists-of-dicts (tags, allocations, option legs, audit_trail),
+  * a few keys deliberately change TYPE across trades (notes str|list|dict,
+    ref int|str, rate float|str) to stress the extras path,
+  * several archetypes (simple / block / multi_leg / algo / cross_ccy /
+    minimal / kitchen_sink) so overall record shape differs structurally.
+
+In the Arrow path all non-core attributes (including the nested/list ones) are
+preserved losslessly in the JSON ``extras_json`` column; in the row path they
+ride through deepcopy and are projected away at summarize. Use ``--uniform`` to
+fall back to the old flat single-shape records for an apples-to-apples baseline.
 
 Usage:
-    python3 perftest/generate_trades.py                 # 10000 trades, defaults
+    python3 perftest/generate_trades.py                 # 10000 heterogeneous trades
     python3 perftest/generate_trades.py --count 50000
-    python3 perftest/generate_trades.py --count 1000 --rate 500   # 500 msg/sec
-    python3 perftest/generate_trades.py --topic perftest_trades \
-        --bootstrap localhost:9092 --anomaly-pct 2 --seed 42
+    python3 perftest/generate_trades.py --count 1000 --rate 500     # 500 msg/sec
+    python3 perftest/generate_trades.py --dry-run --count 8         # print samples
+    python3 perftest/generate_trades.py --uniform                   # old flat shape
+    python3 perftest/generate_trades.py --hetero-level high --seed 42
 
-After it finishes it prints how many were sent and the elapsed time; pair that
-with the line count of the DAG's output file to measure end-to-end throughput:
-
+After it finishes, compare the DAG output line counts to measure throughput:
     wc -l /tmp/perftest/trade_etl_output.jsonl
+    wc -l /tmp/perftest/trade_etl_arrow_output.jsonl
 """
 
 import argparse
@@ -38,46 +59,188 @@ CURRENCIES = ["USD", "USD", "USD", "EUR", "GBP", "JPY", "CHF", "INR", "AUD", "CA
 SIDES = ["BUY", "SELL"]
 DESKS = ["EQ-CASH", "EQ-DERIV", "FX-SPOT", "RATES", "CREDIT"]
 TRADERS = ["tgupta", "jsmith", "mwang", "akhan", "lpatel", "rgarcia", "dmuller"]
+VENUES = ["NYSE", "NASDAQ", "LSE", "XETRA", "TSE"]
+ARCHETYPES = ["simple", "block", "multi_leg", "algo", "cross_ccy",
+              "minimal", "kitchen_sink"]
 
 
-def make_trade(i, rng, anomaly_pct):
-    """Build one realistic trade record. A small percentage are anomalous.
-
-    Every record is guaranteed UNIQUE even if a trade_id repeats: the
-    monotonic `seq`, a high-resolution `event_ts`, and a per-record price
-    jitter ensure no two emitted dicts are identical (important when the DAG
-    runs with change-detection rather than streaming mode).
-    """
-    symbol = rng.choice(SYMBOLS)
-    side = rng.choice(SIDES)
-    currency = rng.choice(CURRENCIES)
-    quantity = rng.choice([100, 200, 250, 500, 1000, 2500, 5000, 10000])
-    # base price plus a tiny unique jitter so identical (symbol, qty) draws
-    # still differ from one another
-    price = round(rng.uniform(5.0, 950.0) + (i % 1000) * 0.000001, 6)
-
-    trade = {
+def _core(i, rng):
+    """The always-present contract fields. Both pipelines depend on these."""
+    return {
         "trade_id": f"T{1_000_000 + i}",
-        "seq": i,                       # monotonic, guarantees uniqueness
-        "symbol": symbol,
-        "side": side,
-        "quantity": quantity,
-        "price": price,
-        "currency": currency,
-        # client_id lets the SAME trade stream drive client-centric pipelines
-        # (e.g. the EOD running-exposure example) without a separate generator.
-        "client_id": f"C{(i % 5) + 1}",
-        "desk": rng.choice(DESKS),
-        "trader": rng.choice(TRADERS),
-        "venue": rng.choice(["NYSE", "NASDAQ", "LSE", "XETRA", "TSE"]),
-        "client_order_id": f"OID{rng.randint(10**8, 10**9)}",
-        "ts_event": time.time(),
-        "event_ts": time.perf_counter_ns(),   # high-res, unique per record
-        # a field the ETL deliberately drops, to exercise projection work
-        "internal_only": "scratch",
+        "seq": i,                                   # monotonic -> unique
+        "symbol": rng.choice(SYMBOLS),
+        "side": rng.choice(SIDES),
+        "quantity": rng.choice([100, 200, 250, 500, 1000, 2500, 5000, 10000]),
+        # base price + tiny unique jitter so identical draws still differ
+        "price": round(rng.uniform(5.0, 950.0) + (i % 1000) * 0.000001, 6),
+        "currency": rng.choice(CURRENCIES),
     }
 
-    # Inject occasional anomalies so the ETL's anomaly stage has work to flag.
+
+# ---- nested / list optional blocks (each returns a {key: value}) ------------ #
+def _settlement(rng):
+    return {"settlement": {
+        "date": f"2026-0{rng.randint(1, 9)}-{rng.randint(10, 28)}",
+        "method": rng.choice(["DVP", "FOP", "RVP"]),
+        "account": f"ACC{rng.randint(1000, 9999)}",
+        "custodian": rng.choice(["BNY", "STT", "JPM", "CITI"]),
+    }}
+
+
+def _counterparty(rng):
+    return {"counterparty": {
+        "id": f"CP{rng.randint(100, 999)}",
+        "name": rng.choice(["Acme Cap", "Globex", "Initech", "Soylent", "Hooli"]),
+        "lei": "".join(rng.choice("0123456789ABCDEFGHJKLMNPQRSTUVWXYZ") for _ in range(20)),
+        "country": rng.choice(["US", "GB", "DE", "JP", "SG"]),
+    }}
+
+
+def _algo_params(rng):
+    # dict-in-dict (deeper nesting)
+    return {"algo_params": {
+        "type": rng.choice(["VWAP", "TWAP", "POV", "IS"]),
+        "start": "09:30", "end": "16:00",
+        "participation_pct": round(rng.uniform(2, 25), 1),
+        "limits": {"min_clip": rng.randint(100, 500),
+                   "max_clip": rng.randint(1000, 5000),
+                   "dark_ok": rng.choice([True, False])},
+    }}
+
+
+def _compliance(rng):
+    # dict containing a list
+    return {"compliance": {
+        "restricted": rng.choice([True, False]),
+        "checks": rng.sample(["AML", "KYC", "BEST_EX", "WASH", "POSITION_LIMIT"],
+                             k=rng.randint(1, 4)),
+    }}
+
+
+def _allocations(rng):
+    # list of dicts (block trade split across accounts)
+    n = rng.randint(2, 5)
+    return {"allocations": [
+        {"account": f"FUND{rng.randint(1, 20)}",
+         "quantity": rng.choice([100, 250, 500, 1000]),
+         "pct": round(rng.uniform(5, 60), 1)} for _ in range(n)]}
+
+
+def _legs(rng):
+    # list of dicts (multi-leg option strategy)
+    n = rng.randint(2, 4)
+    return {"legs": [
+        {"leg_id": k + 1, "symbol": rng.choice(SYMBOLS),
+         "side": rng.choice(SIDES), "ratio": rng.choice([1, 1, 2, 3]),
+         "strike": round(rng.uniform(50, 500), 2),
+         "expiry": f"2026-{rng.randint(1, 12):02d}-15"} for k in range(n)]}
+
+
+def _audit_trail(rng):
+    actions = ["CREATED", "ROUTED", "AMENDED", "PARTIAL_FILL", "FILLED"]
+    n = rng.randint(1, 4)
+    return {"audit_trail": [
+        {"ts": time.time() - rng.uniform(0, 60),
+         "action": rng.choice(actions),
+         "user": rng.choice(TRADERS)} for _ in range(n)]}
+
+
+def _tags(rng):
+    pool = ["urgent", "client", "hedge", "rebalance", "tax-lot", "program",
+            "crossing", "facilitation", "risk", "sweep"]
+    return {"tags": rng.sample(pool, k=rng.randint(1, 4))}
+
+
+# flat optional fields (simple scalars)
+def _flat_optionals(rng):
+    out = {}
+    pool = {
+        "client_id": lambda: f"C{rng.randint(1, 5)}",
+        "desk": lambda: rng.choice(DESKS),
+        "trader": lambda: rng.choice(TRADERS),
+        "venue": lambda: rng.choice(VENUES),
+        "client_order_id": lambda: f"OID{rng.randint(10**8, 10**9)}",
+        "portfolio": lambda: f"PF{rng.randint(1, 50)}",
+        "region": lambda: rng.choice(["AMER", "EMEA", "APAC"]),
+        "broker": lambda: rng.choice(["GS", "MS", "JPM", "UBS", "BARC"]),
+        "ts_event": lambda: time.time(),
+        "event_ts": lambda: time.perf_counter_ns(),
+        "internal_only": lambda: "scratch",
+        "urgency": lambda: rng.choice(["LOW", "NORMAL", "HIGH"]),
+    }
+    for key in rng.sample(list(pool), k=rng.randint(1, len(pool))):
+        out[key] = pool[key]()
+    return out
+
+
+# keys whose TYPE varies across trades (stress the extras path)
+def _type_varying(rng):
+    out = {}
+    if rng.random() < 0.5:
+        out["notes"] = rng.choice([
+            "manual booking",
+            ["reviewed", "approved"],
+            {"text": "see ticket", "author": rng.choice(TRADERS)},
+        ])
+    if rng.random() < 0.4:
+        out["ref"] = rng.choice([rng.randint(1, 10**6), f"REF-{rng.randint(1, 999)}"])
+    if rng.random() < 0.3:
+        out["rate"] = rng.choice([round(rng.uniform(0.5, 2.0), 4),
+                                  str(round(rng.uniform(0.5, 2.0), 4))])
+    return out
+
+
+_NESTED_BLOCKS = [_settlement, _counterparty, _algo_params, _compliance,
+                  _audit_trail, _tags]
+_LIST_HEAVY = [_allocations, _legs, _audit_trail]
+
+# how many optional blocks to attach, by heterogeneity level
+_LEVELS = {"low": (0, 2), "med": (1, 4), "high": (3, 7)}
+
+
+def make_trade(i, rng, anomaly_pct, uniform=False, level="med"):
+    """Build one trade. With uniform=True, emit the legacy flat single shape;
+    otherwise pick an archetype and attach a random mix of nested/list/scalar
+    optional fields so records differ in shape and depth."""
+    trade = _core(i, rng)
+
+    if uniform:
+        trade.update({
+            "client_id": f"C{(i % 5) + 1}", "desk": rng.choice(DESKS),
+            "trader": rng.choice(TRADERS), "venue": rng.choice(VENUES),
+            "client_order_id": f"OID{rng.randint(10**8, 10**9)}",
+            "ts_event": time.time(), "event_ts": time.perf_counter_ns(),
+            "internal_only": "scratch",
+        })
+    else:
+        archetype = rng.choice(ARCHETYPES)
+        trade["archetype"] = archetype          # so you can see the shape mix
+        if archetype != "minimal":
+            trade.update(_flat_optionals(rng))
+            trade.update(_type_varying(rng))
+
+        if archetype == "block":
+            trade.update(_allocations(rng)); trade.update(_counterparty(rng))
+        elif archetype == "multi_leg":
+            trade.update(_legs(rng)); trade.update(_algo_params(rng))
+        elif archetype == "algo":
+            trade.update(_algo_params(rng)); trade.update(_tags(rng))
+        elif archetype == "cross_ccy":
+            trade.update(_settlement(rng)); trade.update(_counterparty(rng))
+            trade["fx"] = {"pair": f"{trade['currency']}USD",
+                           "tenor": rng.choice(["SPOT", "TN", "SN"])}
+        elif archetype == "kitchen_sink":
+            for blk in _NESTED_BLOCKS + _LIST_HEAVY:
+                trade.update(blk(rng))
+        elif archetype == "simple":
+            lo, hi = _LEVELS.get(level, _LEVELS["med"])
+            for blk in rng.sample(_NESTED_BLOCKS,
+                                  k=min(rng.randint(lo, hi), len(_NESTED_BLOCKS))):
+                trade.update(blk(rng))
+        # 'minimal' stays core-only (exercises the no-extras path)
+
+    # Anomaly injection (on the core, so both pipelines flag the same records).
     if rng.random() * 100 < anomaly_pct:
         kind = rng.choice(["fat_finger", "price_outlier", "bad_side", "neg_price"])
         if kind == "fat_finger":
@@ -113,7 +276,7 @@ def build_producer(bootstrap):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Generate trades and publish to Kafka.")
+    ap = argparse.ArgumentParser(description="Generate heterogeneous trades and publish to Kafka.")
     ap.add_argument("--count", type=int, default=DEFAULT_COUNT,
                     help=f"number of trades to send (default {DEFAULT_COUNT})")
     ap.add_argument("--topic", default=DEFAULT_TOPIC,
@@ -124,6 +287,10 @@ def main():
                     help="max messages/sec (0 = as fast as possible)")
     ap.add_argument("--anomaly-pct", type=float, default=1.0,
                     help="percentage of anomalous trades (default 1.0)")
+    ap.add_argument("--hetero-level", choices=["low", "med", "high"], default="med",
+                    help="how many optional blocks 'simple' trades carry (default med)")
+    ap.add_argument("--uniform", action="store_true",
+                    help="emit the legacy flat single-shape records (baseline)")
     ap.add_argument("--seed", type=int, default=None,
                     help="RNG seed for reproducible data")
     ap.add_argument("--dry-run", action="store_true",
@@ -133,15 +300,18 @@ def main():
     rng = random.Random(args.seed)
 
     if args.dry_run:
-        print(f"# Dry run: {min(args.count, 5)} sample trades "
-              f"(of {args.count} requested)\n")
-        for i in range(min(args.count, 5)):
-            print(json.dumps(make_trade(i, rng, args.anomaly_pct)))
+        n = min(args.count, 8)
+        print(f"# Dry run: {n} sample trades (of {args.count} requested), "
+              f"{'uniform' if args.uniform else 'heterogeneous'}\n")
+        for i in range(n):
+            print(json.dumps(make_trade(i, rng, args.anomaly_pct,
+                                        args.uniform, args.hetero_level)))
         return
 
     producer = build_producer(args.bootstrap)
-    print(f"Publishing {args.count} trades to topic '{args.topic}' "
-          f"at {args.bootstrap}"
+    print(f"Publishing {args.count} "
+          f"{'uniform' if args.uniform else 'heterogeneous'} trades to topic "
+          f"'{args.topic}' at {args.bootstrap}"
           + (f" (rate-limited to {args.rate}/s)" if args.rate else "") + " ...")
 
     interval = (1.0 / args.rate) if args.rate > 0 else 0.0
@@ -150,7 +320,8 @@ def main():
     next_report = 10000
 
     for i in range(args.count):
-        producer.send(args.topic, make_trade(i, rng, args.anomaly_pct))
+        producer.send(args.topic, make_trade(i, rng, args.anomaly_pct,
+                                              args.uniform, args.hetero_level))
         sent += 1
         if interval:
             time.sleep(interval)
@@ -164,8 +335,9 @@ def main():
     elapsed = time.perf_counter() - start
     print(f"\nDone. Sent {sent} trades in {elapsed:.2f}s "
           f"({sent/elapsed:,.0f} msg/s produced).")
-    print("Now check the DAG output file once the pipeline drains, e.g.:")
+    print("Now check the DAG output files once the pipeline drains, e.g.:")
     print("  wc -l /tmp/perftest/trade_etl_output.jsonl")
+    print("  wc -l /tmp/perftest/trade_etl_arrow_output.jsonl")
 
 
 if __name__ == "__main__":

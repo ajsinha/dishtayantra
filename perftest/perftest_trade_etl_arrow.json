@@ -1,0 +1,97 @@
+{
+  "_comment": "HIGH-THROUGHPUT Arrow RecordBatch version of perftest_trade_etl. Targets ~10k msg/s by draining many Kafka trades per cycle into ONE columnar pyarrow.RecordBatch and running every stage as a single vectorized pass, with the immutable batch shared downstream by reference (zero per-hop copy). HETEROGENEOUS TRADES: individual Kafka trades may carry different attribute sets; only a few core attributes are always present. The ingest node (NormalizingArrowBatchingSubscriptionNode) normalizes every batch to a STABLE schema - typed core columns (trade_id/seq/symbol/side/quantity/price/currency) plus one JSON 'extras_json' column that losslessly carries every non-core attribute - so ragged input never drops attributes and never breaks the schema (unlike a raw from_pylist, which infers schema from the first row only and crashes on cross-row type conflicts). TOPOLOGY: linear, because RecordBatch fan-in is unsupported (a node may receive at most one batch edge); the original fan-out/fan-in (fees|risk|anomaly -> classify) is fused into a vectorized chain. Fan-OUT to the three sinks is fine. Sinks use ArrowFlatteningPublicationNode, which converts the batch back to one message per row so the external/broker contract is unchanged. Tuning for 10k/s: batch.max_size 5000 (~2 batches/s at 10k/s) and a deep subscriber queue; raise idle_poll a touch since latency is dominated by batch fill, not poll. Additive/opt-in: custom node + calculators are referenced by dotted path; the engine is untouched.",
+  "name": "perftest_trade_etl_arrow",
+  "description": "Kafka -> arrow normalize-ingest (stable schema + extras) -> FX -> notional -> fees -> risk -> classify -> anomaly -> summarize -> {file sink, kafka sink, kafka async sink}. Columnar/zero-copy high-throughput equivalent of perftest_trade_etl for heterogeneous trades.",
+
+  "version": "5.17.0",
+
+  "start_time": null,
+  "duration": null,
+
+  "subscribers": [
+    {
+      "name": "trade_kafka",
+      "config": {
+        "source": "kafka://topic/perftest_trades",
+        "bootstrap_servers": ["localhost:9092"],
+        "group_id": "perftest_trade_etl_arrow",
+        "kafka_library": "kafka-python",
+        "max_depth": 2000000,
+        "idle_poll_interval": 0.002,
+        "_idle_note": "Deep queue so the batching ingest can drain large batches under load; latency at 10k/s is dominated by batch fill, not poll interval."
+      }
+    }
+  ],
+
+  "publishers": [
+    {
+      "name": "output_file",
+      "config": { "destination": "file:///tmp/perftest/trade_etl_arrow_output.jsonl" }
+    },
+    {
+      "name": "output_kafka",
+      "config": {
+        "destination": "kafka://topic/perftest_trades_enriched",
+        "bootstrap_servers": ["localhost:9092"],
+        "kafka_library": "kafka-python"
+      }
+    },
+    {
+      "name": "output_kafka_async",
+      "config": {
+        "destination": "kafka://topic/perftest_trades_enriched_async",
+        "bootstrap_servers": ["localhost:9092"],
+        "kafka_library": "kafka-python",
+        "async_egress": true,
+        "_async_note": "async_egress:true routes this publisher through the WAL-backed AsyncPublisher when egress.async.enabled=true, for async vs sync side-by-side benchmarking."
+      }
+    }
+  ],
+
+  "calculators": [
+    { "name": "validate",  "type": "perftest.arrow_trade_etl_calculators.ArrowValidateCalculator", "config": {} },
+    { "name": "fx",        "type": "perftest.arrow_etl_calculators.ArrowFxConvertCalculator",       "config": { "default_rate": 1.0 } },
+    { "name": "notional",  "type": "perftest.arrow_etl_calculators.ArrowNotionalCalculator",        "config": {} },
+    { "name": "fees",      "type": "perftest.arrow_etl_calculators.ArrowFeeCalculator",
+      "config": { "commission_rate": 0.0005, "exchange_fee_rate": 0.0001, "min_fee": 0.50 } },
+    { "name": "risk",      "type": "perftest.arrow_etl_calculators.ArrowRiskScoreCalculator",       "config": {} },
+    { "name": "classify",  "type": "perftest.arrow_trade_etl_calculators.ArrowClassifyCalculator",  "config": {} },
+    { "name": "anomaly",   "type": "perftest.arrow_trade_etl_calculators.ArrowAnomalyCalculator",
+      "config": { "fat_finger_qty": 1000000, "max_price_usd": 1000000 } },
+    { "name": "summarize", "type": "perftest.arrow_trade_etl_calculators.ArrowSummarizeCalculator", "config": {} }
+  ],
+
+  "transformers": [],
+
+  "nodes": [
+    { "name": "trade_ingest", "type": "perftest.arrow_trade_nodes.NormalizingArrowBatchingSubscriptionNode",
+      "subscriber": "trade_kafka", "calculator": "validate",
+      "config": { "batch": { "max_size": 5000 }, "extras_key": "extras_json" } },
+
+    { "name": "fx_node",        "type": "CalculationNode", "calculator": "fx",        "config": {} },
+    { "name": "notional_node",  "type": "CalculationNode", "calculator": "notional",  "config": {} },
+    { "name": "fees_node",      "type": "CalculationNode", "calculator": "fees",      "config": {} },
+    { "name": "risk_node",      "type": "CalculationNode", "calculator": "risk",      "config": {} },
+    { "name": "classify_node",  "type": "CalculationNode", "calculator": "classify",  "config": {} },
+    { "name": "anomaly_node",   "type": "CalculationNode", "calculator": "anomaly",   "config": {} },
+    { "name": "summarize_node", "type": "CalculationNode", "calculator": "summarize", "config": {} },
+
+    { "name": "file_sink",        "type": "ArrowFlatteningPublicationNode", "config": { "publishers": ["output_file"] } },
+    { "name": "kafka_sink",       "type": "ArrowFlatteningPublicationNode", "config": { "publishers": ["output_kafka"] } },
+    { "name": "kafka_async_sink", "type": "ArrowFlatteningPublicationNode", "config": { "publishers": ["output_kafka_async"] } }
+  ],
+
+  "edges": [
+    { "from_node": "trade_ingest",  "to_node": "fx_node" },
+    { "from_node": "fx_node",       "to_node": "notional_node" },
+    { "from_node": "notional_node", "to_node": "fees_node" },
+    { "from_node": "fees_node",     "to_node": "risk_node" },
+    { "from_node": "risk_node",     "to_node": "classify_node" },
+    { "from_node": "classify_node", "to_node": "anomaly_node" },
+    { "from_node": "anomaly_node",  "to_node": "summarize_node" },
+
+    { "from_node": "summarize_node", "to_node": "file_sink" },
+    { "from_node": "summarize_node", "to_node": "kafka_sink" },
+    { "from_node": "summarize_node", "to_node": "kafka_async_sink" }
+  ]
+}

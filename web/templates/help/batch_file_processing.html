@@ -92,7 +92,7 @@ with open("/feeds/eod/trades.jsonl") as fh:
             <li><strong>Auto-batching + Arrow</strong> → put a <code>BatchingSubscriptionNode</code> at the
             source and use Arrow (vectorized) calculators, or wrap a row enricher with
             <code>RowCalculatorBatchAdapter</code>, then a <code>FlatteningPublicationNode</code> so output
-            stays per-record. See the Arrow tutorial (<code>docs/TUTORIAL_arrow_dag.md</code>).</li>
+            stays per-record. See the Arrow tutorial (<code>docs/TUTORIAL_arrow.md</code>).</li>
             <li><strong>Parallelism</strong> → partition the trade file (by symbol or client) and run multiple
             DAG instances / the worker pool; each partition shares the same loaded dimension tables.</li>
         </ul>

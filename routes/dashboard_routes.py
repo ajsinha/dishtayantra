@@ -16,6 +16,7 @@ import logging
 import os
 
 from core.dag.dag_view import build_dag_view
+from core.dag.edge_value import is_batch
 
 from fastapi import FastAPI, Request
 
@@ -28,6 +29,33 @@ from web.fastapi_compat import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _state_value_safe(value, preview_rows=5):
+    """Make a node input/output safe for the state view's ``| tojson`` filter.
+
+    Arrow nodes hold a ``pyarrow.RecordBatch`` as their input/output, which is not
+    JSON-serializable. Summarize it (schema + row count + a small preview) instead
+    of letting the template raise. Dicts, lists, scalars, and None pass through
+    UNCHANGED so normal (row) node state still renders as proper JSON.
+    """
+    try:
+        if is_batch(value):
+            try:
+                preview = value.slice(0, preview_rows).to_pylist()
+            except Exception:  # noqa: BLE001
+                preview = []
+            return {
+                '__type__': 'pyarrow.RecordBatch',
+                'num_rows': value.num_rows,
+                'num_columns': value.num_columns,
+                'schema': [f"{f.name}: {f.type}" for f in value.schema],
+                'preview': preview,
+                'preview_truncated': value.num_rows > preview_rows,
+            }
+    except Exception:  # noqa: BLE001
+        pass
+    return value
 
 
 def _json_safe(value):
@@ -291,6 +319,16 @@ class DashboardRoutes:
                         'last_calculation': last_calculation,
                         'status_note': None
                     })
+
+            # Arrow nodes carry a pyarrow.RecordBatch as input/output, which the
+            # state template would try to JSON-serialize and fail. Make every
+            # node's input/output JSON-safe regardless of which path populated it.
+            for ns in node_states:
+                if isinstance(ns, dict):
+                    if 'input' in ns:
+                        ns['input'] = _state_value_safe(ns['input'])
+                    if 'output' in ns:
+                        ns['output'] = _state_value_safe(ns['output'])
 
             logger.info(f"Rendering state page with {len(node_states)} nodes")
             return render(request, 'dag/state.html',

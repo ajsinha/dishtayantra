@@ -39,6 +39,12 @@
 {% endblock %}
 
 {% block content %}
+<div class="alert alert-info d-flex align-items-start" role="alert">
+  <i class="bi bi-book me-2 mt-1"></i>
+  <div>The canonical, portable reference for this topic is the
+  <a href="{{ url_for('help_userguide_view', filename='AutoClone Feature - Complete Documentation.md') }}"><strong>AutoClone Feature guide</strong></a>
+  (Markdown). This page is a quick in-app overview.</div>
+</div>
 <!-- Navigation -->
 <div class="help-nav">
     <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">

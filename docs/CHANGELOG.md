@@ -5,6 +5,93 @@ records the per-release highlights that previously lived in the version.py
 docstring.
 
 
+## Version 5.18.1 highlights (fix: DAG state page crashed for Arrow DAGs):
+    - /dag/<name>/state rendered each node's raw _input/_output via the template's `| tojson`
+      filter. Arrow nodes hold a pyarrow.RecordBatch (not JSON-serializable), so the state page
+      failed with "Object of type RecordBatch is not JSON serializable". Added
+      _state_value_safe() in routes/dashboard_routes.py: RecordBatch -> {schema, num_rows,
+      preview} summary; dicts/lists/scalars/None pass through unchanged (no regression for row
+      nodes). Applied to all node input/output before render. build_dag_view verified unaffected.
+
+
+## Version 5.18.0 highlights (documentation consolidation - markdown is the single portable source):
+    - User guides consolidated 40 -> 20 (no content loss): 18 connector guides -> 5 family guides
+      (Message Broker, Data Store, In-Process & Local, Network, Advanced Connector Patterns);
+      3 calculator guides -> 1; 4 admin/observability guides -> 2 (Administration & Maintenance,
+      Observability); the two Arrow tutorials -> docs/TUTORIAL_arrow.md.
+    - Principle: documentation lives in (portable) markdown; HTML help pages are thin overviews
+      that point to the canonical guide. The 9 connector HTML pages were repointed to their
+      family guides; subgraph/autoclone/prometheus/py4j/pybind11/rust gained a canonical-guide
+      pointer banner. All help_userguide_view links verified resolvable.
+    - Docs-only; no application code changed.
+
+
+## Version 5.17.3 highlights (Configuration Reference Guide + documentation accuracy sweep):
+    - NEW "Configuration Reference Guide" user guide: table-based reference for every config item
+      across application.yaml and the DAG JSON schema (subscribers, publishers, node types, node
+      config, URI schemes, calculators/transformers, edges, schedule), each with a sample value
+      and explanation. Derived from the source of truth (config files + parsing code). Surfaces
+      in /help/userguides.
+    - Accuracy sweep: version references clean; 167 internal file-path references verified with no
+      broken links. Fixed the User Management Architecture guide's PostgreSQL example, which used
+      a "postgresql:" config section while the code reads "db.postgres.*" (now "postgres:").
+    - Docs-only; no application code changed.
+
+
+## Version 5.17.2 highlights (documentation completeness + accuracy pass):
+    - Accuracy: TUTORIAL_arrow.md and TUTORIAL_arrow.md no longer tell
+      users to avoid Arrow for heterogeneous data (contradicted by v5.17.0). Corrected to the
+      normalize-to-stable-schema nuance, with a new "Heterogeneous sources" section.
+    - Completeness (were CHANGELOG-only): NEW "Admin Maintenance and Drain Mode Guide" and
+      "UI Themes Guide" user guides; "Logging and Observability Guide" extended with Runtime
+      Logging Control (/admin/logging) and the per-minute ingest histogram. New guides
+      auto-surface in /help/userguides.
+    - README: Arrow heterogeneous-source note + Admin Maintenance/Drain, Runtime Logging
+      Control, and UI themes entries.
+    - Docs-only; no application code changed.
+
+
+## Version 5.17.1 highlights (heterogeneous trade generator for reliable row+Arrow testing):
+    - perftest/generate_trades.py reworked to emit heterogeneous trades by default. Core fields
+      always present; optional fields vary per record and include nested dicts, lists,
+      lists-of-dicts, dict-in-dict, and type-varying keys, across seven archetypes (simple/
+      block/multi_leg/algo/cross_ccy/minimal/kitchen_sink). New CLI flags: --hetero-level
+      {low,med,high} and --uniform (legacy flat single-shape baseline). The same stream now
+      meaningfully tests both the row DAG and the Arrow RecordBatch DAG.
+    - Verified: ~57 distinct shapes per 60 records; the row ETL and the Arrow normalize-ingest
+      + vectorized chain both process the stream without error; nested/list attributes are
+      preserved losslessly in the Arrow extras_json column; row-vs-Arrow parity holds on all
+      core numeric/categorical outputs. Additive; no app code changed.
+
+
+## Version 5.17.0 highlights (high-throughput Arrow RecordBatch trade-ETL for heterogeneous trades):
+    New files (all additive; engine untouched):
+    - perftest/perftest_trade_etl_arrow.json: columnar/zero-copy RecordBatch version of
+      perftest_trade_etl. Kafka -> normalize-ingest -> FX -> notional -> fees -> risk ->
+      classify -> anomaly -> summarize -> {file, kafka, kafka-async} sinks. Linear topology
+      (RecordBatch fan-in unsupported); original fan-out/fan-in fused into a vectorized chain.
+      batch.max_size 5000 + deep queue for ~10k msg/s.
+    - perftest/arrow_trade_nodes.py: NormalizingArrowBatchingSubscriptionNode. Drains up to
+      max_size heterogeneous trade dicts and builds ONE stable-schema RecordBatch: typed core
+      columns (trade_id/seq/symbol/side/quantity/price/currency, with symbol/side/currency
+      upper-cased and missing/bad values coerced to defaults, never raising) plus a JSON
+      extras_json column that losslessly preserves every non-core attribute. Solves the
+      heterogeneous-trade problem: raw pa.Table.from_pylist infers schema from the first row
+      only (drops later-row attributes) and crashes on cross-row type conflicts. Uses ev_equals
+      gate + by-reference output. Selected by dotted-path node type.
+    - perftest/arrow_trade_etl_calculators.py: vectorized ArrowValidateCalculator (_valid),
+      ArrowClassifyCalculator (size_bucket/risk_tier/requires_review via nested pc.if_else),
+      ArrowAnomalyCalculator (boolean flag columns + is_anomalous), ArrowSummarizeCalculator
+      (processed_at/pipeline). FX/notional/fees/risk reuse perftest.arrow_etl_calculators.
+
+    Notes:
+    - Verified: stable schema on ragged/type-conflicting input (no drops, no crash); extras
+      preserved end-to-end to the sink; bit-for-bit parity with the row ETL on a heterogeneous
+      sample; in-memory DAG build + batch round-trip through all three flattening sinks.
+    - Columnar anomaly stage emits boolean flag columns rather than the row pipeline's
+      list-of-strings anomaly_flags (cheaper and queryable). Backward compatible; additive only.
+
+
 ## Version 5.16.2 highlights (logout returns to the public landing page):
     - routes/auth_routes.py logout(): now redirects to 'index' (the root route '/', which
       renders the public landing page for anonymous visitors) instead of 'login'. Previously
@@ -898,7 +985,7 @@ docstring.
 
 
 ## Version 5.1.2 highlights (documentation: in-app tutorials elaborated + made discoverable):
-    - New dedicated deep-dive tutorial docs/TUTORIAL_high_performance_arrow.md:
+    - New dedicated deep-dive tutorial docs/TUTORIAL_arrow.md:
       extremely high-performance DAGs with zero-copy Arrow RecordBatch — theory
       (where time goes, columnar/vectorization, immutability), design (edge_value
       dispatch, equality-gate preservation, layered speedups), full calculators +
@@ -1035,7 +1122,7 @@ docstring.
 
 
 ## Version 4.4.0 highlights (Arrow tutorial + adapter ergonomics):
-    - Hands-on tutorial at docs/TUTORIAL_arrow_dag.md: write an ArrowCalculator,
+    - Hands-on tutorial at docs/TUTORIAL_arrow.md: write an ArrowCalculator,
       use it as a drop-in, vectorize batches, mix row + Arrow in one graph, bridge
       legacy calculators with RowCalculatorBatchAdapter, and measure the result.
     - RowCalculatorBatchAdapter now resolves config["wrapped"] using the same

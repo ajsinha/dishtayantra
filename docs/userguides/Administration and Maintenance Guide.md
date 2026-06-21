@@ -1,3 +1,13 @@
+# Administration and Maintenance Guide
+
+Operating the server: system monitoring, worker/JVM/native management, and the maintenance/drain workflow for quiescing the server during a maintenance window.
+
+> **Common configuration** (URI schemes, shared subscriber/publisher/node
+> parameters, application.yaml) is in the **Configuration Reference Guide**. This
+> guide covers connector-specific detail. Each connector is a section below.
+
+---
+
 # Admin & System Monitoring Guide
 
 ## Applies to: current release
@@ -453,3 +463,98 @@ Query parameters:
 ---
 
 © 2025-2030 Ashutosh Sinha. All rights reserved.
+
+
+---
+
+# Admin Maintenance and Drain Mode Guide
+
+Drain mode lets an operator quiesce a running server for a maintenance window
+without stopping it or losing in-flight work. It **freezes** subscribers so they
+stop pulling new messages, then lets the DAGs finish processing everything
+already in flight — including data still queued in the async-egress WAL — so you
+can reach a clean, drained state before a deploy, broker restart, or config
+change.
+
+Introduced in v5.15.0; the drain check was made WAL-aware in v5.16.0.
+
+## Drain vs. pause
+
+These are different and intentionally so:
+
+- **Pause** holds a subscriber's queues — messages keep arriving and back up.
+- **Freeze / drain** stops the subscriber from accepting new messages at all, so
+  the rest of the pipeline can run dry. Drain mode is for *maintenance windows*;
+  pause is for *temporary holds*.
+
+## The Maintenance page
+
+Open **Admin → Maintenance** (`/admin/maintenance`). It shows live drain status
+(polled every few seconds) and lets you freeze/unfreeze at three scopes:
+
+- **Global** — every subscriber on every DAG.
+- **Per-DAG** — all subscribers on one DAG.
+- **Per-subscriber** — a single subscriber.
+
+For each scope you see whether it is frozen and how much work remains before it
+is fully drained.
+
+## What "drained" means
+
+A DAG is **drained** when both of these reach zero:
+
+1. **Subscriber queues** — nothing left waiting to be pulled in.
+2. **Async-egress WAL pending** — for publishers using `async_egress: true`,
+   records may still be sitting in the write-ahead log waiting to be flushed to
+   the real sink. Drain status accounts for these via
+   `AsyncPublisher.async_pending()`, which returns the WAL's `pending_count()`.
+
+> **Why pending *count*, not WAL size.** The check is offset-based (records
+> appended minus records committed), **not** WAL byte size. The filelog backend's
+> active segment keeps already-committed bytes on disk until it rolls, so its size
+> never reaches zero even when fully drained — byte size would make "drained"
+> unreachable. The offset-based count correctly reaches zero on drain.
+
+## JSON status API
+
+`GET /admin/maintenance/status` returns the same data the page polls, for
+scripting a maintenance runbook:
+
+```json
+{
+  "dags": [
+    {
+      "name": "perftest_trade_etl",
+      "frozen": false,
+      "subscribers": [{"name": "trade_kafka", "frozen": false}],
+      "drain": {"queue_pending": 0, "wal_pending": 0, "drained": true}
+    }
+  ]
+}
+```
+
+A typical runbook: freeze (global) → poll `status` until every DAG reports
+`"drained": true` → perform the maintenance → unfreeze.
+
+## How it works under the hood
+
+- `ComputeGraph.freeze_subscribers()` / `unfreeze_subscribers()` set a generic
+  `_frozen` flag honoured by the shared subscription loop, so freeze works for
+  **all** broker types. Kafka additionally calls the consumer's `pause()`/
+  `resume()` for true broker-side back-off.
+- `ComputeGraph.drain_status()` aggregates queue depth and async WAL pending.
+- In worker-pool deployments, the freeze/unfreeze commands are broadcast to
+  workers via the `FREEZE_SUBSCRIBERS` / `UNFREEZE_SUBSCRIBERS` control messages,
+  so a drain spans every process.
+
+## Notes
+
+- Freezing does not drop data; it only stops *new* intake. In-flight messages and
+  WAL-backed egress continue to completion.
+- Unfreezing resumes normal intake immediately.
+- Drain mode is additive and backward-compatible; DAGs that are never frozen
+  behave exactly as before.
+
+
+---
+

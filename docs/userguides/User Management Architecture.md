@@ -57,7 +57,7 @@ db:
     path: data/dishtayantra.db
   # For PostgreSQL instead:
   # engine: postgresql
-  # postgresql:
+  # postgres:
   #   host: localhost
   #   port: 5432
   #   database: dishtayantra

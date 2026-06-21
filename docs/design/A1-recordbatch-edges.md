@@ -14,7 +14,7 @@ node-loop overhead, not data copying. Delivered as `core/dag/edge_value.py`, the
 minimal `graph_elements.py` substitution below, the `ArrowCalculator` RecordBatch
 fast-path, the opt-in `ArrowBatchingSubscriptionNode` / `ArrowFlatteningPublicationNode`
 nodes, and `core/transformer/arrow_transformer.py` (§5.1). See
-`docs/TUTORIAL_arrow_dag.md` for hands-on usage.
+`docs/TUTORIAL_arrow.md` for hands-on usage.
 
 ---
 
@@ -204,4 +204,4 @@ for the native polyglot handoff (Arrow C Data Interface) and for A2 (DataFusion 
 streaming SQL), both of which want Arrow already on the edges.
 
 Related: `docs/design/A1-arrow-data-plane.md`, `docs/ROADMAP.md`,
-`docs/TUTORIAL_arrow_dag.md`.
+`docs/TUTORIAL_arrow.md`.

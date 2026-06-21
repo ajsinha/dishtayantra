@@ -1,5 +1,5 @@
 {
-  "name": "perftest_trade_etl",
+  "name": "perftest_trade_etl_arrow",
   "subscribers": [
     {
       "name": "trade_kafka",
@@ -8,10 +8,11 @@
         "bootstrap_servers": [
           "localhost:9092"
         ],
-        "group_id": "perftest_trade_etl",
+        "group_id": "perftest_trade_etl_arrow",
         "kafka_library": "kafka-python",
+        "max_depth": 2000000,
         "idle_poll_interval": 0.002,
-        "_idle_note": "Low idle poll for a latency-sensitive benchmark feed."
+        "_idle_note": "Deep queue so the batching ingest can drain large batches under load; latency at 10k/s is dominated by batch fill, not poll interval."
       }
     }
   ],
@@ -19,7 +20,7 @@
     {
       "name": "output_file",
       "config": {
-        "destination": "file:///tmp/perftest/trade_etl_output.jsonl"
+        "destination": "file:///tmp/perftest/trade_etl_arrow_output.jsonl"
       }
     },
     {
@@ -41,36 +42,31 @@
         ],
         "kafka_library": "kafka-python",
         "async_egress": true,
-        "_async_note": "async_egress:true routes this publisher through the WAL-backed AsyncPublisher (non-blocking publish) when the global switch egress.async.enabled=true is set. The sibling output_kafka stays inline, so you can benchmark async vs sync side by side."
+        "_async_note": "async_egress:true routes this publisher through the WAL-backed AsyncPublisher when egress.async.enabled=true, for async vs sync side-by-side benchmarking."
       }
     }
   ],
   "calculators": [
     {
       "name": "validate",
-      "type": "perftest.etl_calculators.ValidateTradeCalculator",
-      "config": {}
-    },
-    {
-      "name": "normalize",
-      "type": "perftest.etl_calculators.NormalizeTradeCalculator",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowValidateCalculator",
       "config": {}
     },
     {
       "name": "fx",
-      "type": "perftest.etl_calculators.FxConvertCalculator",
+      "type": "perftest.arrow_etl_calculators.ArrowFxConvertCalculator",
       "config": {
         "default_rate": 1
       }
     },
     {
       "name": "notional",
-      "type": "perftest.etl_calculators.NotionalCalculator",
+      "type": "perftest.arrow_etl_calculators.ArrowNotionalCalculator",
       "config": {}
     },
     {
       "name": "fees",
-      "type": "perftest.etl_calculators.FeeCalculator",
+      "type": "perftest.arrow_etl_calculators.ArrowFeeCalculator",
       "config": {
         "commission_rate": 0.0005,
         "exchange_fee_rate": 0.0001,
@@ -79,25 +75,25 @@
     },
     {
       "name": "risk",
-      "type": "perftest.etl_calculators.RiskScoreCalculator",
+      "type": "perftest.arrow_etl_calculators.ArrowRiskScoreCalculator",
+      "config": {}
+    },
+    {
+      "name": "classify",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowClassifyCalculator",
       "config": {}
     },
     {
       "name": "anomaly",
-      "type": "perftest.etl_calculators.AnomalyFlagCalculator",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowAnomalyCalculator",
       "config": {
         "fat_finger_qty": 1000000,
         "max_price_usd": 1000000
       }
     },
     {
-      "name": "classify",
-      "type": "perftest.etl_calculators.ClassifyTradeCalculator",
-      "config": {}
-    },
-    {
       "name": "summarize",
-      "type": "perftest.etl_calculators.SummarizeTradeCalculator",
+      "type": "perftest.arrow_trade_etl_calculators.ArrowSummarizeCalculator",
       "config": {}
     }
   ],
@@ -105,16 +101,15 @@
   "nodes": [
     {
       "name": "trade_ingest",
-      "type": "SubscriptionNode",
-      "config": {},
+      "type": "perftest.arrow_trade_nodes.NormalizingArrowBatchingSubscriptionNode",
+      "config": {
+        "batch": {
+          "max_size": 5000
+        },
+        "extras_key": "extras_json"
+      },
       "subscriber": "trade_kafka",
       "calculator": "validate"
-    },
-    {
-      "name": "normalize_node",
-      "type": "CalculationNode",
-      "config": {},
-      "calculator": "normalize"
     },
     {
       "name": "fx_node",
@@ -129,28 +124,28 @@
       "calculator": "notional"
     },
     {
-      "name": "fees_branch",
+      "name": "fees_node",
       "type": "CalculationNode",
       "config": {},
       "calculator": "fees"
     },
     {
-      "name": "risk_branch",
+      "name": "risk_node",
       "type": "CalculationNode",
       "config": {},
       "calculator": "risk"
-    },
-    {
-      "name": "anomaly_branch",
-      "type": "CalculationNode",
-      "config": {},
-      "calculator": "anomaly"
     },
     {
       "name": "classify_node",
       "type": "CalculationNode",
       "config": {},
       "calculator": "classify"
+    },
+    {
+      "name": "anomaly_node",
+      "type": "CalculationNode",
+      "config": {},
+      "calculator": "anomaly"
     },
     {
       "name": "summarize_node",
@@ -160,7 +155,7 @@
     },
     {
       "name": "file_sink",
-      "type": "PublisherSinkNode",
+      "type": "ArrowFlatteningPublicationNode",
       "config": {
         "publishers": [
           "output_file"
@@ -169,7 +164,7 @@
     },
     {
       "name": "kafka_sink",
-      "type": "PublisherSinkNode",
+      "type": "ArrowFlatteningPublicationNode",
       "config": {
         "publishers": [
           "output_kafka"
@@ -178,7 +173,7 @@
     },
     {
       "name": "kafka_async_sink",
-      "type": "PublisherSinkNode",
+      "type": "ArrowFlatteningPublicationNode",
       "config": {
         "publishers": [
           "output_kafka_async"
@@ -189,10 +184,6 @@
   "edges": [
     {
       "from_node": "trade_ingest",
-      "to_node": "normalize_node"
-    },
-    {
-      "from_node": "normalize_node",
       "to_node": "fx_node"
     },
     {
@@ -201,30 +192,22 @@
     },
     {
       "from_node": "notional_node",
-      "to_node": "fees_branch"
+      "to_node": "fees_node"
     },
     {
-      "from_node": "notional_node",
-      "to_node": "risk_branch"
+      "from_node": "fees_node",
+      "to_node": "risk_node"
     },
     {
-      "from_node": "notional_node",
-      "to_node": "anomaly_branch"
-    },
-    {
-      "from_node": "fees_branch",
-      "to_node": "classify_node"
-    },
-    {
-      "from_node": "risk_branch",
-      "to_node": "classify_node"
-    },
-    {
-      "from_node": "anomaly_branch",
+      "from_node": "risk_node",
       "to_node": "classify_node"
     },
     {
       "from_node": "classify_node",
+      "to_node": "anomaly_node"
+    },
+    {
+      "from_node": "anomaly_node",
       "to_node": "summarize_node"
     },
     {

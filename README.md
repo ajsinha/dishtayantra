@@ -6,7 +6,7 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-5.16.2-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-5.18.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -76,7 +76,7 @@ counterparts (validated in CI) and deliver their speedup on *batched* message
 flow (~11.8x at the kernel level).
 
 - Worked example & decision tree: `docs/design/A1-worked-example-and-coexistence.md`
-- Tutorial (hands-on): `docs/TUTORIAL_arrow_dag.md`
+- Tutorial (hands-on): `docs/TUTORIAL_arrow.md`
 - Runnable demos: `python -m perftest.run_arrow_example` (mixed graph), `python -m perftest.run_autobatch_example` (automatic source-batching), and `python -m perftest.run_arrow_transport_example` (zero-copy transport)
 
 Two **opt-in** node types make batching automatic without changing producers or
@@ -90,6 +90,12 @@ For maximum throughput, the **zero-copy transport** path carries an immutable
 `ArrowBatchingSubscriptionNode` / `ArrowFlatteningPublicationNode` — ~2.29x the
 dict-envelope path with byte-identical output, while the equality-gate invariant is
 preserved (`core/dag/edge_value.py`). The dict path is behaviourally unchanged.
+Heterogeneous sources (records with different attribute sets) are supported via
+**stable-schema normalization at ingress** — typed core columns plus a JSON
+`extras_json` column that losslessly carries the variable attributes (including
+nested dicts/lists) — so a ragged Kafka feed can still ride the columnar path
+(`perftest/perftest_trade_etl_arrow.json`, `perftest/arrow_trade_nodes.py`; see
+`docs/TUTORIAL_arrow.md`).
 - Design RFCs: `docs/design/A1-arrow-data-plane.md`, `docs/design/A1-recordbatch-edges.md`
 
 ### Headless Execution & Orchestration (opt-in)
@@ -123,6 +129,8 @@ when a true cross-record dependency needs one-at-a-time ordering.
 - **Live Logs**: Real-time log streaming with SSE
 - **System Logs Viewer**: View, filter, search, and download application logs
 - **Worker Pool Management**: Monitor and control worker processes
+- **Maintenance / Drain Mode**: freeze subscribers (global, per-DAG, or per-subscriber) to quiesce the server for a maintenance window; live drain status accounts for in-flight queues *and* the async-egress WAL (`/admin/maintenance`)
+- **Runtime Logging Control**: change global and per-logger levels on a live server with no restart, broadcast to all worker processes (`/admin/logging`)
 - **JVM Management**: Java gateway status and control
 - **C++ Management**: pybind11 module administration
 - **Rust Management**: PyO3 module administration
@@ -131,6 +139,7 @@ when a true cross-record dependency needs one-at-a-time ordering.
 ### Documentation & Help
 - **20+ page help system** with comprehensive guides
 - **Interactive DAG Designer** for visual workflow creation
+- **Multiple UI themes** (Light, Dark, Green, Ubuntu, Blue) selectable from the navbar; see the *UI Themes Guide*
 - **50+ term glossary** for reference
 - **Sample DAG configurations** with examples
 - **API reference documentation**
@@ -437,7 +446,7 @@ status = server.get_server_status()
 
 ## Version & History
 
-Current version: **5.16.2** (the authoritative version is always
+Current version: **5.18.1** (the authoritative version is always
 `core/version.py::VERSION`, which every module, template, and banner imports —
 nothing hard-codes a version string). DishtaYantra is developed as a continuously
 evolving system; rather than a release-by-release changelog, the current

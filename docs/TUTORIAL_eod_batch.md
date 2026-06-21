@@ -282,7 +282,7 @@ computes `notional_usd` for all 500 trades in one vectorized operation instead o
 looping. For the absolute fastest path, the
 `ArrowBatchingSubscriptionNode` / `ArrowFlatteningPublicationNode` pair carries the
 batch between steps without copying it. The full story (with a hands-on build) is
-in `docs/TUTORIAL_arrow_dag.md`. The important promise: **the answers are
+in `docs/TUTORIAL_arrow.md`. The important promise: **the answers are
 byte-for-byte identical** — batching and vectorizing change only the speed, never
 the result.
 
@@ -367,6 +367,6 @@ next tutorial.
 ## Where to go next
 
 - **Reference (short version):** `docs/BATCH_FILE_PROCESSING.md`
-- **Make enrichment fast (Arrow / columnar):** `docs/TUTORIAL_arrow_dag.md`
+- **Make enrichment fast (Arrow / columnar):** `docs/TUTORIAL_arrow.md`
 - **Run-once + orchestrating many jobs:** `docs/TUTORIAL_headless.md`
 - **In the app:** Help Center → *Batch File Processing*, and → *Calculators*

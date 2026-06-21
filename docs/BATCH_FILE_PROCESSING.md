@@ -116,7 +116,7 @@ Because case (a) is independent per trade, you have every lever:
 - **Auto-batching + Arrow** → put a `BatchingSubscriptionNode` at the source and
   use Arrow (vectorized) calculators, or wrap a row enricher with
   `RowCalculatorBatchAdapter`, and finish with a `FlatteningPublicationNode` so
-  output stays per-record. See `docs/TUTORIAL_arrow_dag.md`.
+  output stays per-record. See `docs/TUTORIAL_arrow.md`.
 - **Parallelism** → partition the trade file (e.g. by symbol or client) and run
   multiple DAG instances / the worker pool; each partition shares the same loaded
   dimension tables.
@@ -165,5 +165,5 @@ Files:
   calculator on an ordered stream.
 - Combine both: parallel enrichment, then the sequential step.
 
-Related: `docs/TUTORIAL_arrow_dag.md`, `docs/ARCHITECTURE.md`,
+Related: `docs/TUTORIAL_arrow.md`, `docs/ARCHITECTURE.md`,
 `docs/design/A1-worked-example-and-coexistence.md`.
