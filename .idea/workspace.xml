@@ -5,18 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="83be616c-9322-4a25-8c5b-0f9a6cfb300b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/HANDOVER.md" beforeDir="false" afterPath="$PROJECT_DIR$/HANDOVER.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NEW_SESSION_PROMPT.md" beforeDir="false" afterPath="$PROJECT_DIR$/NEW_SESSION_PROMPT.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/dags/perftest_trade_etl.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/version.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/version.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/CHANGELOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/perftest/generate_trades.py" beforeDir="false" afterPath="$PROJECT_DIR$/perftest/generate_trades.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/twonode/configs/nodeA.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/twonode/configs/nodeA.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/twonode/configs/nodeB.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/twonode/configs/nodeB.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/templates/help/configuration.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/templates/help/configuration.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
