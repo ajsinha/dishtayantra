@@ -10,6 +10,8 @@ Each module groups one logical area of the web UI/API:
     noauth_routes      - about, help pages, user guides, research paper
     dashboard_routes   - dashboard, DAG details/state views
     dag_routes         - DAG lifecycle (create/clone/start/stop/...)
+    service_routes     - JSON management API (/api/service/*) for the
+                         UI-plane/service-plane split (Phase 1)
     cache_routes       - cache HTML pages (+ CacheRoutes composition facade)
     cache_api_routes   - cache JSON API
     user_routes        - user management pages + API (DB-backed in v2.0.0)
@@ -28,11 +30,16 @@ from .auth_routes import AuthRoutes
 from .noauth_routes import NoAuthRoutes
 from .dashboard_routes import DashboardRoutes
 from .dag_routes import DAGRoutes
+from .service_routes import ServiceRoutes
+from .trusted_routes import TrustedServerRoutes
+from .service_proxy_routes import ServiceProxyRoutes
+from .fleet_routes import FleetRoutes
 from .cache_routes import CacheRoutes
 from .cache_api_routes import CacheApiRoutes
 from .user_routes import UserRoutes
 from .apikey_routes import ApiKeyRoutes
 from .audit_routes import AuditRoutes
+from .flow_routes import FlowRoutes
 from .dagdesigner_routes import DAGDesignerRoutes
 from .metrics_routes import MetricsRoutes
 from .worker_routes import WorkerRoutes
@@ -49,11 +56,16 @@ __all__ = [
     'NoAuthRoutes',
     'DashboardRoutes',
     'DAGRoutes',
+    'ServiceRoutes',
+    'TrustedServerRoutes',
+    'ServiceProxyRoutes',
+    'FleetRoutes',
     'CacheRoutes',
     'CacheApiRoutes',
     'UserRoutes',
     'ApiKeyRoutes',
     'AuditRoutes',
+    'FlowRoutes',
     'DAGDesignerRoutes',
     'MetricsRoutes',
     'WorkerRoutes',

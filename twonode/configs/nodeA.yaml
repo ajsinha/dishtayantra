@@ -1,0 +1,287 @@
+# GENERATED for the two-node dev setup (nodeA). Do not edit by hand;
+# regenerate with: python3 twonode/generate_configs.py
+# ==========================================================================
+# DishtaYantra Compute Server - Configuration (v2.2)
+# ==========================================================================
+# This YAML file is the recommended configuration format. The classic
+# application.properties is still fully supported - pick either by passing
+# its path to the configuration loader (auto-detected by extension).
+#
+# ${VAR} and ${VAR:default} substitution works here exactly as in
+# .properties files: values resolve against other keys, environment
+# variables, and command-line --key=value overrides, with nested
+# references supported. Values are read as strings and coerced on access
+# (get_int / get_bool / get_list), so "port: 5002" and
+# "port: \"${PORT:5002}\"" behave identically.
+# ==========================================================================
+
+app:
+  name: DishtaYantra
+  # Informational only; authoritative runtime version is core/version.py VERSION.
+  version: "5.48.0"
+  author:
+    name: Ashutosh Sinha
+    email: ajsinha@gmail.com
+  copyright:
+    years: "2025-2030"
+    holder: Ashutosh Sinha
+  github:
+    repo: https://github.com/ajsinha/dishtayantra
+  trademark:
+    notice: "DishtaYantra(TM) is a trademark of Ashutosh Sinha"
+  # Session signing secret. REQUIRED - the server refuses to start without
+  # it. Override via the SECRET_KEY env var in production.
+  secret_key: "${SECRET_KEY:default_secret_key_change_in_production}"
+
+server:
+  host: 0.0.0.0
+  port: 18080
+  debug: false
+
+# ==========================================================================
+# Logging
+# ==========================================================================
+# Handled entirely at the formatter level (core/log_config.py) - switching
+# format changes every log line without touching any call site.
+#   format: text | json   (json = one compact JSON object per line)
+#   json_fields: comma list from {timestamp,epoch,level,logger,message,
+#                module,func,line,path,process,thread}
+#   json_include_extra: also emit any keys passed via logger.x(..., extra={...})
+logging:
+  format: json
+  level: INFO
+  json_fields: timestamp,level,logger,message
+  json_include_extra: "true"
+  text_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# ==========================================================================
+# Backpressure (credit-based flow control)
+# ==========================================================================
+# Opt-in. When OFF (default) the in-memory topic fan-out behaves exactly as
+# before (non-blocking put, drop-on-full). When ON, each subscriber grants the
+# publisher a bounded number of in-flight 'credits'; the publisher spends one
+# per message and the subscriber returns one per consume.
+#   policy: block - publisher waits for a credit (true backpressure)
+#           drop  - publisher drops (counted) when no credit is free
+#   timeout_ms: under 'block', max wait before falling back to a drop (0 = wait
+#               forever). NOTE: with a single-threaded producer/consumer, prefer
+#               'drop' or a finite timeout to avoid stalling the publisher.
+backpressure:
+  enabled: "false"
+  capacity: 1000
+  policy: block
+  timeout_ms: 0
+
+# Async egress (WAL-backed decoupled publication) - OFF by default. Endpoints are
+# taken from the publisher definitions, so there is no separate egress endpoint
+# config. See the "Async Egress (WAL-Backed Publication) Guide" in Help.
+egress:
+  async:
+    enabled: "false"
+    default: "true"           # default for publishers that don't set async_egress
+  worker:
+    count: 4                  # bounded egress worker pool size (per process)
+  wal:
+    backend: filelog          # filelog | sqlite | lmdb | memory (filelog/sqlite = pure stdlib)
+    path: ./data/egress_wal
+    max_bytes: 2147483648
+    high_water_pct: 80
+    segment_bytes: 134217728
+    fsync: interval           # always | interval | os
+    fsync_interval_ms: 50
+  batch:
+    max_records: 500
+  overflow:
+    policy: block             # block | drop
+    block_timeout_ms: 0
+
+# ==========================================================================
+# Storage Abstraction
+# ==========================================================================
+# Provider for ALL stored objects (DAG configs, holiday calendars, etc.).
+# Supported: filesystem | s3 | azureblob | gcs
+storage:
+  provider: filesystem
+  filesystem:
+    root: ./
+  dags:
+    prefix: config/dags
+    # v3.1.0: additional, logically-grouped DAG folders (comma-separated).
+    # config/dags is ALWAYS scanned; each folder is scanned for its DIRECT
+    # .json children only (never sub-folders). DAG names must be globally
+    # unique across ALL folders - a collision is fatal at startup and
+    # rejected at reload. See the "DAG Folders, Name Uniqueness, and
+    # External Libraries" user guide.
+    # prefixes: config/risk_dags,config/trade_dags
+  # --- S3 example ---
+  # provider: s3
+  # s3:
+  #   bucket: my-dishtayantra-bucket
+  #   prefix: dishtayantra
+  #   region: us-east-1
+  #   endpoint_url: http://localhost:9000        # MinIO/localstack (optional)
+  #   access_key_id: "${AWS_ACCESS_KEY_ID:}"
+  #   secret_access_key: "${AWS_SECRET_ACCESS_KEY:}"
+  # --- Azure Blob example ---
+  # provider: azureblob
+  # azureblob:
+  #   connection_string: "${AZURE_STORAGE_CONNECTION_STRING:}"
+  #   container: dishtayantra
+  #   prefix: dishtayantra
+  # --- GCS example ---
+  # provider: gcs
+  # gcs:
+  #   bucket: my-dishtayantra-bucket
+  #   prefix: dishtayantra
+  #   credentials_file: /etc/gcp/service-account.json
+
+# ==========================================================================
+# Database - users, roles, API keys
+# ==========================================================================
+# Engine: sqlite | postgresql
+db:
+  engine: sqlite
+  sqlite:
+    path: data/twonode/nodeA/dishtayantra.db
+  # --- PostgreSQL example (apply config/schema/schema_postgres.sql once) ---
+  # engine: postgresql
+  # postgres:
+  #   host: localhost
+  #   port: 5432
+  #   database: dishtayantra
+  #   user: "${POSTGRES_USER:dishtayantra}"
+  #   password: "${POSTGRES_PASSWORD:}"
+
+# ==========================================================================
+# High Availability Manager
+# ==========================================================================
+# Provider: none | zookeeper | redis | s3 | socket
+ha:
+  provider: none
+  # zookeeper:
+  #   hosts: localhost:2181
+  #   election_path: /dishtayantra/election
+  # redis:
+  #   host: localhost
+  #   port: 6379
+  #   lock_key: dishtayantra:ha:lock
+  #   lease_seconds: 10
+  # s3:
+  #   bucket: my-dishtayantra-bucket
+  #   lease_key: dishtayantra/ha/lease.json
+  #   region: us-east-1
+  #   lease_seconds: 15
+  # socket:
+  #   host: 0.0.0.0
+  #   port: 5599
+  #   retry_seconds: 3
+
+# ==========================================================================
+# DAG Scheduling - day-of-week + holiday calendars
+# ==========================================================================
+holidays:
+  prefix: config/holidays
+  reload_seconds: 180
+schedule:
+  refresh_seconds: 240
+
+# ==========================================================================
+# External module paths (custom calculator/transformer plugins)
+# ==========================================================================
+external:
+  module:
+    path:
+      "1": /opt/custom_modules
+      "2": "${HOME}/my_plugins"
+      analytics: /opt/analytics
+
+# ==========================================================================
+# User registry
+# ==========================================================================
+user:
+  registry:
+    reload_interval: 600
+
+# ==========================================================================
+# Kafka connection tuning
+# ==========================================================================
+kafka:
+  connection:
+    max_retries: 5
+    retry_delay: 3
+    auto_reconnect: true
+    health_check_interval: 30
+
+# ==========================================================================
+# LMDB transport
+# ==========================================================================
+lmdb:
+  db:
+    path: "${LMDB_DB_PATH:/tmp/dishtayantra_lmdb}"
+  map:
+    size: 1073741824
+  max:
+    dbs: 100
+    readers: 126
+  ttl:
+    seconds: 300
+  cleanup:
+    interval: 60
+
+# Audit trail retention (Admin -> Audit Trail). A background sweep deletes
+# events older than retention_days. Set retention_days <= 0 to keep forever.
+audit:
+  retention_days: 15
+  retention_sweep_hours: 6
+
+# Flow Time-Travel (v5.26.0): OFF by default, non-blocking, disable-able at will.
+flow_recorder:
+  enabled: true
+  store: sqlite            # sqlite | postgres | noop | paimon | aerospike
+  store_path: data/twonode/nodeA/flow_history.db   # sqlite: a SEPARATE file from the app DB
+  # store=postgres (or any SQLAlchemy URL) writes flow history to its OWN
+  # database, separate from the application DB. Many instances may share one
+  # central flow DB; each row records provenance (instance, host, port).
+  # db_url: postgresql+psycopg://user:pass@db-host:5432/flowdb
+  # store=paimon: append-only, hourly-partitioned Apache Paimon (pip install
+  #   pypaimon). Read/write/query work on a local FS warehouse; explicit
+  #   retention (partition drop) needs a REST catalog.
+  #   warehouse: data/flow_warehouse
+  # store=aerospike: EXPERIMENTAL (pip install aerospike; needs a cluster).
+  #   aerospike_hosts: 127.0.0.1:3000
+  #   aerospike_namespace: dishtayantra
+  # NOTE: store=dao is FORBIDDEN - flow history must never share the application
+  # database (users/keys/audit). Use sqlite or postgres (both separate DBs).
+  maxsize: 100000          # bounded queue; overflow dropped (counted), never blocks
+  max_payload_bytes: 2048  # per-side JSON cap on captured values
+  sample_rate: 1.0         # 1.0 = every fire; lower to shed load under pressure
+  retention_hours: 24      # history window kept; <= 0 disables purging
+  retention_sweep_minutes: 30
+  # Optional on-disk reclaim (usually unnecessary - deleted pages are reused so
+  # the file plateaus). 'none' (default) | 'incremental' | 'full' (VACUUM, off-
+  # hours: exclusive lock, but the recorder is decoupled so DAGs never block).
+  # Only the dedicated sqlite store reclaims; the shared-DB 'dao' store never is.
+  maintenance: none
+  maintenance_hour: 3      # local hour (0-23) for the once-daily maintenance pass
+  # Flow replay (UI) web-tier guards. The compute path is isolated (separate WAL
+  # flow DB; enqueue-only hot path), so these bound only web-tier replay load.
+  max_concurrent_streams: 5   # simultaneous SSE replays; over the cap -> "busy"
+  stream_max_seconds: 120     # hard cap per replay (also bounds its WAL read snapshot)
+
+# --- SLO / staleness alerting (v1) ------------------------------------------
+# Output-change staleness from the flow history. A rule breaches when a DAG (or a
+# named node) has produced no OUTPUT CHANGE within max_age_seconds. Evaluated on
+# demand at GET /api/alerts and shown on Admin -> System Monitoring. Because of
+# the equality gate this is "output-change" staleness (a constant-but-healthy
+# stream reads as stale). Disabled by default; rules live in a JSON file - see
+# config/alerts.example.json for the format.
+alerts:
+  enabled: false
+  rules_file: ""           # e.g. config/alerts.json
+
+# Service-plane split (v5.29.0): manage multiple instances from one UI. Empty
+# trusted list (default) => local-only, as before. Trusted-server API keys are
+# encrypted at rest using the secret in the env var named by secret_env.
+service:
+  instance_name: UI-Plane-A
+  secret_env: DY_SECRET_KEY

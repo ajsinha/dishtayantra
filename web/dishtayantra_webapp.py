@@ -58,6 +58,10 @@ from routes import (
     CPPRoutes,
     DAGDesignerRoutes,
     DAGRoutes,
+    ServiceRoutes,
+    TrustedServerRoutes,
+    ServiceProxyRoutes,
+    FleetRoutes,
     DashboardRoutes,
     JVMRoutes,
     MetricsRoutes,
@@ -67,6 +71,7 @@ from routes import (
     UserRoutes,
     ApiKeyRoutes,
     AuditRoutes,
+    FlowRoutes,
     WorkerRoutes,
 )
 
@@ -125,6 +130,11 @@ class DishtaYantraWebApp:
         self.cache_routes = None
         self.user_routes = None
         self.audit_retention = None
+        self.flow_recorder = None
+        self.alert_engine = None
+        self.flow_store = None
+        self.flow_retention = None
+        self.flow_routes = None
         self.dagdesigner_routes = None
         self.admin_routes = None
         self.admin_log_routes = None
@@ -312,6 +322,28 @@ class DishtaYantraWebApp:
         # processor can surface HA role (PRIMARY/SECONDARY) in the navbar
         # on every page (for logged-in users only).
         self.app.state.dag_server = self.dag_server
+        # v5.28.0: the ServiceClient seam (UI-plane/service-plane split). The
+        # local flavour wraps this instance's DAG server; route code resolves a
+        # client via get_service_client(request) and is agnostic to whether it
+        # is local or (in a later phase) a remote trusted server.
+        from core.service.client import LocalServiceClient
+        self.app.state.local_service_client = LocalServiceClient(
+            self.dag_server, self.worker_pool)
+        # v5.29.0: trusted-server registry for the per-session service-plane
+        # switch. Empty by default => the UI manages the local server only,
+        # exactly as before. The instance name annotates the X-DY-On-Behalf-Of
+        # header on outbound remote calls.
+        try:
+            from core.service.registry import TrustedServerRegistry
+            secret_env = self.props.get('service.secret_env', 'DY_SECRET_KEY')
+            self.trusted_registry = TrustedServerRegistry(secret_env=secret_env)
+            self.app.state.trusted_registry = self.trusted_registry
+            self.app.state.service_instance_name = self.props.get(
+                'service.instance_name', 'DishtaYantra')
+        except Exception:  # noqa: BLE001 - registry is best-effort at startup
+            logger.exception("Trusted-server registry unavailable; "
+                             "remote service planes disabled")
+            self.trusted_registry = None
         self.redis_cache = InMemoryRedisClone()
         self.guards = AuthGuards(self.user_registry)
 
@@ -334,6 +366,17 @@ class DishtaYantraWebApp:
             self.worker_pool)
         self.dag_routes = DAGRoutes(self.app, self.dag_server, self.guards,
                                     self.worker_pool)
+        # v5.28.0: JSON management API (/api/service/*) over the ServiceClient
+        # seam - the contract a remote UI plane will target in a later phase.
+        self.service_routes = ServiceRoutes(self.app, self.guards)
+        # v5.29.0: trusted-server admin + the per-session target switch.
+        self.trusted_routes = TrustedServerRoutes(
+            self.app, self.guards, getattr(self, 'trusted_registry', None))
+        # v5.30.0: Phase 3 gateway proxy + Phase 4 fleet view.
+        self.service_proxy_routes = ServiceProxyRoutes(
+            self.app, self.guards, getattr(self, 'trusted_registry', None))
+        self.fleet_routes = FleetRoutes(
+            self.app, self.guards, getattr(self, 'trusted_registry', None))
         self.cache_routes = CacheRoutes(self.app, self.redis_cache,
                                         self.user_registry, self.guards)
         self.user_routes = UserRoutes(self.app, self.user_registry,
@@ -342,6 +385,22 @@ class DishtaYantraWebApp:
                                           self.guards)
         self.audit_routes = AuditRoutes(self.app, self.guards)
         self._start_audit_retention()
+        self._start_flow_recorder()
+        self._start_alert_engine()
+        try:
+            _max_streams = int(self.props.get('flow_recorder.max_concurrent_streams', '5'))
+        except (TypeError, ValueError):
+            _max_streams = 5
+        try:
+            _stream_secs = int(self.props.get('flow_recorder.stream_max_seconds', '120'))
+        except (TypeError, ValueError):
+            _stream_secs = 120
+        self.flow_routes = FlowRoutes(self.app, self.guards,
+                                      self.flow_recorder, self.flow_store,
+                                      self.alert_engine,
+                                      max_streams=_max_streams,
+                                      stream_max_seconds=_stream_secs)
+        self._start_flow_retention()
         self.dagdesigner_routes = DAGDesignerRoutes(
             self.app, self.dag_server, self.user_registry, self.guards)
         self.admin_routes = AdminRoutes(self.app, self.dag_server,
@@ -414,6 +473,145 @@ class DishtaYantraWebApp:
             retention_days=days, sweep_interval_seconds=int(hours * 3600))
         self.audit_retention.start()
 
+    def _start_alert_engine(self):
+        """Build the SLO / staleness alert engine (v1: output-change staleness).
+
+        Keys:
+          alerts.enabled     (default false)
+          alerts.rules_file  (JSON file of staleness rules; default empty = none)
+
+        A rule breaches when a DAG (or a named node) has produced no OUTPUT CHANGE
+        within max_age_seconds. Evaluation is on demand against the flow store;
+        nothing runs and no rules load while disabled.
+        """
+        from core.alerts import AlertEngine, load_rules
+        enabled = str(self.props.get('alerts.enabled', 'false')).strip().lower() \
+            in ('1', 'true', 'yes', 'on')
+        rules_file = self.props.get('alerts.rules_file', '') or ''
+        rules = load_rules(rules_file) if enabled else []
+        self.alert_engine = AlertEngine(lambda: self.flow_store,
+                                        enabled=enabled, rules=rules)
+        if enabled:
+            logger.info("Alert engine ENABLED with %d staleness rule(s) from %s",
+                        len(rules), rules_file or "(no rules_file set)")
+
+    def _start_flow_recorder(self):
+        """Build the flow store + recorder from configuration.
+
+        Flow Time-Travel is OFF by default and disable-able at runtime. Keys:
+          flow_recorder.enabled          (default false)
+          flow_recorder.store            (sqlite | dao | noop | paimon; default sqlite)
+          flow_recorder.store_path       (sqlite file; default data/flow_history.db)
+          flow_recorder.maxsize          (bounded queue depth; default 100000)
+          flow_recorder.max_payload_bytes(per-side JSON cap; default 2048)
+          flow_recorder.sample_rate      (1.0 = every fire; default 1.0)
+        """
+        from core.flow_recorder import FLOW_RECORDER
+        from core.flow_store import make_flow_store
+        enabled = str(self.props.get('flow_recorder.enabled', 'false')).strip().lower() \
+            in ('1', 'true', 'yes', 'on')
+        kind = str(self.props.get('flow_recorder.store', 'sqlite')).strip().lower()
+        # Provenance lets several instances share ONE flow database and lets
+        # queries disambiguate origin.
+        import socket
+        try:
+            host = socket.gethostname()
+        except Exception:  # noqa: BLE001
+            host = self.props.get('server.host', None)
+        try:
+            port = int(self.props.get('server.port', '5002'))
+        except (TypeError, ValueError):
+            port = None
+        provenance = {'instance': self.props.get('service.instance_name',
+                                                  'DishtaYantra'),
+                      'host': host, 'port': port}
+        if kind == 'dao':
+            logger.error(
+                "flow_recorder.store=dao is no longer permitted (flow history "
+                "must never share the application database). Disabling flow "
+                "recording - set store=sqlite or store=postgres.")
+            from core.flow_store import NoopFlowStore
+            self.flow_store = NoopFlowStore()
+            enabled = False
+        else:
+            # Safety net: never let the flow DB resolve to the application DB.
+            app_db = str(self.props.get('db.sqlite.path', '') or '')
+            flow_path = str(self.props.get('flow_recorder.store_path', '') or '')
+            flow_url = str(self.props.get('flow_recorder.db_url', '') or '')
+            same = bool(app_db) and (
+                os.path.abspath(flow_path) == os.path.abspath(app_db)
+                or (flow_url.startswith('sqlite') and app_db in flow_url))
+            if same:
+                logger.error("flow_recorder points at the application database "
+                             "(%s); refusing. Disabling flow recording.", app_db)
+                from core.flow_store import NoopFlowStore
+                self.flow_store = NoopFlowStore()
+                enabled = False
+            else:
+                try:
+                    self.flow_store = make_flow_store(
+                        kind, path=self.props.get('flow_recorder.store_path',
+                                                  'data/flow_history.db'),
+                        db_url=self.props.get('flow_recorder.db_url', None),
+                        warehouse=self.props.get('flow_recorder.warehouse',
+                                                 'data/flow_warehouse'),
+                        aerospike_hosts=self.props.get(
+                            'flow_recorder.aerospike_hosts', '127.0.0.1:3000'),
+                        aerospike_namespace=self.props.get(
+                            'flow_recorder.aerospike_namespace', 'dishtayantra'),
+                        provenance=provenance)
+                except Exception:
+                    logger.exception("Flow store '%s' could not be created; "
+                                     "flow recording will be inert", kind)
+                    from core.flow_store import NoopFlowStore
+                    self.flow_store = NoopFlowStore()
+        try:
+            maxsize = int(self.props.get('flow_recorder.maxsize', '100000'))
+        except (TypeError, ValueError):
+            maxsize = 100000
+        try:
+            mpb = int(self.props.get('flow_recorder.max_payload_bytes', '2048'))
+        except (TypeError, ValueError):
+            mpb = 2048
+        try:
+            sample = float(self.props.get('flow_recorder.sample_rate', '1.0'))
+        except (TypeError, ValueError):
+            sample = 1.0
+        self.flow_recorder = FLOW_RECORDER
+        self.flow_recorder.configure(
+            enabled=enabled, store=self.flow_store, maxsize=maxsize,
+            max_payload_bytes=mpb, sample_rate=sample)
+        logger.info("Flow recorder configured (enabled=%s, store=%s, "
+                    "sample_rate=%.3f)", enabled, kind, sample)
+
+    def _start_flow_retention(self):
+        """Start the sweep that bounds flow history. Keys:
+          flow_recorder.retention_hours        (default 24; <= 0 disables)
+          flow_recorder.retention_sweep_minutes (default 30)
+          flow_recorder.maintenance            (none | incremental | full; default none)
+          flow_recorder.maintenance_hour       (local hour 0-23 for daily maint; default 3)
+        """
+        try:
+            hours = float(self.props.get('flow_recorder.retention_hours', '24'))
+        except (TypeError, ValueError):
+            hours = 24.0
+        try:
+            minutes = float(self.props.get(
+                'flow_recorder.retention_sweep_minutes', '30'))
+        except (TypeError, ValueError):
+            minutes = 30.0
+        maint = str(self.props.get('flow_recorder.maintenance', 'none')).strip().lower()
+        try:
+            maint_hour = int(self.props.get('flow_recorder.maintenance_hour', '3'))
+        except (TypeError, ValueError):
+            maint_hour = 3
+        from core.flow_retention import FlowRetention
+        self.flow_retention = FlowRetention(
+            self.flow_store, retention_hours=hours,
+            sweep_interval_seconds=int(minutes * 60),
+            maintenance_mode=maint, maintenance_hour=maint_hour)
+        self.flow_retention.start()
+
     def shutdown(self):
         """Shutdown the web application and clean up resources."""
         logger.info("Shutting down DishtaYantra Web Application...")
@@ -437,6 +635,11 @@ class DishtaYantraWebApp:
 
             if self.audit_retention:
                 self.audit_retention.stop()
+
+            if self.flow_retention:
+                self.flow_retention.stop()
+            if self.flow_recorder:
+                self.flow_recorder.stop(flush=True)
 
             logger.info("DishtaYantra Web Application shutdown complete")
         except Exception as e:

@@ -266,13 +266,13 @@ class AdminLogRoutes:
             filename=f'{log_file}_{timestamp}.log')
 
     def live_logs(self, request: Request):
-        """Render the live logs page."""
-        self.guards.admin_required(request)
+        """Render the live logs page (any authenticated user)."""
+        self.guards.login_required(request)
         return render(request, 'admin/live_logs.html')
 
     def live_logs_stream(self, request: Request):
-        """Server-Sent Events endpoint for live log streaming."""
-        self.guards.admin_required(request)
+        """Server-Sent Events endpoint for live log streaming (any authenticated user)."""
+        self.guards.login_required(request)
 
         def generate_log_events():
             """Tail all known log files and yield SSE data frames."""

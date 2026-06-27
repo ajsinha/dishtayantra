@@ -17,6 +17,7 @@ import os
 
 from core.dag.dag_view import build_dag_view
 from core.dag.edge_value import is_batch
+from core.service.client import active_target_is_remote, get_service_client
 
 from fastapi import FastAPI, Request
 
@@ -106,8 +107,9 @@ class DashboardRoutes:
         """Main dashboard view."""
         username = self.guards.login_required(request)
         try:
-            server_status = self.dag_server.get_server_status()
-            dags = self.dag_server.list_dags()
+            svc = get_service_client(request)
+            server_status = svc.server_status()
+            dags = svc.list_dags()
             return render(request, 'dashboard.html',
                           dags=dags,
                           is_admin=self.user_registry.has_role(username,
@@ -123,6 +125,10 @@ class DashboardRoutes:
     def dag_details(self, request: Request, dag_name: str):
         """DAG details view."""
         username = self.guards.login_required(request)
+        if active_target_is_remote(request):
+            flash(request, 'Detailed DAG view is not yet available for remote '
+                           'servers - switch to Local to inspect a DAG.', 'info')
+            return redirect_to(request, 'dashboard')
         try:
             # The DAG object in this (main) process. When the DAG runs in a
             # worker subprocess this is a lazy, unbuilt copy; the live view-model
@@ -244,6 +250,10 @@ class DashboardRoutes:
         the worker process when the DAG runs in a worker.
         """
         self.guards.login_required(request)
+        if active_target_is_remote(request):
+            flash(request, 'DAG state view is not yet available for remote '
+                           'servers - switch to Local to inspect a DAG.', 'info')
+            return redirect_to(request, 'dashboard')
         try:
             dag = self.dag_server.dags.get(dag_name)
             if not dag:

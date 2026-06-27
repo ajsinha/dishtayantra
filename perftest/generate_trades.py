@@ -31,6 +31,7 @@ Usage:
     python3 perftest/generate_trades.py                 # 10000 heterogeneous trades
     python3 perftest/generate_trades.py --count 50000
     python3 perftest/generate_trades.py --count 1000 --rate 500     # 500 msg/sec
+    python3 perftest/generate_trades.py --count 1000 --randomrate 50  # bursts of 1..50
     python3 perftest/generate_trades.py --dry-run --count 8         # print samples
     python3 perftest/generate_trades.py --uniform                   # old flat shape
     python3 perftest/generate_trades.py --hetero-level high --seed 42
@@ -329,6 +330,11 @@ def main():
                     help=f"bootstrap servers, comma-separated (default {DEFAULT_BOOTSTRAP})")
     ap.add_argument("--rate", type=float, default=0.0,
                     help="max messages/sec (0 = as fast as possible)")
+    ap.add_argument("--randomrate", type=int, default=None,
+                    help="bursty mode: send trades in batches whose size is a random "
+                         "integer from 1 to RANDOMRATE (inclusive), flushed together "
+                         "so each batch lands as one burst. Total is still bounded by "
+                         "--count; combine with --rate to bound the average msgs/sec.")
     ap.add_argument("--anomaly-pct", type=float, default=1.0,
                     help="percentage of anomalous trades (default 1.0)")
     ap.add_argument("--hetero-level", choices=["low", "med", "high"], default="med",
@@ -353,6 +359,9 @@ def main():
 
     if args.partitions < 1:
         sys.exit("--partitions must be >= 1")
+
+    if args.randomrate is not None and args.randomrate < 1:
+        sys.exit("--randomrate must be >= 1")
 
     rng = random.Random(args.seed)
 
@@ -379,6 +388,7 @@ def main():
           f"{'uniform' if args.uniform else 'heterogeneous'} trades to topic "
           f"'{args.topic}' at {args.bootstrap}"
           + (f" (rate-limited to {args.rate}/s)" if args.rate else "")
+          + (f" in random bursts of 1..{args.randomrate}" if args.randomrate else "")
           + f"; keyed by '{args.partition_key}' so Kafka groups every trade "
             f"with the same value onto one partition ...")
 
@@ -389,8 +399,8 @@ def main():
     key_field = args.partition_key
     distinct_keys = set()
 
-    for i in range(args.count):
-        trade = make_trade(i, rng, args.anomaly_pct, args.uniform, args.hetero_level)
+    def emit_one(idx):
+        trade = make_trade(idx, rng, args.anomaly_pct, args.uniform, args.hetero_level)
         key_val = str(trade.get(key_field, ""))
         # Provide ONLY the message key; Kafka's partitioner hashes it to one of
         # the topic's partitions (same key -> same partition). The producer must
@@ -398,13 +408,34 @@ def main():
         # count the topic may not have, and fail if it has fewer.
         producer.send(args.topic, value=trade, key=key_val)
         distinct_keys.add(key_val)
-        sent += 1
-        if interval:
-            time.sleep(interval)
-        if sent >= next_report:
+
+    def report():
+        nonlocal next_report
+        while sent >= next_report:
             elapsed = time.perf_counter() - start
             print(f"  ... {sent} sent ({sent/elapsed:,.0f} msg/s)")
             next_report += 10000
+
+    if args.randomrate:
+        # Bursty mode: each batch is a random 1..randomrate trades, flushed
+        # together so it arrives downstream as one burst. The last batch is
+        # trimmed so the total equals --count.
+        while sent < args.count:
+            batch = min(rng.randint(1, args.randomrate), args.count - sent)
+            for _ in range(batch):
+                emit_one(sent)
+                sent += 1
+            producer.flush()                       # land the whole batch at once
+            if interval:
+                time.sleep(batch * interval)       # keep the average rate ~ --rate
+            report()
+    else:
+        for i in range(args.count):
+            emit_one(i)
+            sent += 1
+            if interval:
+                time.sleep(interval)
+            report()
 
     producer.flush()
     producer.close()

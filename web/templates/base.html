@@ -1250,15 +1250,33 @@
                             <i class="bi bi-bezier2"></i> DAG Designer
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('cache_management') }}">
-                            <i class="bi bi-hdd-rack"></i> Cache
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="manageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tools"></i> Manage
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('egress_monitoring') }}">
-                            <i class="bi bi-arrow-up-right-circle"></i> Egress
-                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="manageDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('egress_monitoring') }}">
+                                    <i class="bi bi-arrow-up-right-circle"></i> Egress
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('flow_time_travel') }}">
+                                    <i class="bi bi-clock-history"></i> Flow Time Travel
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('cache_management') }}">
+                                    <i class="bi bi-hdd-rack"></i> Cache
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('live_logs') }}">
+                                    <i class="bi bi-broadcast"></i> Live Logs
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     {% if 'admin' in session.get('roles', []) %}
                     <li class="nav-item dropdown">
@@ -1303,11 +1321,6 @@
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('live_logs') }}">
-                                    <i class="bi bi-broadcast"></i> Live Logs
-                                </a>
-                            </li>
-                            <li>
                                 <a class="dropdown-item" href="{{ url_for('logging_management') }}">
                                     <i class="bi bi-sliders"></i> Logging Control
                                 </a>
@@ -1337,15 +1350,22 @@
                             <i class="bi bi-book"></i> Help
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('comparison') }}">
-                            <i class="bi bi-bar-chart-steps"></i> Compare
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('about') }}">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="aboutDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-info-circle"></i> About
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="aboutDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('about') }}">
+                                    <i class="bi bi-info-circle"></i> About DishtaYantra
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('comparison') }}">
+                                    <i class="bi bi-bar-chart-steps"></i> Compare
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
@@ -1362,6 +1382,51 @@
                             <li><button type="button" class="dropdown-item theme-option" data-theme-value="blue"><i class="bi bi-bank me-2"></i>Blue<i class="bi bi-check2 theme-check ms-2"></i></button></li>
                         </ul>
                     </li>
+                    {% if session.username %}
+                    <!-- v5.29.0: service-plane switcher (local vs trusted servers) -->
+                    <li class="nav-item dropdown me-2" id="serviceSwitcher">
+                        <button class="btn btn-sm dropdown-toggle" id="serviceSwitcherBtn"
+                                style="border:1px solid rgba(255,255,255,.35);color:#fff;{% if service_target and service_target != 'local' %}background:#b45309;border-color:#b45309;{% endif %}"
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                title="Active service plane">
+                            <i class="bi bi-hdd-network"></i>
+                            {% if service_target and service_target != 'local' %}
+                                {% set _sel = (trusted_servers | selectattr('server_id','equalto',service_target) | list) %}
+                                {{ _sel[0].name if _sel else service_target }}
+                            {% else %}Local{% endif %}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                            <li>
+                                <form method="post" action="{{ url_for('service_select') }}" class="m-0">
+                                    <input type="hidden" name="target" value="local">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-house me-2"></i>Local
+                                        {% if not service_target or service_target == 'local' %}<i class="bi bi-check2 ms-2"></i>{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% if trusted_servers %}<li><hr class="dropdown-divider"></li>{% endif %}
+                            {% for ts in trusted_servers %}
+                            <li>
+                                <form method="post" action="{{ url_for('service_select') }}" class="m-0">
+                                    <input type="hidden" name="target" value="{{ ts.server_id }}">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-hdd-network me-2"></i>{{ ts.name }}
+                                        <span class="dy-srv-dot ms-2" data-server="{{ ts.server_id }}" title="checking…" style="color:#9ca3af;">&#9679;</span>
+                                        {% if ts.last_probe_ok is sameas false %}<i class="bi bi-exclamation-triangle text-warning ms-2" title="last probe failed"></i>{% endif %}
+                                        {% if service_target == ts.server_id %}<i class="bi bi-check2 ms-2"></i>{% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                            {% if 'admin' in session.get('roles', []) %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('trusted_servers_page') }}"><i class="bi bi-gear me-2"></i>Manage servers…</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('fleet_page') }}"><i class="bi bi-grid-3x3-gap me-2"></i>Fleet view…</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                     {% if session.username and ha_role %}
                     <!-- v2.2: HA role visible on every page for logged-in users -->
                     <li class="nav-item">
@@ -1535,5 +1600,77 @@
     });
     </script>
     {% block extra_js %}{% endblock %}
+<!-- v5.30.0: service-plane gateway shim. When a remote target is active, route
+     whitelisted data-API calls through the UI plane's /api/proxy so existing
+     pages (flow, metrics, designer, workers, egress) re-target transparently.
+     Local target -> no-op, native behaviour unchanged. -->
+<script>
+(function () {
+    window.DY_SERVICE_TARGET = "{{ service_target or 'local' }}";
+    if (!window.DY_SERVICE_TARGET || window.DY_SERVICE_TARGET === "local") return;
+    var ALLOW = [
+        "/api/flow", "/api/dag-designer/components", "/api/dag-designer/folders",
+        "/api/dag-designer/validate", "/api/dag-designer/save",
+        "/api/workers/status", "/api/workers/assignments",
+        "/api/workers/load-summary", "/metrics", "/health", "/egress/stats"
+    ];
+    function proxied(path) {
+        for (var i = 0; i < ALLOW.length; i++) {
+            if (path === ALLOW[i] || path.indexOf(ALLOW[i]) === 0) return true;
+        }
+        return false;
+    }
+    var nativeFetch = window.fetch.bind(window);
+    window.fetch = function (input, init) {
+        try {
+            var url = (typeof input === "string") ? input : (input && input.url);
+            if (url && url.charAt(0) === "/" && url.indexOf("/api/proxy") !== 0) {
+                var path = url.split("?")[0];
+                if (proxied(path)) {
+                    var rewritten = "/api/proxy" + url;
+                    if (typeof input === "string") { input = rewritten; }
+                    else { input = new Request(rewritten, input); }
+                }
+            }
+        } catch (e) { /* fall through to native */ }
+        return nativeFetch(input, init);
+    };
+})();
+</script>
+<!-- v5.31.0: live reachability dots in the service-plane switcher. Probes only
+     when the dropdown opens (lazy, cached ~15s) so it costs nothing on normal
+     page loads. Uses the same reachable/manageable signal as /fleet. -->
+<script>
+(function () {
+    var sw = document.getElementById('serviceSwitcher');
+    if (!sw) return;
+    var dots = sw.querySelectorAll('.dy-srv-dot');
+    if (!dots.length) return;
+    var last = 0;
+    function colour(p) {
+        if (!p) return ['#9ca3af', 'unknown'];
+        if (p.reachable && p.manageable) return ['#16a34a', 'reachable'];
+        if (p.reachable) return ['#d97706', 'up · not manageable'];
+        return ['#dc2626', 'unreachable'];
+    }
+    function refresh() {
+        var now = Date.now();
+        if (now - last < 15000) return;   // cache window
+        last = now;
+        fetch('/api/fleet/overview', { headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                var byId = {};
+                (data.planes || []).forEach(function (p) { byId[p.id] = p; });
+                dots.forEach(function (d) {
+                    var c = colour(byId[d.getAttribute('data-server')]);
+                    d.style.color = c[0]; d.title = c[1];
+                });
+            })
+            .catch(function () { last = 0; /* allow retry on next open */ });
+    }
+    sw.addEventListener('show.bs.dropdown', refresh);
+})();
+</script>
 </body>
 </html>

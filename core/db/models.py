@@ -9,11 +9,13 @@ All persistent security entities for DishtaYantra v2.0.0 live here:
     user_roles - many-to-many association between users and roles
     api_keys   - programmatic access keys bound to a user
 
-These models intentionally mirror the DDL shipped in
-``config/schema/schema_sqlite.sql`` and ``config/schema/schema_postgres.sql``.
-There is deliberately **no** migration framework: SQLite databases are created
-automatically from the model metadata on startup, while PostgreSQL databases
-are provisioned once by executing the PostgreSQL schema file.
+These models map onto the DDL shipped in
+``config/schema/schema_sqlite.sql`` and ``config/schema/schema_postgres.sql``,
+which are the **single source of truth** for the schema. There is deliberately
+**no** migration framework: on startup the SQLite database is created by
+applying ``schema_sqlite.sql`` verbatim (the models map to it for queries only),
+and PostgreSQL is provisioned once by executing ``schema_postgres.sql``. A
+database that predates a schema change is recreated, never migrated.
 
 All database access goes through :mod:`core.db.dao` - no SQL anywhere else.
 
@@ -27,6 +29,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Table,
@@ -37,7 +40,16 @@ from sqlalchemy.orm import DeclarativeBase, relationship
 
 
 class Base(DeclarativeBase):
-    """Declarative base shared by every DishtaYantra ORM model."""
+    """Declarative base for the **application** database (users, roles, API
+    keys, audit, trusted servers). The app DB is created from this metadata via
+    create_all (SQLite) / config/schema/schema_*.sql (Postgres)."""
+
+
+class FlowBase(DeclarativeBase):
+    """Separate declarative base for the **flow-history** store. Kept distinct
+    from ``Base`` on purpose: flow history lives in its OWN database, so
+    ``FlowEvent`` must NOT be created in the application DB by the app's
+    create_all. Its schema is the dedicated config/schema/flow_events_*.sql."""
 
 
 # Association table: users <-> roles (no extra payload, plain link table)
@@ -185,3 +197,117 @@ class AuditEvent(Base):
 
     def __repr__(self) -> str:  # pragma: no cover - debug aid
         return f"<AuditEvent {self.action} actor={self.actor}>"
+
+
+class FlowEvent(FlowBase):
+    """An append-only record of one node-fire, for Flow Time-Travel.
+
+    Captured by the engine's equality gate (a node only fires when its output
+    changes), so these rows are the DAG's compact change-log. Written in
+    batches by core.flow_recorder; never updated; purged by age via
+    core.flow_retention. Indexed on (dag_id, ts_ms) for fast window queries.
+    """
+
+    __tablename__ = "flow_events"
+    __table_args__ = (
+        Index("ix_flow_dag_ts", "dag_id", "ts_ms"),
+        Index("ix_flow_dag_node_ts", "dag_id", "node_id", "ts_ms"),
+        # Provenance index: when many instances write to one shared flow DB,
+        # queries scope by origin first.
+        Index("ix_flow_instance_dag_ts", "instance", "dag_id", "ts_ms"),
+        Index("ix_flow_dag_cycle", "dag_id", "cycle_id"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    dag_id = Column(String(128), nullable=False)
+    node_id = Column(String(128), nullable=False)
+    seq = Column(Integer, nullable=False)        # per-instance monotonic order
+    ts_ms = Column(Integer, nullable=False)       # epoch milliseconds
+    inputs_json = Column(Text, nullable=True)     # bounded JSON snapshot
+    output_json = Column(Text, nullable=True)     # bounded JSON snapshot
+    targets_json = Column(Text, nullable=True)    # downstream node names (JSON)
+    compute_us = Column(Integer, nullable=True)   # optional compute time
+    # Compute-cycle group (v5.42.0): all fires produced by one engine sweep
+    # (one start-to-finish propagation wave) share a cycle_id, so a window can be
+    # grouped and inspected one whole cycle at a time. Nullable (older rows null).
+    cycle_id = Column(Integer, nullable=True)
+    # Provenance (v5.34.0): which instance produced this event. Lets several
+    # servers safely share ONE flow database (e.g. a central Postgres) and lets
+    # queries disambiguate origin. Nullable for backward compatibility.
+    instance = Column(String(128), nullable=True)
+    host = Column(String(255), nullable=True)
+    port = Column(Integer, nullable=True)
+
+    def to_dict(self) -> dict:
+        import json as _json
+
+        def _load(s):
+            if s is None:
+                return None
+            try:
+                return _json.loads(s)
+            except Exception:  # noqa: BLE001
+                return s
+
+        return {
+            "id": self.id, "dag_id": self.dag_id, "node_id": self.node_id,
+            "seq": self.seq, "ts_ms": self.ts_ms,
+            "inputs": _load(self.inputs_json), "output": _load(self.output_json),
+            "targets": _load(self.targets_json) or [], "compute_us": self.compute_us,
+            "cycle_id": self.cycle_id,
+            "instance": self.instance, "host": self.host, "port": self.port,
+        }
+
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        return f"<FlowEvent {self.dag_id}/{self.node_id} seq={self.seq}>"
+
+
+class TrustedServer(Base):
+    """A trusted remote DishtaYantra instance this UI plane may manage.
+
+    Part of the UI-plane / service-plane split (v5.29.0). An admin registers
+    another instance by URL + a ``dyk_`` API key minted on that instance; the
+    key is stored symmetric-encrypted (``api_key_enc``; see
+    ``core.service.crypto``) and never exposed in the clear via API or UI. The
+    ``role`` records whether the supplied key is an 'admin' (full lifecycle) or
+    'user' (read-only) key, so the UI can gate mutating controls. Probe columns
+    cache the last reachability/version check against the remote's
+    ``/api/service/info``.
+    """
+
+    __tablename__ = "trusted_servers"
+    __table_args__ = (
+        Index("ix_trusted_server_id", "server_id", unique=True),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    server_id = Column(String(64), nullable=False, unique=True)  # stable handle
+    name = Column(String(128), nullable=False)                   # display label
+    url = Column(String(512), nullable=False)
+    api_key_enc = Column(Text, nullable=False)                   # encrypted key
+    role = Column(String(16), nullable=False, default="admin")   # admin | user
+    verify_tls = Column(Boolean, nullable=False, default=True)
+    added_by = Column(String(128), nullable=True)
+    added_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    last_probe_at = Column(DateTime, nullable=True)
+    last_probe_ok = Column(Boolean, nullable=True)
+    last_probe_version = Column(String(32), nullable=True)
+
+    def to_dict(self) -> dict:
+        """Safe dict for API/UI: NEVER includes the key (not even encrypted)."""
+        return {
+            "server_id": self.server_id,
+            "name": self.name,
+            "url": self.url,
+            "role": self.role,
+            "verify_tls": self.verify_tls,
+            "added_by": self.added_by,
+            "added_at": self.added_at.isoformat() if self.added_at else None,
+            "last_probe_at": (self.last_probe_at.isoformat()
+                              if self.last_probe_at else None),
+            "last_probe_ok": self.last_probe_ok,
+            "last_probe_version": self.last_probe_version,
+        }
+
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        return f"<TrustedServer {self.server_id} {self.url}>"

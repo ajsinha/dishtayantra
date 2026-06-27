@@ -6,6 +6,7 @@ from collections import deque
 import threading
 
 from core.dag.edge_value import ev_copy, ev_equals, ev_consolidate, ev_describe, is_batch
+from core.flow_recorder import FLOW_RECORDER
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +138,13 @@ class Node(ABC):
                 # Mark children as dirty
                 for edge in self._outgoing_edges:
                     edge.to_node.set_dirty()
+
+                # Flow Time-Travel: record this fire. The equality gate above
+                # means we only get here when the output actually changed, so
+                # this captures the DAG's change-log. It is a no-op and costs
+                # ~nothing when disabled, never blocks, and never raises into
+                # compute (see core/flow_recorder.py).
+                FLOW_RECORDER.record_node_fire(self)
 
             self.set_clean()
             #self.increment_compute_count()

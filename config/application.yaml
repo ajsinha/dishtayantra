@@ -16,7 +16,7 @@
 app:
   name: DishtaYantra
   # Informational only; authoritative runtime version is core/version.py VERSION.
-  version: "5.25.1"
+  version: "5.48.0"
   author:
     name: Ashutosh Sinha
     email: ajsinha@gmail.com
@@ -231,3 +231,55 @@ lmdb:
 audit:
   retention_days: 15
   retention_sweep_hours: 6
+
+# Flow Time-Travel (v5.26.0): OFF by default, non-blocking, disable-able at will.
+flow_recorder:
+  enabled: true
+  store: sqlite            # sqlite | postgres | noop | paimon | aerospike
+  store_path: data/flow_history.db   # sqlite: a SEPARATE file from the app DB
+  # store=postgres (or any SQLAlchemy URL) writes flow history to its OWN
+  # database, separate from the application DB. Many instances may share one
+  # central flow DB; each row records provenance (instance, host, port).
+  # db_url: postgresql+psycopg://user:pass@db-host:5432/flowdb
+  # store=paimon: append-only, hourly-partitioned Apache Paimon (pip install
+  #   pypaimon). Read/write/query work on a local FS warehouse; explicit
+  #   retention (partition drop) needs a REST catalog.
+  #   warehouse: data/flow_warehouse
+  # store=aerospike: EXPERIMENTAL (pip install aerospike; needs a cluster).
+  #   aerospike_hosts: 127.0.0.1:3000
+  #   aerospike_namespace: dishtayantra
+  # NOTE: store=dao is FORBIDDEN - flow history must never share the application
+  # database (users/keys/audit). Use sqlite or postgres (both separate DBs).
+  maxsize: 100000          # bounded queue; overflow dropped (counted), never blocks
+  max_payload_bytes: 2048  # per-side JSON cap on captured values
+  sample_rate: 1.0         # 1.0 = every fire; lower to shed load under pressure
+  retention_hours: 24      # history window kept; <= 0 disables purging
+  retention_sweep_minutes: 30
+  # Optional on-disk reclaim (usually unnecessary - deleted pages are reused so
+  # the file plateaus). 'none' (default) | 'incremental' | 'full' (VACUUM, off-
+  # hours: exclusive lock, but the recorder is decoupled so DAGs never block).
+  # Only the dedicated sqlite store reclaims; the shared-DB 'dao' store never is.
+  maintenance: none
+  maintenance_hour: 3      # local hour (0-23) for the once-daily maintenance pass
+  # Flow replay (UI) web-tier guards. The compute path is isolated (separate WAL
+  # flow DB; enqueue-only hot path), so these bound only web-tier replay load.
+  max_concurrent_streams: 5   # simultaneous SSE replays; over the cap -> "busy"
+  stream_max_seconds: 120     # hard cap per replay (also bounds its WAL read snapshot)
+
+# --- SLO / staleness alerting (v1) ------------------------------------------
+# Output-change staleness from the flow history. A rule breaches when a DAG (or a
+# named node) has produced no OUTPUT CHANGE within max_age_seconds. Evaluated on
+# demand at GET /api/alerts and shown on Admin -> System Monitoring. Because of
+# the equality gate this is "output-change" staleness (a constant-but-healthy
+# stream reads as stale). Disabled by default; rules live in a JSON file - see
+# config/alerts.example.json for the format.
+alerts:
+  enabled: false
+  rules_file: ""           # e.g. config/alerts.json
+
+# Service-plane split (v5.29.0): manage multiple instances from one UI. Empty
+# trusted list (default) => local-only, as before. Trusted-server API keys are
+# encrypted at rest using the secret in the env var named by secret_env.
+service:
+  instance_name: DishtaYantra
+  secret_env: DY_SECRET_KEY

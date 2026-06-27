@@ -644,6 +644,46 @@
     </div>
 </div>
 
+<!-- Flow Recording control (admin) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> Flow Recording
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Capture of DAG node-fires into the flow history store. Enable or disable globally (all DAGs), or pick a single DAG from the dropdown. This is a runtime control; the persisted startup default is <code>flow_recorder.enabled</code>.</p>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+                    <span>Global status:</span>
+                    <span id="flowGlobalStatus" class="badge bg-secondary">unknown</span>
+                    <span class="ms-3">Scope:</span>
+                    <select id="flowScope" class="form-select form-select-sm" style="width:auto;min-width:220px">
+                        <option value="">All DAGs</option>
+                    </select>
+                    <button id="flowEnableBtn" class="btn btn-sm btn-success"><i class="bi bi-play-fill"></i> Enable</button>
+                    <button id="flowDisableBtn" class="btn btn-sm btn-danger"><i class="bi bi-stop-fill"></i> Disable</button>
+                    <button id="flowRefreshBtn" class="btn btn-sm btn-outline-secondary" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+                <div id="flowOverrides" class="small text-muted"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="monitoring-card">
+            <div class="card-header">
+                <i class="bi bi-bell"></i> SLO / Staleness Alerts
+                <span id="sloSummary" class="badge bg-secondary ms-2">—</span>
+                <button id="sloRefreshBtn" class="btn btn-sm btn-outline-secondary float-end" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Output-change staleness from the flow history: a rule breaches when a DAG (or a named node) has produced no <em>output change</em> within its limit. Because of the equality gate, a constant-but-healthy stream reads as stale, so size limits to the slowest legitimate change interval. Rules: <code>alerts.enabled</code> + <code>alerts.rules_file</code> (see <code>config/alerts.example.json</code>).</p>
+                <div id="sloBody" class="small text-muted">Loading…</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -690,5 +730,70 @@ autoRefreshCheckbox.addEventListener('change', function() {
 if (autoRefreshCheckbox.checked) {
     startAutoRefresh();
 }
+// ---- Flow Recording control (admin) ----
+(function(){
+    const statusEl=document.getElementById('flowGlobalStatus');
+    const scopeEl=document.getElementById('flowScope');
+    const overEl=document.getElementById('flowOverrides');
+    if(!statusEl) return;
+    async function j(u,opt){try{const r=await fetch(u,opt);if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
+    function render(s){
+        if(!s){statusEl.textContent='unavailable';statusEl.className='badge bg-secondary';return;}
+        const on=!!s.enabled;
+        statusEl.textContent=on?'ON (all DAGs)':'OFF (all DAGs)';
+        statusEl.className='badge '+(on?'bg-success':'bg-secondary');
+        const ov=s.dag_overrides||{}, keys=Object.keys(ov);
+        overEl.innerHTML=keys.length
+            ? 'Per-DAG overrides: '+keys.map(k=>`<span class="badge ${ov[k]?'bg-success':'bg-danger'} me-1">${k}: ${ov[k]?'on':'off'}</span>`).join('')
+            : 'No per-DAG overrides — every DAG follows the global flag.';
+    }
+    async function loadDags(){
+        const d=await j('/api/flow/dags'); const cur=scopeEl.value;
+        let html='<option value="">All DAGs</option>';
+        if(d&&d.dags){html+=d.dags.map(x=>`<option value="${x.dag_id}">${x.dag_id} (${(x.count||0).toLocaleString()})</option>`).join('');}
+        scopeEl.innerHTML=html; scopeEl.value=cur;
+    }
+    async function loadStatus(){ render(await j('/api/flow/status')); }
+    async function setFlow(enable){
+        const dag=scopeEl.value, qs=dag?('?dag='+encodeURIComponent(dag)):'';
+        render(await j('/api/flow/'+(enable?'enable':'disable')+qs,{method:'POST'}));
+    }
+    document.getElementById('flowEnableBtn').addEventListener('click',()=>setFlow(true));
+    document.getElementById('flowDisableBtn').addEventListener('click',()=>setFlow(false));
+    document.getElementById('flowRefreshBtn').addEventListener('click',()=>{loadStatus();loadDags();});
+    loadStatus(); loadDags();
+})();
+
+/* ---- SLO / staleness alerts panel ---- */
+(function(){
+    const sumEl=document.getElementById('sloSummary');
+    const bodyEl=document.getElementById('sloBody');
+    if(!sumEl) return;
+    async function j(u){try{const r=await fetch(u);if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
+    function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+    function render(d){
+        if(!d){sumEl.textContent='unavailable';sumEl.className='badge bg-secondary ms-2';bodyEl.textContent='Could not load alerts.';return;}
+        if(!d.enabled){sumEl.textContent='disabled';sumEl.className='badge bg-secondary ms-2';
+            bodyEl.innerHTML='Alerting is disabled. Set <code>alerts.enabled=true</code> and <code>alerts.rules_file</code> to enable.';return;}
+        const s=d.summary||{total:0,ok:0,breach:0};
+        sumEl.textContent=s.breach?(s.breach+' breaching'):(s.total+' OK');
+        sumEl.className='badge ms-2 '+(s.breach?'bg-danger':'bg-success');
+        const a=d.alerts||[];
+        if(!a.length){bodyEl.innerHTML='No alert rules configured.';return;}
+        let h='<table class="table table-sm align-middle mb-0"><thead><tr>'
+            +'<th>Rule</th><th>DAG</th><th>Node</th><th>Limit</th><th>Last change</th><th>Status</th></tr></thead><tbody>';
+        for(const x of a){
+            const cls=x.status==='OK'?'success':(x.status==='BREACH'?'danger':'secondary');
+            const age=(x.age_seconds==null)?'—':(x.age_seconds<120?Math.round(x.age_seconds)+'s':Math.round(x.age_seconds/60)+'m')+' ago';
+            h+=`<tr><td>${esc(x.name)}</td><td><code>${esc(x.dag)}</code></td><td>${x.node?('<code>'+esc(x.node)+'</code>'):'<span class="text-muted">(all)</span>'}</td>`
+              +`<td>${x.max_age_seconds}s</td><td>${esc(age)}</td>`
+              +`<td><span class="badge bg-${cls}">${esc(x.status)}</span> <span class="text-muted">${esc(x.reason||'')}</span></td></tr>`;
+        }
+        bodyEl.innerHTML=h+'</tbody></table>';
+    }
+    async function refresh(){render(await j('/api/alerts'));}
+    document.getElementById('sloRefreshBtn').addEventListener('click',refresh);
+    refresh(); setInterval(refresh, 15000);
+})();
 </script>
 {% endblock %}

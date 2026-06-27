@@ -1,8 +1,624 @@
 # DishtaYantra Changelog
 
+## Version 5.48.0 highlights (perftest generator: --randomrate bursty batch mode):
+    - **`--randomrate N` on `perftest/generate_trades.py`.** When given, trades are published in **bursts**
+      whose size is a random integer from **1 to N** (inclusive), flushed together so each batch arrives
+      downstream as one group. The total is still bounded by `--count` (the final batch is trimmed to land
+      exactly on the count), and combining with `--rate` bounds the **average** msgs/sec while keeping the
+      shape bursty. This produces ragged, variable-sized load that exercises the variable compute-cycle
+      sizes the flow distribution chart and per-node throughput surfaces reflect.
+    - Validated with `--randomrate 0` rejected; the steady (no-flag) send path is unchanged. Tooling-only
+      change; the app runtime and the 345-test suite are untouched.
+
+
+
+## Version 5.47.0 highlights (Slow-node / bottleneck highlighting on the DAG details graph, zero server load):
+    - **"Slow nodes" toggle.** The DAG details Graph View gains a toggle that highlights slacker nodes:
+      **stalled** (red - receiving work but emitting ~nothing) and **lagging** (amber - emitting far less
+      than it takes in), while dimming the nodes that are keeping pace so the laggards pop. A ranked
+      **"Slowest nodes"** overlay lists them (stalled first) with in/out rates; clicking a row centres that
+      node in the graph.
+    - **Still zero added server load.** It reuses the client-side throughput deltas (now tracking **both**
+      inbound and outbound msgs/min from the ~30s reload), so there are no new requests, no DB scan and no
+      hot-path rate-meter. The toggle state survives the auto-refresh via `sessionStorage`.
+    - **Honest heuristic.** Because the equality gate lets a node legitimately emit less than it receives
+      (e.g. a filter), the highlight flags nodes for **attention**, not as a verdict. A true per-node
+      compute-latency timer would distinguish "slow" from "selective" but adds hot-path cost, so it remains
+      a deliberate opt-in that is **not** enabled.
+    - UI-only change; the backend is untouched. 345 tests still pass.
+
+
+
+## Version 5.46.0 highlights (Per-node total + throughput inside DAG-details nodes, zero added server load):
+    - **Total + throughput inside each node.** The live DAG details Graph View now renders, inside every
+      node rectangle, the cumulative **message count** and a **throughput** figure in **messages/minute**,
+      making slow or stalled nodes easy to spot.
+    - **No extra server load.** The throughput is computed entirely **client-side**: the page already
+      renders each node's cumulative count (`messages_out`, from `build_dag_view`) and reloads on its ~30s
+      auto-refresh cycle, so the rate is simply the delta between the current snapshot and the previous one
+      (persisted in `sessionStorage`), normalised to msgs/min. There are **no new requests, no DB scan, and
+      no rate-meter on the compute hot path** - directly honouring the "don't overload the server" constraint.
+    - Robustness: the first load shows the total only (rate appears after the next refresh); a counter reset
+      from a DAG restart clamps the rate to 0 instead of showing a negative spike; stale/too-fast gaps are
+      ignored. Nodes size to their longest label line and gained a little height for the second line, and the
+      Graph View header documents what the second line means.
+    - UI-only change; the backend is untouched. 345 tests still pass.
+
+
+
 The authoritative current version is `core/version.py` (`VERSION`). This file
 records the per-release highlights that previously lived in the version.py
 docstring.
+
+
+## Version 5.45.0 highlights (Per-node message counts, dropdown time pickers, unified Clear button):
+    - **Per-node message counts.** During replay each node on the graph shows a running message count
+      beneath its name (incremented as that node fires), so the DAG visibly lights up partially according
+      to the data and branch logic. Counts reset on Clear / new replay.
+    - **Dropdown time pickers replace the calendar.** The native `datetime-local` calendar was not
+      reacting well, so From/To are now plain dropdowns: **Today/Yesterday + hh : mm : ss + AM/PM**. The
+      12-hour->24-hour and today-vs-yesterday conversion was verified against concrete cases. Changing the
+      window re-slices the in-memory distribution buckets client-side (no server hit) and drives both the
+      chart and the replay window.
+    - **Unified Clear button.** A single Clear action stops the stream (closing the SSE connection so the
+      server releases the concurrency slot + WAL read snapshot) and resets the graph, per-node counts and
+      event list. The redundant jump-to-start button was removed.
+    - 345 tests (UI-only change; backend unchanged).
+
+
+## Version 5.44.0 highlights (In-memory rolling 24h distribution per DAG + auto-focused chart):
+    - **Rolling 24h distribution per DAG, in memory.** The flow recorder now maintains a per-DAG rolling
+      last-24h histogram (120 x 12-minute buckets) updated from the drain thread as events are written -
+      event count and **distinct compute-cycle count** per bucket (cycle_ids are monotonic per bucket, so
+      the distinct count is exact). It runs off the compute path and can never affect DAG computation.
+    - **New `GET /api/flow/{dag_id}/distribution`** serves that roll-up in O(120) with **no database
+      scan**, so the replay bottom-pane chart costs the database nothing even when several flows are viewed
+      at once. The earlier per-load `/histogram` SQL aggregate is no longer on the default path (it remains
+      available for an exact aggregate over an arbitrary sub-window).
+    - **Auto-focused chart.** On load the window auto-focuses to where the DAG was actually active (so a
+      quiet 24h no longer looks sparse); changing the From/To pickers **re-slices the buckets already in
+      the browser** - no further server hits. An amber playhead advances during replay.
+    - 4 new tests (`tests/test_flow_distribution.py`); 345 total.
+
+
+## Version 5.43.0 highlights (Editable From/To pickers + compute-cycle distribution chart):
+    - **Fixed the From/To pickers.** They were constrained to a fixed last-24h `min`/`max` and re-clamped to
+      that range on every change, so edits made via the calendar dropdown appeared not to take. They are now
+      **freely editable**: the window respects whichever field you just edited and only caps the span to 24h
+      (by moving the *other* field), with no snap-back.
+    - **New compute-cycle distribution chart** replaces the old slider/density bars. `GET
+      /api/flow/{dag_id}/histogram?from&to&buckets=120` returns per-bucket **compute-cycle and event counts**
+      via a single SQL `GROUP BY` aggregate (SQLite override; the `FlowStore` base class has an
+      `iter_export`-based fallback for other backends) - **no events are sent to the browser**. The bottom
+      pane now draws cycle counts across the selected window (bars + line + soft area) with an amber
+      **playhead** that advances during replay, and From/To labels on the x-axis.
+    - **Simpler interaction:** the draggable timeline handles were removed - the window is set entirely by
+      the From/To pickers. 3 new tests (`tests/test_flow_histogram.py`); 341 total.
+
+
+## Version 5.42.2 highlights (Flow replay "Stop" button - explicit disconnect + resource release):
+    - **New Stop button** on the flow replay transport bar. It closes the SSE `EventSource`, so the server
+      generator hits `GeneratorExit` and its `finally` **releases the concurrency slot** (and frees the WAL
+      read snapshot the replay held); it then resets the replay view and refreshes the "replays N/5"
+      indicator. The same release already happens on pause or when navigating away - the button makes it an
+      explicit, discoverable action.
+    - **Tests:** the concurrency slot is released both after a stream completes normally and after an early
+      client disconnect (mid-stream). 338 tests total.
+
+
+## Version 5.42.1 highlights (No DB migrations - schema files are the single source of truth):
+    - **Removed the `ALTER TABLE ... ADD COLUMN cycle_id`** added in 5.42.0. There is now **no** schema
+      migration code anywhere. The four DDL files - `schema_sqlite.sql`, `schema_postgres.sql`,
+      `flow_events_sqlite.sql`, `flow_events_postgres.sql` (one per dialect for the core app and for flow) -
+      are the single source of truth. A database that predates a schema change is **recreated, never
+      migrated** (flow history is transient: 24h retention, in its own file separate from the app DB).
+    - **Core app SQLite is now created by applying `schema_sqlite.sql` verbatim** (via the DBAPI
+      `executescript`) instead of SQLAlchemy `create_all()`, so the *file* - not the ORM metadata - defines
+      the schema, exactly as the flow store already does. The ORM models map onto it for queries only. The
+      file and ORM were verified to produce functionally identical tables before the switch; PostgreSQL was
+      already provisioned from its schema file.
+    - **New guard tests** (`tests/test_no_migrations.py`): exactly four schema files exist, and no
+      `ALTER TABLE`/`ADD COLUMN` appears in the Python sources or in the DDL files - so this policy cannot
+      silently regress. 336 tests total.
+
+
+## Version 5.42.0 highlights (Compute-cycle id + cycle-grouped replay + replay caps):
+    - **Compute-cycle id (data model).** One engine sweep that does work = one *compute cycle* (a
+      start-to-finish propagation wave). `ComputeGraph` stamps a monotonic `cycle_id` (per dag-instance)
+      before each sweep via `_begin_compute_cycle`/`_commit_compute_cycle` (idle sweeps neither burn an id
+      nor leave a gap); every node fire recorded in that sweep carries it. NEW nullable
+      `flow_events.cycle_id` column (schema files + `FlowEvent` ORM); older rows are null, and an existing
+      SQLite flow DB gets the column added defensively at startup (additive, not a migration framework).
+    - **Cycle-grouped SSE replay.** `/api/flow/{dag}/stream` now groups by `cycle_id` and pushes a
+      configurable number of **complete** cycles per message (`cycles`, default 256) - never a partial
+      cycle - so the UI always renders a consistent wave and cycles arrive in order. A hard per-push event
+      cap bounds memory for legacy (null cycle_id) rows or a pathologically large single cycle.
+    - **Replay caps (web-tier guards).** `flow_recorder.max_concurrent_streams` (default **5**; over the cap
+      a replay gets a clear "server busy" event) and `flow_recorder.stream_max_seconds` (default 120s, which
+      also bounds the WAL read snapshot a replay holds). `/api/flow/status` reports `active_streams` /
+      `max_streams`; the replay page header shows "replays N/5" and flags when at capacity. The compute path
+      stays isolated (separate WAL flow DB; enqueue-only hot path).
+    - **UI.** Graph topology now comes from `state-at` (every node, one row each) instead of a 1500-event
+      sample, so the drawn DAG is complete; event rows and the detail pane show the `cycle_id`. The
+      EventSource is closed on done/error so the browser never auto-reconnects and silently re-streams.
+    - 6 new tests (333 total). Help page, Flow design doc, and QUICKSTART updated.
+
+
+## Version 5.41.0 highlights (Flow replay scales to huge windows: SSE streaming + bounded rendering):
+    - **Fixed the Flow Time-Travel page becoming unresponsive** on DAGs with hundreds of thousands of
+      events. Root cause: the page fetched the entire window (up to 100k events) into the browser and
+      the playback loop scanned the whole events array on every animation frame - both O(N).
+    - **New `GET /api/flow/{dag_id}/stream`** streams a window as Server-Sent-Event **batches** (default
+      1000 events/message, configurable via `batch`) using the memory-safe `iter_export`. The window is
+      hard-capped to **24h** server-side. Emits `event: batch` repeatedly then `event: done` {total}.
+    - **Client reworked to stream on play:** an `EventSource` feeds a **bounded render queue** drained at
+      a speed-controlled rate; the on-screen event list is capped at 300 rows and firing-density builds
+      incrementally - so browser memory and DOM stay flat regardless of window size. Page load now fetches
+      only a small sample to draw the graph topology.
+    - **From/To time pickers** added (synced with the timeline handles; max 24h span enforced on both
+      client and server). **Download** still exports the selected window as **JSONL** (one JSON record per
+      line) via streaming `iter_export`.
+    - No engine/recorder change. Help page, Flow design doc, and QUICKSTART updated. 3 new tests.
+
+
+## Version 5.40.0 highlights (SLO / staleness alerting v1):
+    - **New opt-in alerting** derived from the flow change-log. A rule breaches when a DAG (or a named
+      node) has produced **no output change** within `max_age_seconds`. `core/alerts.py` is pure and
+      decoupled - it reads the flow store through a provider callable and evaluates **on demand** (no
+      background thread). Per-DAG rules use `distinct_dags()` (`max_ts`); per-node rules use one
+      `state_at(now)` per DAG.
+    - **Config (off by default):** `alerts.enabled` + `alerts.rules_file` (JSON: a top-level list or
+      `{"rules":[...]}`; see `config/alerts.example.json`). Invalid rules are skipped and a missing file
+      is treated as no rules - alerting never takes the server down.
+    - **Surfaced** at `GET /api/alerts` (login), an **SLO / Staleness** panel on Admin -> System
+      Monitoring (15s poll, OK/BREACH per rule), and the `dyflow alerts` CLI.
+    - **Honest scope.** The equality gate means this is *output-change* staleness: a constant-but-healthy
+      stream reads as stale (documented; size limits accordingly). **Execution-liveness** (ran but no
+      change - `increment_compute_count()` is currently commented out) and **error-rate** SLOs (the
+      per-node `_errors` deque is capped at 10) are deferred follow-ups needing small engine additions.
+    - Docs updated in lockstep: Configuration Reference (new `alerts` section), Flow Time-Travel help
+      page + design doc, QUICKSTART, Administration & Maintenance guide. 9 new tests.
+
+
+## Version 5.39.0 highlights (flow-log replay & recovery: design + foundation slice):
+    - **New strategic program (C6).** Use the already-shipped Flow Time-Travel change-log for two
+      capabilities no cluster engine offers cheaply: **replay** a recorded window back through the
+      engine (time-travel debugging, regression-testing a new calculator against real historical
+      inputs, what-if runs) and **log-based warm-start recovery** (seed each node's last output from
+      the log at boot). No new infrastructure - a frugal on-ramp to B2 durable state, not a replacement.
+    - **Slice 1 landed: `core/replay.py`** - a read-only, fully offline foundation. `ReplaySource`
+      streams a recorded window as an ordered event tape (memory-bounded `iter_export`; filter by node,
+      instance/origin, and time window) and reports payload fidelity; `recovery_seed` /
+      `recovery_seed_detail` reduce the log to a per-node latest-output map for warm start. Both detect
+      `__truncated__` payloads (capped at capture) and flag them, since faithful replay/restore needs
+      un-truncated values. No engine changes. 6 new tests (309 -> 315).
+    - **Design doc** `docs/design/replay-and-recovery.md` lays out the engine seam, the incremental
+      slices, and the hard consistency questions surfaced honestly (calculator determinism, egress
+      side-effects stubbed in offline replay, payload-truncation fidelity, and warm-start being
+      explicitly **not** exactly-once recovery).
+    - **ROADMAP** updated: C6 added under Phase 3 with a Phase 2 on-ramp note, the baseline refreshed
+      to v5.38.1, and a new section mapping every recently identified enhancement (replay, recovery,
+      flow-based alerting, per-node latency histograms, schema/data contracts, brokers, typed SDK,
+      secrets, per-DAG RBAC, encryption-at-rest, DAG-sharding) to a phase with honest status.
+
+
+## Version 5.38.1 highlights (doc audit: flow control location / per-DAG / CLI):
+    - Documentation-only. Corrected stale references that still described toggling capture from the
+      `/flow` page (the pill is read-only now). QUICKSTART, the Flow Time-Travel design doc, and the
+      Administration & Maintenance guide now consistently state: enable/disable lives on
+      **Admin -> System Monitoring** (global or per-DAG via the scope dropdown), `/flow` shows status
+      read-only, and the equivalent CLI is `dyflow enable|disable [--dag NAME]`. The design doc also
+      documents the per-DAG override model and adds the CLI enable/disable examples.
+    - (Help page and Configuration Reference were already accurate as of 5.38.0.)
+
+
+## Version 5.38.0 highlights (admin-only flow toggle on System Monitoring; per-DAG; CLI):
+    - **The enable/disable control moved to Admin -> System Monitoring** (`/admin/monitoring`, admin-only).
+      A new "Flow Recording" panel shows global status, a scope dropdown (All DAGs / a specific DAG), and
+      Enable/Disable buttons. The `/flow` page now shows recording status **read-only** (the pill is no
+      longer a toggle). Non-admins cannot change capture: the endpoints are `admin_required` and the
+      control only lives on an admin page.
+    - **Per-DAG enable/disable.** Capture can be toggled globally (all DAGs) or for a single DAG. The
+      recorder gained a per-DAG override map; the effective state for a DAG is `override.get(dag, global)`,
+      so a DAG can be silenced while others record, or one DAG enabled while the global flag is off. The
+      hot path stays cheap (fast return when globally off with no overrides).
+    - **API.** `POST /api/flow/enable` and `/api/flow/disable` now accept an optional `?dag=NAME`
+      (omit for all DAGs); `/api/flow/status` reports `dag_overrides`.
+    - **CLI.** `dyflow enable|disable` accept `--dag NAME` (omit for all); `dyflow status` prints the
+      per-DAG overrides.
+    - 306 -> 309 tests (per-DAG disable-while-on, enable-while-off, and override status). Help page and
+      Configuration Reference updated.
+
+
+## Version 5.37.1 highlights (fix: flow events now tagged with the real DAG name):
+    - **Bug fix.** The engine capture hook built each event's `dag_id` from `getattr(node, "dag_id")`,
+      but real DAG nodes have **no** `dag_id` attribute (they carry their graph via `node._graph`, set by
+      `ComputeGraph.set_graph`). Result: every captured node fire was tagged `"default"`, so the `/flow`
+      DAG dropdown could only ever show a single `default` bucket regardless of which DAG fired.
+    - **Fix.** `FlowRecorder._event_from_node` now resolves the DAG id from `node._graph.name` (with an
+      explicit-`dag_id` override and a `"default"` fallback). No change to the engine/node code - the hook
+      is still just the import + one `record_node_fire(self)` call.
+    - The test stub `_make_node` was made realistic (carries `._graph.name`, not a fake `dag_id`), which
+      is what masked the bug; added `test_node_fire_uses_graph_name_for_dag_id` and
+      `test_node_fire_without_graph_defaults`. 304 -> 306 tests.
+    - Verified the UI recording toggle end-to-end: the `/flow` switch calls `admin_required`
+      `/api/flow/enable` and `/api/flow/disable`; toggling flips `/api/flow/status` and unauthenticated
+      calls are rejected (401).
+
+
+## Version 5.37.0 highlights (flow UI re-homed into base.html; recording on by default):
+    - **`/flow` now uses the standard layout.** The Flow Time-Travel page was a standalone HTML
+      document; it now `{% extends "base.html" %}` so it carries the app navbar, theme, and footer. Its
+      bespoke CSS is scoped under `.flow-tt` (no more redefining `:root` variables or styling global
+      `body`/`header`/`main`/`footer`/`select`/`button`, which clashed with Bootstrap); structural tags
+      became `.ftt-*` divs.
+    - **No more mock data on the served page.** Removed the client-side synthetic trade-ETL generator
+      from `/flow`. With no recorded data it now shows an honest **empty state** and a disabled
+      "no recorded DAGs" dropdown, instead of fabricated data that looked real. The synthetic generator
+      survives only in `flow_time_travel_standalone.html` (the demo). The page still derives the graph
+      and events entirely from the live `/api/flow/*` endpoints.
+    - **Recording on by default.** `flow_recorder.enabled` now defaults to `true` with the SQLite store,
+      so DAG node fires are captured out of the box (set `false` to disable). Verified end-to-end:
+      recorder enabled -> events drain to `data/flow_history.db` -> inventory and window queries return
+      them with provenance.
+    - Docs updated (design doc, Configuration Reference, Flow Time-Travel help page) to reflect
+      on-by-default. 304 tests pass.
+
+
+## Version 5.36.1 highlights (flow store schema provisioning matches the app DB policy):
+    - `SqlFlowStore` now provisions like the application database: **SQLite auto-creates** the flow
+      schema from `config/schema/flow_events_sqlite.sql`; **PostgreSQL does NOT auto-create** - apply
+      `config/schema/flow_events_postgres.sql` once yourself. If the `flow_events` table is missing on
+      Postgres, startup fails with a clear, actionable error instead of creating it.
+    - Docs updated (Configuration Reference, Flow Time-Travel help page, postgres schema header).
+
+
+## Version 5.36.0 highlights (no DB migrations; one dedicated schema file per subsystem/dialect):
+    - **No more schema migrations.** Removed the flow-store `_migrate()` (the only ALTER-based path in
+      the codebase). `SqliteFlowStore` now applies the dedicated `config/schema/flow_events_sqlite.sql`
+      verbatim at startup; the **schema file is the single source of truth**. To change the schema, edit
+      the file and recreate the (transient, ~24h) flow database.
+    - **One dedicated schema file per subsystem per dialect.** The core-app schema files
+      (`schema_sqlite.sql`, `schema_postgres.sql`) now contain ONLY application tables (roles, users,
+      user_roles, api_keys, audit_events, trusted_servers). The `flow_events` table (which was present,
+      and stale - it lacked the provenance columns) was removed from them. Flow has its own dedicated
+      `flow_events_sqlite.sql` / `flow_events_postgres.sql`.
+    - **Fixed an app-DB leak.** `FlowEvent` shared the application ORM `Base`, so the app's
+      `Base.metadata.create_all()` was creating an empty `flow_events` table *inside the application
+      database*. `FlowEvent` now uses a separate `FlowBase`, so it is never created in the app DB -
+      reinforcing that flow history never co-locates with the application database.
+    - **PostgreSQL correctness.** `SqlFlowStore` now creates its table from the dedicated `.sql` file
+      rather than the ORM model, so PostgreSQL gets `BIGINT`/`BIGSERIAL`; the model's `Integer` would
+      have 32-bit-overflowed on epoch-millisecond `ts_ms`.
+    - 304 tests (the old migration test is replaced by `test_sqlite_schema_comes_from_dedicated_file`).
+    - Note: a separate one-time *data* bootstrap (legacy `users.json` -> users table in
+      `core/user_registry.py`) still exists; it is a data import, not a schema migration, and was left
+      untouched.
+
+
+## Version 5.35.2 highlights (documentation audit fixes):
+    - A documentation-only pass resolving every finding in `docs/DOC_AUDIT_5_35_1.md`. The only
+      code change is a **new help page + route** (`/help/flow-time-travel`).
+    - **Accuracy:** rewrote `docs/design/flow-time-travel.md` to the v5.35.x reality (backends
+      `sqlite | postgres | noop | paimon | aerospike`; `dao` forbidden; provenance columns;
+      separate-DB guarantee; Paimon/Aerospike/Postgres caveats). Corrected `QUICKSTART.md`
+      navigation (real paths `/dag-designer`, `/admin/logs`, `/admin/logs/live`, `/users`;
+      Manage/Admin/About grouping; Live Logs open to all signed-in users). Fixed the stale navbar
+      diagram in the Administration guide and a stale "SSE planned" note in `MULTI_INSTANCE.md`
+      (fleet SSE shipped in v5.32.0). Minor `ROADMAP.md` (Paimon sink vs flow-store) and
+      `about.html` wording fixes.
+    - **Completeness:** added a full `flow_recorder` section to the Configuration Reference Guide;
+      added a **Flow Time-Travel help page** linked from the help index; documented the two-node
+      kit, `DY_CONFIG_FILE`, and the reachable-vs-manageable fleet health split in `MULTI_INSTANCE.md`.
+    - **Robustness:** the backend caveats (Postgres tested-via-sqlite, Paimon local-FS retention
+      no-op, Aerospike experimental) now appear in the user-facing config guide and help page, not
+      only the changelog; added a Live-Logs log-exposure security note to the Administration guide.
+    - 304 tests unchanged.
+
+
+## Version 5.35.1 highlights (Live Logs visible to all authenticated users):
+    - **Live Logs is no longer admin-only.** The live log page (`/admin/logs/live`) and its SSE
+      stream (`/admin/logs/live/stream`) now use `login_required` instead of `admin_required`, so
+      any authenticated user can watch the live tail. The navbar **Manage > Live Logs** item is
+      ungated to match. All other log endpoints (system-logs viewer/api/download, logging control)
+      remain admin-only. Note: the live stream tails `dagserver.log`/`application.log`/`error.log`,
+      which can contain stack traces and request detail - widening access widens that exposure.
+
+
+## Version 5.35.0 highlights (Paimon implemented, Aerospike experimental, dao forbidden):
+    - **`store=dao` is now FORBIDDEN.** Flow history must never share the application database. The
+      factory rejects `dao` with a clear error; the webapp disables recording (degrade-to-inert) and
+      additionally **refuses any `flow_recorder.db_url`/`store_path` that resolves to the application
+      DB** (a safety net). Use `store=sqlite` (separate file) or `store=postgres` (separate database).
+    - **Paimon is now a real backend** (`core/flow_store_paimon.py`): append-only, hourly-partitioned
+      Apache Paimon table via pure-Python PyPaimon (no JVM). `write_batch`, `query` (predicate push-
+      down), `state_at`, `distinct_dags`, and the `instance` filter are implemented and **tested on a
+      local filesystem warehouse**. Verified caveat: PyPaimon's local FS catalog cannot drop
+      partitions programmatically (it needs a REST catalog), so partition-drop retention is a graceful,
+      logged no-op there — read/write are unaffected; bound retention with a REST catalog or the
+      table's `partition.expiration-time`.
+    - **Aerospike is a full, API-correct implementation** (`core/flow_store_aerospike.py`) but
+      **EXPERIMENTAL and UNVERIFIED**: no Aerospike cluster was available in development, so the
+      connect/write/read/query paths have not been run end to end. This is labelled honestly rather
+      than presented as done (per "verify, don't assert"); validate against a real cluster before use.
+    - The flow store remains a pluggable `FlowStore` ABC; backends now: `sqlite` (default, separate
+      file), `postgres`, `noop`, `paimon`, `aerospike`. Provenance `(instance, host, port)` carries
+      through all of them.
+    - 303 tests (304 with pypaimon installed — the Paimon round-trip then runs for real). The only
+      breaking change is the deliberate removal of `dao`.
+
+
+## Version 5.34.0 highlights (pluggable flow store: separate DB, Postgres, provenance):
+    - **Formal `FlowStore` ABC.** The flow-store contract is now an abstract base class; every backend
+      implements it. Backends: `sqlite` (default, **separate file**), `postgres` (**new**), `dao`
+      (shares the app DB), `noop`, `paimon` (stub), `aerospike` (**new** stub).
+    - **`SqlFlowStore` (`core/flow_store_sql.py`).** Persists flow history to its **own** SQLAlchemy
+      engine — a database *separate from the application DB* — chosen by `flow_recorder.db_url`. The
+      same code serves PostgreSQL or SQLite; only the URL changes
+      (`postgresql+psycopg://…` vs `sqlite:///…`). A central Postgres lets **many instances share one
+      flow database**. PostgreSQL needs a driver (e.g. `pip install psycopg[binary]`); the store
+      reuses the canonical `FlowEvent` table so the schema matches everywhere.
+    - **Provenance `(instance, host, port)`** added to `flow_events` (model + raw sqlite schema, with
+      automatic in-place migration of existing flow DBs). Every event is stamped with its origin, so
+      multiple instances writing to one shared DB stay disambiguable: `query()` / `state_at()` gained
+      an optional `instance` filter and `distinct_dags()` groups by `(instance, dag_id)`.
+    - **Separate schema files:** `config/schema/flow_events_postgres.sql` and `flow_events_sqlite.sql`.
+    - **`store=dao` now warns loudly at startup** (flow events go into the application DB; not
+      recommended above low volume — prefer `sqlite` or `postgres`). No longer a silent foot-gun.
+    - **`AerospikeFlowStore` stub (`core/flow_store_aerospike.py`):** documents how the contract maps
+      onto Aerospike (record key, secondary-index range query, `state_at`/`distinct` strategies, TTL
+      retention); import-guarded, raises `NotImplementedError` until wired to a real cluster — mirrors
+      the Paimon approach (no faking an untestable backend).
+    - Additive and backward-compatible (new columns nullable; new params optional). 296 → 302 tests.
+      Note: the Postgres path is exercised via SQLite in tests (same SQLAlchemy code); it has not been
+      run against a live PostgreSQL server in this environment.
+
+
+## Version 5.33.1 highlights (cached DAG inventory):
+    - `distinct_dags()` is now served from a short TTL cache (`DEFAULT_DAGS_CACHE_TTL` = 30s) in both
+      `SqliteFlowStore` and `DaoFlowStore`. That query is a full aggregate over every event (seconds
+      at tens of millions of rows) and feeds the DAG inventory, not a hot path — so caching bounds how
+      often the scan runs while keeping the list fresh enough; WAL means the scan never blocks the
+      writer anyway. This addresses the one query identified as growing with total volume in the
+      86.4M-row extrapolation. Cache refreshes on TTL expiry. Additive; 295 → 296 tests.
+
+
+## Version 5.33.0 highlights (batched retention purge + optional flow-store maintenance):
+    - **Batched retention purge.** The purge now deletes in bounded batches (5000 rows per
+      transaction, oldest first) instead of one big `DELETE`. At high event rates a single sweep can
+      target a huge slice — e.g. **1000 events/s over a 30-min sweep ≈ 1.8M rows** — and doing that in
+      one transaction holds the SQLite write lock long enough to starve the recorder's drain thread
+      (→ queue fills → dropped events). Batching releases the write lock between chunks so the writer
+      interleaves; each lock is held only ~tens of ms. Applies to `SqliteFlowStore` and the DAO path
+      (`FlowDAO.purge_older_than_ms`); the subquery deletes by PK in id order, so it stays O(batch)
+      per call even at tens of millions of rows.
+    - **Optional, config-gated maintenance.** `flow_recorder.maintenance` = `none` (default) |
+      `incremental` | `full`, run once daily at `flow_recorder.maintenance_hour` (local). Only the
+      dedicated `SqliteFlowStore` reclaims; the shared-DB `dao` store is **never** VACUUMed (it holds
+      users/keys/audit). Usually unnecessary — deleted pages are reused so the file plateaus — but
+      available to cap disk after a retention change. Because the recorder is decoupled from DAG
+      execution, even a full `VACUUM` never blocks DAGs (flow-history events buffer/shed during it).
+    - **Churn/plateau benchmark.** `bench_flow_queries.py --cycles N` fills a 24h window with the real
+      `SqliteFlowStore`, then repeatedly inserts a sweep-interval and purges the oldest, reporting the
+      file size per cycle. Demonstrated (1000 ev/s, scaled): row count and file size hold **flat**
+      across cycles — freed pages are reused — confirming the single file plateaus and no periodic
+      VACUUM is needed to bound size. Extrapolated to 1000 ev/s × 24h (86.4M rows): the hot window
+      queries stay low-ms (index range scans, size-independent); **disk** (driven by payload size +
+      two indexes) is the dimension to plan; `distinct_dags` (full-table aggregate) is the one query
+      that grows with total volume and would want caching/a summary table at that scale.
+    - Additive and backward-compatible. 292 → 295 tests.
+
+
+## Version 5.32.0 highlights (fleet live push (SSE) + switcher health dots):
+    - **Fleet live updates via SSE.** NEW `GET /api/fleet/stream` (server-sent events) emits a fresh
+      overview immediately and then every ~5s; `?once=1` emits a single event (handy for curl and
+      tests). The `/fleet` page subscribes with `EventSource` and updates tiles in place, so a
+      server going down or coming back appears **without a manual refresh**, with automatic fallback
+      to periodic polling if EventSource is unavailable. The generator runs per-plane probes in a
+      threadpool (event loop never blocks), reports a failed probe as an SSE `error` event rather
+      than killing the stream, and stops cleanly on client disconnect. This is the Phase 5 live
+      transport (decision E kept v1 on polling), scoped to the fleet live view; the gateway-proxied
+      data APIs stay on polling for now.
+    - **Switcher reachability dots.** The navbar service-plane switcher shows a live dot per trusted
+      server — green (reachable + manageable), amber (up but not manageable), red (unreachable) —
+      using the same `health()` reachable/manageable split as `/fleet`. Probed lazily only when the
+      dropdown opens (cached ~15s), so normal page loads incur no extra cost.
+    - Additive and backward-compatible. 291 -> 292 tests (`test_fleet_sse_stream_once`).
+
+
+## Version 5.31.0 highlights (fleet health split + flow query benchmark):
+    - **Fleet health: reachable vs manageable.** The fleet/registry probe previously called
+      `info()` only, conflating "the box is up" with "our key can manage it". It now checks two
+      signals: **reachable** via a cheap, unauthenticated `GET /health/live` (new
+      `RestServiceClient.live()`), and **manageable** via the authenticated `info()` contract.
+      `registry.health()` returns `{reachable, manageable, version, error}` (never raises), and the
+      `/fleet` tiles render three states — reachable, "up · not manageable" (amber; e.g. bad/expired
+      key, wrong role, or version mismatch), and unreachable (red) — so a peer that's up but
+      unmanageable is shown distinctly from one that's down, and a down peer never blanks the page.
+      Probing `/health/live` (liveness: unauthenticated, cheap, no dependency checks) follows the
+      standard liveness/readiness convention. New `test_down_server_shows_unreachable` exercises the
+      down path end to end.
+    - **NEW `perftest/bench_flow_queries.py`** — a query-side benchmark for Flow Time-Travel history.
+      It builds an isolated temp DB with the real `flow_events` schema + indexes, fills a realistic
+      bounded volume (`--rate`/`--hours`, or `--rows`), and times the actual `FlowDAO` query paths
+      (5-min and 1-hour window queries, `state_at`, `distinct_dags`) plus real `DAO.write_batch`
+      throughput — against an isolated database, never the configured one. This makes any future
+      SQLite-vs-RocksDB-vs-Paimon decision rest on numbers for *your* volumes. Sample (1M rows / 24h /
+      20 dags): 5-min window ~3 ms, 1-hour ~28 ms median; the single SQLite file is not the bottleneck
+      for the hot window queries.
+    - Additive and backward-compatible. 290 -> 291 tests.
+
+
+## Version 5.30.2 highlights (two-node ports):
+    - Changed the `twonode/` dev-setup ports to avoid clashes with common local services: Node A (UI
+      plane) 8080 -> **18080**, Node B (service plane) 8090 -> **18090**. Updated everywhere they
+      appear: `generate_configs.py`, the generated node configs, `run-node-a.sh` / `run-node-b.sh`,
+      `setup.sh`, `bootstrap.py` defaults, `README.md`, and `tests/test_config_override.py`. No
+      product code change; 290 tests still pass.
+
+
+## Version 5.30.1 highlights (two-node dev setup + DY_CONFIG_FILE override):
+    - NEW `twonode/` kit to run two instances locally and exercise the multi-instance features end
+      to end: `setup.sh`, `generate_configs.py` (derives per-node configs from the canonical
+      `config/application.yaml` so they cannot drift), `run-node-a.sh` / `run-node-b.sh`, `stop.sh`,
+      and `bootstrap.py` (mints an API key on node B and registers it as a trusted server on node A).
+      See `twonode/README.md`. Node A is the UI plane (:8080, UI-Plane-A); node B is a managed
+      service plane (:8090, Service-Plane-B); they differ only in port, instance name, and isolated
+      SQLite/flow-store paths so the two processes never share a database.
+    - The config layer now honours a `DY_CONFIG_FILE` environment variable: both
+      `PropertiesConfigurator` (a process singleton) and `run_server.py` load the pointed-at file
+      first, so a per-instance config wins regardless of import order. Unset -> unchanged behaviour.
+      This fixes a bug where the singleton's first initialiser (canonical config, reached via an
+      import) shadowed an explicit per-node load, causing both nodes to come up on the same port.
+    - Verified live, not just asserted: two instances on 8080/8090 with isolated DBs; node A manages
+      node B through the navbar switcher, the `/fleet` overview (both planes reachable), and the
+      gateway proxy (`/api/proxy/api/service/info`, `/api/proxy/api/flow/status` -> 200), while
+      host-scoped admin (`/api/proxy/api/workers/pool/start`) is correctly refused (403) to a remote.
+    - Additive and backward-compatible. 2 new tests (`tests/test_config_override.py`, subprocess-
+      isolated to respect the singleton); 288 -> 290 total. Known minor follow-up: `/api/service/info`
+      reports `name` as the constant APP_NAME rather than the configured `service.instance_name`
+      (the fleet/switcher show the configured names from the registry).
+
+
+## Version 5.30.0 highlights (service-plane Phases 3-5: breadth, fleet, hardening):
+    - Completes the UI-plane / service-plane initiative for managing multiple instances from one UI
+      (design: docs/design/service-plane-split.md; tracker: docs/design/service-plane-roadmap.md).
+    - **Phase 3 - breadth (the gateway).** The UI plane now proxies a strict whitelist of broad
+      read/op surfaces to the active trusted server, so they re-target along with DAG lifecycle:
+      flow time-travel, metrics/health, worker *status*, egress *status*, and designer
+      components/validate/deploy. Implemented as one explicit, login-guarded route
+      `/api/proxy/{path}` (`routes/service_proxy_routes.py`) that forwards with the trusted server's
+      `Bearer` key + `X-DY-On-Behalf-Of`, runs `requests` in a threadpool, and relays the response.
+      A small `fetch` shim in `base.html` re-routes whitelisted calls through the proxy only when a
+      remote target is active - existing pages re-target transparently, no per-page edits, and local
+      behaviour is byte-for-byte unchanged. The whitelist **excludes** host-scoped admin (worker pool
+      start/stop, DAG migrate, JVM/C++/Rust runtimes, maintenance) and every auth/user/session
+      surface; those always act on the plane you logged into. Rather than duplicating each
+      subsystem's API into the service contract (which would re-introduce parallel-structure drift),
+      the gateway forwards the existing APIs - one source of truth.
+    - **Phase 4 - fleet view.** A new read-only `/fleet` single-pane-of-glass
+      (`routes/fleet_routes.py`, `GET /api/fleet/overview`) aggregates the local plane and every
+      trusted server into per-plane tiles (reachable?, version, DAG count, running count) with a
+      one-click switch. Fan-out is per-plane isolated: each plane reports its own ok/error so one
+      unreachable or slow plane never blanks the page - explicit outcomes, no partial-success lies.
+    - **Phase 5 - hardening (partial).** `RestServiceClient` now reuses a pooled `requests.Session`
+      per trusted server (HTTP keep-alive) instead of a fresh socket per call; a never-raising
+      `registry.health()` probe backs the fleet tiles and switcher reachability. Trusted-key rotation
+      already shipped in v5.29.0. The SSE/websocket live-transport swap is **intentionally deferred**
+      (decision E kept v1 on proxied polling). One decision is **left open for the owner**: whether
+      host-scoped admin (worker pool, language runtimes, maintenance) should ever become
+      re-targetable - it is currently local-only by design.
+    - Additive and fully backward-compatible. 5 new tests (`tests/test_service_plane_breadth.py`);
+      283 -> 288 total. Documentation refreshed across `README.md`, `docs/ARCHITECTURE.md`, a new
+      `web/templates/help/multi_instance.html` help page (+ help index link), a new
+      `docs/MULTI_INSTANCE.md` guide, and the service-plane design/roadmap status.
+
+
+## Version 5.29.0 highlights (service-plane Phase 2 - manage remote instances):
+    - Phase 2 of the UI-plane / service-plane split (design: docs/design/service-plane-split.md;
+      tracker: docs/design/service-plane-roadmap.md). One UI plane can now manage other trusted
+      DishtaYantra instances. Builds on the Phase 0/1 seam + JSON contract; the compute plane is
+      unchanged. Off by default - an empty trusted-server list means the UI manages only its local
+      server, exactly as before.
+    - NEW remote flavour `core/service/rest_client.py` (RestServiceClient): mirrors the
+      ServiceClient interface over HTTPS using the trusted server's `dyk_` key as Bearer, with
+      per-call timeouts, typed transport errors (`core/service/errors.py`:
+      ServiceUnavailable/Timeout/AuthError/ProtocolError) and an `X-DY-On-Behalf-Of:
+      <user>@<instance>` header the remote records in its audit log (advisory metadata only, never
+      an authorization input). Mutations raise on failure (ValueError for unknown DAG) to match the
+      local flavour, so route code is identical regardless of target.
+    - NEW trusted-server registry: `core/db/models.py` TrustedServer + `trusted_servers` table
+      (sqlite + postgres schema), `core/db/trusted_dao.py` TrustedServerDAO, and
+      `core/service/registry.py` TrustedServerRegistry. Admins add a server by URL + an API key
+      minted on that server; the registry probes the remote `/api/service/info` at add time to
+      validate auth and record its version. The key is stored **symmetric-encrypted at rest**
+      (`core/service/crypto.py`, Fernet; secret read from the env var named by `service.secret_env`,
+      default `DY_SECRET_KEY`) and is never returned by the API/UI nor sent to the browser; only
+      masked forms are shown.
+    - Per-session switch (decision: per-session): `get_service_client(request)` reads the session's
+      selected target, so the dashboard DAG list and the lifecycle controls (start/stop/suspend/
+      resume) re-target to the chosen server. A navbar switcher and an admin page
+      (`/admin/trusted-servers`, routes in `routes/trusted_routes.py`) drive selection and registry
+      management. Local-only detail/state views guard cleanly when a remote is active. The browser
+      only ever talks to its own UI plane, which proxies to the selected plane.
+    - Decisions locked: key at rest = encrypted-in-DB; role per server = admin or user; on-behalf
+      header = included; live transport = proxied polling (SSE/websocket deferred to Phase 5).
+      `cryptography` is an optional dependency, needed only when trusted servers are used. Additive
+      and backward-compatible. 10 new tests (273 -> 283).
+
+
+## Version 5.28.0 highlights (service-plane seam + JSON management contract):
+    - Phases 0 and 1 of the UI-plane / service-plane split (design:
+      docs/design/service-plane-split.md; phase tracker:
+      docs/design/service-plane-roadmap.md). The goal of the initiative is one UI managing many DAG
+      servers; this release lays the foundation with zero user-visible change.
+    - Phase 0 - the seam. NEW `core/service/` package: a `ServiceClient` interface; a
+      `LocalServiceClient` that wraps this instance's `DAGComputeServer` in-process (exactly today's
+      behaviour, and the contract reference); result types `ServiceInfo`/`OpResult`; and a
+      `get_service_client(request)` resolver that reads a client off `app.state` (always local for
+      now; a later phase returns a remote client when a trusted server is selected). The
+      DAG-lifecycle HTML handlers (`start`/`stop`/`suspend`/`resume` in `routes/dag_routes.py`) now
+      route the *operation* through the seam while keeping presentation (flash/redirect) in the
+      route - so the pages behave identically.
+    - Phase 1 - the contract. NEW `routes/service_routes.py` exposes a JSON management API under
+      `/api/service/*`: `info`, `dags`, `dag/{id}` details, `status`, `dags/reload`, and
+      `dag/{id}/{start,stop,suspend,resume}`. Mutations return `OpResult`-shaped JSON (ok/message/
+      level/data); unknown DAG -> 404; other failures -> structured 500. These share the *same*
+      `LocalServiceClient` operation path as the HTML handlers (single source of truth).
+      `GET /api/service/info` advertises name/version/build_date/capabilities/schema_version so a
+      peer UI plane can surface version and gate controls by capability.
+    - Anti-drift: the promised operations live once in `core/service/contract.py`
+      (`SERVICE_OPERATIONS`, `CAPABILITIES`, `SCHEMA_VERSION`); `tests/test_service_contract.py`
+      asserts every promised operation is present in the live OpenAPI schema (same discipline as the
+      v5.27.0 palette parity guard). 8 new tests (265 -> 273). Fully additive and backward-compatible.
+
+
+## Version 5.27.0 highlights (API-driven Designer palette):
+    - The DAG Designer's component palette is now rendered dynamically from the existing
+      GET /api/dag-designer/components endpoint instead of a large hand-maintained block of HTML in
+      web/templates/dag/designer.html. The component catalogue itself moved into a new pure-data
+      module, core/dag/designer_catalogue.py (build_component_catalogue / palette_component_types /
+      PALETTE_SECTIONS), which is the single source of truth shared by the API and the palette.
+    - This resolves tracked deferred debt and fixes a latent drift bug it had already caused: the
+      hardcoded palette had silently fallen seven components behind the backend - PublisherSinkNode,
+      NullCalculator, RandomCalculator, AttributeFilterAwayCalculator, AttributeNameChangeCalculator,
+      NullDataTransformer and AttributeFilterAwayDataTransformer were supported by the engine but
+      undraggable in the Designer. They now appear automatically.
+    - A frontend PALETTE_PRESENTATION map supplies the icon/colour/label for each type; anything not
+      in the map falls back to a category-default icon and a humanised label, so a newly-added
+      backend component is always visible in the palette even before anyone styles it - drift can no
+      longer silently hide a component.
+    - Additive and fully backward-compatible: the API response shape is unchanged, and drag/drop
+      still keys off the same data-type/data-category attributes (canvas drop target wired once;
+      palette items wired by wirePaletteDragItems() after each render). Extracting the catalogue also
+      brought routes/dagdesigner_routes.py back under the 500-line limit (561 -> 439 lines).
+    - New regression test tests/test_designer_catalogue.py (6 tests) asserts the catalogue is
+      complete, the live API returns it verbatim, the template hardcodes no palette items, and the
+      presentation map carries no stale entries. 265 tests total (259 -> 265).
+
+
+## Version 5.26.0 highlights (flow time-travel):
+    - NEW flow time-travel feature. An opt-in recorder captures the DAG change-log - each node
+      fire's inputs -> output, taken off the equality gate, so only actual changes are stored -
+      into a pluggable store (sqlite default; dao/noop; paimon optional). The engine hot path stays
+      fast: a single enabled-check when off, otherwise a cheap snapshot + non-blocking enqueue to a
+      bounded queue drained by a background thread (serialization happens off-thread). Disabled is a
+      true no-op (~96 ns/fire, native throughput restored); under overload the queue sheds *counted
+      drops* and never blocks or raises into compute.
+    - Browser Time-Travel console at /flow: a 24h timeline with firing-density histogram, draggable
+      range brush, play/pause/scrub with speed control, per-node firing animation and edge-value
+      labels on Cytoscape, an event-stream inspector, and a download button.
+    - API under /api/flow: status, enable/disable (admin), dags, range query, state-at
+      reconstruction, and a streaming export (jsonl|csv). New CLI tools/dyflow.py scripts these and
+      streams a downloaded window to file (human-friendly --last/ISO/epoch windows; same auth as
+      dyadmin).
+    - Retention is driven by its own 24h sweep daemon (flow_recorder.retention_hours,
+      flow_recorder.retention_sweep_minutes), mirroring audit retention - not assumed store
+      auto-expiry. Optional Paimon backend documented for on-prem use without Flink/Spark (pure
+      Python PyPaimon >= 1.3, append table, hourly-partitioned), but sqlite stays the frugal default.
+    - Off by default (flow_recorder.enabled=false). All config additive (application.properties /
+      application.yaml). New flow_events table (schema_sqlite.sql + schema_postgres.sql; FlowEvent
+      model + FlowDAO). Design: docs/design/flow-time-travel.md. 12 new tests (259 total).
 
 
 ## Version 5.25.1 highlights (fix: trade generator must not choose Kafka partitions):
@@ -362,7 +978,6 @@ docstring.
       235 passed with lmdb; 234 passed + 1 skipped in the shipped repo.
 
 
-
     - The DAG "Details" page now shows the same live data whether a DAG runs in the main
       process or in a worker subprocess. Previously, with the worker pool enabled the main
       process held only a lazy (unbuilt) copy of a worker-run DAG, so its details() returned
@@ -390,7 +1005,6 @@ docstring.
       values and does NOT fall back to the local DAG's figures; single-process rendering is
       unchanged. The view round-trips through JSON intact (proving IPC-shippability). Tests:
       235 passed with lmdb installed; 234 passed + 1 skipped in the shipped repo.
-
 
 
     - FIX (DAG Details page, worker pool enabled): rendering crashed with "unsupported
@@ -433,7 +1047,6 @@ docstring.
       (no lmdb dependency bundled).
 
 
-
     - ComputeGraph builder (core/dag/compute_graph_builders.py): the calculators-building
       loop now routes bridge calculators through CalculatorFactory. A calculator whose
       `type` is "cpp"/"java"/"rust" (case-insensitive), or whose `config` carries a
@@ -460,7 +1073,6 @@ docstring.
       rust_integration help-page links remain valid. NOTE: those three help pages still
       embed old-schema JSON examples that no longer match the migrated files - a docs
       refresh is outstanding. 234 passed, 1 skipped.
-
 
 
     - DAG Designer importer (importDagJson) now accepts legacy edge keys. Edges are read

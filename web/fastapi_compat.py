@@ -139,6 +139,20 @@ def _inject_flask_compat(request: Request) -> dict:
                     "PRIMARY" if dag_server.is_primary else "SECONDARY")
         except Exception:  # noqa: BLE001 - navbar badge is best-effort
             context["ha_role"] = None
+    # v5.29.0: surface the active service-plane target + trusted-server list in
+    # the navbar switcher (logged-in users only; best-effort).
+    context["service_target"] = "local"
+    context["trusted_servers"] = []
+    if request.session.get("username"):
+        try:
+            from core.service.client import active_target
+            context["service_target"] = active_target(request)
+            registry = getattr(request.app.state, "trusted_registry", None)
+            if registry is not None:
+                context["trusted_servers"] = registry.list()
+        except Exception:  # noqa: BLE001 - switcher is best-effort
+            context["service_target"] = "local"
+            context["trusted_servers"] = []
     return context
 
 

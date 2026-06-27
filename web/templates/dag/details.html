@@ -98,6 +98,27 @@
     .legend-dot.role-subgraph { background: #8b5cf6; }
     .legend-dot.role-sink     { background: #10b981; }
     .graph-toolbar .btn { line-height: 1; }
+    #graphBottleneck.active-toggle { background: #f59e0b; border-color: #f59e0b; color: #1a1a1a; }
+    .slow-panel { position: absolute; top: 10px; right: 10px; z-index: 5;
+        width: 230px; max-height: 60%; overflow-y: auto;
+        background: var(--bg-elevated, #fff); border: 1px solid var(--border, #e2e8f0);
+        border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 8px 10px;
+        font-size: 12px; }
+    .slow-panel .slow-panel-title { font-weight: 700; margin-bottom: 6px; font-size: 12px;
+        color: var(--text-primary, #1a1a1a); }
+    .slow-panel .slow-empty { color: var(--text-secondary, #64748b); font-size: 11px; }
+    .slow-panel .slow-row { display: flex; align-items: center; gap: 6px; padding: 4px 0;
+        cursor: pointer; border-top: 1px solid var(--border, #eef2f6); }
+    .slow-panel .slow-row:hover { background: rgba(245,158,11,.08); }
+    .slow-panel .slow-name { font-weight: 600; flex: 0 1 auto; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap; max-width: 96px;
+        color: var(--text-primary, #1a1a1a); }
+    .slow-panel .slow-rate { margin-left: auto; color: var(--text-secondary, #64748b);
+        font-size: 10px; white-space: nowrap; }
+    .slow-panel .slow-badge { font-size: 9px; font-weight: 700; text-transform: uppercase;
+        padding: 1px 5px; border-radius: 4px; color: #fff; flex: 0 0 auto; }
+    .slow-panel .slow-badge.stalled { background: #dc2626; }
+    .slow-panel .slow-badge.lagging { background: #f59e0b; color: #1a1a1a; }
     /* Floating node-state panel */
     .dag-node-panel {
         position: absolute;
@@ -427,7 +448,11 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Graph View</h5>
+                <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Graph View
+                    <small class="text-muted fw-normal" style="font-size:.72rem;display:block;margin-top:2px">
+                        each node shows <b>total messages</b> · <b>throughput</b> (msgs/min over the last refresh)
+                    </small>
+                </h5>
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                     <div class="graph-legend">
                         <span class="legend-item"><span class="legend-dot role-source"></span> Source</span>
@@ -435,6 +460,7 @@
                         <span class="legend-item"><span class="legend-dot role-subgraph"></span> Subgraph</span>
                         <span class="legend-item"><span class="legend-dot role-sink"></span> Sink</span>
                     </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="graphBottleneck" title="Highlight slow / stalled nodes - nodes taking work in but not emitting it"><i class="bi bi-speedometer2"></i> Slow nodes</button>
                     <div class="btn-group btn-group-sm graph-toolbar" role="group" aria-label="Graph controls">
                         <button type="button" class="btn btn-outline-secondary" id="graphZoomIn" title="Zoom in"><i class="bi bi-zoom-in"></i></button>
                         <button type="button" class="btn btn-outline-secondary" id="graphZoomOut" title="Zoom out"><i class="bi bi-zoom-out"></i></button>
@@ -450,6 +476,8 @@
                     <div id="dagGraphEmpty" class="text-muted text-center py-4" style="display:none;">
                         This DAG has no nodes to display.
                     </div>
+                    <!-- Ranked "slowest nodes" overlay (shown when the Slow-nodes toggle is on) -->
+                    <div id="slowPanel" class="slow-panel" style="display:none;"></div>
                     <!-- Floating node-state panel (shown on click / right-click) -->
                     <div id="dagNodePanel" class="dag-node-panel" style="display:none;">
                         <div class="dag-node-panel-head">
@@ -1008,11 +1036,123 @@
 <script>
 // ---- DAG Graph View (v2.2): interactive Cytoscape renderer ----
 var DAG_GRAPH = {{ graph_data | tojson }};
+var DAG_NAME = {{ dag_name | tojson }};
 var DAG_CY = null;
+var NODE_RATES = {};     // id -> {inRate, outRate}  (client-side, from the 30s delta)
+var NODE_SLOW = {};      // id -> 'stalled' | 'lagging' | 'idle' | 'ok'
+var BOTTLENECK_ON = false;
+try { BOTTLENECK_ON = sessionStorage.getItem('dagBottleneck') === '1'; } catch (e) {}
+
+// Paint the graph + side list to surface "slacker" nodes. Pure view work on the
+// classifications we already computed - no server interaction.
+function applyBottleneck() {
+    var btn = document.getElementById('graphBottleneck');
+    var panel = document.getElementById('slowPanel');
+    if (btn) btn.classList.toggle('active-toggle', BOTTLENECK_ON);
+    if (!DAG_CY) return;
+    DAG_CY.batch(function () {
+        DAG_CY.nodes().forEach(function (nd) {
+            nd.removeClass('slow-stalled slow-lagging slow-dim');
+            if (!BOTTLENECK_ON) return;
+            var cls = NODE_SLOW[nd.id()];
+            if (cls === 'stalled') nd.addClass('slow-stalled');
+            else if (cls === 'lagging') nd.addClass('slow-lagging');
+            else nd.addClass('slow-dim');           // fade the keeping-up nodes for contrast
+        });
+    });
+    if (!panel) return;
+    if (!BOTTLENECK_ON) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    // Ranked: stalled first, then lagging by how far out-rate trails in-rate.
+    var ranked = Object.keys(NODE_SLOW)
+        .filter(function (id) { return NODE_SLOW[id] === 'stalled' || NODE_SLOW[id] === 'lagging'; })
+        .sort(function (a, b) {
+            var wa = NODE_SLOW[a] === 'stalled' ? 0 : 1, wb = NODE_SLOW[b] === 'stalled' ? 0 : 1;
+            if (wa !== wb) return wa - wb;
+            var ra = NODE_RATES[a] || {}, rb = NODE_RATES[b] || {};
+            return ((ra.outRate || 0) / Math.max(1, ra.inRate || 0)) - ((rb.outRate || 0) / Math.max(1, rb.inRate || 0));
+        });
+    var haveSample = Object.keys(NODE_RATES).length > 0;
+    var html = '<div class="slow-panel-title">Slowest nodes</div>';
+    if (!haveSample) {
+        html += '<div class="slow-empty">Throughput samples after the next refresh.</div>';
+    } else if (ranked.length === 0) {
+        html += '<div class="slow-empty">No nodes falling behind right now.</div>';
+    } else {
+        ranked.slice(0, 6).forEach(function (id) {
+            var r = NODE_RATES[id] || {}, cls = NODE_SLOW[id];
+            html += '<div class="slow-row" data-node="' + id + '">'
+                + '<span class="slow-badge ' + cls + '">' + (cls === 'stalled' ? 'stalled' : 'lagging') + '</span>'
+                + '<span class="slow-name">' + id + '</span>'
+                + '<span class="slow-rate">in ' + fmtNum(Math.round(r.inRate || 0)) + ' · out ' + fmtNum(Math.round(r.outRate || 0)) + '/min</span>'
+                + '</div>';
+        });
+    }
+    panel.innerHTML = html;
+    panel.querySelectorAll('.slow-row').forEach(function (row) {
+        row.addEventListener('click', function () {
+            var nd = DAG_CY.getElementById(row.getAttribute('data-node'));
+            if (nd && nd.length) { DAG_CY.animate({ center: { eles: nd }, zoom: 1.4 }, { duration: 300 }); nd.select(); }
+        });
+    });
+}
 
 function cssVar(name, fallback) {
     var v = getComputedStyle(document.body).getPropertyValue(name);
     return (v && v.trim()) || fallback;
+}
+
+// Abbreviate counts so they fit inside the node rectangle (1284 -> "1.2k").
+function fmtNum(v) {
+    v = +v || 0;
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(1) + 'k';
+    return '' + v;
+}
+
+// Per-node throughput WITHOUT any extra server load: the page already renders
+// each node's cumulative counts and reloads every ~30s, so we derive msgs/min
+// from the delta between this snapshot and the previous one (kept in
+// sessionStorage). We track BOTH inbound and outbound so we can flag nodes that
+// take work in but aren't emitting it (the "slacker" signal). No new requests,
+// no DB scan, no rate-meter on the compute hot path.
+function computeNodeRates(nodes) {
+    var nowTs = Date.now(), key = 'dagRate:' + DAG_NAME, prev = null;
+    try { prev = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) {}
+    var cur = { ts: nowTs, counts: {} }, rates = {};
+    nodes.forEach(function (n) {
+        var inn = n.messages_in || 0;
+        var out = (n.messages_out != null ? n.messages_out : inn);
+        cur.counts[n.id] = { in: inn, out: out };
+        var p = prev && prev.counts && prev.counts[n.id];
+        if (p != null) {
+            var pin = (typeof p === 'object') ? (p.in || 0) : 0;
+            var pout = (typeof p === 'object') ? (p.out || 0) : p;   // migrate old shape
+            var dt = (nowTs - prev.ts) / 1000;          // seconds since last snapshot
+            if (dt >= 3 && dt <= 600) {                 // ignore stale/too-fast gaps
+                var di = inn - pin, dout = out - pout;
+                rates[n.id] = {                          // clamp restarts (delta<0) to 0
+                    inRate: di > 0 ? (di / dt * 60) : 0,
+                    outRate: dout > 0 ? (dout / dt * 60) : 0
+                };
+            }
+        }
+    });
+    try { sessionStorage.setItem(key, JSON.stringify(cur)); } catch (e) {}
+    return rates;
+}
+
+// Classify a node from its in/out rates. "stalled" = receiving but not emitting;
+// "lagging" = emitting far less than it's taking in. Sources (no inbound) are
+// never flagged. Returns null when we don't have a rate sample yet.
+function classifyNode(r, role) {
+    if (!r) return null;
+    var IN = r.inRate || 0, OUT = r.outRate || 0;
+    if (role === 'source') return 'ok';            // sources set the pace; can't be "behind"
+    if (IN < 1 && OUT < 1) return 'idle';          // nothing flowing - not a slacker
+    if (IN >= 1 && OUT < 0.05 * IN) return 'stalled';
+    if (IN >= 1 && OUT < 0.5 * IN) return 'lagging';
+    return 'ok';
 }
 
 function buildDagGraph() {
@@ -1037,9 +1177,17 @@ function buildDagGraph() {
     var edgeColor = cssVar('--text-muted', '#94a3b8');
 
     var elements = [];
+    var rates = computeNodeRates(nodes);     // client-side, zero server cost
+    NODE_RATES = rates; NODE_SLOW = {};
     nodes.forEach(function (n) {
+        var total = (n.messages_out != null ? n.messages_out : (n.messages_in || 0));
+        var r = rates[n.id];
+        var lbl = n.label + '\n' + fmtNum(total) + ' msgs';
+        if (r && r.outRate != null) lbl += '  ·  ' + fmtNum(Math.round(r.outRate)) + '/min';
+        var cls = classifyNode(r, n.role || 'compute');
+        if (cls) NODE_SLOW[n.id] = cls;
         elements.push({ data: {
-            id: n.id, label: n.label, role: n.role || 'compute',
+            id: n.id, label: lbl, name: n.label, role: n.role || 'compute',
             ntype: n.type, color: roleColor[n.role] || roleColor.compute,
             state: n   // carry the full node payload for the panel
         }});
@@ -1068,9 +1216,9 @@ function buildDagGraph() {
                 'border-width': 2,
                 'shape': 'round-rectangle',
                 'label': 'data(label)',
-                // Size width to the label (replaces the deprecated width:'label').
-                'width': function (ele) { var s = String(ele.data('label') || ''); return Math.max(40, Math.min(s.length * 7.5, 150)); },
-                'height': 46,
+                // Size width to the LONGEST label line (the stats line adds a 2nd line).
+                'width': function (ele) { var lines = String(ele.data('label') || '').split('\n'); var longest = Math.max.apply(null, lines.map(function (x) { return x.length; })); return Math.max(40, Math.min(longest * 7.0, 170)); },
+                'height': 52,
                 'padding': '12px',
                 'text-valign': 'center', 'text-halign': 'center',
                 'text-wrap': 'wrap', 'text-max-width': '150px',
@@ -1081,6 +1229,15 @@ function buildDagGraph() {
             { selector: 'node:selected', style: {
                 'border-width': 4, 'background-opacity': 0.32
             }},
+            { selector: 'node.slow-stalled', style: {
+                'border-color': '#dc2626', 'background-color': '#dc2626',
+                'background-opacity': 0.30, 'border-width': 4, 'color': '#fca5a5'
+            }},
+            { selector: 'node.slow-lagging', style: {
+                'border-color': '#f59e0b', 'background-color': '#f59e0b',
+                'background-opacity': 0.24, 'border-width': 3
+            }},
+            { selector: 'node.slow-dim', style: { 'opacity': 0.38 }},
             { selector: 'edge', style: {
                 'width': 1.8, 'line-color': edgeColor,
                 'target-arrow-color': edgeColor,
@@ -1104,6 +1261,7 @@ function buildDagGraph() {
     DAG_CY.on('tap', function (evt) {
         if (evt.target === DAG_CY) hideNodePanel();
     });
+    applyBottleneck();   // paint slow-node highlighting + ranked list if the toggle is on
 }
 
 function dagLayout() {
@@ -1180,6 +1338,11 @@ function initDagGraphControls() {
     bind('graphFit', function () { if (DAG_CY) DAG_CY.fit(undefined, 30); });
     bind('graphRelayout', function () {
         if (DAG_CY) DAG_CY.layout(dagLayout()).run();
+    });
+    bind('graphBottleneck', function () {
+        BOTTLENECK_ON = !BOTTLENECK_ON;
+        try { sessionStorage.setItem('dagBottleneck', BOTTLENECK_ON ? '1' : '0'); } catch (e) {}
+        applyBottleneck();
     });
     bind('dagNodePanelClose', hideNodePanel);
 }

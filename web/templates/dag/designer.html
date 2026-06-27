@@ -841,28 +841,7 @@
                     <i class="bi bi-chevron-down"></i>
                     <span>Nodes</span>
                 </div>
-                <div class="palette-items">
-                    <div class="palette-item" draggable="true" data-type="SubscriptionNode" data-category="node">
-                        <div class="item-icon"><i class="bi bi-box-arrow-in-down"></i></div>
-                        <span>Subscription</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="PublicationNode" data-category="node">
-                        <div class="item-icon"><i class="bi bi-box-arrow-up"></i></div>
-                        <span>Publication</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="CalculationNode" data-category="node">
-                        <div class="item-icon"><i class="bi bi-calculator"></i></div>
-                        <span>Calculation</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="MetronomeNode" data-category="node">
-                        <div class="item-icon"><i class="bi bi-stopwatch"></i></div>
-                        <span>Metronome</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="SinkNode" data-category="node">
-                        <div class="item-icon"><i class="bi bi-sign-stop"></i></div>
-                        <span>Sink</span>
-                    </div>
-                </div>
+                <div class="palette-items" id="palette-node"><!-- rendered dynamically from /api/dag-designer/components --></div>
             </div>
 
             <!-- Subscribers Section -->
@@ -871,112 +850,7 @@
                     <i class="bi bi-chevron-down"></i>
                     <span>Subscribers</span>
                 </div>
-                <div class="palette-items" style="max-height: 280px; overflow-y: auto;">
-                    <div class="palette-item" draggable="true" data-type="KafkaDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#059669;"><i class="bi bi-broadcast"></i></div>
-                        <span>Kafka</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RedisChannelDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#dc2626;"><i class="bi bi-database"></i></div>
-                        <span>Redis Channel</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RabbitMQDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#f97316;"><i class="bi bi-envelope"></i></div>
-                        <span>RabbitMQ</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="ActiveMQDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#ea580c;"><i class="bi bi-envelope-open"></i></div>
-                        <span>ActiveMQ</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="GRPCDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#8b5cf6;"><i class="bi bi-arrow-left-right"></i></div>
-                        <span>gRPC</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="FileDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#0891b2;"><i class="bi bi-file-earmark-text"></i></div>
-                        <span>File</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="SQSDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-aws"></i></div>
-                        <span>AWS SQS</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="KinesisDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-water"></i></div>
-                        <span>AWS Kinesis</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="S3DataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#e0701a;"><i class="bi bi-bucket"></i></div>
-                        <span>AWS S3</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="ServiceBusDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-bus-front"></i></div>
-                        <span>Azure Service Bus</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="EventHubsDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-broadcast"></i></div>
-                        <span>Azure Event Hubs</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AzureBlobDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-cloud"></i></div>
-                        <span>Azure Blob</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="GCSDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#1a73e8;"><i class="bi bi-google"></i></div>
-                        <span>Google Cloud Storage</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="LMDBDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#15803d;"><i class="bi bi-hdd"></i></div>
-                        <span>LMDB (zero-copy)</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="SQLDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#0f766e;"><i class="bi bi-database"></i></div>
-                        <span>SQL Database</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RESTDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#475569;"><i class="bi bi-hdd-network"></i></div>
-                        <span>REST / HTTP</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="TibcoEMSDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#003366;"><i class="bi bi-diagram-2"></i></div>
-                        <span>TIBCO EMS</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="WebSphereMQDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#052f5f;"><i class="bi bi-server"></i></div>
-                        <span>WebSphere MQ</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="InMemoryDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#0d9488;"><i class="bi bi-memory"></i></div>
-                        <span>InMemory</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="InMemoryRedisDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#14b8a6;"><i class="bi bi-hdd-stack"></i></div>
-                        <span>InMemory Redis</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="InMemoryRedisChannelDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#2dd4bf;"><i class="bi bi-hdd-network"></i></div>
-                        <span>InMemory Redis Ch</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AshRedisChannelDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#10b981;"><i class="bi bi-diagram-3"></i></div>
-                        <span>AshRedis Channel</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="MetronomeDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#7c3aed;"><i class="bi bi-alarm"></i></div>
-                        <span>Metronome</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="FaninDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#6366f1;"><i class="bi bi-arrows-collapse"></i></div>
-                        <span>Fan-In (Composite)</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="FanoutDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#a855f7;"><i class="bi bi-signpost-split"></i></div>
-                        <span>Fan-Out (Router)</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="CustomDataSubscriber" data-category="subscriber">
-                        <div class="item-icon" style="background:#64748b;"><i class="bi bi-puzzle"></i></div>
-                        <span>Custom</span>
-                    </div>
-                </div>
+                <div class="palette-items" id="palette-subscriber" style="max-height: 280px; overflow-y: auto;"><!-- rendered dynamically from /api/dag-designer/components --></div>
             </div>
 
             <!-- Publishers Section -->
@@ -985,128 +859,7 @@
                     <i class="bi bi-chevron-down"></i>
                     <span>Publishers</span>
                 </div>
-                <div class="palette-items" style="max-height: 280px; overflow-y: auto;">
-                    <div class="palette-item" draggable="true" data-type="KafkaDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#dc2626;"><i class="bi bi-broadcast-pin"></i></div>
-                        <span>Kafka</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RedisDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#ef4444;"><i class="bi bi-database-add"></i></div>
-                        <span>Redis</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RedisChannelDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#f87171;"><i class="bi bi-database-up"></i></div>
-                        <span>Redis Channel</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RabbitMQDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#f97316;"><i class="bi bi-envelope-plus"></i></div>
-                        <span>RabbitMQ</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="ActiveMQDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#fb923c;"><i class="bi bi-envelope-arrow-up"></i></div>
-                        <span>ActiveMQ</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="GRPCDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#a78bfa;"><i class="bi bi-arrow-up-right"></i></div>
-                        <span>gRPC</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="FileDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#0891b2;"><i class="bi bi-file-earmark-arrow-up"></i></div>
-                        <span>File</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="SQSDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-aws"></i></div>
-                        <span>AWS SQS</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="SNSDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-megaphone"></i></div>
-                        <span>AWS SNS</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="KinesisDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#ff9900;"><i class="bi bi-water"></i></div>
-                        <span>AWS Kinesis</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="S3DataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#e0701a;"><i class="bi bi-bucket"></i></div>
-                        <span>AWS S3</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="ServiceBusDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-bus-front"></i></div>
-                        <span>Azure Service Bus</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="EventHubsDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-broadcast"></i></div>
-                        <span>Azure Event Hubs</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AzureBlobDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#0078d4;"><i class="bi bi-cloud"></i></div>
-                        <span>Azure Blob</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="GCSDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#1a73e8;"><i class="bi bi-google"></i></div>
-                        <span>Google Cloud Storage</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="LMDBDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#15803d;"><i class="bi bi-hdd"></i></div>
-                        <span>LMDB (zero-copy)</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="SQLDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#0f766e;"><i class="bi bi-database"></i></div>
-                        <span>SQL Database</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="RESTDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#475569;"><i class="bi bi-hdd-network"></i></div>
-                        <span>REST / HTTP</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="TibcoEMSDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#003366;"><i class="bi bi-diagram-2"></i></div>
-                        <span>TIBCO EMS</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="WebSphereMQDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#052f5f;"><i class="bi bi-server"></i></div>
-                        <span>WebSphere MQ</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="InMemoryDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#0d9488;"><i class="bi bi-memory"></i></div>
-                        <span>InMemory</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="InMemoryRedisDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#14b8a6;"><i class="bi bi-hdd-fill"></i></div>
-                        <span>InMemory Redis</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="InMemoryRedisChannelDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#2dd4bf;"><i class="bi bi-hdd-rack-fill"></i></div>
-                        <span>InMemory Redis Ch</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AshRedisDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#10b981;"><i class="bi bi-diagram-2"></i></div>
-                        <span>AshRedis</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AshRedisChannelDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#34d399;"><i class="bi bi-diagram-3-fill"></i></div>
-                        <span>AshRedis Channel</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AerospikeDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#84cc16;"><i class="bi bi-cloud-upload"></i></div>
-                        <span>Aerospike</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="MetronomeDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#7c3aed;"><i class="bi bi-stopwatch"></i></div>
-                        <span>Metronome</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="FaninDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#6366f1;"><i class="bi bi-arrows-expand"></i></div>
-                        <span>Fan-In (Composite)</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="FanoutDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#a855f7;"><i class="bi bi-signpost-2"></i></div>
-                        <span>Fan-Out (Router)</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="CustomDataPublisher" data-category="publisher">
-                        <div class="item-icon" style="background:#64748b;"><i class="bi bi-puzzle-fill"></i></div>
-                        <span>Custom</span>
-                    </div>
-                </div>
+                <div class="palette-items" id="palette-publisher" style="max-height: 280px; overflow-y: auto;"><!-- rendered dynamically from /api/dag-designer/components --></div>
             </div>
 
             <!-- Calculators Section -->
@@ -1115,28 +868,7 @@
                     <i class="bi bi-chevron-down"></i>
                     <span>Calculators</span>
                 </div>
-                <div class="palette-items">
-                    <div class="palette-item" draggable="true" data-type="PassthruCalculator" data-category="calculator">
-                        <div class="item-icon"><i class="bi bi-arrow-right"></i></div>
-                        <span>Passthru</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="ApplyDefaultsCalculator" data-category="calculator">
-                        <div class="item-icon"><i class="bi bi-plus-square"></i></div>
-                        <span>Apply Defaults</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AdditionCalculator" data-category="calculator">
-                        <div class="item-icon"><i class="bi bi-plus-lg"></i></div>
-                        <span>Addition</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="MultiplicationCalculator" data-category="calculator">
-                        <div class="item-icon"><i class="bi bi-x-lg"></i></div>
-                        <span>Multiplication</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AttributeFilterCalculator" data-category="calculator">
-                        <div class="item-icon"><i class="bi bi-funnel"></i></div>
-                        <span>Attribute Filter</span>
-                    </div>
-                </div>
+                <div class="palette-items" id="palette-calculator"><!-- rendered dynamically from /api/dag-designer/components --></div>
             </div>
 
             <!-- Transformers Section -->
@@ -1145,20 +877,7 @@
                     <i class="bi bi-chevron-down"></i>
                     <span>Transformers</span>
                 </div>
-                <div class="palette-items">
-                    <div class="palette-item" draggable="true" data-type="PassthruDataTransformer" data-category="transformer">
-                        <div class="item-icon"><i class="bi bi-arrow-right"></i></div>
-                        <span>Passthru</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="AttributeFilterDataTransformer" data-category="transformer">
-                        <div class="item-icon"><i class="bi bi-funnel"></i></div>
-                        <span>Attribute Filter</span>
-                    </div>
-                    <div class="palette-item" draggable="true" data-type="ApplyDefaultsDataTransformer" data-category="transformer">
-                        <div class="item-icon"><i class="bi bi-plus-square"></i></div>
-                        <span>Apply Defaults</span>
-                    </div>
-                </div>
+                <div class="palette-items" id="palette-transformer"><!-- rendered dynamically from /api/dag-designer/components --></div>
             </div>
         </div>
     </div>
@@ -1628,6 +1347,7 @@ let canvasState = {
 document.addEventListener('DOMContentLoaded', function() {
     initializeCanvas();
     initializeDragAndDrop();
+    loadPalette();
 
     {% if loaded_dag %}
     const loadedDag = {{ loaded_dag|safe }};
@@ -1752,14 +1472,179 @@ function isInputFocused() {
 // ==========================================
 // Drag and Drop (palette -> canvas)
 // ==========================================
+// ==========================================
+// Component palette (API-driven, v5.27.0)
+// The palette renders dynamically from /api/dag-designer/components, whose
+// catalogue lives in core/dag/designer_catalogue.py - a single source of
+// truth shared by the API and this palette, so the two can never drift (the
+// old hand-maintained HTML palette had silently fallen behind the backend by
+// seven components). PALETTE_PRESENTATION supplies icon/colour/label per
+// type; anything absent falls back to a category default + humanised label,
+// so a newly-added backend component always appears even before it is styled.
+// ==========================================
+const PALETTE_PRESENTATION = {
+    ActiveMQDataPublisher: {icon:"bi bi-envelope-arrow-up", color:"#fb923c", label:"ActiveMQ"},
+    ActiveMQDataSubscriber: {icon:"bi bi-envelope-open", color:"#ea580c", label:"ActiveMQ"},
+    AdditionCalculator: {icon:"bi bi-plus-lg", label:"Addition"},
+    AerospikeDataPublisher: {icon:"bi bi-cloud-upload", color:"#84cc16", label:"Aerospike"},
+    ApplyDefaultsCalculator: {icon:"bi bi-plus-square", label:"Apply Defaults"},
+    ApplyDefaultsDataTransformer: {icon:"bi bi-plus-square", label:"Apply Defaults"},
+    AshRedisChannelDataPublisher: {icon:"bi bi-diagram-3-fill", color:"#34d399", label:"AshRedis Channel"},
+    AshRedisChannelDataSubscriber: {icon:"bi bi-diagram-3", color:"#10b981", label:"AshRedis Channel"},
+    AshRedisDataPublisher: {icon:"bi bi-diagram-2", color:"#10b981", label:"AshRedis"},
+    AttributeFilterAwayCalculator: {icon:"bi bi-funnel-fill", label:"Attribute Filter Away"},
+    AttributeFilterAwayDataTransformer: {icon:"bi bi-funnel-fill", label:"Attribute Filter Away"},
+    AttributeFilterCalculator: {icon:"bi bi-funnel", label:"Attribute Filter"},
+    AttributeFilterDataTransformer: {icon:"bi bi-funnel", label:"Attribute Filter"},
+    AttributeNameChangeCalculator: {icon:"bi bi-input-cursor-text", label:"Rename Attributes"},
+    AzureBlobDataPublisher: {icon:"bi bi-cloud", color:"#0078d4", label:"Azure Blob"},
+    AzureBlobDataSubscriber: {icon:"bi bi-cloud", color:"#0078d4", label:"Azure Blob"},
+    CalculationNode: {icon:"bi bi-calculator", label:"Calculation"},
+    CustomDataPublisher: {icon:"bi bi-puzzle-fill", color:"#64748b", label:"Custom"},
+    CustomDataSubscriber: {icon:"bi bi-puzzle", color:"#64748b", label:"Custom"},
+    EventHubsDataPublisher: {icon:"bi bi-broadcast", color:"#0078d4", label:"Azure Event Hubs"},
+    EventHubsDataSubscriber: {icon:"bi bi-broadcast", color:"#0078d4", label:"Azure Event Hubs"},
+    FaninDataPublisher: {icon:"bi bi-arrows-expand", color:"#6366f1", label:"Fan-In (Composite)"},
+    FaninDataSubscriber: {icon:"bi bi-arrows-collapse", color:"#6366f1", label:"Fan-In (Composite)"},
+    FanoutDataPublisher: {icon:"bi bi-signpost-2", color:"#a855f7", label:"Fan-Out (Router)"},
+    FanoutDataSubscriber: {icon:"bi bi-signpost-split", color:"#a855f7", label:"Fan-Out (Router)"},
+    FileDataPublisher: {icon:"bi bi-file-earmark-arrow-up", color:"#0891b2", label:"File"},
+    FileDataSubscriber: {icon:"bi bi-file-earmark-text", color:"#0891b2", label:"File"},
+    GCSDataPublisher: {icon:"bi bi-google", color:"#1a73e8", label:"Google Cloud Storage"},
+    GCSDataSubscriber: {icon:"bi bi-google", color:"#1a73e8", label:"Google Cloud Storage"},
+    GRPCDataPublisher: {icon:"bi bi-arrow-up-right", color:"#a78bfa", label:"gRPC"},
+    GRPCDataSubscriber: {icon:"bi bi-arrow-left-right", color:"#8b5cf6", label:"gRPC"},
+    InMemoryDataPublisher: {icon:"bi bi-memory", color:"#0d9488", label:"InMemory"},
+    InMemoryDataSubscriber: {icon:"bi bi-memory", color:"#0d9488", label:"InMemory"},
+    InMemoryRedisChannelDataPublisher: {icon:"bi bi-hdd-rack-fill", color:"#2dd4bf", label:"InMemory Redis Ch"},
+    InMemoryRedisChannelDataSubscriber: {icon:"bi bi-hdd-network", color:"#2dd4bf", label:"InMemory Redis Ch"},
+    InMemoryRedisDataPublisher: {icon:"bi bi-hdd-fill", color:"#14b8a6", label:"InMemory Redis"},
+    InMemoryRedisDataSubscriber: {icon:"bi bi-hdd-stack", color:"#14b8a6", label:"InMemory Redis"},
+    KafkaDataPublisher: {icon:"bi bi-broadcast-pin", color:"#dc2626", label:"Kafka"},
+    KafkaDataSubscriber: {icon:"bi bi-broadcast", color:"#059669", label:"Kafka"},
+    KinesisDataPublisher: {icon:"bi bi-water", color:"#ff9900", label:"AWS Kinesis"},
+    KinesisDataSubscriber: {icon:"bi bi-water", color:"#ff9900", label:"AWS Kinesis"},
+    LMDBDataPublisher: {icon:"bi bi-hdd", color:"#15803d", label:"LMDB (zero-copy)"},
+    LMDBDataSubscriber: {icon:"bi bi-hdd", color:"#15803d", label:"LMDB (zero-copy)"},
+    MetronomeDataPublisher: {icon:"bi bi-stopwatch", color:"#7c3aed", label:"Metronome"},
+    MetronomeDataSubscriber: {icon:"bi bi-alarm", color:"#7c3aed", label:"Metronome"},
+    MetronomeNode: {icon:"bi bi-stopwatch", label:"Metronome"},
+    MultiplicationCalculator: {icon:"bi bi-x-lg", label:"Multiplication"},
+    NullCalculator: {icon:"bi bi-slash-circle", label:"Null"},
+    NullDataTransformer: {icon:"bi bi-slash-circle", label:"Null"},
+    PassthruCalculator: {icon:"bi bi-arrow-right", label:"Passthru"},
+    PassthruDataTransformer: {icon:"bi bi-arrow-right", label:"Passthru"},
+    PublicationNode: {icon:"bi bi-box-arrow-up", label:"Publication"},
+    PublisherSinkNode: {icon:"bi bi-sign-merge-left", label:"Publisher Sink"},
+    RESTDataPublisher: {icon:"bi bi-hdd-network", color:"#475569", label:"REST / HTTP"},
+    RESTDataSubscriber: {icon:"bi bi-hdd-network", color:"#475569", label:"REST / HTTP"},
+    RabbitMQDataPublisher: {icon:"bi bi-envelope-plus", color:"#f97316", label:"RabbitMQ"},
+    RabbitMQDataSubscriber: {icon:"bi bi-envelope", color:"#f97316", label:"RabbitMQ"},
+    RandomCalculator: {icon:"bi bi-shuffle", label:"Random"},
+    RedisChannelDataPublisher: {icon:"bi bi-database-up", color:"#f87171", label:"Redis Channel"},
+    RedisChannelDataSubscriber: {icon:"bi bi-database", color:"#dc2626", label:"Redis Channel"},
+    RedisDataPublisher: {icon:"bi bi-database-add", color:"#ef4444", label:"Redis"},
+    S3DataPublisher: {icon:"bi bi-bucket", color:"#e0701a", label:"AWS S3"},
+    S3DataSubscriber: {icon:"bi bi-bucket", color:"#e0701a", label:"AWS S3"},
+    SNSDataPublisher: {icon:"bi bi-megaphone", color:"#ff9900", label:"AWS SNS"},
+    SQLDataPublisher: {icon:"bi bi-database", color:"#0f766e", label:"SQL Database"},
+    SQLDataSubscriber: {icon:"bi bi-database", color:"#0f766e", label:"SQL Database"},
+    SQSDataPublisher: {icon:"bi bi-aws", color:"#ff9900", label:"AWS SQS"},
+    SQSDataSubscriber: {icon:"bi bi-aws", color:"#ff9900", label:"AWS SQS"},
+    ServiceBusDataPublisher: {icon:"bi bi-bus-front", color:"#0078d4", label:"Azure Service Bus"},
+    ServiceBusDataSubscriber: {icon:"bi bi-bus-front", color:"#0078d4", label:"Azure Service Bus"},
+    SinkNode: {icon:"bi bi-sign-stop", label:"Sink"},
+    SubscriptionNode: {icon:"bi bi-box-arrow-in-down", label:"Subscription"},
+    TibcoEMSDataPublisher: {icon:"bi bi-diagram-2", color:"#003366", label:"TIBCO EMS"},
+    TibcoEMSDataSubscriber: {icon:"bi bi-diagram-2", color:"#003366", label:"TIBCO EMS"},
+    WebSphereMQDataPublisher: {icon:"bi bi-server", color:"#052f5f", label:"WebSphere MQ"},
+    WebSphereMQDataSubscriber: {icon:"bi bi-server", color:"#052f5f", label:"WebSphere MQ"},
+};
+
+const PALETTE_SECTIONS = [
+    {key: 'node_types',        category: 'node',        container: 'palette-node'},
+    {key: 'subscriber_types',  category: 'subscriber',  container: 'palette-subscriber'},
+    {key: 'publisher_types',   category: 'publisher',   container: 'palette-publisher'},
+    {key: 'calculator_types',  category: 'calculator',  container: 'palette-calculator'},
+    {key: 'transformer_types', category: 'transformer', container: 'palette-transformer'},
+];
+
+const PALETTE_CATEGORY_FALLBACK_ICON = {
+    node: 'bi bi-diagram-3',
+    subscriber: 'bi bi-box-arrow-in-down',
+    publisher: 'bi bi-box-arrow-up',
+    calculator: 'bi bi-calculator',
+    transformer: 'bi bi-arrow-repeat',
+};
+
+function humanizePaletteType(type) {
+    const base = type.replace(/(DataSubscriber|DataPublisher|DataTransformer|Calculator|Node)$/, '');
+    const spaced = base.replace(/([a-z0-9])([A-Z])/g, '$1 $2').trim();
+    return spaced || type;
+}
+
+function buildPaletteItem(type, category) {
+    const p = PALETTE_PRESENTATION[type] || {};
+    const icon = p.icon || PALETTE_CATEGORY_FALLBACK_ICON[category] || 'bi bi-puzzle';
+    const label = p.label || humanizePaletteType(type);
+    const div = document.createElement('div');
+    div.className = 'palette-item';
+    div.setAttribute('draggable', 'true');
+    div.dataset.type = type;
+    div.dataset.category = category;
+    const iconStyle = p.color ? ` style="background:${p.color};"` : '';
+    div.innerHTML = `<div class="item-icon"${iconStyle}><i class="${icon}"></i></div><span></span>`;
+    div.querySelector('span').textContent = label;   // textContent: never inject markup
+    return div;
+}
+
+function renderPaletteError() {
+    PALETTE_SECTIONS.forEach(sec => {
+        const c = document.getElementById(sec.container);
+        if (c) {
+            c.innerHTML = '<div style="padding:10px;color:#ef4444;font-size:12px;">'
+                + 'Could not load components. '
+                + '<a href="#" onclick="loadPalette();return false;" style="color:#60a5fa;">Retry</a></div>';
+        }
+    });
+}
+
+async function loadPalette() {
+    try {
+        const resp = await fetch('/api/dag-designer/components', {headers: {'Accept': 'application/json'}});
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const catalogue = await resp.json();
+        PALETTE_SECTIONS.forEach(sec => {
+            const container = document.getElementById(sec.container);
+            if (!container) return;
+            container.innerHTML = '';
+            (catalogue[sec.key] || []).forEach(entry => {
+                if (entry && entry.type) {
+                    container.appendChild(buildPaletteItem(entry.type, sec.category));
+                }
+            });
+        });
+        wirePaletteDragItems();
+    } catch (err) {
+        console.error('Failed to load component palette:', err);
+        renderPaletteError();
+    }
+}
+
 function initializeDragAndDrop() {
+    // Canvas drop target is attached once here. Palette items are rendered
+    // asynchronously from the API and wired by wirePaletteDragItems() after
+    // each render (see loadPalette).
+    const container = document.getElementById('cy');
+    container.addEventListener('dragover', handleDragOver);
+    container.addEventListener('drop', handleDrop);
+}
+
+function wirePaletteDragItems() {
     document.querySelectorAll('.palette-item').forEach(item => {
         item.addEventListener('dragstart', handleDragStart);
         item.addEventListener('dragend', handleDragEnd);
     });
-    const container = document.getElementById('cy');
-    container.addEventListener('dragover', handleDragOver);
-    container.addEventListener('drop', handleDrop);
 }
 
 function handleDragStart(e) {

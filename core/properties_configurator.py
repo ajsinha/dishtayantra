@@ -55,6 +55,15 @@ class PropertiesConfigurator(TypedAccessorsMixin, ContentResolutionMixin):
 
         self._initialized = True
 
+        # DY_CONFIG_FILE override: whichever caller initialises the singleton
+        # first, an explicitly-pointed config file always wins. This makes
+        # per-instance configs (e.g. the twonode/ dev setup) robust regardless
+        # of import order. Unset -> unchanged behaviour.
+        import os as _os
+        _override = _os.environ.get('DY_CONFIG_FILE')
+        if _override:
+            properties_files = _override
+
         # Parse properties_files - handle both string and list
         self._properties_files = self._parse_file_paths(properties_files)
 

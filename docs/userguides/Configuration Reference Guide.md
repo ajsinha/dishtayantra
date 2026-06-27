@@ -146,6 +146,62 @@ deletes old events.
 
 ---
 
+## `flow_recorder` (Flow Time-Travel capture, opt-in)
+
+Records the engine's equality-gate change-log so you can replay a DAG's history
+and reconstruct state at any point in time (UI: **Manage → Flow Time Travel**).
+**On by default** (SQLite). The flow store is always a database **separate** from the
+application DB; co-locating with the app DB (the old `store=dao`) is **forbidden**.
+
+| Key | Sample | Explanation |
+|-----|--------|-------------|
+| `flow_recorder.enabled` | `true` | Capture on at startup. Default **true** (records DAG node fires to the SQLite flow DB). Set `false` to disable. An admin can also toggle capture at runtime from **Admin -> System Monitoring** (globally or per-DAG) or via the `dyflow enable|disable [--dag NAME]` CLI (in-memory; does not persist across restart). |
+| `flow_recorder.store` | `sqlite` | Backend: `sqlite` (default) \| `postgres` \| `noop` \| `paimon` \| `aerospike`. `dao` is rejected. |
+| `flow_recorder.store_path` | `data/flow_history.db` | `store=sqlite`: the SQLite file (a **separate** file from `db.sqlite.path`). |
+| `flow_recorder.db_url` | `postgresql+psycopg://user:pass@host:5432/flowdb` | `store=postgres`: a dedicated SQLAlchemy database (any URL; PostgreSQL needs a driver, e.g. `pip install psycopg[binary]`). Several instances may share one — each row carries provenance `(instance, host, port)`. |
+| `flow_recorder.warehouse` | `data/flow_warehouse` | `store=paimon`: Paimon warehouse path (`pip install pypaimon`). |
+| `flow_recorder.aerospike_hosts` / `flow_recorder.aerospike_namespace` | `127.0.0.1:3000` / `dishtayantra` | `store=aerospike` (experimental). |
+| `flow_recorder.maxsize` | `100000` | Bounded queue between the engine and the drain thread; overflow is dropped (counted), never blocks the hot path. |
+| `flow_recorder.max_payload_bytes` | `2048` | Per-side JSON cap on captured input/output snapshots. |
+| `flow_recorder.sample_rate` | `1.0` | `1.0` = record every gate fire; lower to shed load. |
+| `flow_recorder.retention_hours` | `24` | History window kept; `<= 0` disables purging. |
+| `flow_recorder.retention_sweep_minutes` | `30` | Retention sweep cadence; deletes happen in bounded batches. |
+| `flow_recorder.maintenance` | `none` | `none` \| `incremental` \| `full` — optional daily SQLite VACUUM (never applied to a shared/app DB). |
+
+## `alerts` (SLO / staleness alerting, opt-in)
+
+**Off by default.** Output-change staleness derived from the flow history: a rule
+breaches when a DAG (or a named node) has produced **no output change** within
+`max_age_seconds`. Evaluated on demand at `GET /api/alerts` and shown on **Admin →
+System Monitoring** (and via `dyflow alerts`). Because of the equality gate this is
+*output-change* staleness — a constant-but-healthy stream will read as stale, so
+size limits to the slowest legitimate change interval. (Execution-liveness and
+error-rate SLOs are planned follow-ups; they need small engine additions.)
+
+| Key | Default | Notes |
+|-----|---------|-------|
+| `alerts.enabled` | `false` | Evaluate rules. While off, no rules load and `/api/alerts` reports `enabled:false`. |
+| `alerts.rules_file` | *(empty)* | Path to a JSON rules file (a top-level list, or `{"rules":[...]}`). Empty ⇒ no rules. See `config/alerts.example.json`. |
+
+Each rule: `{"name": "...", "dag": "trade-etl", "node": "enrich_fx" (optional),
+"max_age_seconds": 120}`. Omit `node` for a DAG-level rule. Invalid rules are
+skipped (logged); a missing file is treated as no rules — alerting never takes the
+server down.
+
+**Schema provisioning (no migrations):** like the application DB, **SQLite
+auto-creates** the flow schema from `config/schema/flow_events_sqlite.sql`, while
+on **PostgreSQL the application does NOT create the schema** — apply
+`config/schema/flow_events_postgres.sql` once yourself
+(`psql -f config/schema/flow_events_postgres.sql`). If the `flow_events` table is
+missing on Postgres, startup fails with a clear message rather than guessing.
+
+**Backend caveats (read before enabling in production):**
+- **postgres** — implemented as dialect-agnostic SQLAlchemy and exercised via SQLite in tests; not yet validated against a live PostgreSQL server.
+- **paimon** — real append-only hourly-partitioned backend; on a **local-filesystem** Paimon catalog, partition-drop retention is a no-op (PyPaimon needs a **REST catalog** to drop partitions). Read/write are unaffected; bound retention with a REST catalog or the table's `partition.expiration-time`.
+- **aerospike** — complete but **experimental/unverified** against a live cluster.
+
+---
+
 # Part 2 — DAG configuration (JSON)
 
 ## DAG top-level keys

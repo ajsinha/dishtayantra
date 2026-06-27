@@ -511,7 +511,11 @@ def main():
         print("\n┌─ Application Properties ─────────────────────────────────────────────┐")
         logger.info("Loading application configuration...")
         from core.config_parsers import find_default_config
-        config_file = find_default_config('config')
+        # DY_CONFIG_FILE lets you point an instance at an explicit config file
+        # (used by the two-node dev setup in twonode/). Unset -> unchanged
+        # behaviour: auto-discover config/application.{yaml,yml,properties}.
+        config_file = os.environ.get('DY_CONFIG_FILE') or \
+            find_default_config('config')
         props = PropertiesConfigurator([config_file])
         _log_component_status("Application Configuration", "OK", f"Loaded from {config_file}")
         print("└──────────────────────────────────────────────────────────────────────┘")

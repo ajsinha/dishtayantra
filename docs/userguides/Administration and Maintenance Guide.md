@@ -25,24 +25,43 @@ DishtaYantra provides comprehensive admin features including real-time system mo
 
 ### Accessing Admin Features
 
-Admin features are consolidated in a dropdown menu in the navigation bar:
+Operational and admin features are grouped into navbar dropdowns:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ DishtaYantra  Dashboard  DAG Designer  Cache  [Admin ▼] Help │
-│                                              ├─────────────┤ │
-│                                              │ User Mgmt   │ │
-│                                              │ System Mon  │ │
-│                                              │─────────────│ │
-│                                              │ System Logs │ │
-│                                              └─────────────┘ │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│ DishtaYantra  Dashboard  DAG Designer  [Manage ▼] [Admin ▼] Help [About ▼] │
+│                                         │              │                   │
+│                              ┌──────────┤   ┌──────────┤                   │
+│                              │ Egress   │   │ User Mgmt│                   │
+│                              │ Flow T-T │   │ System.. │                   │
+│                              │ Cache    │   │ Workers  │                   │
+│                              │──────────│   │ JVM/C++/ │                   │
+│                              │ Live Logs│   │  Rust    │                   │
+│                              └──────────┘   │──────────│                   │
+│                                             │ Sys Logs │                   │
+│                                             │ Logging  │                   │
+│                                             │ Maint.   │                   │
+│                                             │ API Keys │                   │
+│                                             │ Audit    │                   │
+│                                             └──────────┘                   │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
-The Admin dropdown contains:
-- **User Management** - Create, edit, delete users
-- **System Monitoring** - Real-time system metrics
-- **System Logs** - View and download application logs
+- **System Monitoring** (`/admin/monitoring`, admin) also hosts the **Flow
+  Recording** control: enable/disable capture globally or for a single DAG
+  (the `/flow` page shows status read-only). Equivalent CLI: `dyflow enable|disable [--dag NAME]`.
+  It also shows **SLO / staleness alerts** (opt-in: `alerts.enabled` +
+  `alerts.rules_file`; `GET /api/alerts` / `dyflow alerts`) - a rule breaches when a
+  DAG or node has had no output change within its limit.
+
+- **Manage** (visible to any signed-in user): Egress, Flow Time-Travel, Cache,
+  and **Live Logs**. Live Logs is the only Manage item that streams logs and is
+  open to all authenticated users; the rest of the operational views follow their
+  own page permissions.
+- **Admin** (admin role only): User Management, System Monitoring, Worker Pool,
+  JVM / C++ / Rust management, System Logs, Logging Control, Maintenance / Drain,
+  API Keys, and Audit Trail.
+- **About**: About DishtaYantra and Compare.
 
 ---
 
@@ -205,7 +224,23 @@ Shows mounted disk partitions with usage:
 
 ### Accessing System Logs
 
-Navigate to **Admin → System Logs** or directly to `/admin/logs`.
+Navigate to **Admin → System Logs** or directly to `/admin/logs`. The static log
+viewer, raw-file download, and runtime logging controls are **admin-only**.
+
+### Live Logs — available to all signed-in users
+
+The **live** log stream is a separate, lighter view: navigate to **Manage → Live
+Logs** (`/admin/logs/live`), which tails `dagserver.log`, `application.log`, and
+`error.log` over Server-Sent Events. As of v5.35.1 this view is available to **any
+authenticated user**, not just admins (the page and its SSE stream use
+`login_required`).
+
+> **Operational note:** the live stream surfaces raw log lines, which can include
+> stack traces and request detail. Because every signed-in user can now watch it,
+> avoid logging secrets or sensitive payloads at INFO/ERROR, and consider a
+> dedicated role or a filtered stream if your deployment needs tighter control.
+> The static system-log viewer, download, and logging controls remain admin-only.
+
 
 ### Log Viewer Interface
 

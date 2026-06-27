@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Flow Time-Travel - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-nav {
+        background: var(--bg-body);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .code-block {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        white-space: pre;
+    }
+    .caveat { border-left: 4px solid #d9822b; padding-left: .75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation -->
+<div class="help-nav">
+    <a href="{{ url_for('help') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Help
+    </a>
+</div>
+
+<h2><i class="bi bi-clock-history" style="color: #4a90c2;"></i> Flow Time-Travel</h2>
+<p class="lead">Record the engine's change-log and replay any DAG's history &mdash; what each node output, when, and what the graph looked like at a chosen moment.</p>
+
+<!-- Overview -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle"></i> Overview</h5></div>
+    <div class="card-body">
+        <p>Because nodes only recompute when an input actually changes (the
+        <strong>equality gate</strong>), the flow history is a compact
+        <em>change-log</em> rather than a full event stream. The recorder captures
+        each gate fire off the hot path (a bounded queue feeds a single background
+        writer), so capture never blocks computation.</p>
+        <p>Open it from the navbar: <strong>Manage &rarr; Flow Time Travel</strong>
+        (or <code>/flow</code>). You can pick a DAG, scrub a time window to see the
+        events, reconstruct the state at a point in time, and export the window as
+        JSONL or CSV.</p>
+        <p><strong>On by default</strong> (SQLite). Set <code>flow_recorder.enabled=false</code>
+        to disable, or an admin can toggle capture on/off at runtime from
+        <strong>Admin &rarr; System Monitoring</strong> &mdash; globally (all DAGs) or for a
+        single DAG via the scope dropdown. (The Flow page itself shows recording
+        status read-only.) The same is available from the <code>dyflow</code> CLI:
+        <code>dyflow enable|disable [--dag NAME]</code> (the runtime toggle is in-memory and does not persist across a
+        restart).</p>
+    </div>
+</div>
+
+<!-- Storage backends -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-hdd-network"></i> Storage backends</h5></div>
+    <div class="card-body">
+        <p>The flow store is always a database <strong>separate</strong> from the
+        application database. Selected by <code>flow_recorder.store</code>:</p>
+        <table class="table table-sm">
+            <thead><tr><th>store</th><th>What it is</th></tr></thead>
+            <tbody>
+                <tr><td><code>sqlite</code> <span class="badge bg-secondary">default</span></td><td>A separate SQLite file (<code>flow_recorder.store_path</code>, default <code>data/flow_history.db</code>). Frugal, zero extra dependencies.</td></tr>
+                <tr><td><code>postgres</code></td><td>A dedicated SQLAlchemy database via <code>flow_recorder.db_url</code>. The same code targets PostgreSQL or any URL. Several instances can share one central flow DB.</td></tr>
+                <tr><td><code>noop</code></td><td>Keeps the wiring but persists nothing.</td></tr>
+                <tr><td><code>paimon</code></td><td>Optional Apache Paimon append-only archive (pure-Python PyPaimon).</td></tr>
+                <tr><td><code>aerospike</code></td><td>Optional, experimental.</td></tr>
+                <tr><td><del><code>dao</code></del></td><td><strong>Forbidden.</strong> Flow history must never share the application database; the server rejects it.</td></tr>
+            </tbody>
+        </table>
+        <p>Every event is stamped with <strong>provenance</strong>
+        <code>(instance, host, port)</code>, so a shared database stays origin-aware:
+        queries can scope to one instance and the DAG inventory groups by origin.</p>
+    </div>
+</div>
+
+<!-- Configuration -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders"></i> Configuration</h5></div>
+    <div class="card-body">
+        <div class="code-block">flow_recorder.enabled=true               # capture on at startup (default ON)
+flow_recorder.store=sqlite               # sqlite | postgres | noop | paimon | aerospike
+flow_recorder.store_path=data/flow_history.db        # store=sqlite (separate file)
+#flow_recorder.db_url=postgresql+psycopg://user:pass@host:5432/flowdb   # store=postgres
+#flow_recorder.warehouse=data/flow_warehouse                           # store=paimon
+flow_recorder.maxsize=100000             # bounded queue; overflow dropped (counted)
+flow_recorder.max_payload_bytes=2048     # per-side JSON cap on captured values
+flow_recorder.sample_rate=1.0            # 1.0 = every fire; lower to shed load
+flow_recorder.retention_hours=24         # history kept; <= 0 disables purging
+flow_recorder.retention_sweep_minutes=30
+flow_recorder.maintenance=none           # none | incremental | full (sqlite VACUUM)</div>
+        <p class="mt-2 mb-0">See the <em>Configuration Reference Guide</em> for the
+        full key list.</p>
+    </div>
+</div>
+
+<!-- Caveats -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Backend caveats</h5></div>
+    <div class="card-body">
+        <p class="caveat"><strong>postgres</strong> &mdash; implemented as
+        dialect-agnostic SQLAlchemy and exercised via SQLite in tests; validate
+        against a live PostgreSQL before production. <strong>Provisioning:</strong>
+        SQLite auto-creates the schema, but on PostgreSQL the application does
+        <em>not</em> &mdash; apply <code>config/schema/flow_events_postgres.sql</code>
+        once yourself before enabling.</p>
+        <p class="caveat"><strong>paimon</strong> &mdash; a real append-only,
+        hourly-partitioned backend. On a <em>local filesystem</em> Paimon catalog,
+        partition-drop retention is a no-op (PyPaimon needs a REST catalog to drop
+        partitions); read/write are unaffected. Bound retention with a REST catalog
+        or the table's <code>partition.expiration-time</code>.</p>
+        <p class="caveat mb-0"><strong>aerospike</strong> &mdash; complete but
+        experimental and not yet verified against a live cluster.</p>
+    </div>
+</div>
+
+<!-- API -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-code-slash"></i> API &amp; CLI</h5></div>
+    <div class="card-body">
+        <div class="code-block">GET  /flow                              # the Time-Travel console
+GET  /api/flow/status                   # recorder stats + enabled flag
+POST /api/flow/enable[?dag=NAME] | /api/flow/disable[?dag=NAME]   # admin: toggle (all or one DAG)
+GET  /api/flow/dags                     # DAGs with event counts + time bounds
+GET  /api/flow/{dag_id}?from&to&nodes&limit&after   # events in a window
+GET  /api/flow/{dag_id}/state-at?ts=ms              # reconstructed state
+GET  /api/flow/{dag_id}/distribution                # rolling 24h cycle distribution (in-memory)
+GET  /api/flow/{dag_id}/histogram?from&to&buckets=120  # exact cycle/event counts (SQL)
+GET  /api/flow/{dag_id}/stream?from&to&cycles=256   # SSE replay, grouped by compute cycle
+GET  /api/flow/{dag_id}/export?from&to&format=jsonl|csv&download=1</div>
+        <p class="mt-2 mb-0"><strong>Reading the graph:</strong> during replay each node displays a running <strong>message count</strong> beneath its name, so you can watch the DAG light up partially depending on the data and branch logic. The <strong>Clear</strong> button stops the stream, releases the server slot and resets the graph, counts and event list in one action. The window is chosen with simple <strong>Today/Yesterday + hh:mm:ss AM/PM</strong> dropdowns (no calendar).</p>
+        <p class="mt-2 mb-0"><strong>Window &amp; distribution chart:</strong> the
+        backend keeps a rolling <strong>last-24h distribution per DAG</strong> in
+        memory (120 x 12-min buckets), updated as events are recorded. The bottom-pane
+        chart loads this with a single cheap read (<code>/distribution</code>, no DB
+        scan), so many concurrent replays cost the database nothing. On load the window
+        <strong>auto-focuses to where the DAG was actually active</strong> (so a quiet
+        24h doesn't look sparse); adjusting the <strong>From</strong> / <strong>To</strong>
+        pickers (max 24h) just re-slices the buckets already in the browser - no further
+        server hits. An amber playhead advances during replay. <code>/histogram</code>
+        remains available for an exact SQL aggregate over an arbitrary window; Download
+        exports the window as JSONL.</p>
+        <p class="mt-2 mb-0"><strong>Large windows &amp; compute cycles:</strong> the
+        replay page streams the selected window from the server as Server-Sent-Event
+        pushes and renders them through a bounded queue, so the browser stays
+        responsive even for windows with hundreds of thousands of events. Each push
+        carries a configurable number of <em>complete compute cycles</em>
+        (<code>cycles</code>, default 256) - a compute cycle is every node fire from
+        one engine sweep (one start-to-finish propagation wave), grouped by
+        <code>cycle_id</code> - so the display is never a partial cycle and cycles
+        arrive in order. Pick a range (max 24h) with the From/To controls or the
+        timeline handles, then press play; Download exports the same window as JSONL
+        (one JSON record per line).</p>
+        <p class="mt-2 mb-0"><strong>Replay limits:</strong> concurrent replays are
+        capped server-side (<code>flow_recorder.max_concurrent_streams</code>, default
+        5) and each replay has a duration cap
+        (<code>flow_recorder.stream_max_seconds</code>, default 120s). The page header
+        shows how many replays are in progress; at capacity, a new replay is asked to
+        try again shortly. The transport bar has a <strong>Stop</strong> button that
+        disconnects the stream immediately and releases the server slot (the same
+        happens automatically if you pause or leave the page). These guards protect
+        the web tier only - DAG computation is already isolated (separate WAL flow DB;
+        the compute hot path only enqueues).</p>
+        <p class="mt-2 mb-0">A command-line client is provided at
+        <code>tools/dyflow.py</code>.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-bell"></i> SLO / staleness alerts</h5></div>
+    <div class="card-body">
+        <p>Opt-in staleness alerting is derived from the same flow history. A rule
+        breaches when a DAG (or a named node) has produced <strong>no output
+        change</strong> within its limit. Because of the equality gate this is
+        <em>output-change</em> staleness &mdash; a constant-but-healthy stream reads
+        as stale, so size <code>max_age_seconds</code> to the slowest legitimate
+        change interval.</p>
+        <p>Enable with <code>alerts.enabled=true</code> and point
+        <code>alerts.rules_file</code> at a JSON rules file (see
+        <code>config/alerts.example.json</code>). Status appears on
+        <strong>Admin &rarr; System Monitoring</strong>, at <code>GET /api/alerts</code>,
+        and via <code>dyflow alerts</code>.</p>
+        <div class="code-block">{"rules":[
+  {"name":"trade-etl alive","dag":"trade-etl","max_age_seconds":300},
+  {"name":"fx fresh","dag":"trade-etl","node":"enrich_fx","max_age_seconds":120}
+]}</div>
+    </div>
+</div>
+{% endblock %}

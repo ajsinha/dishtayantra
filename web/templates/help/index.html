@@ -427,6 +427,19 @@ explanation. Start at Tutorial 1 and build up.</p>
         </div>
     </div>
     <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card help-card" style="border-left: 4px solid #b45309;">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-hdd-network" style="color: #b45309;"></i> Multi-Instance Management
+                </h5>
+                <p class="card-text">Manage several DishtaYantra instances from one UI: trusted servers, the per-session switcher, the fleet view, and the security model.</p>
+                <a href="{{ url_for('help_multi_instance') }}" class="btn btn-sm text-white" style="background: #b45309;">
+                    Open Guide <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4 mb-3">
         <div class="card help-card">
             <div class="card-body">
                 <h5 class="card-title">
@@ -565,6 +578,18 @@ explanation. Start at Tutorial 1 and build up.</p>
                 </h5>
                 <p class="card-text">Schedule DAG execution within specific time windows using start_time and duration configuration.</p>
                 <a href="{{ url_for('help_time_windows') }}" class="btn btn-outline-primary btn-sm">
+                    Learn More <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="card help-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-clock-history"></i> Flow Time-Travel
+                </h5>
+                <p class="card-text">Record the engine's change-log and replay any DAG's history: view events over a window, reconstruct state at a point in time, and export. Pluggable separate store (SQLite, Postgres, Paimon).</p>
+                <a href="{{ url_for('help_flow_time_travel') }}" class="btn btn-outline-primary btn-sm">
                     Learn More <i class="bi bi-arrow-right"></i>
                 </a>
             </div>

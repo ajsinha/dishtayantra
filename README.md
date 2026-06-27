@@ -6,7 +6,7 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-5.25.1-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-5.48.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -136,6 +136,12 @@ when a true cross-record dependency needs one-at-a-time ordering.
 - **C++ Management**: pybind11 module administration
 - **Rust Management**: PyO3 module administration
 - **Service Health Checks**: Monitor DAG server and integration status
+
+### Multi-Instance Management (Service-Plane Split)
+- **One UI, many servers**: register other DishtaYantra instances as **trusted servers** and manage them from a single UI. The UI plane acts as a gateway — your browser only ever talks to its own instance, which proxies to the selected server.
+- **Per-session server switch**: a navbar switcher re-targets the management surface (DAG lifecycle, flow time-travel, metrics/health, worker & egress status, designer deploy) to the active server; identity, users, and API keys always stay on the plane you logged into. Host-scoped admin (worker pool, language runtimes, maintenance) stays local.
+- **Fleet view** (`/fleet`): read-only single-pane-of-glass with per-server reachability, version, and DAG counts — one unreachable server never blanks the page.
+- **Secure by construction**: trusted-server API keys are encrypted at rest (Fernet, key from `DY_SECRET_KEY`), masked everywhere, and never sent to the browser; cross-server actions carry `X-DY-On-Behalf-Of` for audit attribution. Admins manage the trusted list at `/admin/trusted-servers`. See the *Multi-Instance Management Guide* (`docs/MULTI_INSTANCE.md`) and the in-app help page.
 
 ### Documentation & Help
 - **20+ page help system** with comprehensive guides
@@ -346,6 +352,23 @@ Open http://localhost:5000 in your browser.
 }
 ```
 
+### 5. Managing Multiple Instances from One UI
+
+Run two or more instances; on the one you'll use as the UI, set a stable
+encryption secret and register the others as trusted servers:
+
+```sh
+# UI plane: secret used to encrypt trusted-server keys at rest (keep it stable)
+export DY_SECRET_KEY="a-long-stable-passphrase"
+python3 run_server.py
+```
+
+Then, as an admin, open `/admin/trusted-servers`, add each remote instance by
+URL and a `dyk_` API key minted on that instance (admin role for full control,
+user role for read-only). Use the navbar **server switcher** to re-target the
+management UI, or open **`/fleet`** for a read-only overview of every instance.
+See `docs/MULTI_INSTANCE.md`.
+
 ---
 
 ## Performance
@@ -420,6 +443,13 @@ status = server.get_server_status()
 | GET | `/rust/management` | Rust management |
 | GET | `/help` | Help center |
 | GET | `/help/research` | Research paper |
+| GET | `/api/service/info` | Service plane identity (name, version, capabilities) |
+| GET | `/api/service/dags` | DAG inventory (JSON management API) |
+| POST | `/api/service/dag/<n>/{start,stop,suspend,resume}` | Lifecycle (structured `OpResult`) |
+| GET | `/admin/trusted-servers` | Manage trusted servers (admin) |
+| POST | `/service/select` | Switch the per-session active server |
+| GET | `/fleet`, `/api/fleet/overview` | Fleet view + aggregated overview |
+| GET/POST | `/api/proxy/{path}` | Gateway: forward whitelisted calls to the active server |
 
 ---
 
@@ -447,7 +477,7 @@ status = server.get_server_status()
 
 ## Version & History
 
-Current version: **5.25.1** (the authoritative version is always
+Current version: **5.48.0** (the authoritative version is always
 `core/version.py::VERSION`, which every module, template, and banner imports —
 nothing hard-codes a version string). DishtaYantra is developed as a continuously
 evolving system; rather than a release-by-release changelog, the current
@@ -469,6 +499,7 @@ specific subsystems see:
 4. **Network security**: Configure firewalls, use VPN
 5. **Audit logging**: Enable comprehensive logging
 6. **Regular updates**: Keep dependencies current
+7. **Trusted-server keys**: when managing multiple instances, set a strong, stable `DY_SECRET_KEY` on the UI plane — it encrypts trusted-server API keys at rest (Fernet). Keep it out of version control (use the environment); rotating it invalidates stored keys, which must then be re-entered. Prefer HTTPS endpoints for trusted servers and per-server keys scoped to the least role needed (user for read-only, admin for control).
 
 ---
 

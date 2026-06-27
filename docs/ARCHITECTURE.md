@@ -1728,6 +1728,76 @@ services:
 
 ---
 
+## Service-Plane / UI-Plane Split (Multi-Instance Management)
+
+DishtaYantra can manage **multiple instances from one UI** without becoming a
+cluster. This is a *control-plane* separation, not compute scale-out: the
+compute/data plane (single node, single compute thread, equality gate,
+`dagState`-authoritative) is unchanged. It extends the existing principle
+"`dagState` is authoritative; the canvas is a view" up one level — *the service
+plane's state is authoritative; the UI plane is a (possibly remote) view of it.*
+
+**The `ServiceClient` seam.** Route code obtains a client via
+`core.service.client.get_service_client(request)` and never cares whether it is
+local or remote. Two flavours implement the same interface:
+
+- `LocalServiceClient` — in-process calls to this instance's `DAGComputeServer`
+  (today's behaviour; the contract reference; no network, no failure modes a
+  remote has).
+- `RestServiceClient` — HTTPS calls to a trusted instance's JSON management API
+  (`/api/service/*`), authenticated with that instance's `dyk_` key and
+  annotated with `X-DY-On-Behalf-Of` for audit attribution. Typed errors
+  (`ServiceUnavailable/Timeout/AuthError/ProtocolError`); pooled `requests`
+  session per server.
+
+The selected target is **per-session** (`request.session['service_target']`),
+so two users can view different planes at once; identity (login/users/API keys)
+always stays on the plane you logged into.
+
+**The UI plane as a gateway.** The browser only ever talks to its own UI plane.
+For the broad read/op surfaces that aren't part of the typed management
+contract (flow time-travel, metrics/health, worker/egress *status*, designer
+components/validate/deploy), the UI plane proxies a **strict whitelist** of
+existing API paths to the active target (`routes/service_proxy_routes.py`,
+`/api/proxy/{path}`), attaching the trusted key + on-behalf header. A small
+`fetch` shim in `base.html` re-routes whitelisted calls only when a remote
+target is active, so pages re-target transparently. Forwarding the existing
+APIs (rather than duplicating each subsystem into the service contract) keeps a
+single source of truth and avoids parallel-structure drift. Host-scoped admin
+(worker pool start/stop, DAG migrate, language runtimes, maintenance) and all
+auth/user surfaces are deliberately **excluded** from the whitelist — they
+always act on the local plane.
+
+```
+   browser ──HTTPS (single origin)──▶  UI plane
+                                          │  ServiceClient seam (server-side)
+                              ┌───────────┴────────────┐
+                              ▼                         ▼
+                     LocalServiceClient          RestServiceClient / proxy
+                     (in-process)                (Bearer dyk_ + on-behalf)
+                              │                         │
+                        local DAG server         trusted server B
+```
+
+**Trusted-server registry.** Admins register peers at
+`/admin/trusted-servers` (URL + `dyk_` key + role). Keys are encrypted at rest
+with Fernet keyed from `DY_SECRET_KEY` (`core.service.crypto`), masked
+everywhere, never sent to the browser. Add-time probing of the remote
+`/api/service/info` validates auth and records the version. Persisted in the
+`trusted_servers` table via `core.db.trusted_dao`.
+
+**Fleet view.** `/fleet` (`routes/fleet_routes.py`, `GET /api/fleet/overview`)
+fans out across the local plane and every trusted server, returning per-plane
+reachability/version/DAG-counts with per-plane isolation — a single unreachable
+plane reports its own error rather than failing the page.
+
+**Version policy.** `/api/service/info` advertises version + capabilities; the
+UI surfaces a non-blocking mismatch warning but does **not** enforce
+compatibility — the admin owns which versions are added to the trusted list.
+
+Design and phase history: `docs/design/service-plane-split.md` and
+`docs/design/service-plane-roadmap.md`.
+
 ## Appendix
 
 ### Version History

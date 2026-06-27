@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Trusted Servers - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ts-help { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+    .ts-url { font-family:'Monaco','Menlo','Ubuntu Mono',monospace; font-size:.82rem; }
+    .ts-badge-ok { color: #16a34a; }
+    .ts-badge-bad { color: #d97706; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1000px;">
+    <h2 class="mb-1"><i class="bi bi-hdd-network"></i> Trusted Servers</h2>
+    <p class="ts-help mb-4">
+        Register other DishtaYantra instances so this UI can manage them. You
+        supply each server's URL and an API key minted on that server
+        (<span class="ts-url">dyk_…</span>). The key is encrypted at rest and
+        never shown again. It is your responsibility to add only
+        version-compatible servers. Switch the active server from the
+        <i class="bi bi-hdd-network"></i> menu in the top bar.
+    </p>
+
+    {% if not secret_ok %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        The at-rest encryption secret is not configured, so keys cannot be
+        stored. Set the <code>DY_SECRET_KEY</code> environment variable (a
+        passphrase or a url-safe base64 Fernet key) and restart before adding
+        servers.
+    </div>
+    {% endif %}
+
+    <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-plus-circle"></i> Add a trusted server</div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('trusted_add') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">ID (stable handle)</label>
+                    <input name="server_id" class="form-control" placeholder="ord-prod-1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Name</label>
+                    <input name="name" class="form-control" placeholder="Orders — Prod 1" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">URL</label>
+                    <input name="url" class="form-control" placeholder="https://10.0.3.21:5061" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">API key (dyk_…)</label>
+                    <input name="api_key" type="password" class="form-control" placeholder="dyk_…" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Key role</label>
+                    <select name="role" class="form-select">
+                        <option value="admin">admin (full control)</option>
+                        <option value="user">user (read-only)</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="verify_tls" id="verify_tls" checked>
+                        <label class="form-check-label" for="verify_tls">Verify TLS</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary" {% if not secret_ok %}disabled{% endif %}>
+                        <i class="bi bi-check2-circle"></i> Add &amp; verify
+                    </button>
+                    <span class="ts-help ms-2">The server is probed on add; a bad URL/key/unreachable host is rejected.</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-list-ul"></i> Registered servers ({{ servers|length }})</div>
+        <div class="card-body p-0">
+            {% if not servers %}
+            <p class="ts-help p-3 mb-0">No trusted servers yet. The UI manages the local server only.</p>
+            {% else %}
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th><th>URL</th><th>Role</th><th>TLS</th>
+                        <th>Last probe</th><th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in servers %}
+                    <tr>
+                        <td><strong>{{ s.name }}</strong><br><span class="ts-help">{{ s.server_id }}</span></td>
+                        <td class="ts-url">{{ s.url }}</td>
+                        <td><span class="badge bg-{{ 'warning text-dark' if s.role == 'admin' else 'secondary' }}">{{ s.role }}</span></td>
+                        <td>{{ 'yes' if s.verify_tls else 'no' }}</td>
+                        <td>
+                            {% if s.last_probe_ok is sameas true %}
+                                <span class="ts-badge-ok"><i class="bi bi-check-circle"></i> v{{ s.last_probe_version or '?' }}</span>
+                            {% elif s.last_probe_ok is sameas false %}
+                                <span class="ts-badge-bad"><i class="bi bi-exclamation-triangle"></i> failed</span>
+                            {% else %}
+                                <span class="ts-help">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" action="{{ url_for('trusted_test', server_id=s.server_id) }}" class="d-inline">
+                                <button class="btn btn-sm btn-outline-secondary" title="Re-probe"><i class="bi bi-arrow-repeat"></i></button>
+                            </form>
+                            <form method="post" action="{{ url_for('trusted_remove', server_id=s.server_id) }}" class="d-inline"
+                                  onsubmit="return confirm('Remove trusted server {{ s.name }}?');">
+                                <button class="btn btn-sm btn-outline-danger" title="Remove"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

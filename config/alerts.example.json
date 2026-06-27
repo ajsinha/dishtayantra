@@ -1,0 +1,16 @@
+{
+  "_comment": "SLO/staleness rules for DishtaYantra. Copy to config/alerts.json, set alerts.enabled=true and alerts.rules_file=config/alerts.json. A rule BREACHES when the DAG (or named node) has had no OUTPUT CHANGE within max_age_seconds. Because of the equality gate this is output-change staleness: a constant-but-healthy stream will read as stale, so size max_age_seconds to the slowest legitimate change interval.",
+  "rules": [
+    {
+      "name": "trade-etl pipeline alive",
+      "dag": "trade-etl",
+      "max_age_seconds": 300
+    },
+    {
+      "name": "fx enrichment fresh",
+      "dag": "trade-etl",
+      "node": "enrich_fx",
+      "max_age_seconds": 120
+    }
+  ]
+}

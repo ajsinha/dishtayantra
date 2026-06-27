@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Fleet — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h4 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Fleet</h4>
+      <small class="text-muted">Local plane and every trusted server, at a glance.</small>
+    </div>
+    <button id="fleet-refresh" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </button>
+  </div>
+
+  <div id="fleet-status" class="text-muted small mb-2">Loading…</div>
+  <div id="fleet-grid" class="row g-3"></div>
+</div>
+
+<template id="fleet-tile">
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card h-100 shadow-sm tile">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <h6 class="card-title mb-1 tile-name"></h6>
+          <span class="badge tile-badge"></span>
+        </div>
+        <div class="text-muted small tile-url mb-2"></div>
+        <div class="row text-center g-2 tile-metrics">
+          <div class="col"><div class="fs-5 tile-dags">—</div><div class="small text-muted">DAGs</div></div>
+          <div class="col"><div class="fs-5 tile-running">—</div><div class="small text-muted">Running</div></div>
+          <div class="col"><div class="fs-6 tile-version">—</div><div class="small text-muted">Version</div></div>
+        </div>
+        <div class="tile-error text-danger small mt-2 d-none"></div>
+        <div class="mt-2 tile-actions"></div>
+      </div>
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Fleet view talks ONLY to the local UI plane's /api/fleet/overview, which
+// fans out server-side. Per-plane ok/error is rendered explicitly - one
+// unreachable plane does not blank the page.
+(function () {
+  var grid = document.getElementById('fleet-grid');
+  var statusEl = document.getElementById('fleet-status');
+  var tpl = document.getElementById('fleet-tile');
+
+  function tile(p, activeTarget) {
+    var node = tpl.content.cloneNode(true);
+    node.querySelector('.tile-name').textContent = p.name + (p.id === 'local' ? ' (this plane)' : '');
+    node.querySelector('.tile-url').textContent = p.url || '';
+    var badge = node.querySelector('.tile-badge');
+    // Two signals: reachable (is it up?) and manageable (can we manage it?).
+    if (p.reachable && p.manageable) {
+      badge.textContent = 'reachable'; badge.classList.add('bg-success');
+    } else if (p.reachable && !p.manageable) {
+      badge.textContent = 'up · not manageable'; badge.classList.add('bg-warning', 'text-dark');
+    } else {
+      badge.textContent = 'unreachable'; badge.classList.add('bg-danger');
+    }
+    node.querySelector('.tile-dags').textContent = p.manageable ? p.dag_count : '—';
+    node.querySelector('.tile-running').textContent = p.manageable ? p.running : '—';
+    node.querySelector('.tile-version').textContent = p.version || '—';
+    if (p.error) {
+      var err = node.querySelector('.tile-error');
+      err.textContent = p.error; err.classList.remove('d-none');
+    }
+    if (p.id !== activeTarget) {
+      var actions = node.querySelector('.tile-actions');
+      var f = document.createElement('form');
+      f.method = 'post'; f.action = "{{ url_for('service_select') }}"; f.className = 'm-0';
+      f.innerHTML = '<input type="hidden" name="target" value="' + p.id + '">' +
+                    '<button class="btn btn-sm btn-outline-primary">Switch to this plane</button>';
+      actions.appendChild(f);
+    } else {
+      node.querySelector('.tile-actions').innerHTML = '<span class="badge bg-primary">active</span>';
+    }
+    return node;
+  }
+
+  function render(data) {
+    grid.innerHTML = '';
+    var planes = data.planes || [];
+    var reachable = planes.filter(function (p) { return p.reachable; }).length;
+    statusEl.textContent = reachable + ' of ' + planes.length +
+      ' plane(s) reachable · live';
+    planes.forEach(function (p) { grid.appendChild(tile(p, data.active_target)); });
+  }
+
+  function pollOnce() {
+    statusEl.textContent = 'Loading…';
+    fetch('/api/fleet/overview', { headers: { 'Accept': 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(render)
+      .catch(function (e) { statusEl.textContent = 'Failed to load fleet: ' + e; });
+  }
+
+  // Live updates via SSE; up/down transitions appear without a reload. Falls
+  // back to periodic polling if EventSource is unavailable or errors.
+  var es = null, pollTimer = null;
+  function startPolling() {
+    if (pollTimer) return;
+    pollOnce();
+    pollTimer = setInterval(pollOnce, 8000);
+  }
+  function startStream() {
+    if (!window.EventSource) { startPolling(); return; }
+    try {
+      es = new EventSource('/api/fleet/stream');
+    } catch (e) { startPolling(); return; }
+    es.onmessage = function (ev) {
+      try { render(JSON.parse(ev.data)); } catch (e) { /* ignore */ }
+    };
+    es.addEventListener('error', function () {
+      // Browser auto-reconnects EventSource; if it stays down, fall back.
+      if (es && es.readyState === 2 /* CLOSED */) {
+        es = null; startPolling();
+      } else {
+        statusEl.textContent = 'Reconnecting…';
+      }
+    });
+  }
+
+  document.getElementById('fleet-refresh').addEventListener('click', pollOnce);
+  startStream();
+})();
+</script>
+{% endblock %}

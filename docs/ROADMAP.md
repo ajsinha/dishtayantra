@@ -1,7 +1,7 @@
 # DishtaYantra — Strategic Feature Roadmap
 
 *Toward "best real-time compute server in its category"*
-Draft v1 · derived from the 2026 competitive research · current product baseline: v5.8.1 (tracks `core/version.py`)
+Draft v1 · derived from the 2026 competitive research · current product baseline: v5.38.1 (tracks `core/version.py`)
 
 ---
 
@@ -167,6 +167,7 @@ graph TD
 - Incrementally-checkpointed keyed state (LMDB local + async barrier snapshots) building on `core/lmdb`/`core/storage`.
 - End-to-end exactly-once via transactional/idempotent sinks committed on checkpoint (`core/pubsub`).
 - Disaggregated state to object storage (the Flink 2.0 / RisingWave direction) so state can exceed one node's RAM and recovery/rescale is fast — this is also the bridge to optional scale-out.
+- *Frugal on-ramp (ships earlier, in Phase 3 as **C6**):* **log-based warm-start recovery** seeds node outputs from the existing flow change-log with no new infrastructure. It is warm-start, **not** exactly-once recovery — B2 remains the cluster-grade guarantee.
 
 **Exit criteria:** correct event-time windowing on out-of-order input; exactly-once verified under fault injection; state survives HA failover (`core/ha`); recovery within target SLO.
 **Beats Spark/Flink:** gives the fault-tolerance guarantees enterprises require, on the architecture the leaders are themselves migrating toward.
@@ -184,6 +185,23 @@ graph TD
 
 **C5 — Dynamic / elastic DAG topology (data-driven template expansion)** *(L–XL, foundations can start early)*
 - A running DAG can grow and shrink at runtime — add/modify/remove nodes, calculators, and edges — and a *templatized* section can expand in reaction to the data that arrives: a new key (symbol, tenant, session) materializes its own sub-pipeline behind a stable dispatcher→collector boundary, and idle instances are torn down (idle-TTL / LRU). Built on the single compute thread (structural mutations applied transactionally **between sweeps**, with cycle checks and a generation-stamped re-sort, preserving the equality gate), with a low-risk first cut using per-key subgraphs behind pub/sub topics so the parent's execution order is never disturbed. Finer-grained AutoClone, replicated to the HA standby via a deterministic-from-data design plus a replayable mutation log. Design: `docs/design/C5-dynamic-dag-topology.md`.
+
+**C6 — Flow-log replay & log-based recovery** *(M, first slice landed)*
+- Leverages the already-shipped Flow Time-Travel change-log (on by default) for two things no
+  cluster engine offers cheaply: **replay** a recorded window back through the engine, and **warm-start
+  recovery** by seeding each node's last output from the log - no checkpoint/disaggregated-state infra
+  required (a frugal on-ramp to B2, not a replacement).
+  - *Replay* uses: time-travel debugging (reproduce an incident deterministically), **regression testing**
+    (replay real historical inputs through a NEW calculator version and diff vs recorded outputs -
+    "record in prod, replay in CI"), and what-if runs against an alternate config. Offline/sandbox by
+    default with egress stubbed to sinks - any side-effecting mode is loudly opt-in.
+  - *Key honest constraint*: faithful replay needs pure calculators and **un-truncated** payloads, so a
+    per-DAG full-fidelity capture mode is part of the program; replay detects `__truncated__` and refuses
+    rather than producing a wrong result.
+  - Slices: (1) **landed** - `core/replay.py` read-only foundation (ordered event tape + per-node
+    recovery seed + fidelity report, fully tested); (2) offline replay runner over a sandbox graph;
+    (3) regression diff + `dyflow replay` / `POST /api/flow/{dag}/replay`; (4) `recover_on_start` seeding;
+    (5) full-fidelity capture mode. Design: `docs/design/replay-and-recovery.md`.
 
 **Exit criteria:** an incrementally-maintained view stays correct under updates/deletes; a user-supplied WASM calculator runs sandboxed with zero-copy handoff; a template section grows per-key under load and shrinks when idle, with the HA standby converging to the same topology.
 **Beats Spark/Flink:** combines incremental SQL views, any-language sandboxed UDFs, *and* a self-restructuring topology that follows the data — an ergonomics combination none of them offer.
@@ -206,7 +224,7 @@ graph TD
 ### Phase 5 — Scale & ecosystem (remove the ceiling, close the two-stack gap)
 
 **D1 — Optional key-sharded scale-out** *(M–L)* — on the disaggregated-state foundation (B2); consistent hashing on keys across a few nodes. Kept as the exception, not the default.
-**D3 — Streaming lakehouse sink (Iceberg/Paimon, exactly-once)** *(M)* — one engine feeds both real-time consumers and the lakehouse, closing the "two stacks" problem.
+**D3 — Streaming lakehouse sink (Iceberg/Paimon, exactly-once)** *(M)* — one engine feeds both real-time consumers and the lakehouse, closing the "two stacks" problem. *(Note: this is a **data-plane** sink and is distinct from the already-shipped Paimon **flow-history** store backend — `flow_recorder.store=paimon` — which archives the engine's change-log, not business output.)*
 **D2 — Credit-based backpressure end-to-end** *(S–M, can start earlier)* — graceful degradation under load while holding latency (extends existing backpressure handling).
 **D4 — Publish benchmarks** *(S)* — public Nexmark + TCO numbers for credibility.
 
@@ -255,3 +273,35 @@ Sequence the quick wins early — they build credibility and measurement before 
 4. Ship credit-based backpressure (a contained quick win) in parallel.
 
 Everything after follows the dependency map: A1 → A2 → C1, with B1/B2 progressing alongside to unlock the differentiators and the moat.
+
+---
+
+## 10. Recently identified enhancements (2026-06) — where they land
+
+Captured from a competitive-positioning review. Mapped to the phases above so
+nothing is lost; "status" is honest about what the roadmap already covered.
+
+| Enhancement | Lands as | Status |
+|---|---|---|
+| **Flow-log replay** (debug / regression / what-if) | **C6** (Phase 3) | New — flagship; slice 1 landed (`core/replay.py`) |
+| **Log-based warm-start recovery** | **C6** + Phase 2 on-ramp | New — frugal recovery before B2 |
+| **Replay-based CI test harness** ("record in prod, replay in CI") | C6 slice 3 | New |
+| **Full-fidelity capture mode** (un-truncated payloads for replay) | C6 slice 5 | New |
+| **Lineage / "why did this output change?"** view | C6-adjacent / observability | New |
+| **Flow-based staleness & SLO alerting** (node idle, error-rate, end-to-end latency budget) | Phase 0 observability | New — uses signals we already emit |
+| **Per-node timing + latency histograms (p50/95/99) + queue/backpressure gauges** | Phase 0 instrumentation | Partial — `compute_us` slot exists but is unset; fill it |
+| **Kafka / Pulsar / NATS / Redis Streams / MQTT** first-class | Ecosystem (broker breadth) | Partial — broad adapter set exists; confirm/extend these |
+| **Schema registry (Avro/Protobuf) + edge data contracts** | **B3** (new, Phase 2-adjacent) | New |
+| **Dead-letter / poison-message handling** | Ecosystem / B3 | New |
+| **Typed Python SDK + local dev mode + examples gallery** | DX program (new) | New — adoption lever |
+| **Idempotent / exactly-once egress** (WAL dedup keys) | **B2** | Exists in roadmap |
+| **Secrets management for connector credentials** | Security (new) | New |
+| **Per-DAG RBAC** | Security (new) | Partial — auth/roles exist; scope to DAGs |
+| **Encryption at rest for the flow store** | Security (new) | New |
+| **Scale by DAG-sharding across the fleet** | **D1** | Exists in roadmap |
+
+**Sequencing suggestion:** finish **C6** (replay + recovery) and the Phase 0
+instrumentation quick wins (`compute_us`, latency histograms, flow-based alerting)
+first — they are the highest differentiation-per-effort and build directly on what
+already ships. Treat schema/contracts (**B3**) and the security items as the next
+enterprise-credibility wave.

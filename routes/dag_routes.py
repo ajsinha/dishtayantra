@@ -22,6 +22,7 @@ import traceback
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from core.service.client import get_service_client
 from web.fastapi_compat import (
     AuthGuards,
     flash,
@@ -296,7 +297,7 @@ class DAGRoutes(DAGMessagingMixin):
         """Start a DAG (worker pool dispatch handled by the server)."""
         self.guards.admin_required(request)
         try:
-            self.dag_server.start(dag_name)
+            get_service_client(request).start_dag(dag_name)
             if self.worker_pool and self.worker_pool.is_running():
                 worker_id = self.worker_pool.get_dag_assignment(dag_name)
                 if worker_id is not None:
@@ -317,7 +318,7 @@ class DAGRoutes(DAGMessagingMixin):
             worker_id = None
             if self.worker_pool and self.worker_pool.is_running():
                 worker_id = self.worker_pool.get_dag_assignment(dag_name)
-            self.dag_server.stop(dag_name)
+            get_service_client(request).stop_dag(dag_name)
             if worker_id is not None:
                 flash(request, f'DAG {dag_name} stopped (was on Worker '
                                f'{worker_id})', 'success')
@@ -331,7 +332,7 @@ class DAGRoutes(DAGMessagingMixin):
         """Suspend a DAG."""
         self.guards.admin_required(request)
         try:
-            self.dag_server.suspend(dag_name)
+            get_service_client(request).suspend_dag(dag_name)
             flash(request, f'DAG {dag_name} suspended', 'success')
         except Exception as e:  # noqa: BLE001
             flash_error_and_log(request, 'Error suspending DAG', e)
@@ -341,7 +342,7 @@ class DAGRoutes(DAGMessagingMixin):
         """Resume a DAG."""
         self.guards.admin_required(request)
         try:
-            self.dag_server.resume(dag_name)
+            get_service_client(request).resume_dag(dag_name)
             flash(request, f'DAG {dag_name} resumed', 'success')
         except Exception as e:  # noqa: BLE001
             flash_error_and_log(request, 'Error resuming DAG', e)

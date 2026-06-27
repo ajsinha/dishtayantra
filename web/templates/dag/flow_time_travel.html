@@ -1,0 +1,603 @@
+{% extends "base.html" %}
+
+{% block title %}Flow Time Travel - {{ app_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .flow-tt{
+    --bg:#081826; --panel:#0E2336; --panel2:#122B41; --line:#1E3A52;
+    --ink:#E7F0F8; --muted:#8AA3B8; --teal:#19C2A8; --teal-dim:#0E6F62;
+    --amber:#F0A93E; --red:#E5484D; --cyan:#46D6F2;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  .flow-tt *{box-sizing:border-box}
+  
+  .flow-tt{background:var(--bg);color:var(--ink);font-family:var(--ui);display:flex;flex-direction:column;height:calc(100vh - 230px);min-height:560px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  /* ---- header ---- */
+  .flow-tt .ftt-bar{display:flex;align-items:center;gap:18px;padding:12px 18px;
+    border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0B2034,#0A1B2B)}
+  .flow-tt .brand{font-weight:700;letter-spacing:.04em;font-size:15px}
+  .flow-tt .brand b{color:var(--teal)}
+  .eyebrow{font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+  .flow-tt .spacer{flex:1}
+  .flow-tt select,.flow-tt button{font-family:var(--ui);font-size:13px;color:var(--ink);
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer}
+  .flow-tt select:focus,.flow-tt button:focus{outline:2px solid var(--cyan);outline-offset:1px}
+  .flow-tt button.primary{background:var(--teal-dim);border-color:#1B8C7C}
+  .flow-tt button.primary:hover{background:#138a78}
+  .rec{display:flex;align-items:center;gap:8px;border:1px solid var(--line);
+    border-radius:999px;padding:6px 12px;background:var(--panel2);cursor:default;user-select:none}
+  .rec .dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 var(--red)}
+  .rec.on .dot{animation:pulse 1.6s infinite}
+  .rec.off .dot{background:#4A5C6B;box-shadow:none}
+  .rec .lbl{font-size:12px;letter-spacing:.04em}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.6)}70%{box-shadow:0 0 0 7px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+  /* ---- main ---- */
+  .flow-tt .ftt-main{flex:1;display:grid;grid-template-columns:1fr 340px;min-height:0}
+  #cyWrap{position:relative;min-width:0;background:
+    radial-gradient(1200px 500px at 50% -10%,#0c2034 0%,#081826 60%)}
+  #cy{position:absolute;inset:0}
+  .canvas-tag{position:absolute;left:14px;top:12px;font-size:10px;letter-spacing:.2em;
+    color:var(--muted);text-transform:uppercase}
+  .legend{position:absolute;left:14px;bottom:12px;display:flex;gap:16px;font-size:11px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  /* ---- inspector ---- */
+  .flow-tt .ftt-aside{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+  .sec-h{padding:11px 14px;border-bottom:1px solid var(--line);font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+  .sec-h b{color:var(--teal);font-weight:600;letter-spacing:0}
+  #stream{flex:1;overflow:auto;min-height:0}
+  .ev{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:center;
+    padding:7px 14px;border-bottom:1px solid #0d2031;cursor:pointer;font-size:12px}
+  .ev:hover{background:var(--panel2)}
+  .ev.sel{background:#10324a;box-shadow:inset 3px 0 0 var(--cyan)}
+  .ev .t{font-family:var(--mono);color:var(--muted);font-size:11px}
+  .ev .n{font-weight:600}
+  .ev .v{font-family:var(--mono);color:var(--teal);font-size:11px;white-space:nowrap}
+  .ev .v.warn{color:var(--amber)}
+  .detail{border-top:1px solid var(--line);max-height:40%;overflow:auto;background:#0A1E30}
+  .detail pre{margin:0;padding:12px 14px;font-family:var(--mono);font-size:11.5px;
+    line-height:1.5;color:#CFE0EE;white-space:pre-wrap;word-break:break-word}
+  .detail .k{color:var(--amber)}
+  .empty{padding:18px 14px;color:var(--muted);font-size:12.5px;line-height:1.6}
+  /* ---- timeline footer ---- */
+  .flow-tt .ftt-foot{border-top:1px solid var(--line);background:var(--panel);padding:10px 16px 14px}
+  .transport{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .transport .t-time{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .transport .win{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .transport .win b{color:var(--cyan);font-weight:600}
+  .icon-btn{width:38px;text-align:center;padding:7px 0}
+  #tl{width:100%;height:96px;display:block;cursor:default;border-radius:8px;
+    border:1px solid var(--line);background:linear-gradient(180deg,#0b2033,#0a1c2c)}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px}
+  .hint b{color:var(--teal)}
+  @media (prefers-reduced-motion: reduce){.rec.on .dot{animation:none}}
+  @media (max-width:880px){.flow-tt .ftt-main{grid-template-columns:1fr}.flow-tt .ftt-aside{display:none}}
+
+  .flow-tt .ftt-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;color:var(--muted);font-size:13px;line-height:1.6}
+  .flow-tt .ftt-empty b{color:var(--ink);font-size:15px;font-weight:600}
+  .flow-tt .ftt-empty[hidden]{display:none}
+  .flow-tt .rangebar{display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+  .flow-tt .rangebar .eyebrow{margin-right:2px}
+  .flow-tt .rangebar .cln{color:var(--muted);margin:0 -1px}
+  .flow-tt select.rp{background:#0d2436;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 4px;font:inherit;font-size:12px}
+  .flow-tt #applyRange{width:auto;padding:0 12px;font-size:12px;margin-left:8px}
+  .flow-tt .ev .cyc{color:#7fb0c8;font-size:10px;margin:0 4px;opacity:.85}
+  .flow-tt #detail .k{color:#6f8aa0}
+  .flow-tt .rec.warn{background:#3a1d1d;border-color:#7a2e2e;color:#ff9b9b}
+  .flow-tt #clearBtn{width:auto;padding:0 12px;font-size:12px;letter-spacing:.02em;color:#e9c0c0;border-color:#5a2e2e}
+  .flow-tt #clearBtn:hover{background:#3a1d1d;border-color:#7a2e2e;color:#ff9b9b}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flow-tt">
+<div class="ftt-bar">
+  <div>
+    <div class="eyebrow">Reactive compute · history replay</div>
+    <div class="brand"><b>DishtaYantra</b> &nbsp;Flow Time Travel</div>
+  </div>
+  <div class="spacer"></div>
+  <label class="eyebrow" for="dag" style="margin:0 -8px 0 0">DAG</label>
+  <select id="dag" aria-label="DAG"></select>
+  <div id="rec" class="rec on" title="Recording status (read-only). Enable/disable from Admin → System Monitoring.">
+    <span class="dot"></span><span class="lbl">Recording on</span>
+  </div>
+  <div id="replayCount" class="rec off" title="Concurrent flow replays in progress across the server (capped).">
+    <span class="lbl">replays 0/5</span>
+  </div>
+  <button id="download" class="primary">Download window ↓</button>
+</div>
+
+<div class="ftt-main">
+  <div id="cyWrap">
+    <div class="canvas-tag">trade-etl · live replay</div>
+    <div id="cy"></div>
+    <div id="emptyState" class="ftt-empty" hidden><b>No flow history recorded yet</b><span>Recording is on by default &mdash; run a DAG and its node fires will appear here. (If the toggle above shows recording off, switch it on.)</span></div>
+    <div class="legend">
+      <span><i style="background:var(--amber)"></i>node firing</span>
+      <span><i style="background:var(--teal)"></i>data on edge</span>
+      <span><i style="background:#33536b"></i>idle</span>
+    </div>
+  </div>
+  <div class="ftt-aside">
+    <div class="sec-h">Events in window <b id="evCount">0</b></div>
+    <div id="stream"></div>
+    <div class="sec-h">Selected event</div>
+    <div class="detail"><pre id="detail" class="empty">Scrub the timeline or press play. Click any event to inspect its input → output.</pre></div>
+  </div>
+</div>
+
+<div class="ftt-foot">
+  <div class="rangebar">
+    <span class="eyebrow">From</span>
+    <select id="fromDate" class="rp" aria-label="From date"></select>
+    <select id="fromHH" class="rp" aria-label="From hour"></select><span class="cln">:</span><select id="fromMM" class="rp" aria-label="From minute"></select><span class="cln">:</span><select id="fromSS" class="rp" aria-label="From second"></select>
+    <select id="fromAP" class="rp" aria-label="From AM/PM"></select>
+    <span class="eyebrow" style="margin-left:14px">To</span>
+    <select id="toDate" class="rp" aria-label="To date"></select>
+    <select id="toHH" class="rp" aria-label="To hour"></select><span class="cln">:</span><select id="toMM" class="rp" aria-label="To minute"></select><span class="cln">:</span><select id="toSS" class="rp" aria-label="To second"></select>
+    <select id="toAP" class="rp" aria-label="To AM/PM"></select>
+    <button id="applyRange" class="icon-btn" title="Apply this window to the chart">Apply</button>
+  </div>
+  <div class="transport">
+    <button id="play" class="icon-btn primary" title="Play / pause replay">▶</button>
+    <button id="clearBtn" class="icon-btn" title="Clear the flow: stop the stream, free the server slot, and reset the graph, counts and events">✕ Clear</button>
+    <select id="speed" title="Playback render speed">
+      <option value="0.25">0.25×</option>
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option>
+      <option value="3">3×</option>
+      <option value="12">12×</option>
+    </select>
+    <span class="t-time" id="playClock">--:--</span>
+    <span class="win">window <b id="winLabel">last 24h</b></span>
+  </div>
+  <canvas id="tl"></canvas>
+  <div class="hint">Pick a window with the <b>From</b> / <b>To</b> dropdowns (Today/Yesterday + time, max 24h) · the chart shows <b>compute-cycle activity</b> with an amber <b>playhead</b> during replay · as you play, each node shows its <b>message count</b> so you can see the graph light up · <b>Clear</b> stops the stream, frees the server slot, and resets everything.</div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='vendor/cytoscape/cytoscape.min.js') }}"></script>
+<script>
+"use strict";
+/* ============================================================= sample flow
+   In a deployment this comes from GET /api/flow/{dag}?from&to (see backend).
+   Standalone, we synthesize a realistic 24h trade-ETL change-log so the whole
+   experience is live without a server. */
+const NOW = Date.now();
+const DAY = 24*3600*1000;
+const T0 = NOW - DAY;
+/* synthetic sample generator removed: the served page shows REAL flow data only */
+let EVENTS = [];
+
+/* ============================================================= cytoscape */
+let cy=null;
+function initCy(NODES, EDGES){
+cy = cytoscape({
+  container:document.getElementById("cy"),
+  elements:[
+    ...NODES.map(n=>({data:{id:n.id,label:n.label,name:n.label,count:0},position:{x:n.x,y:n.y}})),
+    ...EDGES.map(([s,t],i)=>({data:{id:"e"+i,source:s,target:t,lbl:""}})),
+  ],
+  layout:{name:"preset"},
+  userZoomingEnabled:true,userPanningEnabled:true,
+  style:[
+    {selector:"node",style:{
+      "background-color":"#10314A","border-color":"#33536b","border-width":2,
+      "label":"data(label)","color":"#CFE0EE","font-size":13,"font-family":"system-ui",
+      "text-valign":"center","text-halign":"center","width":118,"height":46,"shape":"round-rectangle",
+      "text-wrap":"wrap","text-max-width":104,
+      "transition-property":"border-color border-width background-color","transition-duration":"160ms"}},
+    {selector:"node.firing",style:{
+      "border-color":"#F0A93E","border-width":4,"background-color":"#173a52","color":"#FFE8C2"}},
+    {selector:"node.sink",style:{"shape":"round-rectangle","background-color":"#0e2c2a","border-color":"#0E6F62"}},
+    {selector:"edge",style:{
+      "width":2,"line-color":"#28455c","target-arrow-color":"#28455c",
+      "target-arrow-shape":"triangle","curve-style":"bezier","arrow-scale":1,
+      "label":"data(lbl)","font-family":"ui-monospace,Menlo,monospace","font-size":10,
+      "color":"#19C2A8","text-background-color":"#081826","text-background-opacity":1,
+      "text-background-padding":3,"text-rotation":"autorotate",
+      "transition-property":"line-color width target-arrow-color","transition-duration":"160ms"}},
+    {selector:"edge.flow",style:{
+      "line-color":"#19C2A8","target-arrow-color":"#19C2A8","width":4.5}},
+  ],
+});
+cy.$("#anomaly").addClass("sink");
+cy.fit(undefined,40); cy.zoom(Math.min(cy.zoom(),1.1)); cy.center();
+}
+
+const decayTimers={};
+function pulse(nodeId, edgeLabels){
+  const n=cy.$id(nodeId); if(!n) return;
+  n.addClass("firing");
+  const outs=n.connectedEdges(`edge[source = "${nodeId}"]`);
+  outs.addClass("flow");
+  outs.forEach(e=>{ if(edgeLabels) e.data("lbl",edgeLabels); });
+  clearTimeout(decayTimers[nodeId]);
+  decayTimers[nodeId]=setTimeout(()=>{
+    n.removeClass("firing"); outs.removeClass("flow");
+    outs.forEach(e=>e.data("lbl",""));
+  }, 520);
+}
+function bumpNode(nodeId){
+  // running per-node message count, shown under the node name as the graph lights up
+  const n=cy&&cy.$id(nodeId); if(!n||!n.length)return;
+  const c=(n.data("count")||0)+1;
+  n.data("count",c); n.data("label",(n.data("name")||nodeId)+"\n● "+c.toLocaleString());
+}
+function resetNodeCounts(){
+  if(!cy)return;
+  cy.nodes().forEach(nd=>{ nd.data("count",0); nd.data("label",nd.data("name")||nd.data("id")); });
+}
+
+/* ============================================================= timeline */
+const tl=document.getElementById("tl");
+const tlctx=tl.getContext("2d");
+let DPR=Math.max(1,window.devicePixelRatio||1);
+let win={a:T0,b:NOW};           // selected window [a,b], <= 24h
+let playT=T0;                    // playhead time (advances during replay)
+let hist=[];                     // distribution buckets [{t0,t1,cycles,events}]
+let histMax=1;                   // peak cycles/bucket (y scale)
+
+function sizeCanvas(){
+  const r=tl.getBoundingClientRect(); tl.width=r.width*DPR; tl.height=r.height*DPR;
+  tlctx.setTransform(DPR,0,0,DPR,0,0); drawTL();
+}
+const PAD=10;
+function t2x(t){const r=tl.getBoundingClientRect();const span=Math.max(1,win.b-win.a);
+  return PAD+(t-win.a)/span*(r.width-2*PAD);}
+function fmt(t){const d=new Date(t);return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+function fmtFull(t){const d=new Date(t);return d.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}
+
+let distAll=[];                  // full rolling 24h buckets (from the server)
+async function loadDistribution(){
+  const dag=document.getElementById("dag").value;
+  if(!dag){ distAll=[]; hist=[]; histMax=1; drawTL(); return; }
+  // Cheap in-memory roll-up (no DB scan) - safe under many concurrent replays.
+  const j=await fetchJSON(`/api/flow/${encodeURIComponent(dag)}/distribution`);
+  distAll=(j&&j.buckets)?j.buckets:[];
+  autoFocus();                   // zoom the window to where the activity actually is
+  syncPickersFromWin(); updateWinLabel();
+  sliceHist();
+}
+function autoFocus(){
+  const nz=distAll.filter(b=>b.events>0);
+  if(nz.length){
+    const lo=distAll[0].t0, hi=distAll[distAll.length-1].t1, bw=distAll[0].t1-distAll[0].t0;
+    let a=Math.max(lo, nz[0].t0 - bw);                 // one bucket of padding
+    let b=Math.min(hi, nz[nz.length-1].t1 + bw);
+    if(b-a < 5*60000) b=a+5*60000;                     // at least a 5-min window
+    win.a=a; win.b=b;
+  } else if(distAll.length){                           // no activity: show full 24h
+    win.a=distAll[0].t0; win.b=distAll[distAll.length-1].t1;
+  }
+  if(playT<win.a)playT=win.a; if(playT>win.b)playT=win.b;
+}
+function sliceHist(){
+  // Bars whose time range overlaps the selected window - pure client-side slice,
+  // so changing From/To never hits the server.
+  hist=distAll.filter(b=>b.t1>win.a && b.t0<win.b);
+  histMax=Math.max(1,...hist.map(b=>b.cycles||0));
+  drawTL();
+}
+function drawTL(){
+  const r=tl.getBoundingClientRect(), W=r.width, H=r.height;
+  tlctx.clearRect(0,0,W,H);
+  const top=10, base=H-20, plot=base-top, n=hist.length;
+  // baseline
+  tlctx.strokeStyle="#163047";tlctx.lineWidth=1;
+  tlctx.beginPath();tlctx.moveTo(PAD,base+.5);tlctx.lineTo(W-PAD,base+.5);tlctx.stroke();
+  if(n){
+    // bars positioned by their actual time range within the window
+    for(let i=0;i<n;i++){const h=(hist[i].cycles||0)/histMax*plot;if(h<=0)continue;
+      const x0=t2x(hist[i].t0), x1=t2x(hist[i].t1);
+      tlctx.fillStyle="#19C2A8";tlctx.fillRect(x0+0.5,base-h,Math.max(1,x1-x0-1),h);}
+    // soft area + crisp line through bucket centres
+    tlctx.beginPath();tlctx.moveTo(t2x(hist[0].t0),base);
+    for(let i=0;i<n;i++){const h=(hist[i].cycles||0)/histMax*plot;tlctx.lineTo(t2x((hist[i].t0+hist[i].t1)/2),base-h);}
+    tlctx.lineTo(t2x(hist[n-1].t1),base);tlctx.closePath();
+    tlctx.fillStyle="rgba(25,194,168,.12)";tlctx.fill();
+    tlctx.strokeStyle="#46D6F2";tlctx.lineWidth=1.2;tlctx.beginPath();
+    for(let i=0;i<n;i++){const h=(hist[i].cycles||0)/histMax*plot;const x=t2x((hist[i].t0+hist[i].t1)/2),y=base-h;i?tlctx.lineTo(x,y):tlctx.moveTo(x,y);}
+    tlctx.stroke();
+    // y peak label
+    tlctx.fillStyle="#6f8aa0";tlctx.font="10px ui-monospace,Menlo,monospace";
+    tlctx.fillText("peak "+histMax+" cycles/bucket",PAD+2,top+8);
+  }else{
+    tlctx.fillStyle="#46607a";tlctx.font="11px ui-monospace,Menlo,monospace";
+    tlctx.fillText("No compute cycles in this window.",PAD+4,base-plot/2);
+  }
+  // x ticks: from .. to
+  tlctx.font="10px ui-monospace,Menlo,monospace";
+  const ticks=4;
+  for(let k=0;k<=ticks;k++){
+    const t=win.a+(win.b-win.a)*k/ticks, x=PAD+k/ticks*(W-2*PAD);
+    tlctx.fillStyle="#10283c";tlctx.fillRect(x,top,1,base-top);
+    tlctx.fillStyle="#6f8aa0";const lbl=fmt(t),twd=tlctx.measureText(lbl).width;
+    let lx=k===ticks?x-twd-2:(k>0?x-twd/2:x+2);tlctx.fillText(lbl,lx,H-6);
+  }
+  // playhead
+  if(playT>=win.a&&playT<=win.b){
+    const xp=t2x(playT);
+    tlctx.fillStyle="#F0A93E";tlctx.fillRect(xp-1,top-6,2,base-top+8);
+    tlctx.beginPath();tlctx.moveTo(xp-5,top-6);tlctx.lineTo(xp+5,top-6);tlctx.lineTo(xp,top+1);tlctx.closePath();tlctx.fill();
+  }
+}
+function updateWinLabel(){
+  const span=(win.b-win.a);
+  const lbl = (Math.abs(span-DAY)<60000)?"last 24h":`${fmt(win.a)} – ${fmt(win.b)}`;
+  document.getElementById("winLabel").textContent=lbl;
+}
+
+/* ===== From/To window pickers (synced with the timeline; max 24h span) ===== */
+/* ===== From/To window via simple dropdowns (no native calendar) ===== */
+const RP={from:{},to:{}};
+["from","to"].forEach(p=>{["Date","HH","MM","SS","AP"].forEach(k=>RP[p][k]=document.getElementById(p+k));});
+function _opt(v,t){const o=document.createElement("option");o.value=v;o.textContent=t;return o;}
+function _midnight(daysAgo){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-daysAgo);return d;}
+function _fill(sel,vals,fmt2){sel.innerHTML="";vals.forEach(v=>sel.appendChild(_opt(v,fmt2?fmt2(v):v)));}
+function initPickers(){
+  if(!RP.from.Date)return;
+  const today=_midnight(0), yday=_midnight(1);
+  const dlabel=d=>d.toLocaleDateString([], {month:"short",day:"numeric"});
+  ["from","to"].forEach(p=>{
+    _fill(RP[p].Date,[0,1],v=>(v===0?"Today ":"Yesterday ")+dlabel(v===0?today:yday));
+    _fill(RP[p].HH,Array.from({length:12},(_,i)=>i+1));
+    _fill(RP[p].MM,Array.from({length:60},(_,i)=>i),v=>String(v).padStart(2,"0"));
+    _fill(RP[p].SS,Array.from({length:60},(_,i)=>i),v=>String(v).padStart(2,"0"));
+    _fill(RP[p].AP,["AM","PM"]);
+    ["Date","HH","MM","SS","AP"].forEach(k=>RP[p][k].addEventListener("change",applyRange));
+  });
+  document.getElementById("applyRange").addEventListener("click",applyRange);
+  syncPickersFromWin();
+}
+function pickerMs(daysAgo, hh12, mm, ss, ap){
+  const base=_midnight(daysAgo);                    // Today/Yesterday 00:00 local
+  let hh=hh12; if(ap==="PM"&&hh<12)hh+=12; if(ap==="AM"&&hh===12)hh=0;
+  base.setHours(hh,mm,ss,0); return base.getTime();
+}
+function readPicker(p){
+  return pickerMs(+RP[p].Date.value, +RP[p].HH.value, +RP[p].MM.value,
+                  +RP[p].SS.value, RP[p].AP.value);
+}
+function setPickerFromMs(p,ms){
+  const d=new Date(ms), today0=_midnight(0).getTime();
+  RP[p].Date.value = ms>=today0 ? "0" : "1";
+  let hh=d.getHours(); const ap=hh>=12?"PM":"AM"; hh=hh%12; if(hh===0)hh=12;
+  RP[p].HH.value=String(hh); RP[p].MM.value=String(d.getMinutes());
+  RP[p].SS.value=String(d.getSeconds()); RP[p].AP.value=ap;
+}
+function syncPickersFromWin(){ if(RP.from.Date){ setPickerFromMs("from",win.a); setPickerFromMs("to",win.b); } }
+function applyRange(){
+  let a=readPicker("from"), b=readPicker("to");
+  if(b<=a){ b=a+3600000; }                          // keep a positive span
+  if(b-a>DAY){ a=b-DAY; flashNote("Window capped to 24h."); }
+  win.a=a; win.b=b;
+  if(playT<win.a)playT=win.a; if(playT>win.b)playT=win.b;
+  // Pure client-side: re-slice the buckets we already have (no server hit), and
+  // do NOT auto-focus again (respect the chosen window).
+  syncPickersFromWin(); updateWinLabel(); sliceHist();
+}
+
+/* ===================================================== streaming playback
+   The selected window is streamed from the server as SSE batches and rendered
+   through a bounded queue, so memory and DOM stay flat no matter how many events
+   the window holds (hundreds of thousands is fine). 'Play' starts the stream. */
+let playing=false, es=null, streamQueue=[], streamEnded=false, streamCount=0;
+let renderPerFrame=180;                  // events rendered per animation frame
+const playBtn=document.getElementById("play");
+const clock=document.getElementById("playClock");
+document.getElementById("speed").addEventListener("change",e=>{
+  renderPerFrame=Math.max(20,Math.round(180*(+e.target.value||1)));});
+playBtn.addEventListener("click",()=>{ playing?stopStream():startStream(); });
+document.getElementById("clearBtn").addEventListener("click",()=>{
+  const wasActive = playing || !!es;
+  stopStream();            // closes the EventSource -> server hits GeneratorExit and
+                           // releases the concurrency slot + WAL read snapshot
+  resetReplay();           // clears the event list, per-node counts and graph highlight
+  playT=win.a; drawTL();
+  flashNote(wasActive
+    ? "Flow cleared \u2014 stream disconnected, server slot released, graph and counts reset."
+    : "Flow cleared. Press \u25B6 to stream this window.");
+  loadStatus();            // refresh the "replays N/5" indicator
+});
+
+function resetReplay(){
+  streamClear(); streamQueue=[]; streamEnded=false; streamCount=0;
+  if(cy)cy.elements().removeClass("firing flow");
+  resetNodeCounts();
+  document.getElementById("evCount").textContent="0";
+}
+function startStream(){
+  const dag=document.getElementById("dag").value; if(!dag)return;
+  stopStream(); resetReplay();
+  playing=true; playBtn.textContent="⏸";
+  const url=`/api/flow/${encodeURIComponent(dag)}/stream`
+    +`?from=${Math.round(win.a)}&to=${Math.round(win.b)}&cycles=256`;
+  es=new EventSource(url);
+  es.addEventListener("batch",ev=>{ try{const d=JSON.parse(ev.data);
+    for(const e of d.events) streamQueue.push(mapApi(e)); }catch(_){} });
+  es.addEventListener("done",ev=>{ streamEnded=true; if(es){es.close();es=null;}
+    try{const d=JSON.parse(ev.data); if(d&&d.truncated)
+      flashNote("Stream stopped at the time limit ("+d.total.toLocaleString()+" events). Narrow the window or use Download for the full set.");}catch(_){}
+    loadStatus(); });
+  // A single 'error' listener handles BOTH a server-sent error event (has data,
+  // e.g. "server busy") and a raw connection drop (no data). In every case we
+  // close the EventSource so the browser does NOT auto-reconnect and silently
+  // re-stream the whole window.
+  es.addEventListener("error",ev=>{ streamEnded=true; if(es){es.close();es=null;}
+    playing=false; playBtn.textContent="▶";
+    if(ev&&ev.data){ try{const d=JSON.parse(ev.data); flashNote(d.error||"Replay stream error."); }catch(_){} }
+    loadStatus(); });
+  requestAnimationFrame(drainFrame);
+  setTimeout(loadStatus, 250);           // reflect this replay in the count
+}
+function flashNote(msg){ detailEl.classList.add("empty"); detailEl.textContent=msg; }
+function stopStream(){ playing=false; playBtn.textContent="▶"; if(es){es.close();es=null;} setTimeout(loadStatus,150); }
+function drainFrame(){
+  if(!playing)return;
+  let n=renderPerFrame;
+  while(n-->0 && streamQueue.length) renderEvent(streamQueue.shift());
+  drawTL();
+  if(streamQueue.length===0 && streamEnded){ playing=false; playBtn.textContent="▶"; return; }
+  requestAnimationFrame(drainFrame);
+}
+function renderEvent(e){
+  pulse(e.node, edgeLabelFor(e)); bumpNode(e.node); pushStream(e); streamCount++;
+  playT=e.ts; clock.textContent=fmt(e.ts);
+  document.getElementById("evCount").textContent=streamCount.toLocaleString();
+}
+function edgeLabelFor(e){
+  if(e.node==="notional")return (e.value.notional_usd||0).toLocaleString()+" USD";
+  if(e.node==="risk")return e.value.risk_band;
+  if(e.node==="fx")return "×"+e.value.fx_rate;
+  if(e.node==="kafka_in")return e.value.symbol;
+  return "";
+}
+function seekTo(t,clear){
+  // Light: there is no preloaded buffer to scan; events arrive via SSE on Play.
+  if(clear){ if(cy)cy.elements().removeClass("firing flow"); streamClear(); }
+  clock.textContent=fmt(t);
+}
+
+/* ============================================================= event stream */
+const streamEl=document.getElementById("stream");
+const detailEl=document.getElementById("detail");
+let streamItems=[];
+function streamClear(){streamItems=[];streamEl.innerHTML="";}
+function rowHtml(e){
+  const warn = e.band==="HIGH" || e.node==="anomaly";
+  const cyc = e.cycle!=null ? `<span class="cyc">#${e.cycle}</span>` : "";
+  return `<div class="ev" data-seq="${e.seq}">
+    <span class="t">${fmt(e.ts)}</span>${cyc}
+    <span class="n">${e.node}</span>
+    <span class="v ${warn?"warn":""}">${escapeHtml(shortVal(e))}</span></div>`;
+}
+function shortVal(e){
+  if(e.node==="notional")return (e.value.notional_usd||0).toLocaleString()+" USD";
+  if(e.node==="risk")return e.value.risk_band;
+  if(e.node==="kafka_in")return e.value.symbol+" ×"+e.value.qty;
+  if(e.node==="anomaly")return "flagged";
+  if(e.node==="publish")return "published";
+  if(e.node==="fx")return "×"+e.value.fx_rate;
+  if(e.node==="validate")return "valid";
+  return "";
+}
+function pushStream(e){
+  streamItems.push(e); if(streamItems.length>300)streamItems.shift();
+  const div=document.createElement("div"); div.innerHTML=rowHtml(e).trim();
+  const node=div.firstChild; bindRow(node,e); streamEl.appendChild(node);
+  while(streamEl.children.length>300)streamEl.removeChild(streamEl.firstChild);
+  streamEl.scrollTop=streamEl.scrollHeight;
+}
+function streamRender(list){
+  streamEl.innerHTML=list.map(rowHtml).join("");
+  [...streamEl.children].forEach((node,i)=>bindRow(node,list[i]));
+  streamEl.scrollTop=streamEl.scrollHeight;
+}
+function bindRow(node,e){node.addEventListener("click",()=>selectEvent(e,node));}
+let selNode=null;
+function selectEvent(e,node){
+  if(selNode)selNode.classList.remove("sel");
+  if(node){node.classList.add("sel");selNode=node;}
+  playT=e.ts; pulse(e.node,edgeLabelFor(e)); drawTL();
+  detailEl.classList.remove("empty");
+  detailEl.innerHTML =
+    `<span class="k">node</span>     ${e.node}\n`+
+    `<span class="k">time</span>     ${fmtFull(e.ts)}\n`+
+    `<span class="k">seq</span>      ${e.seq}\n`+
+    `<span class="k">cycle</span>    ${e.cycle!=null?("#"+e.cycle):"\u2014"}\n`+
+    `<span class="k">targets</span>  ${JSON.stringify(e.targets)}\n\n`+
+    `<span class="k">input  →</span> ${JSON.stringify(e.input)}\n`+
+    `<span class="k">output →</span> ${JSON.stringify(e.value,null,2)}`;
+}
+function escapeHtml(s){return (s+"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ============================================================= download */
+document.getElementById("download").addEventListener("click",()=>{
+  const dag=encodeURIComponent(document.getElementById("dag").value);
+  window.location=`/api/flow/${dag}/export?from=${Math.round(win.a)}&to=${Math.round(win.b)}&format=jsonl&download=1`;
+});
+
+/* ============================================================= recording status (read-only)
+   The enable/disable control lives on the admin System Monitoring page; here the
+   pill is a status indicator only and is not clickable. */
+const recEl=document.getElementById("rec");
+
+/* ============================================================= boot */
+function boot(){
+  sizeCanvas(); updateWinLabel(); syncPickersFromWin();
+  playT=win.a; seekTo(win.a,true); drawTL();
+}
+async function fetchJSON(u,opt){try{const r=await fetch(u,opt);if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
+function mapApi(e){return {seq:e.seq,ts:e.ts_ms,node:e.node_id,value:e.output||{},cycle:(e.cycle_id!=null?e.cycle_id:null),
+  input:(e.input!==undefined?e.input:e.inputs),targets:e.targets||[],
+  band:(e.output&&e.output.risk_band)||null};}
+function deriveGraph(events){
+  const eset=new Set(), ids=[];
+  const add=n=>{if(!ids.includes(n))ids.push(n);};
+  events.forEach(e=>{add(e.node);(e.targets||[]).forEach(t=>{add(t);eset.add(e.node+">"+t);});});
+  const adj={},inc={}; ids.forEach(i=>{adj[i]=[];inc[i]=0;});
+  [...eset].forEach(k=>{const[a,b]=k.split(">");adj[a].push(b);inc[b]++;});
+  const depth={}; let frontier=ids.filter(i=>!inc[i]); frontier.forEach(r=>depth[r]=0);
+  while(frontier.length){const nx=[];frontier.forEach(u=>adj[u].forEach(v=>{
+    if(depth[v]==null||depth[v]<depth[u]+1){depth[v]=depth[u]+1;nx.push(v);}}));frontier=nx;}
+  ids.forEach(i=>{if(depth[i]==null)depth[i]=0;});
+  const byd={}; ids.forEach(i=>{(byd[depth[i]]=byd[depth[i]]||[]).push(i);});
+  const gn=ids.map(i=>({id:i,label:i,x:80+depth[i]*210,
+    y:60+byd[depth[i]].indexOf(i)*92}));
+  return {gn, ge:[...eset].map(k=>k.split(">"))};
+}
+async function loadDags(){
+  const j=await fetchJSON('/api/flow/dags'); const sel=document.getElementById('dag');
+  if(j&&j.dags&&j.dags.length){sel.disabled=false;sel.innerHTML=j.dags.map(d=>
+    `<option value="${d.dag_id}">${d.dag_id} (${(d.count||0).toLocaleString()})</option>`).join('');}
+  else{sel.disabled=true;sel.innerHTML='<option value="">\u2014 no recorded DAGs \u2014</option>';}
+}
+async function loadStatus(){
+  const j=await fetchJSON('/api/flow/status'); if(!j)return;
+  const on=!!j.enabled; recEl.classList.toggle('on',on); recEl.classList.toggle('off',!on);
+  recEl.querySelector('.lbl').textContent=on?'Recording on':'Recording off';
+  updateReplayCount(j.active_streams, j.max_streams);
+}
+function updateReplayCount(active,max){
+  if(active==null||max==null)return;
+  const el=document.getElementById('replayCount'); if(!el)return;
+  el.querySelector('.lbl').textContent='replays '+active+'/'+max;
+  const full=active>=max;
+  el.classList.toggle('on',active>0&&!full); el.classList.toggle('off',active===0);
+  el.classList.toggle('warn',full);
+  el.title=full?('All '+max+' replay slots are in use - new replays will wait.')
+               :(active+' of '+max+' concurrent flow replays in progress.');
+}
+async function loadData(){
+  const dag=document.getElementById('dag').value;
+  stopStream(); resetReplay();
+  if(!dag){ initCy([],[]); document.getElementById("emptyState").hidden=false; boot(); return; }
+  document.querySelector('.canvas-tag').textContent=dag+' · history replay';
+  // 1) Load the cheap in-memory rolling distribution first; it auto-focuses the
+  //    window to where the DAG was actually active (so the pane isn't a sparse 24h).
+  await loadDistribution();
+  // 2) Derive the graph topology from state-at at the (focused) window end - ALL
+  //    nodes, one row each. Events themselves arrive via SSE on Play.
+  const j=await fetchJSON(`/api/flow/${encodeURIComponent(dag)}/state-at?ts=${Math.round(win.b)}`);
+  const recs = (j&&j.nodes)?Object.values(j.nodes):[];
+  if(recs.length){
+    document.getElementById("emptyState").hidden=true;
+    const g=deriveGraph(recs.map(mapApi)); initCy(g.gn,g.ge);
+    detailEl.classList.add("empty");
+    detailEl.textContent="Press ▶ to stream this window (max 24h). Adjust the range with the From/To pickers; the chart below shows compute-cycle activity. ▼ Download exports the window as JSONL.";
+  }else{ initCy([],[]); document.getElementById("emptyState").hidden=false; }
+  boot();
+}
+document.getElementById('dag').addEventListener('change',loadData);
+window.addEventListener("resize",()=>{DPR=Math.max(1,window.devicePixelRatio||1);sizeCanvas();});
+initPickers();
+loadDags().then(loadStatus).then(loadData);
+</script>
+{% endblock %}

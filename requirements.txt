@@ -66,6 +66,13 @@ httpx>=0.27
 # google-cloud-storage>=2.16
 
 # --------------------------------------------------------------------------
+# Optional at-rest encryption for trusted-server API keys (service-plane
+# split). Required ONLY if you register trusted servers in the UI; the base
+# install stays dependency-light. See 'Service-plane split' in Help.
+# --------------------------------------------------------------------------
+# cryptography>=42.0
+
+# --------------------------------------------------------------------------
 # Optional WebAssembly calculator runtime - install only if you use
 # WasmCalculator (core.calculator.wasm_calculator). Bundles the engine; no
 # host C/Rust compiler needed. See the "WebAssembly (WASM) Sandboxed

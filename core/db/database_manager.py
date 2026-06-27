@@ -43,9 +43,14 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from core.db.models import Base
-
 logger = logging.getLogger(__name__)
+
+# The single authoritative DDL file for the core application schema (SQLite).
+# Mirrors the flow store's pattern: the .sql file - not the ORM - defines the
+# schema. The ORM models map to it for queries only. There is no migration path.
+CORE_SQLITE_SCHEMA_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "config", "schema", "schema_sqlite.sql")
 
 
 class DatabaseConfigurationError(Exception):
@@ -177,17 +182,31 @@ class DatabaseManager:
         return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 
     def _auto_create_sqlite_schema(self) -> None:
+        """SQLite mode: create the schema by applying the single authoritative
+        DDL file config/schema/schema_sqlite.sql verbatim (CREATE TABLE/INDEX
+        IF NOT EXISTS).
+
+        The .sql file - not the ORM metadata - is the single source of truth, so
+        the core app matches the flow store and there is exactly one schema file
+        per dialect. The ORM models map onto this schema for queries only. There
+        is deliberately no migration path: a database that predates a schema
+        change must be recreated.
         """
-        SQLite mode: create all tables automatically from the ORM metadata.
-        This mirrors config/schema/schema_sqlite.sql exactly, so the schema
-        file remains the human-readable reference while runtime creation is
-        guaranteed to match the models.
-        """
+        import sqlite3
         try:
-            Base.metadata.create_all(self.engine)
-            logger.info("SQLite schema verified/created automatically")
+            with open(CORE_SQLITE_SCHEMA_FILE, "r", encoding="utf-8") as fh:
+                ddl = fh.read()
+            # Apply via a direct DBAPI connection (executescript handles the
+            # multi-statement file); the SQLAlchemy engine maps to it afterwards.
+            raw = self.engine.raw_connection()
+            try:
+                raw.executescript(ddl)
+                raw.commit()
+            finally:
+                raw.close()
+            logger.info("SQLite schema applied from %s", CORE_SQLITE_SCHEMA_FILE)
         except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to auto-create SQLite schema: %s", exc)
+            logger.error("Failed to apply SQLite schema file: %s", exc)
             logger.error("Full stack trace:\n%s", traceback.format_exc())
             raise
 

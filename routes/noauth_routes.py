@@ -173,12 +173,14 @@ class NoAuthRoutes:
         ('/help/prometheus-monitoring', 'help_prometheus_monitoring', 'help/prometheus_monitoring.html'),
         ('/help/worker-pool', 'help_worker_pool', 'help/parallelism.html'),
         ('/help/configuration', 'help_configuration', 'help/configuration.html'),
+        ('/help/multi-instance', 'help_multi_instance', 'help/multi_instance.html'),
         # New in v2.0.0
         ('/help/storage', 'help_storage', 'help/storage.html'),
         ('/help/ha', 'help_ha', 'help/ha.html'),
         ('/help/cloud-pubsub', 'help_cloud_pubsub', 'help/cloud_pubsub.html'),
         ('/help/database', 'help_database', 'help/database.html'),
         ('/help/scheduling', 'help_scheduling', 'help/scheduling.html'),
+        ('/help/flow-time-travel', 'help_flow_time_travel', 'help/flow_time_travel.html'),
         # Tutorials (v2.2): step-by-step guides with full code
     ]
 

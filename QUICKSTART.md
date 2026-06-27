@@ -161,14 +161,24 @@ instance's **HA role (PRIMARY / SECONDARY)** on every page.
 | Area | Path | Purpose |
 | --- | --- | --- |
 | Dashboard | `/dashboard` | List, start/suspend/stop, clone, and inspect DAGs; see each DAG's schedule |
-| DAG Designer | `/dag/designer` | Build/edit DAG configurations visually |
-| Cache | `/cache` | Browse and manage the in-memory cache |
-| Admin > System Monitoring | `/admin/monitoring` | Live CPU / memory / disk / network |
-| Admin > Worker Pool | `/admin/workers` | Monitor and control worker processes |
-| Admin > JVM / C++ / Rust | `/jvm`, `/cpp`, `/rust` | Native calculator module management |
-| Admin > System / Live Logs | `/admin/system_logs`, `/admin/live_logs` | View, filter, stream logs (SSE) |
-| Users | `/user/management` | Accounts, roles, API keys (admin only) |
+| DAG Designer | `/dag-designer` | Build/edit DAG configurations visually |
+| Manage &gt; Egress | `/egress` | Async-egress (WAL-backed publication) monitoring |
+| Manage &gt; Flow Time Travel | `/flow` | Stream-replay the flow change-log for a chosen window (max 24h), grouped by compute cycle (whole start-to-finish waves) and capped to 5 concurrent replays; export the window as JSONL; recording status is shown **read-only** here |
+| Manage &gt; Cache | `/cache` | Browse and manage the in-memory cache |
+| Manage &gt; Live Logs | `/admin/logs/live` | Live SSE log tail — available to **any authenticated user** |
+| Admin &gt; System Monitoring | `/admin/monitoring` | Live CPU / memory / disk / network; **flow recording enable/disable** (global or per-DAG); **SLO / staleness alerts** *(admin)* |
+| Admin &gt; Worker Pool | `/admin/workers` | Monitor and control worker processes *(admin)* |
+| Admin &gt; JVM / C++ / Rust | `/jvm`, `/cpp`, `/rust` | Native calculator module management *(admin)* |
+| Admin &gt; System Logs | `/admin/logs` | View, filter, download log files *(admin)* |
+| Admin &gt; Logging / Maintenance / API Keys / Audit | `/admin/logging`, `/admin/maintenance`, `/admin/api-keys`, `/admin/audit` | Runtime log-level control, drain/maintenance, key management, audit trail *(admin)* |
+| Users | `/users` | Accounts, roles, API keys *(admin only)* |
 | Help | `/help` | Interactive documentation for every subsystem |
+| About &gt; About / Compare | `/about`, `/comparison` | Product overview; dimension-by-dimension comparison vs Spark / Flink / Airflow |
+
+The navbar groups operational views under a **Manage** dropdown (Egress, Flow
+Time Travel, Cache, Live Logs), admin-only tools under **Admin**, and **About**
+is a dropdown with *About* and *Compare*. Live Logs is reachable by any
+logged-in user; the other admin items require the `admin` role.
 
 A light/dark theme toggle sits in the navbar.
 
@@ -334,7 +344,7 @@ subscriber then feeds a normal subscription node (see the shipped
 Drop any of these files in `config/dags/`, then click **Start** on the
 Dashboard. The two DAGs shipped in `config/dags/` are working references;
 more examples live in `config/example/dags/` (not auto-loaded). The visual
-**DAG Designer** (`/dag/designer`) builds the same JSON without hand-editing.
+**DAG Designer** (`/dag-designer`) builds the same JSON without hand-editing.
 
 ### Loading new files into a running server
 
@@ -537,7 +547,7 @@ Users, roles, and API keys live in a relational database (SQLite by
 default; PostgreSQL via `db.engine=postgresql` and
 `config/schema/schema_postgres.sql`). Passwords are PBKDF2-SHA256 hashed.
 
-- Manage accounts under **Users** (`/user/management`, admin only).
+- Manage accounts under **Users** (`/users`, admin only).
 - The `admin` role unlocks administration (users, clone, native module
   management); other accounts get read/operate access.
 - API keys authenticate programmatic `/api/` calls.
@@ -551,8 +561,8 @@ See `/help/database`.
 - **Health**: `curl http://localhost:5002/health`
 - **Prometheus metrics**: `curl http://localhost:5002/metrics`
 - **System monitoring**: `/admin/monitoring` (live CPU/memory/disk/network)
-- **Logs**: `/admin/system_logs` (view/filter/search/download) and
-  `/admin/live_logs` (SSE streaming)
+- **Logs**: `/admin/logs` (view/filter/search/download, admin) and
+  `/admin/logs/live` (SSE streaming, any authenticated user)
 - **Worker pool**: `/admin/workers` to monitor/control worker processes
 
 DAGs can run in the main process or be assigned to the worker pool for true

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Multi-Instance Management - {{ app_name }} Help{% endblock %}
+
+{% block extra_css %}
+<style>
+    .code-block {
+        background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px;
+        font-family: 'Monaco', 'Menlo', monospace; font-size: 0.85rem;
+        overflow-x: auto; white-space: pre;
+    }
+    .pill { display:inline-block; padding:.1rem .5rem; border-radius:999px;
+            background:#b45309; color:#fff; font-size:.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+  <h2><i class="bi bi-hdd-network me-2"></i>Multi-Instance Management</h2>
+  <p class="text-muted">Manage several DishtaYantra instances from a single UI
+  (the <em>service-plane / UI-plane split</em>).</p>
+
+  <h4 class="mt-4">What it is</h4>
+  <p>One instance acts as a <strong>UI plane</strong>: your browser talks only
+  to it, and it proxies to whichever server you select. Other instances are
+  <strong>service planes</strong>. This is control-plane separation, not
+  clustering — every instance still runs as an independent single-node compute
+  server.</p>
+
+  <h4 class="mt-4">Setup</h4>
+  <ol>
+    <li>On the UI-plane instance, set a stable encryption secret (it encrypts
+    trusted-server keys at rest):
+    <div class="code-block">export DY_SECRET_KEY="a-long-stable-passphrase"
+python3 run_server.py</div></li>
+    <li>On each remote instance, mint an API key (Admin → API Keys). Use an
+    <strong>admin</strong> key for full control or a <strong>user</strong> key
+    for read-only.</li>
+    <li>On the UI plane, open <strong>Admin → Manage servers</strong>
+    (<code>/admin/trusted-servers</code>) and add each remote by id, name, URL,
+    key, and role. The UI plane probes the remote on save and records its
+    version; a bad URL/key is rejected immediately.</li>
+  </ol>
+
+  <h4 class="mt-4">Using it</h4>
+  <ul>
+    <li>Use the navbar <strong>server switcher</strong> to re-target. The active
+    server is shown as a <span class="pill">pill</span> so you always know where
+    you're acting.</li>
+    <li><strong>Re-targets:</strong> DAG list/lifecycle, flow time-travel,
+    metrics/health, worker &amp; egress status, and designer deploy.</li>
+    <li><strong>Always local:</strong> your login, users, and API keys; plus
+    host-scoped admin (worker pool, language runtimes, maintenance).</li>
+    <li><strong>Fleet view</strong> (<code>/fleet</code>): a read-only overview
+    of every server — reachability, version, DAG counts — with one-click switch.
+    An unreachable server shows its own error tile rather than blanking the
+    page.</li>
+  </ul>
+
+  <h4 class="mt-4">Security</h4>
+  <ul>
+    <li>Trusted-server keys are <strong>encrypted at rest</strong> (Fernet via
+    <code>DY_SECRET_KEY</code>), masked everywhere, and <strong>never sent to
+    the browser</strong>.</li>
+    <li>Cross-server actions carry <code>X-DY-On-Behalf-Of</code> so the remote's
+    audit log attributes the action to you (advisory only; the remote still
+    authorises on the API key).</li>
+    <li>The UI plane authenticates you before proxying anything — never an open
+    relay. Version compatibility is the admin's responsibility (the UI warns on
+    mismatch but does not enforce).</li>
+  </ul>
+
+  <h4 class="mt-4">Notes</h4>
+  <ul>
+    <li><code>DY_SECRET_KEY</code> must be stable; rotating it invalidates
+    stored keys (re-enter them). Keep it in the environment, not in config.</li>
+    <li>Prefer HTTPS endpoints; <code>verify_tls</code> can be disabled per entry
+    for self-signed lab setups (not for production).</li>
+    <li>Live views use proxied polling today; a push transport is a planned
+    optimisation.</li>
+  </ul>
+
+  <p class="text-muted mt-4">See also: <code>docs/MULTI_INSTANCE.md</code>,
+  <code>docs/ARCHITECTURE.md</code> (Service-Plane section), and the
+  <code>/api/service/*</code> management API.</p>
+</div>
+{% endblock %}

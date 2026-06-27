@@ -25,10 +25,10 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import select, desc, delete
+from sqlalchemy import select, desc, delete, func, asc, and_
 
 from core.db.database_manager import DatabaseManager
-from core.db.models import ApiKey, AuditEvent, Role, User
+from core.db.models import ApiKey, AuditEvent, FlowEvent, Role, User
 
 logger = logging.getLogger(__name__)
 
@@ -403,3 +403,105 @@ class AuditDAO:
                 select(AuditEvent.action).distinct().order_by(AuditEvent.action)
             ).scalars().all()
             return list(rows)
+
+
+class FlowDAO:
+    """Append-only access to recorded flow events (Flow Time-Travel).
+
+    Mirrors AuditDAO: all SQL is here, every call goes through
+    ``DatabaseManager.session_scope``. Rows are written in batches by the
+    recorder's drain thread and read back as time windows by the API.
+    """
+
+    def __init__(self, db: Optional[DatabaseManager] = None):
+        self.db = db or DatabaseManager.get_instance()
+
+    def write_batch(self, rows: List[dict]) -> None:
+        """Insert a batch of already-serialized event rows."""
+        if not rows:
+            return
+        with self.db.session_scope() as session:
+            session.add_all([FlowEvent(
+                dag_id=r["dag_id"], node_id=r["node_id"], seq=r["seq"],
+                ts_ms=r["ts_ms"], inputs_json=r.get("inputs_json"),
+                output_json=r.get("output_json"),
+                targets_json=r.get("targets_json"),
+                compute_us=r.get("compute_us"),
+                instance=r.get("instance"), host=r.get("host"),
+                port=r.get("port")) for r in rows])
+
+    def query(self, dag_id: str, t0_ms: Optional[int] = None,
+              t1_ms: Optional[int] = None, nodes: Optional[List[str]] = None,
+              limit: int = 5000, after_seq: Optional[int] = None,
+              instance: Optional[str] = None) -> List[dict]:
+        with self.db.session_scope() as session:
+            stmt = select(FlowEvent).where(FlowEvent.dag_id == dag_id)
+            if instance is not None:
+                stmt = stmt.where(FlowEvent.instance == instance)
+            if t0_ms is not None:
+                stmt = stmt.where(FlowEvent.ts_ms >= int(t0_ms))
+            if t1_ms is not None:
+                stmt = stmt.where(FlowEvent.ts_ms <= int(t1_ms))
+            if nodes:
+                stmt = stmt.where(FlowEvent.node_id.in_(nodes))
+            if after_seq is not None:
+                stmt = stmt.where(FlowEvent.seq > int(after_seq))
+            stmt = stmt.order_by(asc(FlowEvent.seq)).limit(int(limit))
+            return [e.to_dict() for e in session.execute(stmt).scalars().all()]
+
+    def state_at(self, dag_id: str, ts_ms: int,
+                 instance: Optional[str] = None) -> dict:
+        """Latest output per node at or before ``ts_ms`` (state reconstruction)."""
+        with self.db.session_scope() as session:
+            where = [FlowEvent.dag_id == dag_id, FlowEvent.ts_ms <= int(ts_ms)]
+            if instance is not None:
+                where.append(FlowEvent.instance == instance)
+            sub = (select(FlowEvent.node_id,
+                          func.max(FlowEvent.ts_ms).label("mts"))
+                   .where(*where)
+                   .group_by(FlowEvent.node_id).subquery())
+            outer = [FlowEvent.dag_id == dag_id]
+            if instance is not None:
+                outer.append(FlowEvent.instance == instance)
+            stmt = (select(FlowEvent).join(
+                sub, and_(FlowEvent.node_id == sub.c.node_id,
+                          FlowEvent.ts_ms == sub.c.mts))
+                .where(*outer))
+            nodes = {e.node_id: e.to_dict()
+                     for e in session.execute(stmt).scalars().all()}
+            return {"ts_ms": int(ts_ms), "nodes": nodes}
+
+    def purge_older_than_ms(self, cutoff_ms: int, batch: int = 5000) -> int:
+        """Delete flow rows older than ``cutoff_ms`` in bounded batches.
+
+        Each batch is its own committed transaction, so a large sweep never
+        holds one long write lock (which would starve the recorder's drain
+        thread). Returns the total count removed.
+        """
+        cutoff = int(cutoff_ms)
+        batch = max(int(batch), 1)
+        total = 0
+        while True:
+            with self.db.session_scope() as session:
+                sub = (select(FlowEvent.id)
+                       .where(FlowEvent.ts_ms < cutoff)
+                       .order_by(FlowEvent.id).limit(batch))
+                result = session.execute(
+                    delete(FlowEvent).where(FlowEvent.id.in_(sub)))
+                n = result.rowcount or 0
+            total += n
+            if n < batch:
+                break
+        return total
+
+    def distinct_dags(self) -> List[dict]:
+        with self.db.session_scope() as session:
+            rows = session.execute(
+                select(FlowEvent.instance, FlowEvent.dag_id,
+                       func.count().label("n"),
+                       func.min(FlowEvent.ts_ms).label("mn"),
+                       func.max(FlowEvent.ts_ms).label("mx"))
+                .group_by(FlowEvent.instance, FlowEvent.dag_id)
+                .order_by(FlowEvent.instance, FlowEvent.dag_id)).all()
+            return [{"instance": r[0], "dag_id": r[1], "count": r[2],
+                     "min_ts": r[3], "max_ts": r[4]} for r in rows]

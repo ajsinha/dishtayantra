@@ -65,6 +65,27 @@ CREATE INDEX IF NOT EXISTS ix_audit_events_created_at ON audit_events (created_a
 CREATE INDEX IF NOT EXISTS ix_audit_events_actor      ON audit_events (actor);
 CREATE INDEX IF NOT EXISTS ix_audit_events_action     ON audit_events (action);
 
+-- NOTE: Flow Time-Travel history lives in its OWN database, never here. Its
+-- schema is the dedicated config/schema/flow_events_postgres.sql.
+
+-- Trusted remote servers (UI-plane / service-plane split, v5.29.0). api_key_enc
+-- holds the symmetric-encrypted key; never stored/returned in the clear.
+CREATE TABLE IF NOT EXISTS trusted_servers (
+    id                 SERIAL PRIMARY KEY,
+    server_id          VARCHAR(64)  NOT NULL UNIQUE,
+    name               VARCHAR(128) NOT NULL,
+    url                VARCHAR(512) NOT NULL,
+    api_key_enc        TEXT         NOT NULL,
+    role               VARCHAR(16)  NOT NULL DEFAULT 'admin',
+    verify_tls         BOOLEAN      NOT NULL DEFAULT TRUE,
+    added_by           VARCHAR(128),
+    added_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_probe_at      TIMESTAMP,
+    last_probe_ok      BOOLEAN,
+    last_probe_version VARCHAR(32)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ix_trusted_server_id ON trusted_servers (server_id);
+
 INSERT INTO roles (name, description) VALUES
     ('admin',    'Full administrative access'),
     ('operator', 'Operational control of DAGs'),

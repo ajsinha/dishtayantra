@@ -131,6 +131,14 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         self._work_available = threading.Event()
         self._idle_poll_interval = 0.01  # fallback wait; was the fixed sleep
 
+        # Compute-cycle id (v5.42.0): one engine sweep that does work = one
+        # compute cycle (a start-to-finish propagation wave). _compute_cycle is
+        # the id stamped on every fire of the current sweep (read by the flow
+        # recorder); _cycle_seq is the last COMMITTED id (only sweeps that did
+        # work advance it, so idle sweeps never burn an id or leave a gap).
+        self._compute_cycle = 0
+        self._cycle_seq = 0
+
         self._time_check_thread = None
         
         # UI override flag: when True, time window checker won't auto-suspend
@@ -512,6 +520,19 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
         """
         self._work_available.set()
 
+    def _begin_compute_cycle(self):
+        """Propose the id for the sweep about to run. Every node fired in this
+        sweep records this id. Idempotent for idle sweeps: it proposes
+        ``_cycle_seq + 1`` without advancing, so an idle sweep neither burns an
+        id nor leaves a gap. Returns the pending id."""
+        self._compute_cycle = self._cycle_seq + 1
+        return self._compute_cycle
+
+    def _commit_compute_cycle(self):
+        """Advance the committed counter; called only when a sweep did work."""
+        self._cycle_seq = self._compute_cycle
+        return self._cycle_seq
+
     def do_compute(self):
         """Main compute loop (v3.0.0: event-driven, minimal polling).
 
@@ -540,13 +561,18 @@ class ComputeGraph(ComponentBuilderMixin, GraphAlgorithmsMixin,
             for node in sorted_nodes:
                 node.pre_compute()
 
-            # Compute phase
+            # Compute phase. Stamp the pending compute-cycle id BEFORE any node
+            # fires so every fire in this sweep shares it; commit it only if the
+            # sweep did work (so idle sweeps don't advance the counter).
+            self._begin_compute_cycle()
             acted_node_set = []
             for node in sorted_nodes:
                 if node.isdirty():
                     computed = node.compute()
                     if computed:
                         acted_node_set.append(node)
+            if acted_node_set:
+                self._commit_compute_cycle()
             for node in acted_node_set:
                 node.increment_compute_count()
                 node.post_compute()

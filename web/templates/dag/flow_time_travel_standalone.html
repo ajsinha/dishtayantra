@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>DishtaYantra · Flow Time Travel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
+<style>
+  :root{
+    --bg:#081826; --panel:#0E2336; --panel2:#122B41; --line:#1E3A52;
+    --ink:#E7F0F8; --muted:#8AA3B8; --teal:#19C2A8; --teal-dim:#0E6F62;
+    --amber:#F0A93E; --red:#E5484D; --cyan:#46D6F2;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--ui);
+    display:flex;flex-direction:column;overflow:hidden}
+  /* ---- header ---- */
+  header{display:flex;align-items:center;gap:18px;padding:12px 18px;
+    border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0B2034,#0A1B2B)}
+  .brand{font-weight:700;letter-spacing:.04em;font-size:15px}
+  .brand b{color:var(--teal)}
+  .eyebrow{font-size:10px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+  .spacer{flex:1}
+  select,button{font-family:var(--ui);font-size:13px;color:var(--ink);
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer}
+  select:focus,button:focus{outline:2px solid var(--cyan);outline-offset:1px}
+  button.primary{background:var(--teal-dim);border-color:#1B8C7C}
+  button.primary:hover{background:#138a78}
+  .rec{display:flex;align-items:center;gap:8px;border:1px solid var(--line);
+    border-radius:999px;padding:6px 12px;background:var(--panel2);cursor:pointer;user-select:none}
+  .rec .dot{width:9px;height:9px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 var(--red)}
+  .rec.on .dot{animation:pulse 1.6s infinite}
+  .rec.off .dot{background:#4A5C6B;box-shadow:none}
+  .rec .lbl{font-size:12px;letter-spacing:.04em}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.6)}70%{box-shadow:0 0 0 7px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+  /* ---- main ---- */
+  main{flex:1;display:grid;grid-template-columns:1fr 340px;min-height:0}
+  #cyWrap{position:relative;min-width:0;background:
+    radial-gradient(1200px 500px at 50% -10%,#0c2034 0%,#081826 60%)}
+  #cy{position:absolute;inset:0}
+  .canvas-tag{position:absolute;left:14px;top:12px;font-size:10px;letter-spacing:.2em;
+    color:var(--muted);text-transform:uppercase}
+  .legend{position:absolute;left:14px;bottom:12px;display:flex;gap:16px;font-size:11px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  /* ---- inspector ---- */
+  aside{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+  .sec-h{padding:11px 14px;border-bottom:1px solid var(--line);font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+  .sec-h b{color:var(--teal);font-weight:600;letter-spacing:0}
+  #stream{flex:1;overflow:auto;min-height:0}
+  .ev{display:grid;grid-template-columns:62px 1fr auto;gap:8px;align-items:center;
+    padding:7px 14px;border-bottom:1px solid #0d2031;cursor:pointer;font-size:12px}
+  .ev:hover{background:var(--panel2)}
+  .ev.sel{background:#10324a;box-shadow:inset 3px 0 0 var(--cyan)}
+  .ev .t{font-family:var(--mono);color:var(--muted);font-size:11px}
+  .ev .n{font-weight:600}
+  .ev .v{font-family:var(--mono);color:var(--teal);font-size:11px;white-space:nowrap}
+  .ev .v.warn{color:var(--amber)}
+  .detail{border-top:1px solid var(--line);max-height:40%;overflow:auto;background:#0A1E30}
+  .detail pre{margin:0;padding:12px 14px;font-family:var(--mono);font-size:11.5px;
+    line-height:1.5;color:#CFE0EE;white-space:pre-wrap;word-break:break-word}
+  .detail .k{color:var(--amber)}
+  .empty{padding:18px 14px;color:var(--muted);font-size:12.5px;line-height:1.6}
+  /* ---- timeline footer ---- */
+  footer{border-top:1px solid var(--line);background:var(--panel);padding:10px 16px 14px}
+  .transport{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .transport .t-time{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .transport .win{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .transport .win b{color:var(--cyan);font-weight:600}
+  .icon-btn{width:38px;text-align:center;padding:7px 0}
+  #tl{width:100%;height:96px;display:block;cursor:crosshair;border-radius:8px;
+    border:1px solid var(--line);background:linear-gradient(180deg,#0b2033,#0a1c2c)}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px}
+  .hint b{color:var(--teal)}
+  @media (prefers-reduced-motion: reduce){.rec.on .dot{animation:none}}
+  @media (max-width:880px){main{grid-template-columns:1fr}aside{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">Reactive compute · history replay</div>
+    <div class="brand"><b>DishtaYantra</b> &nbsp;Flow Time Travel</div>
+  </div>
+  <div class="spacer"></div>
+  <label class="eyebrow" for="dag" style="margin:0 -8px 0 0">DAG</label>
+  <select id="dag"><option value="trade-etl">trade-etl</option></select>
+  <div id="rec" class="rec on" title="Recording captures the change-log the engine fires. Toggle off to fully restore throughput.">
+    <span class="dot"></span><span class="lbl">Recording on</span>
+  </div>
+  <button id="download" class="primary">Download window ↓</button>
+</header>
+
+<main>
+  <div id="cyWrap">
+    <div class="canvas-tag">trade-etl · live replay</div>
+    <div id="cy"></div>
+    <div class="legend">
+      <span><i style="background:var(--amber)"></i>node firing</span>
+      <span><i style="background:var(--teal)"></i>data on edge</span>
+      <span><i style="background:#33536b"></i>idle</span>
+    </div>
+  </div>
+  <aside>
+    <div class="sec-h">Events in window <b id="evCount">0</b></div>
+    <div id="stream"></div>
+    <div class="sec-h">Selected event</div>
+    <div class="detail"><pre id="detail" class="empty">Scrub the timeline or press play. Click any event to inspect its input → output.</pre></div>
+  </aside>
+</main>
+
+<footer>
+  <div class="transport">
+    <button id="toStart" class="icon-btn" title="Jump to window start">⏮</button>
+    <button id="play" class="icon-btn primary" title="Play / pause">▶</button>
+    <select id="speed" title="Playback speed">
+      <option value="900">0.25×</option>
+      <option value="1800">0.5×</option>
+      <option value="3600" selected>1×</option>
+      <option value="10800">3×</option>
+      <option value="43200">12×</option>
+    </select>
+    <span class="t-time" id="playClock">--:--</span>
+    <span class="win">window <b id="winLabel">last 24h</b></span>
+  </div>
+  <canvas id="tl"></canvas>
+  <div class="hint">Drag the <b>blue handles</b> to pick a range · drag the track to move the <b>playhead</b> · the bars are firing density over 24h. Download exports the selected window as JSONL.</div>
+</footer>
+
+<script>
+"use strict";
+/* ============================================================= sample flow
+   In a deployment this comes from GET /api/flow/{dag}?from&to (see backend).
+   Standalone, we synthesize a realistic 24h trade-ETL change-log so the whole
+   experience is live without a server. */
+const NOW = Date.now();
+const DAY = 24*3600*1000;
+const T0 = NOW - DAY;
+const NODES = [
+  {id:"kafka_in",   label:"Kafka trades", x:80,  y:90},
+  {id:"validate",   label:"validate",     x:300, y:90},
+  {id:"fx",         label:"fx normalize", x:520, y:90},
+  {id:"notional",   label:"notional",     x:740, y:90},
+  {id:"risk",       label:"risk score",   x:960, y:90},
+  {id:"publish",    label:"publish",      x:1180,y:60},
+  {id:"anomaly",    label:"anomaly sink", x:1180,y:170},
+];
+const CHAIN = ["kafka_in","validate","fx","notional","risk","publish"];
+const EDGES = [
+  ["kafka_in","validate"],["validate","fx"],["fx","notional"],
+  ["notional","risk"],["risk","publish"],["risk","anomaly"],
+];
+const SYMS = [["AAPL","USD",1.0,187.45],["BP.L","GBP",1.271,4.78],
+  ["7203.T","JPY",0.0067,2810],["MSFT","USD",1.0,418.2],["SAP.DE","EUR",1.08,176.4]];
+function rnd(s){let x=Math.sin(s)*10000;return x-Math.floor(x);}
+// density: quiet overnight, bursts at open / midday / close
+function intensity(h){return 0.15+0.85*(Math.exp(-((h-9.5)**2)/2)+0.7*Math.exp(-((h-13)**2)/3)+0.9*Math.exp(-((h-16)**2)/1.5));}
+function buildEvents(){
+  const evs=[]; let seq=1;
+  for(let m=0;m<24*60;m+=1){
+    const h=m/60, lam=intensity(h)*1.1;
+    if(rnd(m*1.7)<lam*0.18){ // a trade arrives this minute
+      const s=SYMS[Math.floor(rnd(m*3.1)*SYMS.length)];
+      const qty=100+Math.floor(rnd(m*5.3)*900);
+      const notional=+(qty*s[3]*s[2]).toFixed(2);
+      const band = notional>60000?"HIGH":notional>15000?"MEDIUM":"LOW";
+      const tid="T-"+(1000000+m);
+      const base=T0+m*60000+Math.floor(rnd(m)*60000);
+      const row={trade_id:tid,symbol:s[0],qty:qty,price:s[3],ccy:s[1]};
+      const vals={
+        kafka_in:{trade_id:tid,symbol:s[0],side:"BUY",qty:qty,price:s[3],ccy:s[1]},
+        validate:{trade_id:tid,valid:true,symbol:s[0]},
+        fx:{trade_id:tid,fx_rate:s[2],ccy:s[1]},
+        notional:{trade_id:tid,notional_usd:notional},
+        risk:{trade_id:tid,notional_usd:notional,risk_band:band},
+        publish:{trade_id:tid,published:true},
+        anomaly:{trade_id:tid,flagged:band==="HIGH"},
+      };
+      // cascade through the chain, a few ms apart
+      CHAIN.forEach((nid,i)=>{
+        const tgt = nid==="risk"?["publish","anomaly"]:(nid==="publish"?[]:[CHAIN[i+1]]);
+        evs.push({seq:seq++,ts:base+i*4,node:nid,trade:tid,band:band,
+          value:vals[nid],targets:tgt,input:i===0?{source:"kafka:trades"}:vals[CHAIN[i-1]]});
+      });
+      if(band==="HIGH"){ // risk also pushes to anomaly sink
+        evs.push({seq:seq++,ts:base+5*4+2,node:"anomaly",trade:tid,band:band,
+          value:vals.anomaly,targets:[],input:vals.risk});
+      }
+    }
+  }
+  evs.sort((a,b)=>a.ts-b.ts||a.seq-b.seq);
+  return evs;
+}
+let EVENTS = buildEvents();
+
+/* ============================================================= cytoscape */
+const cy = cytoscape({
+  container:document.getElementById("cy"),
+  elements:[
+    ...NODES.map(n=>({data:{id:n.id,label:n.label},position:{x:n.x,y:n.y}})),
+    ...EDGES.map(([s,t],i)=>({data:{id:"e"+i,source:s,target:t,lbl:""}})),
+  ],
+  layout:{name:"preset"},
+  userZoomingEnabled:true,userPanningEnabled:true,
+  style:[
+    {selector:"node",style:{
+      "background-color":"#10314A","border-color":"#33536b","border-width":2,
+      "label":"data(label)","color":"#CFE0EE","font-size":13,"font-family":"system-ui",
+      "text-valign":"center","text-halign":"center","width":118,"height":46,"shape":"round-rectangle",
+      "text-wrap":"wrap","text-max-width":104,
+      "transition-property":"border-color border-width background-color","transition-duration":"160ms"}},
+    {selector:"node.firing",style:{
+      "border-color":"#F0A93E","border-width":4,"background-color":"#173a52","color":"#FFE8C2"}},
+    {selector:"node.sink",style:{"shape":"round-rectangle","background-color":"#0e2c2a","border-color":"#0E6F62"}},
+    {selector:"edge",style:{
+      "width":2,"line-color":"#28455c","target-arrow-color":"#28455c",
+      "target-arrow-shape":"triangle","curve-style":"bezier","arrow-scale":1,
+      "label":"data(lbl)","font-family":"ui-monospace,Menlo,monospace","font-size":10,
+      "color":"#19C2A8","text-background-color":"#081826","text-background-opacity":1,
+      "text-background-padding":3,"text-rotation":"autorotate",
+      "transition-property":"line-color width target-arrow-color","transition-duration":"160ms"}},
+    {selector:"edge.flow",style:{
+      "line-color":"#19C2A8","target-arrow-color":"#19C2A8","width":4.5}},
+  ],
+});
+cy.$("#anomaly").addClass("sink");
+cy.fit(undefined,40); cy.zoom(Math.min(cy.zoom(),1.1)); cy.center();
+
+const decayTimers={};
+function pulse(nodeId, edgeLabels){
+  const n=cy.$id(nodeId); if(!n) return;
+  n.addClass("firing");
+  const outs=n.connectedEdges(`edge[source = "${nodeId}"]`);
+  outs.addClass("flow");
+  outs.forEach(e=>{ if(edgeLabels) e.data("lbl",edgeLabels); });
+  clearTimeout(decayTimers[nodeId]);
+  decayTimers[nodeId]=setTimeout(()=>{
+    n.removeClass("firing"); outs.removeClass("flow");
+    outs.forEach(e=>e.data("lbl",""));
+  }, 520);
+}
+
+/* ============================================================= timeline */
+const tl=document.getElementById("tl");
+const tlctx=tl.getContext("2d");
+let DPR=Math.max(1,window.devicePixelRatio||1);
+let win={a:T0,b:NOW};           // selected window
+let playT=T0;                    // playhead time
+let dragging=null;               // 'a' | 'b' | 'head' | null
+const BUCKETS=96;                // 15-min buckets
+let density=new Array(BUCKETS).fill(0), densityMax=1;
+function computeDensity(){
+  density.fill(0);
+  for(const e of EVENTS){ if(e.node!=="kafka_in") continue;
+    const k=Math.min(BUCKETS-1,Math.floor((e.ts-T0)/DAY*BUCKETS)); density[k]++; }
+  densityMax=Math.max(1,...density);
+}
+computeDensity();
+function sizeCanvas(){
+  const r=tl.getBoundingClientRect(); tl.width=r.width*DPR; tl.height=r.height*DPR;
+  tlctx.setTransform(DPR,0,0,DPR,0,0); drawTL();
+}
+const PAD=10;
+function x2t(x){const r=tl.getBoundingClientRect();return T0+ (Math.min(Math.max(x-PAD,0),r.width-2*PAD))/(r.width-2*PAD)*DAY;}
+function t2x(t){const r=tl.getBoundingClientRect();return PAD+(t-T0)/DAY*(r.width-2*PAD);}
+function fmt(t){const d=new Date(t);return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+function fmtFull(t){const d=new Date(t);return d.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}
+function drawTL(){
+  const r=tl.getBoundingClientRect(), W=r.width, H=r.height;
+  tlctx.clearRect(0,0,W,H);
+  const bw=(W-2*PAD)/BUCKETS, base=H-22;
+  // density bars
+  for(let i=0;i<BUCKETS;i++){
+    const h=density[i]/densityMax*(base-8);
+    const x=PAD+i*bw;
+    const inWin = (T0+i/BUCKETS*DAY)>=win.a && (T0+(i+1)/BUCKETS*DAY)<=win.b+1;
+    tlctx.fillStyle=inWin?"#19C2A8":"#1c425a";
+    tlctx.fillRect(x+0.5,base-h,Math.max(1,bw-1),h);
+  }
+  // hour gridlines + labels
+  tlctx.fillStyle="#6f8aa0";tlctx.font="10px ui-monospace,Menlo,monospace";
+  for(let h=0;h<=24;h+=3){const x=PAD+h/24*(W-2*PAD);
+    tlctx.fillStyle="#163047";tlctx.fillRect(x,4,1,base-4);
+    tlctx.fillStyle="#6f8aa0";tlctx.fillText(((new Date(T0+h*3600*1000)).getHours()+"").padStart(2,"0")+":00",x+3,H-7);}
+  // window shading edges
+  const xa=t2x(win.a), xb=t2x(win.b);
+  tlctx.fillStyle="rgba(8,24,38,.55)";
+  tlctx.fillRect(PAD,4,xa-PAD,base-4); tlctx.fillRect(xb,4,(W-PAD)-xb,base-4);
+  // brush handles
+  [["a",xa],["b",xb]].forEach(([k,x])=>{
+    tlctx.fillStyle="#46D6F2";tlctx.fillRect(x-1.5,2,3,base+2);
+    tlctx.fillStyle="#0A1E30";tlctx.fillRect(x-4,base/2-9,8,18);
+    tlctx.strokeStyle="#46D6F2";tlctx.strokeRect(x-4,base/2-9,8,18);
+  });
+  // playhead
+  const xp=t2x(playT);
+  tlctx.fillStyle="#F0A93E";tlctx.fillRect(xp-1,2,2,base+2);
+  tlctx.beginPath();tlctx.moveTo(xp-5,2);tlctx.lineTo(xp+5,2);tlctx.lineTo(xp,9);tlctx.closePath();tlctx.fill();
+}
+function pickTarget(x){
+  const xa=t2x(win.a),xb=t2x(win.b),xp=t2x(playT);
+  if(Math.abs(x-xa)<7)return"a"; if(Math.abs(x-xb)<7)return"b";
+  if(Math.abs(x-xp)<7)return"head"; return"track";
+}
+tl.addEventListener("pointerdown",e=>{
+  tl.setPointerCapture(e.pointerId);
+  const x=e.offsetX, tgt=pickTarget(x);
+  dragging = tgt==="track" ? "head" : tgt;
+  if(dragging==="head"){playT=clampWin(x2t(x));}
+  onDrag(x); 
+});
+tl.addEventListener("pointermove",e=>{ if(dragging) onDrag(e.offsetX); });
+tl.addEventListener("pointerup",e=>{dragging=null;});
+function clampWin(t){return Math.min(Math.max(t,win.a),win.b);}
+function onDrag(x){
+  const t=x2t(x);
+  if(dragging==="a"){win.a=Math.min(t,win.b-60000);}
+  else if(dragging==="b"){win.b=Math.max(t,win.a+60000);}
+  else if(dragging==="head"){playT=clampWin(t);}
+  if(playT<win.a)playT=win.a; if(playT>win.b)playT=win.b;
+  updateWinLabel(); seekTo(playT,true); drawTL();
+}
+function updateWinLabel(){
+  const span=(win.b-win.a);
+  const lbl = (Math.abs(span-DAY)<60000)?"last 24h":`${fmt(win.a)} – ${fmt(win.b)}`;
+  document.getElementById("winLabel").textContent=lbl;
+}
+
+/* ============================================================= playback */
+let playing=false, last=0, speed=3600; // sim-seconds per real-second multiplier base
+const playBtn=document.getElementById("play");
+const clock=document.getElementById("playClock");
+document.getElementById("speed").addEventListener("change",e=>{speed=+e.target.value;});
+playBtn.addEventListener("click",()=>setPlaying(!playing));
+document.getElementById("toStart").addEventListener("click",()=>{playT=win.a;rendered=win.a;cy.elements().removeClass("firing flow");seekTo(playT,true);drawTL();});
+function setPlaying(p){playing=p;playBtn.textContent=p?"⏸":"▶";last=performance.now();if(p)requestAnimationFrame(loop);}
+let rendered=T0;
+function loop(now){
+  if(!playing)return;
+  const dt=(now-last)/1000; last=now;
+  playT += dt*speed*1000;                  // advance sim time
+  if(playT>=win.b){playT=win.b;setPlaying(false);}
+  advance(rendered,playT); rendered=playT;
+  clock.textContent=fmt(playT);
+  drawTL();
+  if(playing)requestAnimationFrame(loop);
+}
+function edgeLabelFor(e){
+  if(e.node==="notional")return (e.value.notional_usd||0).toLocaleString()+" USD";
+  if(e.node==="risk")return e.value.risk_band;
+  if(e.node==="fx")return "×"+e.value.fx_rate;
+  if(e.node==="kafka_in")return e.value.symbol;
+  return "";
+}
+function advance(fromT,toT){
+  // fire every event whose ts is in (fromT, toT]
+  for(const e of EVENTS){
+    if(e.ts>fromT && e.ts<=toT){ pulse(e.node, edgeLabelFor(e)); pushStream(e); }
+  }
+}
+function seekTo(t,clear){
+  if(clear){cy.elements().removeClass("firing flow");cy.edges().data("lbl","");streamClear();}
+  rendered=win.a;
+  // render the window up to t (cap work for big windows)
+  const inWin=EVENTS.filter(e=>e.ts>=win.a && e.ts<=t);
+  const tail=inWin.slice(-220);
+  streamRender(tail);
+  // light up nodes active near t
+  const recent=inWin.slice(-12);
+  recent.forEach(e=>pulse(e.node,edgeLabelFor(e)));
+  clock.textContent=fmt(t);
+  document.getElementById("evCount").textContent=inWin.length.toLocaleString();
+}
+
+/* ============================================================= event stream */
+const streamEl=document.getElementById("stream");
+const detailEl=document.getElementById("detail");
+let streamItems=[];
+function streamClear(){streamItems=[];streamEl.innerHTML="";}
+function rowHtml(e){
+  const warn = e.band==="HIGH" || e.node==="anomaly";
+  return `<div class="ev" data-seq="${e.seq}">
+    <span class="t">${fmt(e.ts)}</span>
+    <span class="n">${e.node}</span>
+    <span class="v ${warn?"warn":""}">${escapeHtml(shortVal(e))}</span></div>`;
+}
+function shortVal(e){
+  if(e.node==="notional")return (e.value.notional_usd||0).toLocaleString()+" USD";
+  if(e.node==="risk")return e.value.risk_band;
+  if(e.node==="kafka_in")return e.value.symbol+" ×"+e.value.qty;
+  if(e.node==="anomaly")return "flagged";
+  if(e.node==="publish")return "published";
+  if(e.node==="fx")return "×"+e.value.fx_rate;
+  if(e.node==="validate")return "valid";
+  return "";
+}
+function pushStream(e){
+  streamItems.push(e); if(streamItems.length>220)streamItems.shift();
+  const div=document.createElement("div"); div.innerHTML=rowHtml(e).trim();
+  const node=div.firstChild; bindRow(node,e); streamEl.appendChild(node);
+  while(streamEl.children.length>220)streamEl.removeChild(streamEl.firstChild);
+  streamEl.scrollTop=streamEl.scrollHeight;
+  document.getElementById("evCount").textContent=
+    EVENTS.filter(x=>x.ts>=win.a&&x.ts<=playT).length.toLocaleString();
+}
+function streamRender(list){
+  streamEl.innerHTML=list.map(rowHtml).join("");
+  [...streamEl.children].forEach((node,i)=>bindRow(node,list[i]));
+  streamEl.scrollTop=streamEl.scrollHeight;
+}
+function bindRow(node,e){node.addEventListener("click",()=>selectEvent(e,node));}
+let selNode=null;
+function selectEvent(e,node){
+  if(selNode)selNode.classList.remove("sel");
+  if(node){node.classList.add("sel");selNode=node;}
+  playT=e.ts; pulse(e.node,edgeLabelFor(e)); drawTL();
+  detailEl.classList.remove("empty");
+  detailEl.innerHTML =
+    `<span class="k">node</span>     ${e.node}\n`+
+    `<span class="k">time</span>     ${fmtFull(e.ts)}\n`+
+    `<span class="k">seq</span>      ${e.seq}\n`+
+    `<span class="k">targets</span>  ${JSON.stringify(e.targets)}\n\n`+
+    `<span class="k">input  →</span> ${JSON.stringify(e.input)}\n`+
+    `<span class="k">output →</span> ${JSON.stringify(e.value,null,2)}`;
+}
+function escapeHtml(s){return (s+"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ============================================================= download */
+document.getElementById("download").addEventListener("click",()=>{
+  const rows=EVENTS.filter(e=>e.ts>=win.a&&e.ts<=win.b).map(e=>JSON.stringify({
+    dag_id:document.getElementById("dag").value,node_id:e.node,seq:e.seq,
+    ts_ms:e.ts,inputs:e.input,output:e.value,targets:e.targets}));
+  const blob=new Blob([rows.join("\n")],{type:"application/x-ndjson"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`flow_${document.getElementById("dag").value}_${win.a}-${win.b}.jsonl`;
+  a.click();URL.revokeObjectURL(a.href);
+});
+
+/* ============================================================= recording toggle */
+const recEl=document.getElementById("rec");
+recEl.addEventListener("click",()=>{
+  const on=recEl.classList.toggle("on"); recEl.classList.toggle("off",!on);
+  recEl.querySelector(".lbl").textContent = on?"Recording on":"Recording off";
+  /* In deployment: fetch('/api/flow/'+(on?'enable':'disable'),{method:'POST'}) */
+});
+
+/* ============================================================= boot */
+function boot(){
+  sizeCanvas(); updateWinLabel(); playT=win.a; rendered=win.a;
+  seekTo(win.b,true);                 // show the whole 24h initially
+  playT=win.a; drawTL();
+}
+window.addEventListener("resize",()=>{DPR=Math.max(1,window.devicePixelRatio||1);sizeCanvas();});
+boot();
+</script>
+</body>
+</html>
