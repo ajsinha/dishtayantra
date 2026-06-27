@@ -31,7 +31,8 @@ Usage:
     python3 perftest/generate_trades.py                 # 10000 heterogeneous trades
     python3 perftest/generate_trades.py --count 50000
     python3 perftest/generate_trades.py --count 1000 --rate 500     # 500 msg/sec
-    python3 perftest/generate_trades.py --count 1000 --randomrate 50  # bursts of 1..50
+    python3 perftest/generate_trades.py --count 1000 --randomrate 50  # bursts of 1..50, 1..5s gaps
+    python3 perftest/generate_trades.py --count 1000 --randomrate 50 --randomsleep 0  # bursts, no gap
     python3 perftest/generate_trades.py --dry-run --count 8         # print samples
     python3 perftest/generate_trades.py --uniform                   # old flat shape
     python3 perftest/generate_trades.py --hetero-level high --seed 42
@@ -335,6 +336,16 @@ def main():
                          "integer from 1 to RANDOMRATE (inclusive), flushed together "
                          "so each batch lands as one burst. Total is still bounded by "
                          "--count; combine with --rate to bound the average msgs/sec.")
+    ap.add_argument("--randomsleep", type=float, default=5.0,
+                    help="bursty mode: max SECONDS to idle between bursts. The actual "
+                         "gap is random in [--randomsleep-min, --randomsleep] (default "
+                         "max 5.0), giving real-life-like quiet periods between bursts. "
+                         "Set 0 to disable the gap (back-to-back bursts, or --rate "
+                         "pacing if given).")
+    ap.add_argument("--randomsleep-min", type=float, default=1.0,
+                    help="bursty mode: min SECONDS to idle between bursts (default 1.0; "
+                         "clamped to <= --randomsleep). Lower it (e.g. 0.05) for denser "
+                         "traffic, raise it for sparser bursts.")
     ap.add_argument("--anomaly-pct", type=float, default=1.0,
                     help="percentage of anomalous trades (default 1.0)")
     ap.add_argument("--hetero-level", choices=["low", "med", "high"], default="med",
@@ -363,6 +374,9 @@ def main():
     if args.randomrate is not None and args.randomrate < 1:
         sys.exit("--randomrate must be >= 1")
 
+    if args.randomsleep < 0 or args.randomsleep_min < 0:
+        sys.exit("--randomsleep / --randomsleep-min must be >= 0")
+
     rng = random.Random(args.seed)
 
     if args.dry_run:
@@ -388,9 +402,22 @@ def main():
           f"{'uniform' if args.uniform else 'heterogeneous'} trades to topic "
           f"'{args.topic}' at {args.bootstrap}"
           + (f" (rate-limited to {args.rate}/s)" if args.rate else "")
-          + (f" in random bursts of 1..{args.randomrate}" if args.randomrate else "")
+          + (f" in random bursts of 1..{args.randomrate}"
+             + (f", idling {min(args.randomsleep_min, args.randomsleep):g}.."
+                f"{args.randomsleep:g}s between bursts" if args.randomsleep > 0 else "")
+             if args.randomrate else "")
           + f"; keyed by '{args.partition_key}' so Kafka groups every trade "
             f"with the same value onto one partition ...")
+
+    if args.randomrate and args.randomsleep > 0:
+        avg_burst = (1 + args.randomrate) / 2.0
+        avg_gap = (min(args.randomsleep_min, args.randomsleep) + args.randomsleep) / 2.0
+        est_bursts = args.count / max(1.0, avg_burst)
+        est_secs = est_bursts * avg_gap
+        if est_secs > 120:
+            print(f"  heads-up: ~{est_bursts:,.0f} bursts x ~{avg_gap:.1f}s idle "
+                  f"=> ~{est_secs/60:,.0f} min of wall-clock for {args.count:,} trades. "
+                  f"Lower --count or --randomsleep, or raise --randomrate, to shorten it.")
 
     interval = (1.0 / args.rate) if args.rate > 0 else 0.0
     sent = 0
@@ -417,18 +444,25 @@ def main():
             next_report += 10000
 
     if args.randomrate:
-        # Bursty mode: each batch is a random 1..randomrate trades, flushed
-        # together so it arrives downstream as one burst. The last batch is
-        # trimmed so the total equals --count.
+        # Real-life-like bursty mode: emit a random 1..randomrate burst (flushed
+        # together so it lands downstream as one group), then idle a random gap,
+        # and repeat. The last burst is trimmed to land exactly on --count, and
+        # no gap is taken after it.
+        gap_max = args.randomsleep
+        gap_min = min(args.randomsleep_min, gap_max)
         while sent < args.count:
             batch = min(rng.randint(1, args.randomrate), args.count - sent)
             for _ in range(batch):
                 emit_one(sent)
                 sent += 1
-            producer.flush()                       # land the whole batch at once
-            if interval:
-                time.sleep(batch * interval)       # keep the average rate ~ --rate
+            producer.flush()                       # land the whole burst at once
             report()
+            if sent >= args.count:
+                break                              # done - no trailing idle gap
+            if gap_max > 0:
+                time.sleep(rng.uniform(gap_min, gap_max))   # realistic quiet period
+            elif interval:
+                time.sleep(batch * interval)       # else fall back to --rate pacing
     else:
         for i in range(args.count):
             emit_one(i)

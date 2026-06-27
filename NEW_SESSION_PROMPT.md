@@ -8,7 +8,7 @@ archive (`dishtayantra-<version>-<stamp>.zip`) in the same message.*
 You are picking up ongoing engineering on **DishtaYantra**, my single-node,
 in-process reactive dataflow **DAG compute server** (FastAPI + uvicorn, Python
 3.12). I (Ashutosh Sinha, ajsinha@gmail.com) own it. The full project is in the
-attached archive; extract it and work from there. **Current version: 5.48.0.**
+attached archive; extract it and work from there. **Current version: 5.49.0.**
 
 ## What it is
 Nodes wrap pub/sub connectors and calculators and are wired into a DAG. The

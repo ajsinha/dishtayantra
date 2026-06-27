@@ -9,6 +9,14 @@ version string.
 Per-release highlights are kept in docs/CHANGELOG.md (not here, to keep this
 file small). Most recent release:
 
+Version 5.49.0 highlights (perftest generator: real-life-like bursty traffic - random idle gaps):
+    - perftest/generate_trades.py now models bursty traffic with idle gaps: emit a random 1..--randomrate
+      burst (flushed as one group), then idle a random gap, repeat. New --randomsleep (max seconds, default
+      5) and --randomsleep-min (default 1) draw the gap uniform[min,max]; --randomsleep 0 disables it
+      (back-to-back bursts, or --rate pacing if given). No gap after the final burst; total still == --count.
+    - Prints a wall-clock heads-up when gaps would make a run very long, so large --count + gaps does not
+      surprise you. Steady (no --randomrate) path unchanged.
+
 Version 5.48.0 highlights (perftest generator: --randomrate bursty batch mode):
     - perftest/generate_trades.py gains --randomrate N: trades are sent in BURSTS, each batch a random
       integer from 1 to N trades, flushed together so each burst lands downstream as one group. The total
@@ -407,7 +415,7 @@ Version 5.26.0 highlights (flow time-travel):
       flow_events table (sqlite + postgres). 12 new tests (259 total). Full history: docs/CHANGELOG.md.
 """
 
-VERSION = "5.48.0"
+VERSION = "5.49.0"
 BUILD_DATE = "2026-06-23"
 APP_NAME = "DishtaYantra"
 

@@ -14,7 +14,16 @@ Manage > Live Logs ungated. Other log endpoints stay admin-only. Security note:
 the stream tails dagserver/application/error logs (may contain stack traces /
 request detail) - all logged-in users can now see it, by explicit request.
 
-## v5.48.0 (latest): perftest generator --randomrate bursty batch mode
+## v5.49.0 (latest): perftest generator - real-life-like bursty traffic with random idle gaps
+perftest/generate_trades.py: bursty mode now idles a random gap between bursts. Emit random 1..--randomrate
+burst (flushed), then sleep uniform(--randomsleep-min, --randomsleep) seconds, repeat. Defaults: max 5s,
+min 1s (so plain --randomrate N now gives 1..5s gaps). --randomsleep 0 disables (back-to-back, or --rate
+pacing fallback). No gap after final burst; total==count (last trimmed). Wall-clock heads-up printed when
+gaps make a run long. emit_one()/report() helpers; gap_max/gap_min in the bursty loop. Verified via fake
+producer + captured time.sleep: sizes in [1,N], gaps in [min,max], ngaps==nbursts-1, fallbacks, negatives
+rejected. Steady path unchanged. 488 lines (<500). Tooling-only; suite 345.
+
+## v5.48.0: perftest generator --randomrate bursty batch mode
 perftest/generate_trades.py: new --randomrate N sends trades in BURSTS, each batch a random int 1..N,
 flushed together (one burst downstream). Total still bounded by --count (last batch trimmed); combine with
 --rate to bound avg msgs/sec. Implemented via emit_one()/report() helpers + a bursty branch in the send

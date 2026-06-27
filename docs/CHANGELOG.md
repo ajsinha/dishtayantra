@@ -1,5 +1,21 @@
 # DishtaYantra Changelog
 
+## Version 5.49.0 highlights (perftest generator: real-life-like bursty traffic with random idle gaps):
+    - **Idle gaps between bursts.** `perftest/generate_trades.py` now shapes realistic traffic: emit a
+      random **1..`--randomrate`** burst (flushed together as one group), then **idle a random gap**, and
+      repeat. Two new args control the gap: **`--randomsleep`** (max seconds between bursts, default **5**)
+      and **`--randomsleep-min`** (default **1**); the actual pause is drawn `uniform(min, max)`.
+    - **Tunable / disable-able.** `--randomsleep 0` recovers back-to-back bursts (or `--rate` pacing if
+      given); lower `--randomsleep-min` (e.g. 0.05) for denser traffic. No gap is taken after the final
+      burst, and the total is still bounded by `--count` (last burst trimmed).
+    - **Wall-clock heads-up.** When the gaps would make a run very long (e.g. 1M trades), it prints an
+      estimate up front so the run time is no surprise. Validated via a fake producer (burst sizes in
+      [1,N], gaps in [min,max], one fewer gap than bursts, fallbacks, and rejected negatives). The steady
+      (no `--randomrate`) path is unchanged. Tooling-only; the app runtime and the 345-test suite are
+      untouched.
+
+
+
 ## Version 5.48.0 highlights (perftest generator: --randomrate bursty batch mode):
     - **`--randomrate N` on `perftest/generate_trades.py`.** When given, trades are published in **bursts**
       whose size is a random integer from **1 to N** (inclusive), flushed together so each batch arrives

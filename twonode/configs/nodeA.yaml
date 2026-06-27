@@ -18,7 +18,7 @@
 app:
   name: DishtaYantra
   # Informational only; authoritative runtime version is core/version.py VERSION.
-  version: "5.48.0"
+  version: "5.49.0"
   author:
     name: Ashutosh Sinha
     email: ajsinha@gmail.com

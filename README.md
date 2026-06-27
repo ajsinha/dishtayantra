@@ -6,7 +6,7 @@
 
 A high-performance, multi-threaded, and thread-safe DAG (Directed Acyclic Graph) compute server with support for multiple message brokers, data sources, **multi-language calculator integrations**, **LMDB zero-copy data exchange**, and **comprehensive research documentation**.
 
-[![Version](https://img.shields.io/badge/version-5.48.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
+[![Version](https://img.shields.io/badge/version-5.49.0-blue.svg)](https://github.com/ajsinha/dishtayantra)
 [![Python](https://img.shields.io/badge/python-3.8%2B-green.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 
@@ -477,7 +477,7 @@ status = server.get_server_status()
 
 ## Version & History
 
-Current version: **5.48.0** (the authoritative version is always
+Current version: **5.49.0** (the authoritative version is always
 `core/version.py::VERSION`, which every module, template, and banner imports —
 nothing hard-codes a version string). DishtaYantra is developed as a continuously
 evolving system; rather than a release-by-release changelog, the current
