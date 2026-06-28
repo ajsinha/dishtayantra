@@ -9,6 +9,34 @@ version string.
 Per-release highlights are kept in docs/CHANGELOG.md (not here, to keep this
 file small). Most recent release:
 
+Version 5.53.0 highlights (Flow replay: persistent selected-range readout):
+    - The flow replay footer now shows a persistent "replay <start> -> <end> (duration)" readout that stays
+      visible at rest (not just the during-drag bubble), so you always know exactly which span Play and
+      Download will use. Minute resolution. It stays stable during replay (uses the fixed stream start, not
+      the advancing playhead). UI-only; backend untouched. 345 tests pass.
+
+Version 5.52.0 highlights (Flow replay: window presets replace the time dropdowns):
+    - Replaced the ten From/To time dropdowns with lightweight WINDOW PRESETS: Auto (focus to where the DAG
+      was active) and 1h / 2h / 6h / 24h, each meaning the last N hours ending at now. The markers now own
+      the fine replay-range selection, so the dropdowns were redundant for that job.
+    - Presets re-slice the in-memory distribution client-side (no server hit); 24h clamps to the 24h
+      retention boundary. Default is Auto, matching prior load behaviour. UI-only; backend untouched.
+
+Version 5.51.0 highlights (Flow replay: blue end marker -> draggable range selector):
+    - Added a blue END marker to pair with the amber START marker on the flow replay timeline. Drag either
+      (grab the nearest) to bound the replay range within the From/To window; a shaded band shows the
+      selection. Play and Download now act on that [start..end] span. Markers cannot cross (min gap kept).
+    - Default markers span the whole window, so prior behaviour is unchanged; window changes / Clear reset
+      them to the full span. Pointer events cover mouse + touch. UI-only; backend untouched. 345 tests pass.
+
+Version 5.50.0 highlights (Flow replay: draggable start marker / seek cursor):
+    - The amber marker on the flow replay timeline is now DRAGGABLE: click or drag anywhere on the timeline
+      to choose where Play starts within the selected window (a seek cursor over the From/To range). Default
+      marker == window start == whole window, so existing behaviour is unchanged.
+    - Play streams from the marker time; grabbing during a live replay stops it so the marker becomes the
+      new start; when a replay finishes the marker snaps back to the chosen start, ready to replay. Pointer
+      events cover mouse and touch. UI-only; backend untouched. 345 tests pass.
+
 Version 5.49.0 highlights (perftest generator: real-life-like bursty traffic - random idle gaps):
     - perftest/generate_trades.py now models bursty traffic with idle gaps: emit a random 1..--randomrate
       burst (flushed as one group), then idle a random gap, repeat. New --randomsleep (max seconds, default
@@ -415,7 +443,7 @@ Version 5.26.0 highlights (flow time-travel):
       flow_events table (sqlite + postgres). 12 new tests (259 total). Full history: docs/CHANGELOG.md.
 """
 
-VERSION = "5.49.0"
+VERSION = "5.53.0"
 BUILD_DATE = "2026-06-23"
 APP_NAME = "DishtaYantra"
 

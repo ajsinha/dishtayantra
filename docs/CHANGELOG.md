@@ -1,5 +1,57 @@
 # DishtaYantra Changelog
 
+## Version 5.53.0 highlights (Flow replay: persistent selected-range readout):
+    - **Persistent selection readout.** Next to the window label, the flow replay footer now shows a
+      always-on **`replay <start> -> <end> (duration)`** readout reflecting the amber/blue markers, so the
+      exact span that Play and Download will use is visible at rest - not only via the bubble while
+      dragging. Minute-level resolution (e.g. `Jun 28, 02:12 -> 02:38 . 26m`).
+    - It updates live as you drag and **stays stable during replay** (it uses the fixed stream start rather
+      than the advancing playhead), and refreshes on preset/window changes and Clear. UI-only change; the
+      backend and 345-test suite are untouched.
+
+
+
+## Version 5.52.0 highlights (Flow replay: window presets replace the time dropdowns):
+    - **Window presets.** The ten From/To time dropdowns are gone, replaced by compact **Window** presets:
+      **Auto** (focus to where the DAG was active) and **1h / 2h / 6h / 24h**, each meaning *the last N
+      hours ending at now*. Now that the amber/blue markers own the fine replay-range selection, the
+      dropdowns were redundant for choosing the span - this declutters the footer while keeping the two
+      jobs the window still does: setting the zoom/resolution and reaching older history (via 24h + markers).
+    - **Cheap and consistent.** Presets re-slice the in-memory rolling distribution client-side (no server
+      hit, no DB scan); 24h clamps to the 24h retention boundary. Default remains Auto, matching the prior
+      on-load behaviour, and changing the window still resets the markers to span it.
+    - UI-only change; the backend, the streaming endpoint and the 345-test suite are untouched.
+
+
+
+## Version 5.51.0 highlights (Flow replay: blue end marker -> draggable range selector):
+    - **Blue end marker.** A second draggable marker (blue) joins the amber start marker on the flow
+      replay timeline, turning it into a **range selector**: drag either handle (the nearest one is
+      grabbed) to bound the replay span inside the From/To window. A shaded band highlights the selection,
+      and a time bubble shows the exact instant while dragging.
+    - **Play and Download act on the span.** Replay streams `from = start marker` to `to = end marker`;
+      Download exports the same `[start..end]` range. The markers cannot cross (a small minimum gap is
+      kept), and `t2x`/`x2t` are exact inverses so each handle lands precisely where you drag it.
+    - **Defaults unchanged.** Both markers span the whole window by default, so existing whole-window
+      behaviour is preserved; changing From/To or pressing Clear resets the markers to the full span.
+      Pointer events cover mouse and touch. UI-only change; the backend and `/stream` endpoint are
+      untouched. 345 tests still pass.
+
+
+
+## Version 5.50.0 highlights (Flow replay: draggable start marker / seek cursor):
+    - **Draggable start marker.** The amber marker on the flow replay timeline is now a **seek cursor**:
+      click or drag anywhere on the timeline to choose where **Play** starts within the selected window.
+      The marker gained a grab knob and shows the chosen time while dragging; `t2x`/`x2t` are exact
+      inverses so the seek lands precisely where you click (left edge = window start, right edge = end).
+    - **Behaviour.** Play streams from the marker time (`from=marker`, `to=window end`); grabbing during a
+      live replay stops it so the marker becomes the new start; when a replay completes the marker snaps
+      back to the chosen start, ready to replay again. Default marker == window start, so the prior
+      whole-window behaviour is unchanged. Pointer events cover mouse and touch.
+    - UI-only change; the backend and the streaming endpoint are untouched. 345 tests still pass.
+
+
+
 ## Version 5.49.0 highlights (perftest generator: real-life-like bursty traffic with random idle gaps):
     - **Idle gaps between bursts.** `perftest/generate_trades.py` now shapes realistic traffic: emit a
       random **1..`--randomrate`** burst (flushed together as one group), then **idle a random gap**, and

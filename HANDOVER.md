@@ -14,7 +14,42 @@ Manage > Live Logs ungated. Other log endpoints stay admin-only. Security note:
 the stream tails dagserver/application/error logs (may contain stack traces /
 request detail) - all logged-in users can now see it, by explicit request.
 
-## v5.49.0 (latest): perftest generator - real-life-like bursty traffic with random idle gaps
+## v5.53.0 (latest): Flow replay - persistent selected-range readout
+flow_time_travel.html: added an always-on "replay <start> -> <end> (duration)" readout (#selLabel, beside
+#winLabel in the transport row). updateSelLabel() (called at the end of drawTL, cached via _selLast to skip
+redundant writes) shows fmtFull(start)+" -> "+fmt(end)+" . "+fmtDur(span); uses playing?streamFromT:playT so
+it stays STABLE during replay (fixed start, not the advancing playhead). fmtDur(): minute resolution
+(<1m / Nm / Hh MMm). UI-only; backend untouched. fmtDur verified in Node; 345 tests.
+
+## v5.52.0: Flow replay - window presets replace the time dropdowns
+flow_time_travel.html: removed the 10 From/To time dropdowns + Apply; added Window presets Auto/1h/2h/6h/24h
+(.rangebar .preset buttons, data-preset). applyPreset(p): auto -> autoFocus(); numeric -> win=[max(T0,
+NOW-p*3600000), NOW] + resetMarkers; then updateWinLabel/markActivePreset/sliceHist (client-side, no server
+hit). 24h clamps to T0 (retention). Removed RP/initPickers/readPicker/pickerMs/setPickerFromMs/
+syncPickersFromWin/applyRange; callers now use markActivePreset()/initPresets(). Markers own fine
+replay-range selection. Default Auto = prior load behaviour. Verified preset math in Node. UI-only;
+backend untouched. 345 tests. NOTE: presets are last-N-hours-from-now only; exact old-time entry dropped
+(reach old data via 24h + markers; a zoomable timeline was offered for true old+precise, not built).
+
+## v5.51.0: Flow replay - blue end marker (draggable range selector)
+flow_time_travel.html: added blue end marker (endT) beside the amber start (playT). Timeline is now a range
+selector. nearestMarker() grabs the closer handle; scrubMove() drags it with a no-cross min gap (markerGap
+~2% of window, cap 1s); resetMarkers() sets playT=win.a/endT=win.b on autoFocus/applyRange/Clear/boot.
+drawTL draws a shaded selection band ([streamFromT|playT]..endT) + amber & blue knobs + drawTimeBubble.
+scrubbing is now 0/1/2 (none/start/end). startStream streams from=min(playT,endT) to=max(playT,endT);
+Download exports the same span. Grabbing during replay stops it and restores playT=streamFromT. Defaults
+span whole window (unchanged behaviour). t2x/x2t exact inverses; constraints verified in Node. 345 tests.
+
+## v5.50.0: Flow replay - draggable start marker (seek cursor)
+flow_time_travel.html: the amber timeline marker is now draggable. Added x2t() (exact inverse of t2x),
+pointerdown/move/up/cancel handlers on #tl (mouse+touch via pointer events + setPointerCapture), a grab
+knob + time bubble in drawTL, scrubbing/streamFromT state. Click/drag seeks playT within [win.a,win.b];
+grabbing during a live replay stopStream()s first. startStream now streams from=streamFromT(=clamped
+playT) instead of win.a; drainFrame snaps playT back to streamFromT on completion (ready to replay).
+Default marker==win.a so whole-window behaviour unchanged. UI-only; backend + /stream endpoint untouched.
+Verified t2x/x2t exact inverses in Node; 345 tests.
+
+## v5.49.0: perftest generator - real-life-like bursty traffic with random idle gaps
 perftest/generate_trades.py: bursty mode now idles a random gap between bursts. Emit random 1..--randomrate
 burst (flushed), then sleep uniform(--randomsleep-min, --randomsleep) seconds, repeat. Defaults: max 5s,
 min 1s (so plain --randomrate N now gives 1..5s gaps). --randomsleep 0 disables (back-to-back, or --rate

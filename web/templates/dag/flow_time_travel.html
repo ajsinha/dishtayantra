@@ -66,6 +66,8 @@
   .transport{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .transport .t-time{font-family:var(--mono);font-size:12px;color:var(--muted)}
   .transport .win{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .transport .sel{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .transport .sel b{color:#F0A93E;font-weight:600}
   .transport .win b{color:var(--cyan);font-weight:600}
   .icon-btn{width:38px;text-align:center;padding:7px 0}
   #tl{width:100%;height:96px;display:block;cursor:default;border-radius:8px;
@@ -78,11 +80,12 @@
   .flow-tt .ftt-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px;color:var(--muted);font-size:13px;line-height:1.6}
   .flow-tt .ftt-empty b{color:var(--ink);font-size:15px;font-weight:600}
   .flow-tt .ftt-empty[hidden]{display:none}
-  .flow-tt .rangebar{display:flex;align-items:center;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+  .flow-tt .rangebar{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
   .flow-tt .rangebar .eyebrow{margin-right:2px}
-  .flow-tt .rangebar .cln{color:var(--muted);margin:0 -1px}
-  .flow-tt select.rp{background:#0d2436;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 4px;font:inherit;font-size:12px}
-  .flow-tt #applyRange{width:auto;padding:0 12px;font-size:12px;margin-left:8px}
+  .flow-tt .rangebar .preset{background:#0d2436;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 12px;font:inherit;font-size:12px;cursor:pointer}
+  .flow-tt .rangebar .preset:hover{border-color:#2a5570}
+  .flow-tt .rangebar .preset.active-preset{background:#19C2A8;border-color:#19C2A8;color:#042019;font-weight:600}
+  .flow-tt .rangebar .rangenote{color:var(--muted);font-size:11px;margin-left:6px}
   .flow-tt .ev .cyc{color:#7fb0c8;font-size:10px;margin:0 4px;opacity:.85}
   .flow-tt #detail .k{color:#6f8aa0}
   .flow-tt .rec.warn{background:#3a1d1d;border-color:#7a2e2e;color:#ff9b9b}
@@ -131,15 +134,13 @@
 
 <div class="ftt-foot">
   <div class="rangebar">
-    <span class="eyebrow">From</span>
-    <select id="fromDate" class="rp" aria-label="From date"></select>
-    <select id="fromHH" class="rp" aria-label="From hour"></select><span class="cln">:</span><select id="fromMM" class="rp" aria-label="From minute"></select><span class="cln">:</span><select id="fromSS" class="rp" aria-label="From second"></select>
-    <select id="fromAP" class="rp" aria-label="From AM/PM"></select>
-    <span class="eyebrow" style="margin-left:14px">To</span>
-    <select id="toDate" class="rp" aria-label="To date"></select>
-    <select id="toHH" class="rp" aria-label="To hour"></select><span class="cln">:</span><select id="toMM" class="rp" aria-label="To minute"></select><span class="cln">:</span><select id="toSS" class="rp" aria-label="To second"></select>
-    <select id="toAP" class="rp" aria-label="To AM/PM"></select>
-    <button id="applyRange" class="icon-btn" title="Apply this window to the chart">Apply</button>
+    <span class="eyebrow">Window</span>
+    <button class="preset" data-preset="auto" title="Focus to where the DAG was active">Auto</button>
+    <button class="preset" data-preset="1" title="Last hour (now-1h → now)">1h</button>
+    <button class="preset" data-preset="2" title="Last 2 hours">2h</button>
+    <button class="preset" data-preset="6" title="Last 6 hours">6h</button>
+    <button class="preset" data-preset="24" title="Last 24 hours (full window)">24h</button>
+    <span class="rangenote">then drag the amber / blue markers to bound the replay</span>
   </div>
   <div class="transport">
     <button id="play" class="icon-btn primary" title="Play / pause replay">▶</button>
@@ -153,9 +154,10 @@
     </select>
     <span class="t-time" id="playClock">--:--</span>
     <span class="win">window <b id="winLabel">last 24h</b></span>
+    <span class="sel">replay <b id="selLabel">&mdash;</b></span>
   </div>
   <canvas id="tl"></canvas>
-  <div class="hint">Pick a window with the <b>From</b> / <b>To</b> dropdowns (Today/Yesterday + time, max 24h) · the chart shows <b>compute-cycle activity</b> with an amber <b>playhead</b> during replay · as you play, each node shows its <b>message count</b> so you can see the graph light up · <b>Clear</b> stops the stream, frees the server slot, and resets everything.</div>
+  <div class="hint">Pick a <b>Window</b> preset (last 1h/2h/6h/24h, or Auto = focus to activity) · the chart shows <b>compute-cycle activity</b> · drag the <b style="color:#F0A93E">amber</b> and <b style="color:#46A0F0">blue</b> markers to bound the replay range; <b>Play</b> and <b>Download</b> act on that span · each node shows its <b>message count</b> as it plays · <b>Clear</b> stops the stream, frees the server slot, and resets everything.</div>
 </div>
 
 </div>
@@ -240,7 +242,10 @@ const tl=document.getElementById("tl");
 const tlctx=tl.getContext("2d");
 let DPR=Math.max(1,window.devicePixelRatio||1);
 let win={a:T0,b:NOW};           // selected window [a,b], <= 24h
-let playT=T0;                    // playhead time (advances during replay)
+let playT=T0;                    // start marker (amber); advances as the playhead during replay
+let endT=NOW;                    // end marker (blue); Play/Download stop here
+let scrubbing=0;                 // 0 none, 1 dragging start (amber), 2 dragging end (blue)
+let streamFromT=T0;              // time the current/last stream was started from
 let hist=[];                     // distribution buckets [{t0,t1,cycles,events}]
 let histMax=1;                   // peak cycles/bucket (y scale)
 
@@ -251,6 +256,17 @@ function sizeCanvas(){
 const PAD=10;
 function t2x(t){const r=tl.getBoundingClientRect();const span=Math.max(1,win.b-win.a);
   return PAD+(t-win.a)/span*(r.width-2*PAD);}
+function x2t(x){const r=tl.getBoundingClientRect();const span=Math.max(1,win.b-win.a);
+  return win.a+(x-PAD)/Math.max(1,r.width-2*PAD)*span;}
+function markerGap(){return Math.min(1000, Math.max(0,(win.b-win.a)*0.02));}
+function resetMarkers(){ playT=win.a; endT=win.b; }   // markers span the whole window
+function clampMarkers(){
+  const g=markerGap();
+  playT=Math.min(Math.max(playT,win.a),win.b);
+  endT=Math.min(Math.max(endT,win.a),win.b);
+  if(endT<playT+g) endT=Math.min(win.b, playT+g);
+  if(playT>endT-g) playT=Math.max(win.a, endT-g);
+}
 function fmt(t){const d=new Date(t);return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
 function fmtFull(t){const d=new Date(t);return d.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}
 
@@ -262,7 +278,7 @@ async function loadDistribution(){
   const j=await fetchJSON(`/api/flow/${encodeURIComponent(dag)}/distribution`);
   distAll=(j&&j.buckets)?j.buckets:[];
   autoFocus();                   // zoom the window to where the activity actually is
-  syncPickersFromWin(); updateWinLabel();
+  markActivePreset(); updateWinLabel();
   sliceHist();
 }
 function autoFocus(){
@@ -276,7 +292,7 @@ function autoFocus(){
   } else if(distAll.length){                           // no activity: show full 24h
     win.a=distAll[0].t0; win.b=distAll[distAll.length-1].t1;
   }
-  if(playT<win.a)playT=win.a; if(playT>win.b)playT=win.b;
+  resetMarkers();
 }
 function sliceHist(){
   // Bars whose time range overlaps the selected window - pure client-side slice,
@@ -284,6 +300,13 @@ function sliceHist(){
   hist=distAll.filter(b=>b.t1>win.a && b.t0<win.b);
   histMax=Math.max(1,...hist.map(b=>b.cycles||0));
   drawTL();
+}
+function drawTimeBubble(x,t,color){
+  const lbl=fmtFull(t);tlctx.font="10px ui-monospace,Menlo,monospace";
+  const w=tlctx.measureText(lbl).width+8;
+  const lxx=Math.min(Math.max(x-w/2,PAD),tl.getBoundingClientRect().width-PAD-w);
+  tlctx.fillStyle=color;tlctx.fillRect(lxx,2,w,13);
+  tlctx.fillStyle="#081826";tlctx.fillText(lbl,lxx+4,12);
 }
 function drawTL(){
   const r=tl.getBoundingClientRect(), W=r.width, H=r.height;
@@ -321,12 +344,48 @@ function drawTL(){
     tlctx.fillStyle="#6f8aa0";const lbl=fmt(t),twd=tlctx.measureText(lbl).width;
     let lx=k===ticks?x-twd-2:(k>0?x-twd/2:x+2);tlctx.fillText(lbl,lx,H-6);
   }
-  // playhead
+  // selection band between the start and end markers (the range Play will stream)
+  {
+    const bs=playing?streamFromT:playT;
+    const xA=t2x(Math.min(bs,endT)), xB=t2x(Math.max(bs,endT));
+    tlctx.fillStyle="rgba(240,169,62,.06)";tlctx.fillRect(xA,top-2,Math.max(0,xB-xA),base-top+2);
+  }
+  // start marker (amber) — also the advancing playhead during replay
   if(playT>=win.a&&playT<=win.b){
     const xp=t2x(playT);
     tlctx.fillStyle="#F0A93E";tlctx.fillRect(xp-1,top-6,2,base-top+8);
-    tlctx.beginPath();tlctx.moveTo(xp-5,top-6);tlctx.lineTo(xp+5,top-6);tlctx.lineTo(xp,top+1);tlctx.closePath();tlctx.fill();
+    tlctx.beginPath();tlctx.arc(xp,top-6,5.5,0,2*Math.PI);   // grab knob
+    tlctx.fillStyle="#F0A93E";tlctx.fill();
+    tlctx.strokeStyle="#081826";tlctx.lineWidth=1.5;tlctx.stroke();
+    if(scrubbing===1) drawTimeBubble(xp,playT,"#F0A93E");
   }
+  // end marker (blue)
+  if(endT>=win.a&&endT<=win.b){
+    const xe=t2x(endT);
+    tlctx.fillStyle="#46A0F0";tlctx.fillRect(xe-1,top-6,2,base-top+8);
+    tlctx.beginPath();tlctx.arc(xe,top-6,5.5,0,2*Math.PI);
+    tlctx.fillStyle="#46A0F0";tlctx.fill();
+    tlctx.strokeStyle="#081826";tlctx.lineWidth=1.5;tlctx.stroke();
+    if(scrubbing===2) drawTimeBubble(xe,endT,"#46A0F0");
+  }
+  updateSelLabel();
+}
+function fmtDur(ms){
+  const m=Math.round(ms/60000);
+  if(m<1) return "<1m";
+  if(m<60) return m+"m";
+  const h=Math.floor(m/60), mm=m%60;
+  return h+"h"+(mm?(" "+String(mm).padStart(2,"0")+"m"):"");
+}
+let _selLast="";
+function updateSelLabel(){
+  // persistent "selected: start -> end (duration)" readout. During replay we use
+  // the fixed stream start (not the advancing playhead) so the range stays stable.
+  const s=playing?streamFromT:playT;
+  const a=Math.min(s,endT), b=Math.max(s,endT);
+  const txt=fmtFull(a)+" \u2192 "+fmt(b)+" \u00b7 "+fmtDur(b-a);
+  if(txt===_selLast)return; _selLast=txt;
+  const el=document.getElementById("selLabel"); if(el) el.textContent=txt;
 }
 function updateWinLabel(){
   const span=(win.b-win.a);
@@ -336,52 +395,22 @@ function updateWinLabel(){
 
 /* ===== From/To window pickers (synced with the timeline; max 24h span) ===== */
 /* ===== From/To window via simple dropdowns (no native calendar) ===== */
-const RP={from:{},to:{}};
-["from","to"].forEach(p=>{["Date","HH","MM","SS","AP"].forEach(k=>RP[p][k]=document.getElementById(p+k));});
-function _opt(v,t){const o=document.createElement("option");o.value=v;o.textContent=t;return o;}
-function _midnight(daysAgo){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-daysAgo);return d;}
-function _fill(sel,vals,fmt2){sel.innerHTML="";vals.forEach(v=>sel.appendChild(_opt(v,fmt2?fmt2(v):v)));}
-function initPickers(){
-  if(!RP.from.Date)return;
-  const today=_midnight(0), yday=_midnight(1);
-  const dlabel=d=>d.toLocaleDateString([], {month:"short",day:"numeric"});
-  ["from","to"].forEach(p=>{
-    _fill(RP[p].Date,[0,1],v=>(v===0?"Today ":"Yesterday ")+dlabel(v===0?today:yday));
-    _fill(RP[p].HH,Array.from({length:12},(_,i)=>i+1));
-    _fill(RP[p].MM,Array.from({length:60},(_,i)=>i),v=>String(v).padStart(2,"0"));
-    _fill(RP[p].SS,Array.from({length:60},(_,i)=>i),v=>String(v).padStart(2,"0"));
-    _fill(RP[p].AP,["AM","PM"]);
-    ["Date","HH","MM","SS","AP"].forEach(k=>RP[p][k].addEventListener("change",applyRange));
-  });
-  document.getElementById("applyRange").addEventListener("click",applyRange);
-  syncPickersFromWin();
+/* ===== Window presets (last N hours from now) + Auto-focus ===== */
+let activePreset='auto';
+function markActivePreset(){
+  document.querySelectorAll('.rangebar .preset').forEach(b=>
+    b.classList.toggle('active-preset', b.dataset.preset===activePreset));
 }
-function pickerMs(daysAgo, hh12, mm, ss, ap){
-  const base=_midnight(daysAgo);                    // Today/Yesterday 00:00 local
-  let hh=hh12; if(ap==="PM"&&hh<12)hh+=12; if(ap==="AM"&&hh===12)hh=0;
-  base.setHours(hh,mm,ss,0); return base.getTime();
+function applyPreset(p){
+  activePreset=p;
+  if(p==='auto'){ autoFocus(); }                       // win -> active range (+ resetMarkers)
+  else { win.b=NOW; win.a=Math.max(T0, NOW-(+p)*3600000); resetMarkers(); }
+  updateWinLabel(); markActivePreset(); sliceHist();    // pure client-side re-slice, no server hit
 }
-function readPicker(p){
-  return pickerMs(+RP[p].Date.value, +RP[p].HH.value, +RP[p].MM.value,
-                  +RP[p].SS.value, RP[p].AP.value);
-}
-function setPickerFromMs(p,ms){
-  const d=new Date(ms), today0=_midnight(0).getTime();
-  RP[p].Date.value = ms>=today0 ? "0" : "1";
-  let hh=d.getHours(); const ap=hh>=12?"PM":"AM"; hh=hh%12; if(hh===0)hh=12;
-  RP[p].HH.value=String(hh); RP[p].MM.value=String(d.getMinutes());
-  RP[p].SS.value=String(d.getSeconds()); RP[p].AP.value=ap;
-}
-function syncPickersFromWin(){ if(RP.from.Date){ setPickerFromMs("from",win.a); setPickerFromMs("to",win.b); } }
-function applyRange(){
-  let a=readPicker("from"), b=readPicker("to");
-  if(b<=a){ b=a+3600000; }                          // keep a positive span
-  if(b-a>DAY){ a=b-DAY; flashNote("Window capped to 24h."); }
-  win.a=a; win.b=b;
-  if(playT<win.a)playT=win.a; if(playT>win.b)playT=win.b;
-  // Pure client-side: re-slice the buckets we already have (no server hit), and
-  // do NOT auto-focus again (respect the chosen window).
-  syncPickersFromWin(); updateWinLabel(); sliceHist();
+function initPresets(){
+  document.querySelectorAll('.rangebar .preset').forEach(b=>
+    b.addEventListener('click',()=>applyPreset(b.dataset.preset)));
+  markActivePreset();
 }
 
 /* ===================================================== streaming playback
@@ -400,7 +429,7 @@ document.getElementById("clearBtn").addEventListener("click",()=>{
   stopStream();            // closes the EventSource -> server hits GeneratorExit and
                            // releases the concurrency slot + WAL read snapshot
   resetReplay();           // clears the event list, per-node counts and graph highlight
-  playT=win.a; drawTL();
+  resetMarkers(); drawTL();
   flashNote(wasActive
     ? "Flow cleared \u2014 stream disconnected, server slot released, graph and counts reset."
     : "Flow cleared. Press \u25B6 to stream this window.");
@@ -417,8 +446,12 @@ function startStream(){
   const dag=document.getElementById("dag").value; if(!dag)return;
   stopStream(); resetReplay();
   playing=true; playBtn.textContent="⏸";
+  // Stream the range between the two markers (amber start -> blue end), clamped
+  // to the window. Default markers span the whole window.
+  streamFromT=Math.min(Math.max(Math.min(playT,endT),win.a),win.b);
+  const toT=Math.min(Math.max(Math.max(playT,endT),streamFromT),win.b);
   const url=`/api/flow/${encodeURIComponent(dag)}/stream`
-    +`?from=${Math.round(win.a)}&to=${Math.round(win.b)}&cycles=256`;
+    +`?from=${Math.round(streamFromT)}&to=${Math.round(toT)}&cycles=256`;
   es=new EventSource(url);
   es.addEventListener("batch",ev=>{ try{const d=JSON.parse(ev.data);
     for(const e of d.events) streamQueue.push(mapApi(e)); }catch(_){} });
@@ -444,7 +477,9 @@ function drainFrame(){
   let n=renderPerFrame;
   while(n-->0 && streamQueue.length) renderEvent(streamQueue.shift());
   drawTL();
-  if(streamQueue.length===0 && streamEnded){ playing=false; playBtn.textContent="▶"; return; }
+  if(streamQueue.length===0 && streamEnded){ playing=false; playBtn.textContent="▶";
+    playT=streamFromT; drawTL();        // return the marker to the chosen start, ready to replay
+    return; }
   requestAnimationFrame(drainFrame);
 }
 function renderEvent(e){
@@ -521,7 +556,7 @@ function escapeHtml(s){return (s+"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;
 /* ============================================================= download */
 document.getElementById("download").addEventListener("click",()=>{
   const dag=encodeURIComponent(document.getElementById("dag").value);
-  window.location=`/api/flow/${dag}/export?from=${Math.round(win.a)}&to=${Math.round(win.b)}&format=jsonl&download=1`;
+  window.location=`/api/flow/${dag}/export?from=${Math.round(Math.min(playT,endT))}&to=${Math.round(Math.max(playT,endT))}&format=jsonl&download=1`;
 });
 
 /* ============================================================= recording status (read-only)
@@ -531,8 +566,8 @@ const recEl=document.getElementById("rec");
 
 /* ============================================================= boot */
 function boot(){
-  sizeCanvas(); updateWinLabel(); syncPickersFromWin();
-  playT=win.a; seekTo(win.a,true); drawTL();
+  sizeCanvas(); updateWinLabel(); markActivePreset();
+  resetMarkers(); seekTo(win.a,true); drawTL();
 }
 async function fetchJSON(u,opt){try{const r=await fetch(u,opt);if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
 function mapApi(e){return {seq:e.seq,ts:e.ts_ms,node:e.node_id,value:e.output||{},cycle:(e.cycle_id!=null?e.cycle_id:null),
@@ -597,7 +632,35 @@ async function loadData(){
 }
 document.getElementById('dag').addEventListener('change',loadData);
 window.addEventListener("resize",()=>{DPR=Math.max(1,window.devicePixelRatio||1);sizeCanvas();});
-initPickers();
+
+/* Drag the amber marker to choose where Play starts (a seek cursor over the
+   selected window). Click-or-drag anywhere on the timeline seeks; while a replay
+   is running, grabbing first stops it so the marker becomes the new start. */
+tl.style.cursor="grab"; tl.style.touchAction="none";
+function nearestMarker(clientX){
+  const r=tl.getBoundingClientRect(), x=clientX-r.left;
+  return Math.abs(x-t2x(endT)) < Math.abs(x-t2x(playT)) ? 2 : 1;   // 2=end(blue) 1=start(amber)
+}
+function scrubMove(clientX){
+  const r=tl.getBoundingClientRect();
+  let t=Math.min(Math.max(x2t(clientX-r.left),win.a),win.b);
+  const g=markerGap();
+  if(scrubbing===2){ endT=Math.min(win.b, Math.max(t, playT+g)); }   // end can't cross start
+  else            { playT=Math.max(win.a, Math.min(t, endT-g)); }    // start can't cross end
+  clock.textContent=fmt(scrubbing===2?endT:playT); drawTL();
+}
+tl.addEventListener("pointerdown",e=>{
+  if(!document.getElementById("dag").value)return;          // no DAG selected
+  if(playing||es){ stopStream(); playT=streamFromT; }       // stop replay; restore start marker
+  scrubbing=nearestMarker(e.clientX); try{tl.setPointerCapture(e.pointerId);}catch(_){}
+  tl.style.cursor="grabbing"; scrubMove(e.clientX); e.preventDefault();
+});
+tl.addEventListener("pointermove",e=>{ if(scrubbing) scrubMove(e.clientX); });
+function endScrub(e){ if(!scrubbing)return; scrubbing=0; tl.style.cursor="grab";
+  try{tl.releasePointerCapture(e.pointerId);}catch(_){} drawTL(); }
+tl.addEventListener("pointerup",endScrub);
+tl.addEventListener("pointercancel",endScrub);
+initPresets();
 loadDags().then(loadStatus).then(loadData);
 </script>
 {% endblock %}
